@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="dark_grey">#292929</color>
+    <color name="blue">#6c63ff</color>
+    <color name="red">#b01e28</color>
+    <color name="light_black">#353839</color>
+    <color name="darkness_black">#000000</color>
+    <color name="light_red">#FF7F7F</color>
+    <color name="dark_white">#e1d9d1</color>
+    <color name="green">#50C878</color>
+    <color name="light_blue">#add8e6</color>
+    <color name="border_color">#FFD700</color>
+    <color name="disabled">#20C0C0C0</color>
+    <color name="sea_green">#2E8B57</color>
+    <color name="transparent">@android:color/transparent</color>
+
+    <color name="radio_btn_deselected">#CCCCCC</color>
+
+    <color name="yellow">#FCD267</color>
+
+    <color name="crop_radio_btn_default_color">#555555</color>
+
+    <color name="place_holder_color">#C0C0C0</color>
+
+    <color name="hint_text_color_light">#9E9E9E</color>
+    <color name="hint_text_color_dark">#BDBDBD</color>
+
+    <color name="background_color_dark">#1E1E1E</color>
+    <color name="background_color_light">#FFFFFFFF</color>
+    <color name="light_blue_600">#FF039BE5</color>
+    <color name="light_blue_900">#FF01579B</color>
+    <color name="light_blue_A200">#FF40C4FF</color>
+    <color name="light_blue_A400">#FF00B0FF</color>
+    <color name="black_overlay">#66000000</color>
+
+</resources>
