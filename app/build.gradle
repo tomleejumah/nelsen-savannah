@@ -1,8 +1,17 @@
 plugins {
     alias(libs.plugins.android.application)
     id 'org.jetbrains.kotlin.android'
+    id("com.google.gms.google-services")
+}
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
 }
 
+def webClientId = localProperties.getProperty('WEB_CLIENT_ID', '"default_web_client_id"')
 android {
     namespace 'com.app.nisisiafrica'
     compileSdk 35
@@ -14,6 +23,8 @@ android {
         versionCode 1
         versionName "1.0"
 
+//        buildConfigField "String", "WEB_CLIENT_ID", "\"${WEB_CLIENT_ID}\""
+        buildConfigField "String", "WEB_CLIENT_ID", webClientId
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -23,10 +34,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-//    compileOptions {
-//        sourceCompatibility JavaVersion.VERSION_1_8
-//        targetCompatibility JavaVersion.VERSION_1_8
-//    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -43,12 +51,31 @@ dependencies {
     implementation libs.material
     implementation libs.activity
     implementation libs.constraintlayout
+    implementation libs.play.services.auth
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 
+    //ui
     implementation project(':liquid_swipe')
     implementation libs.core.splashscreen
     implementation libs.circleimageview
     implementation libs.swiperefreshlayout
+
+    //firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation libs.firebase.auth
+    implementation libs.firebase.storage
+    implementation libs.firebase.database
+    //google cloud auth
+    implementation libs.credentials
+    implementation libs.credentials.play.services.auth
+    implementation libs.googleid.v111
+
+    // Google Identity Services
+    implementation 'com.google.android.gms:play-services-auth:21.3.0'
+
+    // For Identity API
+    implementation 'com.google.android.gms:play-services-identity:18.1.0'
 }
