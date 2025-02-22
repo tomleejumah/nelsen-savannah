@@ -27,12 +27,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         splashScreen.setKeepOnScreenCondition(() -> true );
 
-        boolean isFirstTime = Utils.getState(getApplicationContext(), "is-FirstTime", true);
-        if (isFirstTime) {
-            startActivity(new Intent(this, IntroActivity.class));
-            finish();
-            return;
-        }
+//        boolean isFirstTime = Utils.getState(getApplicationContext(), "is-FirstTime", true);
+//        if (isFirstTime) {
+//            startActivity(new Intent(this, IntroActivity.class));
+//            finish();
+//            return;
+//        }
 
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);

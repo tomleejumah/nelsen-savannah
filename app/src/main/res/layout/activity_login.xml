@@ -6,7 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".Auth.LoginSignUpActivity">
 
+    <ImageView
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:id="@+id/imgClose"
+        android:layout_marginBottom="10dp"
+        android:contentDescription="TODO"
+        android:src="@drawable/close"/>
+
     <LinearLayout
+        android:layout_below="@+id/imgClose"
         android:layout_marginTop="20dp"
         android:id="@+id/myTabLayout"
         android:layout_width="match_parent"

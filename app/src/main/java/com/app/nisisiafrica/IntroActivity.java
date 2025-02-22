@@ -6,13 +6,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -22,6 +21,7 @@ import com.LiquidPager.liquid_swipe.LiquidPager;
 import com.app.nisisiafrica.Adapter.LiquidPagerAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Fragment.LiquidPagerFragment;
+import com.google.android.material.checkbox.MaterialCheckBox;
 
 public class IntroActivity extends AppCompatActivity implements LiquidPagerFragment.OnTermsAndConditionsListener {
     private static final String TAG = "IntroActivity";
@@ -106,13 +106,14 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
         termsView.findViewById(R.id.radio_btn_male).setOnClickListener(this::setClickAnimation);
         termsView.findViewById(R.id.radio_btn_female).setOnClickListener(this::setClickAnimation);
 
-        Button button = termsView.findViewById(R.id.btn_proceed);
+        AppCompatButton button = termsView.findViewById(R.id.btn_proceed);
         button.setOnClickListener(v -> {
+            Utils.saveState(getApplicationContext(), "is-FirstTime", false);
             setClickAnimation(v);
 
             // Retrieve the required views from the termsView
             RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
-            CheckBox checkBox = termsView.findViewById(R.id.check_box);
+            MaterialCheckBox checkBox = termsView.findViewById(R.id.check_box);
 
             // Validate input fields and the checkbox
             boolean inputsValid = validateInputs(termsView);
