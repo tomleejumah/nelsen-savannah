@@ -21,9 +21,11 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 
 import java.util.Objects;
@@ -32,7 +34,9 @@ import java.util.Objects;
 public class LoginFragment extends Fragment {
     private GoogleAuthHelper googleAuthHelper;
     private ActivityResultLauncher<Intent> launcher;
+    private FacebookAuthHelper facebookAuthHelper;
     private static final String TAG = "LoginFragment";
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,12 +59,42 @@ public class LoginFragment extends Fragment {
                 }
         );
 
-           String web_client_id = BuildConfig.WEB_CLIENT_ID;
+        String web_client_id = BuildConfig.WEB_CLIENT_ID;
         googleAuthHelper = new GoogleAuthHelper(
                 requireActivity(),
                 launcher,
                 web_client_id
         );
+
+        // Initialize the Facebook Auth Helper
+        facebookAuthHelper = new FacebookAuthHelper(requireActivity());
+        facebookAuthHelper.addOnLoginSuccessListener(userData -> {
+            // Handle successful login
+            Toast.makeText(requireContext(), "Logged in as " + userData.getDisplayName(), Toast.LENGTH_SHORT).show();
+            navigateToMainScreen();
+            return null;
+        });
+
+        facebookAuthHelper.addOnLoginErrorListener(exception -> {
+            // Handle login error
+            Toast.makeText(requireContext(), "Login failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+            return null;
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Pass activity result to the Facebook helper
+        facebookAuthHelper.handleActivityResult(requestCode, resultCode, data);
+    }
+
+    private void navigateToMainScreen() {
+        // Navigate to your main screen after successful login
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        startActivity(intent);
+        requireActivity().finish();
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -105,7 +139,8 @@ public class LoginFragment extends Fragment {
             passEDT.setSelection(passEDT.getText().length()); // Keep cursor at the end
         });
 
-        view.findViewById(R.id.googleBtn).setOnClickListener(new View.OnClickListener() {
+        view.findViewById(R.id.googleBtn).setOnClickListener(v -> googleAuthHelper.signIn());
+        view.findViewById(R.id.facebookBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -120,6 +155,7 @@ public class LoginFragment extends Fragment {
         view.findViewById(R.id.btnLogin).setOnClickListener(v -> {
 //            login();
         });
+
             return view;
     }
 
@@ -136,7 +172,7 @@ public class LoginFragment extends Fragment {
                     String userId = userData.getId();
 
                     // Save to Firebase Realtime Database
-                    saveToFireBase(userData);
+                    goToNextActivity(userData);
 
                     return null;
                 },
@@ -149,7 +185,7 @@ public class LoginFragment extends Fragment {
         );
     }
 
-    private void saveToFireBase(GoogleAuthHelper.UserData userData) {
+    private void goToNextActivity(UserData userData) {
         googleAuthHelper.saveUserToFirebase(
                 userData,
                 isSuccess -> {

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
+import com.app.nisisiafrica.Model.UserData
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -64,7 +65,10 @@ class GoogleAuthHelper(
                 .addOnSuccessListener { authResult ->
                     // You can get additional Firebase user data here
                     val firebaseUser = authResult.user
-                    onSuccess(userData)
+                    firebaseUser?.let {
+                        onSuccess(userData)
+                    }
+
                 }.addOnFailureListener { exception ->
                     onError(exception)
                 }
@@ -79,15 +83,15 @@ class GoogleAuthHelper(
 
     fun isUserSignedIn(): Boolean = auth.currentUser != null
 
-    data class UserData(
-        val id: String,
-        val email: String,
-        val displayName: String,
-        val firstName: String,
-        val lastName: String,
-        val photoUrl: String,
-        val idToken: String
-    )
+//    data class UserData(
+//        val id: String,
+//        val email: String,
+//        val displayName: String,
+//        val firstName: String,
+//        val lastName: String,
+//        val photoUrl: String,
+//        val idToken: String
+//    )
 
     fun signOut(onComplete: () -> Unit) {
         googleSignInClient.signOut().addOnCompleteListener {
@@ -109,33 +113,43 @@ class GoogleAuthHelper(
         onError: (Exception) -> Unit
     ) {
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
-
         usersRef.child(userData.id).get().addOnCompleteListener { task ->
             if (task.isSuccessful && task.result.exists()) {
-                Log.d("FirebaseDB", "User already exists, skipping save")
+                Log.d("FirebaseDB", "User already exists, updating last login (Google)")
+                usersRef.child(userData.id).child("lastLogin").setValue(ServerValue.TIMESTAMP)
                 onSuccess(true)
             } else {
-                Log.d("FirebaseDB", "User does not exist, saving new user")
-
-                val user = hashMapOf(
-                    "email" to userData.email,
-                    "displayName" to userData.displayName,
-                    "firstName" to userData.firstName,
-                    "lastName" to userData.lastName,
-                    "photoUrl" to userData.photoUrl,
-                    "lastLogin" to ServerValue.TIMESTAMP
-                )
-
-                usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
-                    .addOnSuccessListener {
-                        Log.d("FirebaseDB", "User data saved successfully!")
-                        onSuccess(true)
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.e("FirebaseDB", "Failed to save user data", exception)
-                        onError(exception)
-                    }
+                Log.d("FirebaseDB", "User does not exist, saving new user (Google)")
+                FirebaseUserHelper.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
             }
         }
+//        usersRef.child(userData.id).get().addOnCompleteListener { task ->
+//            if (task.isSuccessful && task.result.exists()) {
+//                Log.d("FirebaseDB", "User already exists, skipping save")
+//                usersRef.child(userData.id).child("lastLogin").setValue(ServerValue.TIMESTAMP)
+//                onSuccess.invoke(true)
+//            } else {
+//                Log.d("FirebaseDB", "User does not exist, saving new user")
+//
+//                val user = hashMapOf(
+//                    "email" to userData.email,
+//                    "displayName" to userData.displayName,
+//                    "firstName" to userData.firstName,
+//                    "lastName" to userData.lastName,
+//                    "photoUrl" to userData.photoUrl,
+//                    "lastLogin" to ServerValue.TIMESTAMP
+//                )
+//
+//                usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
+//                    .addOnSuccessListener {
+//                        Log.d("FirebaseDB", "User data saved successfully!")
+//                        onSuccess(true)
+//                    }
+//                    .addOnFailureListener { exception ->
+//                        Log.e("FirebaseDB", "Failed to save user data", exception)
+//                        onError(exception)
+//                    }
+//            }
+//        }
     }
 }

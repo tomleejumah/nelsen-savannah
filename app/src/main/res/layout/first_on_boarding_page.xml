@@ -31,8 +31,8 @@
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:layout_marginTop="80dp"
-        android:layout_marginStart="64dp"
-        android:src="@drawable/nisisi_logo" />
+        android:layout_marginStart="0dp"
+        android:src="@drawable/nisisi_newlogo" />
 
     <TextView
         android:layout_alignParentBottom="true"
