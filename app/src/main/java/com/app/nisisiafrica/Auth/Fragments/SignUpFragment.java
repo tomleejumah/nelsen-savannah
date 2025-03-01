@@ -16,25 +16,28 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 public class SignUpFragment extends Fragment {
     private static final String TAG = "SignUpFragment";
     private GoogleAuthHelper googleAuthHelper;
     private ActivityResultLauncher<Intent> launcher;
+    private FacebookAuthHelper facebookAuthHelper;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -58,12 +61,44 @@ public class SignUpFragment extends Fragment {
                 }
         );
 
+        //init google Auth
         String web_client_id = BuildConfig.WEB_CLIENT_ID;
         googleAuthHelper = new GoogleAuthHelper(
                 requireActivity(),
                 launcher,
-                web_client_id  // Add this to strings.xml
+                web_client_id
         );
+
+        // Initialize the Facebook Auth Helper
+        facebookAuthHelper = new FacebookAuthHelper(requireActivity());
+        facebookAuthHelper.addOnLoginSuccessListener(userData -> {
+            // Handle successful login
+            Toast.makeText(requireContext(), "Logged in as " + userData.getDisplayName(), Toast.LENGTH_SHORT).show();
+            navigateToMainScreen();
+            return null;
+        });
+
+        facebookAuthHelper.addOnLoginErrorListener(exception -> {
+            // Handle login error
+            Toast.makeText(requireContext(), "Login failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+            return null;
+        });
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Pass activity result to the Facebook helper
+        facebookAuthHelper.handleActivityResult(requestCode, resultCode, data);
+    }
+
+    private void navigateToMainScreen() {
+        // Navigate to your main screen after successful login
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        startActivity(intent);
+        requireActivity().finish();
     }
 
     @Override
@@ -72,6 +107,13 @@ public class SignUpFragment extends Fragment {
 
         Button signInButton = view.findViewById(R.id.googleBtn);
         signInButton.setOnClickListener(v -> googleAuthHelper.signIn());
+        Button facebookLoginButton = view.findViewById(R.id.facebookBtn);
+
+        // Set click listener
+        facebookLoginButton.setOnClickListener(v -> {
+            List<String> permissions = Arrays.asList("email", "public_profile");
+            facebookAuthHelper.signIn(permissions);
+        });
 
         return view;
     }
@@ -96,7 +138,7 @@ public class SignUpFragment extends Fragment {
                     String userId = userData.getId();
 
                     // Save to Firebase Realtime Database
-                    saveToFireBase(userData);
+                    goToNextActivity(userData);
 
                     return null;
                 },
@@ -109,13 +151,14 @@ public class SignUpFragment extends Fragment {
         );
     }
 
-    private void saveToFireBase(GoogleAuthHelper.UserData userData) {
+    private void goToNextActivity(UserData userData) {
         googleAuthHelper.saveUserToFirebase(
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
                         Intent intent = new Intent(getContext(), MainActivity.class);
                         startActivity(intent);
+                        requireActivity().finish();
                     }
                     return null;
                 },
