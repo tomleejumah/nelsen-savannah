@@ -1,0 +1,74 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+group = 'com.github.tomleejumah'
+version = '1.0.4'
+
+android {
+    namespace 'com.app.customsnackbarlib'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 23
+        targetSdk 34
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+//                from components.release
+                from components.findByName('release')
+
+                groupId = 'com.github.tomleejumah'
+                artifactId = 'Custom_Snackbar_Library'
+                version = '1.0.4'
+
+                pom {
+                    name = 'Custom_Snackbar_Library'
+                    description = 'A custom Snackbar library for Android'
+                    url = 'https://github.com/tomleejumah/Custom_Snackbar_Library'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'tomleejumah'
+                            name = 'Tom Lee Jumah'
+                            email = 'tommlyjumah@gmail.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -75,12 +75,13 @@ class FacebookAuthHelper(private val activity: Activity) {
             }
     }
     private fun fetchGraphDataAndSaveUser(firebaseUser: FirebaseUser, token: AccessToken) {
-        val request = GraphRequest.newMeRequest(token) { jsonObject, _ ->
+        val request = GraphRequest.newMeRequest(token) { jsonObject, response ->
             // Extract additional user info from the Graph API response
             val firstName = jsonObject?.optString("first_name") ?: ""
             val lastName = jsonObject?.optString("last_name") ?: ""
             val displayName = jsonObject?.optString("name") ?: (firebaseUser.displayName ?: "")
             val email = jsonObject?.optString("email") ?: (firebaseUser.email ?: "")
+
             // Extract picture URL (using large image type)
             val pictureUrl = jsonObject?.optJSONObject("picture")
                 ?.optJSONObject("data")
@@ -109,6 +110,41 @@ class FacebookAuthHelper(private val activity: Activity) {
         request.parameters = parameters
         request.executeAsync()
     }
+//    private fun fetchGraphDataAndSaveUser(firebaseUser: FirebaseUser, token: AccessToken) {
+//        val request = GraphRequest.newMeRequest(token) { jsonObject, _ ->
+//            // Extract additional user info from the Graph API response
+//            val firstName = jsonObject?.optString("first_name") ?: ""
+//            val lastName = jsonObject?.optString("last_name") ?: ""
+//            val displayName = jsonObject?.optString("name") ?: (firebaseUser.displayName ?: "")
+//            val email = jsonObject?.optString("email") ?: (firebaseUser.email ?: "")
+//            // Extract picture URL (using large image type)
+//            val pictureUrl = jsonObject?.optJSONObject("picture")
+//                ?.optJSONObject("data")
+//                ?.optString("url") ?: (firebaseUser.photoUrl?.toString() ?: "")
+//
+//            val userData = UserData(
+//                id = firebaseUser.uid,
+//                email = email,
+//                displayName = displayName,
+//                firstName = firstName,
+//                lastName = lastName,
+//                photoUrl = pictureUrl,
+//                idToken = token.token
+//            )
+//
+//            // Save the updated user data to Firebase
+//            saveUserToFirebase(userData)
+//            onLoginSuccessListeners.forEach { listener ->
+//                listener.invoke(userData)
+//            }
+//        }
+//
+//        // Request additional fields from the Graph API
+//        val parameters = Bundle()
+//        parameters.putString("fields", "id,name,first_name,last_name,email,picture.type(large)")
+//        request.parameters = parameters
+//        request.executeAsync()
+//    }
 
     private val onLoginSuccessListeners = mutableListOf<(UserData) -> Unit>()
     private val onLoginErrorListeners = mutableListOf<(Exception) -> Unit>()
@@ -142,17 +178,6 @@ class FacebookAuthHelper(private val activity: Activity) {
         auth.signOut()
         onComplete()
     }
-
-//    data class UserData(
-//        val id: String,
-//        val email: String,
-//        val displayName: String,
-//        val firstName: String,
-//        val lastName: String,
-//        val photoUrl: String,
-//        val idToken: String
-//    )
-
     private fun saveUserToFirebase(
         userData: UserData,
         onSuccess: ((Boolean) -> Unit)?=null,
@@ -170,34 +195,6 @@ class FacebookAuthHelper(private val activity: Activity) {
                 FirebaseUserHelper.saveOrUpdateUser(userData, usersRef, null, null)
             }
         }
-//        usersRef.child(userData.id).get().addOnCompleteListener { task ->
-//            if (task.isSuccessful && task.result.exists()) {
-//                Log.d("FirebaseDB", "User already exists, updating last login")
-//                usersRef.child(userData.id).child("lastLogin").setValue(ServerValue.TIMESTAMP)
-//                onSuccess?.invoke(true)
-//            } else {
-//                Log.d("FirebaseDB", "User does not exist, saving new user")
-//
-//                val user = hashMapOf(
-//                    "email" to userData.email,
-//                    "displayName" to userData.displayName,
-//                    "firstName" to userData.firstName,
-//                    "lastName" to userData.lastName,
-//                    "photoUrl" to userData.photoUrl,
-//                    "lastLogin" to ServerValue.TIMESTAMP
-//                )
-//
-//                usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
-//                    .addOnSuccessListener {
-//                        Log.d("FirebaseDB", "User data saved successfully!")
-//                        onSuccess?.invoke(true)
-//                    }
-//                    .addOnFailureListener { exception ->
-//                        Log.e("FirebaseDB", "Failed to save user data", exception)
-//                        onError?.invoke(exception)
-//                    }
-//            }
-//        }
     }
 
     companion object {

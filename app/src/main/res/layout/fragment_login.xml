@@ -7,6 +7,7 @@
     tools:context=".Auth.Fragments.LoginFragment">
 
     <RelativeLayout
+        android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -45,7 +46,7 @@
                     android:id="@+id/emailEditText"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="4dp"
                     android:background="@drawable/edit_text_background"
                     android:drawablePadding="10dp"
                     android:hint="Enter email"
@@ -66,6 +67,16 @@
 
             </RelativeLayout>
 
+            <TextView
+                android:id="@+id/mailError"
+                android:visibility="gone"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/red"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Please enter your email"
+                android:textSize="12sp" />
+
             <!-- Password Label -->
             <TextView
                 android:layout_width="wrap_content"
@@ -76,7 +87,7 @@
                 android:textStyle="bold" />
 
             <TextView
-               android:id="@+id/txtForgotPwsd"
+                android:id="@+id/txtForgotPwsd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
@@ -93,7 +104,7 @@
                     android:id="@+id/passwordEditText"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="4dp"
                     android:background="@drawable/edit_text_background"
                     android:drawablePadding="10dp"
                     android:hint="Enter password"
@@ -111,6 +122,15 @@
                     android:layout_marginEnd="10dp"
                     android:src="@drawable/ic_hidden_pwsd" />
             </RelativeLayout>
+            <TextView
+                android:id="@+id/passError"
+                android:visibility="gone"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/red"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Please enter your password"
+                android:textSize="12sp" />
 
         </LinearLayout>
 
@@ -130,8 +150,7 @@
             android:background="@drawable/btn_login_bg"
             android:backgroundTint="#03A9F4"
             android:id="@+id/btnLogin"
-            android:text="Login"
-             />
+            android:text="Login" />
 
         <LinearLayout
             android:id="@+id/orSignInWith"

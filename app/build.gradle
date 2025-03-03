@@ -66,6 +66,7 @@ dependencies {
 
     //ui
     implementation project(':liquid_swipe')
+    implementation project(':CustomSnackbarLib')
     implementation libs.core.splashscreen
     implementation libs.circleimageview
     implementation libs.swiperefreshlayout
@@ -89,4 +90,9 @@ dependencies {
 
     // For Identity API
     implementation libs.play.services.identity
+
+    //Room db
+    def room_version = "2.6.1"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
 }

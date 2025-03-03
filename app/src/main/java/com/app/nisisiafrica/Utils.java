@@ -17,21 +17,18 @@ import androidx.lifecycle.LifecycleOwner;
 import java.util.regex.Pattern;
 
 public class Utils {
+    private static Context appContext;
+    public static void init(Context context) {
+        appContext = context.getApplicationContext();
+    }
     public static boolean isNetworkConnected(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager)
-                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
     }
 
-    public static void shakeView(final View view) {
-        final ObjectAnimator shakeAnimator = ObjectAnimator.ofFloat(view, "translationX", 0f, 10f, -10f, 10f, -10f, 5f, -5f, 0f);
-        shakeAnimator.setDuration(500);
-        shakeAnimator.start();
-    }
-
     public static boolean isValidEmail(String email) {
-        // email validation logic
         return Pattern.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)" +
                 "*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$").matcher(email).matches();
     }
@@ -41,64 +38,69 @@ public class Utils {
         return password.length() >= 6;
     }
 
-    public static boolean getState(Context context, String key,boolean defValue) {
-        SharedPreferences preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        return preferences.getBoolean(key, defValue);
+    public static <T> T getState( String key, T defValue) {
+        if (appContext == null) throw new IllegalStateException("Utils not initialized");
+        SharedPreferences preferences = appContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+//        SharedPreferences preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        Object result;
+        if (defValue instanceof Boolean) {
+            result = preferences.getBoolean(key, (Boolean) defValue);
+        } else if (defValue instanceof Integer) {
+            result = preferences.getInt(key, (Integer) defValue);
+        } else if (defValue instanceof Float) {
+            result = preferences.getFloat(key, (Float) defValue);
+        } else if (defValue instanceof Long) {
+            result = preferences.getLong(key, (Long) defValue);
+        } else if (defValue instanceof String) {
+            result = preferences.getString(key, (String) defValue);
+        } else {
+            throw new IllegalArgumentException("Type not supported");
+        }
+        return (T) result;
     }
 
-    public static void saveState(Context context, String key, boolean value) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+    public static <T> void saveState( String key, T value) {
+//        SharedPreferences sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+//        SharedPreferences.Editor editor = sharedPreferences.edit();
+        if (appContext == null) throw new IllegalStateException("Utils not initialized");
+        SharedPreferences sharedPreferences = appContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean(key, value);
+        if (value instanceof Boolean) {
+            editor.putBoolean(key, (Boolean) value);
+        } else if (value instanceof Integer) {
+            editor.putInt(key, (Integer) value);
+        } else if (value instanceof Float) {
+            editor.putFloat(key, (Float) value);
+        } else if (value instanceof Long) {
+            editor.putLong(key, (Long) value);
+        } else if (value instanceof String) {
+            editor.putString(key, (String) value);
+        } else {
+            throw new IllegalArgumentException("Type not supported");
+        }
         editor.apply();
     }
 
-    public static void savePoints(Context context, String key, int value) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(key, value);
-        editor.apply();
+    public static void setClickAnimation(View v) {
+        v.animate()
+                .scaleX(0.8f)
+                .scaleY(0.8f)
+                .setDuration(25)
+                .withEndAction(() -> {
+                    v.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(25)
+                            .start();
+                })
+                .start();
     }
 
-    public static int getPoints(Context context, String key) {
-        SharedPreferences preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        return preferences.getInt(key, 0);
-    }
-
-    public static void saveTime(Context context, String key, Long value) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putLong(key, value);
-        editor.apply();
-    }
-
-    public static long getTime(Context context, String key) {
-        SharedPreferences preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        return preferences.getLong(key, 0);
-    }
-
-
-    private static final String SPINS_COUNT_KEY = "spins_count";
-
-    public static int getSpinsCount(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        return prefs.getInt(SPINS_COUNT_KEY, 0);
-    }
-
-    public static void incrementSpinsCount(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        int currentCount = prefs.getInt(SPINS_COUNT_KEY, 1);
-        prefs.edit().putInt(SPINS_COUNT_KEY, currentCount + 1).apply();
-    }
-
-    public static void resetSpinsCount(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        prefs.edit().putInt(SPINS_COUNT_KEY, 1).apply();
-    }
-
-    public static void resetTime(Context context,String key) {
-        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        prefs.edit().putLong(key, 0).apply();
+    public static void shakeView(final View view) {
+        final ObjectAnimator shakeAnimator = ObjectAnimator.ofFloat(view,
+                "translationX", 0f, 10f, -10f, 10f, -10f, 5f, -5f, 0f);
+        shakeAnimator.setDuration(500);
+        shakeAnimator.start();
     }
 
 }
