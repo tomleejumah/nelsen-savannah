@@ -1,13 +1,21 @@
 package com.app.nisisiafrica.Auth.Fragments;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -22,6 +30,10 @@ import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.SnackbarHandler;
+import com.app.nisisiafrica.Utils;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -30,20 +42,21 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 public class SignUpFragment extends Fragment {
     private static final String TAG = "SignUpFragment";
     private GoogleAuthHelper googleAuthHelper;
-    private ActivityResultLauncher<Intent> launcher;
     private FacebookAuthHelper facebookAuthHelper;
-
+    private ImageView emailCheckIcon;
+    private SnackbarHandler snackbarHandler;
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        launcher = registerForActivityResult(
+        ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     Log.d(TAG, "onActivityResult triggered");
@@ -85,20 +98,19 @@ public class SignUpFragment extends Fragment {
         });
 
     }
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof SnackbarHandler) {
+            snackbarHandler = (SnackbarHandler) context;
+        }
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         // Pass activity result to the Facebook helper
         facebookAuthHelper.handleActivityResult(requestCode, resultCode, data);
-    }
-
-    private void navigateToMainScreen() {
-        // Navigate to your main screen after successful login
-        Intent intent = new Intent(getContext(), MainActivity.class);
-        startActivity(intent);
-        requireActivity().finish();
     }
 
     @Override
@@ -115,9 +127,126 @@ public class SignUpFragment extends Fragment {
             facebookAuthHelper.signIn(permissions);
         });
 
+        EditText firstName = view.findViewById(R.id.FirstNameEditText);
+        EditText lastName = view.findViewById(R.id.LastNameEditText);
+        EditText emailEDT = view.findViewById(R.id.emailEditText);
+        emailCheckIcon = view.findViewById(R.id.emailCheckIcon);
+        EditText passEDT = view.findViewById(R.id.passwordEditText);
+        ImageView passwordToggleIcon = view.findViewById(R.id.passwordToggleIcon);
+        TextView namesError = view.findViewById(R.id.namesError);
+
+        emailEDT.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                String email = s.toString();
+                emailCheckIcon.setImageResource(Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                        ? R.drawable.ic_check_green : R.drawable.ic_error);
+                emailCheckIcon.setVisibility(Patterns.EMAIL_ADDRESS.matcher(email).matches() ?
+                        View.VISIBLE : View.GONE);
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (view.findViewById(R.id.mailError).getVisibility() == View.VISIBLE) {
+                    view.findViewById(R.id.mailError).setVisibility(View.GONE);
+                }
+            }
+        });
+
+        passEDT.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (view.findViewById(R.id.passError).getVisibility() == View.VISIBLE) {
+                    view.findViewById(R.id.passError).setVisibility(View.GONE);
+                }
+            }
+        });
+        final boolean[] isPasswordVisible = {false}; // Using an array to allow modification inside OnClickListener
+
+        passwordToggleIcon.setOnClickListener(v -> {
+            if (isPasswordVisible[0]) {
+                passEDT.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                passwordToggleIcon.setImageResource(R.drawable.ic_hidden_pwsd);
+            } else {
+                passEDT.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                passwordToggleIcon.setImageResource(R.drawable.ic_shown_pwsd);
+            }
+            isPasswordVisible[0] = !isPasswordVisible[0];
+            passEDT.setSelection(passEDT.getText().length()); // Keep cursor at the end
+        });
+       view.findViewById(R.id.btnSignUp).setOnClickListener(v -> {
+           String email = emailEDT.getText().toString();
+           String password = passEDT.getText().toString();
+           String firstNameText = firstName.getText().toString();
+           String lastNameText = lastName.getText().toString();
+           
+           if(email.isEmpty() || password.isEmpty() || firstNameText.isEmpty() || lastNameText.isEmpty()){
+               snackbarHandler.showSnackbar("Please fill in the blanks", Snackbar.LENGTH_SHORT, 2);
+               view.findViewById(R.id.mailError).setVisibility(email.isEmpty() ? View.VISIBLE : View.GONE);
+               view.findViewById(R.id.passError).setVisibility(password.isEmpty() ? View.VISIBLE : View.GONE);
+               if(firstNameText.isEmpty()){
+                   namesError.setText("fill in the first name");
+               }else if(lastNameText.isEmpty()){
+                   namesError.setText("fill in the last name");
+               }
+               view.findViewById(R.id.namesError).setVisibility(firstNameText.isEmpty() || lastNameText.isEmpty() ? View.VISIBLE : View.GONE);
+            
+           }else if(password.length() < 6){
+
+               snackbarHandler.showSnackbar("Password must be at least \n 6 characters", Snackbar.LENGTH_SHORT, 3);
+           } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+               snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
+               emailCheckIcon.setImageResource(R.drawable.ic_error);
+               emailCheckIcon.setVisibility(View.VISIBLE);
+           } else {
+               signUp(firstNameText, lastNameText,email, password);
+           }
+
+
+       }); 
         return view;
     }
 
+    private void signUp(String firstNameText, String lastNameText, String email, String password) {
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
+
+        String userRole = Utils.getState("userRole","Mentee")
+        mAuth.createUserWithEmailAndPassword(email, password).addOnSuccessListener(authResult -> {
+            String id = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
+            HashMap<String,Object> map=new HashMap<>();
+            map.put("lastName",lastNameText);
+            map.put("email",email);
+            map.put("firstName",firstNameText);
+            map.put("displayName","");
+            map.put("ID",id);
+            map.put("imageUrl","default");
+            map.put("userType",userRole);
+            map.put("Bio","");
+
+            usersRef.child("USERS").child(mAuth.getCurrentUser().getUid()).setValue(map).
+                    addOnCompleteListener(task -> {
+                        if (task.isSuccessful()){
+
+                        }
+                    });
+        }).addOnFailureListener(e -> Toast.makeText(Register.this, "Error" +
+                e.getMessage()+ "Retry", Toast.LENGTH_SHORT).show());
+    }
+
+    //todo use this
     private void signOut() {
         googleAuthHelper.signOut(() -> {
             // Handle sign out completion
@@ -156,9 +285,7 @@ public class SignUpFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        Intent intent = new Intent(getContext(), MainActivity.class);
-                        startActivity(intent);
-                        requireActivity().finish();
+                       navigateToMainScreen(userData);
                     }
                     return null;
                 },
@@ -168,33 +295,14 @@ public class SignUpFragment extends Fragment {
                 }
         );
     }
+    private void navigateToMainScreen(UserData userData) {
+        // Navigate to your main screen after successful login
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        intent.putExtra("USER_DATA", userData);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+//        requireActivity().finish();
 
-
-    private void checkCurrentUser() {
-        FirebaseUser user = googleAuthHelper.getCurrentUser();
-        if (user != null) {
-            // User is signed in, get their data from Firebase
-            DatabaseReference userRef = FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(user.getUid());
-
-            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        // User data found
-                        String email = snapshot.child("email").getValue(String.class);
-                        String name = snapshot.child("displayName").getValue(String.class);
-                        // ... get other fields
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e("Firebase", "Error getting user data", error.toException());
-                }
-            });
-        }
     }
 
 }

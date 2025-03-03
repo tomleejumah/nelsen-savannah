@@ -13,6 +13,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.graphics.Insets;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager.widget.ViewPager;
@@ -31,7 +32,9 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+//        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+//        splashScreen.setKeepOnScreenCondition(() -> true );
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_intro);
 
@@ -103,13 +106,13 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
     }
 
     private void setupTermsViewListeners(View termsView) {
-        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(this::setClickAnimation);
-        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(this::setClickAnimation);
+        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(Utils::setClickAnimation);
+        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(Utils::setClickAnimation);
 
         AppCompatButton button = termsView.findViewById(R.id.btn_proceed);
         button.setOnClickListener(v -> {
-            Utils.saveState(getApplicationContext(), "is-FirstTime", false);
-            setClickAnimation(v);
+            Utils.saveState( "is-FirstTime", false);
+            Utils.setClickAnimation(v);
 
             // Retrieve the required views from the termsView
             RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
@@ -123,7 +126,7 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
                 // Make sure a radio button is selected before proceeding
                 int selectedId = radioGroup.getCheckedRadioButtonId();
                 if (selectedId == -1) {
-                    shakeView(radioGroup);
+                    Utils.shakeView(radioGroup);
                     return;
                 }
 
@@ -134,11 +137,8 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
                     role = "Mentee";
                 }
 
-                // Save the role in SharedPreferences
-                getSharedPreferences("ROLE", MODE_PRIVATE)
-                        .edit()
-                        .putString("UserRole", role)
-                        .apply();
+                Utils.saveState("userRole",role);
+                Utils.saveState( "is-FirstTime", false);
 
                 // Start the next activity
                 Intent intent = new Intent(IntroActivity.this, LoginSignUpActivity.class);
@@ -149,11 +149,11 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
 
                 // Shake the checkbox if it is not checked
                 if (!checkBoxChecked) {
-                    shakeView(checkBox);
+                    Utils.shakeView(checkBox);
                 }
                 // Shake the radio group if the inputs are not valid
                 if (!inputsValid) {
-                    shakeView(radioGroup);
+                    Utils.shakeView(radioGroup);
                 }
             }
         });
@@ -164,27 +164,5 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
         RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
         final int selectedGenderLayoutButtonId = radioGroup.getCheckedRadioButtonId();
         return selectedGenderLayoutButtonId != -1;
-    }
-
-    public void shakeView(final View view) {
-        final ObjectAnimator shakeAnimator = ObjectAnimator.ofFloat(view, "translationX",
-                0f, 10f, -10f, 10f, -10f, 5f, -5f, 0f);
-        shakeAnimator.setDuration(500);
-        shakeAnimator.start();
-    }
-
-    public void setClickAnimation(View v) {
-        v.animate()
-                .scaleX(0.8f)
-                .scaleY(0.8f)
-                .setDuration(25)
-                .withEndAction(() -> {
-                    v.animate()
-                            .scaleX(1.0f)
-                            .scaleY(1.0f)
-                            .setDuration(25)
-                            .start();
-                })
-                .start();
     }
 }

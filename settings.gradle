@@ -23,3 +23,5 @@ dependencyResolutionManagement {
 rootProject.name = "Nisisi Africa"
 include ':app'
 include ':liquid_swipe'
+include ':CustomSnackbarLib'
+

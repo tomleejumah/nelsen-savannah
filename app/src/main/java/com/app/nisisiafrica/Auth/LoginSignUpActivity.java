@@ -2,6 +2,7 @@ package com.app.nisisiafrica.Auth;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -11,9 +12,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.SnackbarHandler;
 
-public class LoginSignUpActivity extends AppCompatActivity {
+public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHandler {
     private TextView tab1, tab2;
     private View indicator;
     private ViewPager2 viewPager;
@@ -22,7 +25,7 @@ public class LoginSignUpActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootView), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
@@ -38,5 +41,11 @@ public class LoginSignUpActivity extends AppCompatActivity {
         viewPager.setUserInputEnabled(true);
         // Link ViewPager2 to the Custom Tab Layout
         new CustomTabLayout(tab1, tab2, indicator, viewPager);
+    }
+
+    @Override
+    public void showSnackbar(String message, int duration, int type) {
+        RelativeLayout rootView = findViewById(R.id.rootView);
+        CustomSnackbar.show(rootView, message, duration, type);
     }
 }

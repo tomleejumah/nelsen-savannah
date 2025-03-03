@@ -73,7 +73,7 @@
                     android:layout_height="wrap_content">
 
                     <EditText
-                        android:id="@+id/NameEditText"
+                        android:id="@+id/LastNameEditText"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginBottom="8dp"
@@ -89,6 +89,14 @@
                 </RelativeLayout>
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/namesError"
+                android:visibility="gone"
+                android:layout_gravity="center_horizontal"
+                android:textColor="@color/red"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp" />
             <!-- Email Label -->
             <TextView
                 android:layout_width="wrap_content"
@@ -127,6 +135,17 @@
                     android:visibility="gone" />
 
             </RelativeLayout>
+            <TextView
+                android:id="@+id/mailError"
+                android:visibility="gone"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/red"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Please enter your email"
+                android:textSize="12sp" />
+
+
 
             <!-- Password Label -->
             <TextView
@@ -164,7 +183,15 @@
                     android:layout_marginEnd="10dp"
                     android:src="@drawable/ic_hidden_pwsd" />
             </RelativeLayout>
-
+            <TextView
+                android:id="@+id/passError"
+                android:visibility="gone"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/red"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Please enter your password"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <com.google.android.material.checkbox.MaterialCheckBox
@@ -182,7 +209,7 @@
             android:layout_marginTop="20dp"
             android:background="@drawable/btn_login_bg"
             android:backgroundTint="#03A9F4"
-            android:id="@+id/btnLogin"
+            android:id="@+id/btnSignUp"
             android:textAllCaps="false"
             android:text="Sign-Up"
             />

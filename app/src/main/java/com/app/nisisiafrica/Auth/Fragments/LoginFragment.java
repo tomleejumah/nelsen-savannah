@@ -1,14 +1,10 @@
 package com.app.nisisiafrica.Auth.Fragments;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
+import android.os.Handler;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -21,34 +17,52 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
+import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.SnackbarHandler;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
-import java.util.Objects;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class LoginFragment extends Fragment {
-    private GoogleAuthHelper googleAuthHelper;
-    private ActivityResultLauncher<Intent> launcher;
-    private FacebookAuthHelper facebookAuthHelper;
     private static final String TAG = "LoginFragment";
+    private GoogleAuthHelper googleAuthHelper;
+    private FacebookAuthHelper facebookAuthHelper;
+    private ImageView emailCheckIcon;
+    private SnackbarHandler snackbarHandler;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        launcher = registerForActivityResult(
+        ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     Log.d(TAG, "onActivityResult triggered");
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Log.d(TAG, "Sign-in successful, checking data...");
                         if (result.getData() != null) {
-                            Log.d(TAG, "Intent data: " + result.getData().toString());
+                            Log.d(TAG, "Intent data: " + result.getData());
                         } else {
                             Log.d(TAG, "onActivityResult: Data is null");
                         }
@@ -71,7 +85,7 @@ public class LoginFragment extends Fragment {
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
             // Handle successful login
             Toast.makeText(requireContext(), "Logged in as " + userData.getDisplayName(), Toast.LENGTH_SHORT).show();
-            navigateToMainScreen();
+            navigateToMainScreen(userData);
             return null;
         });
 
@@ -83,27 +97,38 @@ public class LoginFragment extends Fragment {
     }
 
     @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof SnackbarHandler) {
+            snackbarHandler = (SnackbarHandler) context;
+        }
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         // Pass activity result to the Facebook helper
         facebookAuthHelper.handleActivityResult(requestCode, resultCode, data);
     }
 
-    private void navigateToMainScreen() {
+    private void navigateToMainScreen(UserData userData) {
         // Navigate to your main screen after successful login
         Intent intent = new Intent(getContext(), MainActivity.class);
+        intent.putExtra("USER_DATA", userData);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        requireActivity().finish();
+//        requireActivity().finish();
+
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view =  inflater.inflate(R.layout.fragment_login, container, false);
+        View view = inflater.inflate(R.layout.fragment_login, container, false);
 
         EditText emailEDT = view.findViewById(R.id.emailEditText);
-        ImageView emailCheckIcon = view.findViewById(R.id.emailCheckIcon);
+        emailCheckIcon = view.findViewById(R.id.emailCheckIcon);
         EditText passEDT = view.findViewById(R.id.passwordEditText);
         ImageView passwordToggleIcon = view.findViewById(R.id.passwordToggleIcon);
 
@@ -111,19 +136,41 @@ public class LoginFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {
                 String email = s.toString();
-                if (Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    emailCheckIcon.setVisibility(View.VISIBLE);
-                } else {
-                    emailCheckIcon.setVisibility(View.GONE);
-                }
+                emailCheckIcon.setImageResource(Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                        ? R.drawable.ic_check_green : R.drawable.ic_error);
+                emailCheckIcon.setVisibility(Patterns.EMAIL_ADDRESS.matcher(email).matches() ?
+                        View.VISIBLE : View.GONE);
             }
 
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (view.findViewById(R.id.mailError).getVisibility() == View.VISIBLE) {
+                    view.findViewById(R.id.mailError).setVisibility(View.GONE);
+                }
+            }
         });
+
+        passEDT.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (view.findViewById(R.id.passError).getVisibility() == View.VISIBLE) {
+                    view.findViewById(R.id.passError).setVisibility(View.GONE);
+                }
+            }
+        });
+
 
         final boolean[] isPasswordVisible = {false}; // Using an array to allow modification inside OnClickListener
 
@@ -140,24 +187,92 @@ public class LoginFragment extends Fragment {
         });
 
         view.findViewById(R.id.googleBtn).setOnClickListener(v -> googleAuthHelper.signIn());
-        view.findViewById(R.id.facebookBtn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
+        view.findViewById(R.id.facebookBtn).setOnClickListener(v -> {
+            List<String> permissions = Arrays.asList("email", "public_profile");
+            facebookAuthHelper.signIn(permissions);
         });
 
         view.findViewById(R.id.txtForgotPwsd).setOnClickListener(v -> {
-//                Intent intent = new Intent(requireActivity(), ForgotPasswordActivity.class);
-//                startActivity(intent);
+            Intent intent = new Intent(requireActivity(), ForgotPasswordActivity.class);
+            startActivity(intent);
         });
+
 
         view.findViewById(R.id.btnLogin).setOnClickListener(v -> {
-//            login();
+            String email = emailEDT.getText().toString();
+            String password = passEDT.getText().toString();
+
+            if (email.isEmpty() || password.isEmpty()) {
+                snackbarHandler.showSnackbar("Please fill in the blanks", Snackbar.LENGTH_SHORT, 2);
+                view.findViewById(R.id.mailError).setVisibility(email.isEmpty() ? View.VISIBLE : View.GONE);
+                view.findViewById(R.id.passError).setVisibility(password.isEmpty() ? View.VISIBLE : View.GONE);
+
+            } else if (password.length() < 6) {
+                snackbarHandler.showSnackbar("Password must be at least \n 6 characters", Snackbar.LENGTH_SHORT, 3);
+
+            } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
+                emailCheckIcon.setImageResource(R.drawable.ic_error);
+                emailCheckIcon.setVisibility(View.VISIBLE);
+            } else {
+                login(email, password);
+            }
         });
 
-            return view;
+        return view;
     }
+
+    private void login(String email, String password) {
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
+
+        mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+              //todo add loading screen
+                FirebaseUser user = mAuth.getCurrentUser();
+                if (user != null) {
+                    String userId = user.getUid();
+                    // Fetch user data from Realtime Database
+                    usersRef.child(userId).get().addOnCompleteListener(dataTask -> {
+                        if (dataTask.isSuccessful() && dataTask.getResult().exists()) {
+                            UserData userData = dataTask.getResult().getValue(UserData.class);
+
+                            if (userData != null) {
+                                navigateToMainScreen(userData);
+//                                snackbarHandler.showSnackbar("Welcome Back", Snackbar.LENGTH_SHORT, 3);
+//                       todo         saveUserDataLocally(userData); // Optional: Save locally if needed
+
+                                // Delay navigation after showing the snackbar
+//                                new Handler().postDelayed(() -> navigateToMainScreen(userData),1000);
+                            }
+                        } else {
+                            snackbarHandler.showSnackbar("Failed to fetch your data,\n please retry", Snackbar.LENGTH_LONG, 3);
+                        }
+                    });
+                }
+
+            } else {
+                String failureMessage = "Authentication failed. Please try again.";
+                Exception exception = task.getException();
+
+                if (exception != null) {
+                    if (exception instanceof FirebaseAuthInvalidCredentialsException) {
+                        failureMessage = "Invalid credentials. Please check your email or  password.";
+                    } else if (exception instanceof FirebaseAuthInvalidUserException) {
+                        failureMessage = "No account found with this email. Please sign up.";
+                    }
+//                    else if (exception instanceof FirebaseAuthUserCollisionException) {
+//                        failureMessage = "This email is already in use. Try logging in instead.";
+//                    } else if (exception instanceof FirebaseAuthNetworkException) {
+//                        failureMessage = "Network error. Please check your internet connection.";
+//                    }
+                }
+
+                snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
+            }
+        });
+    }
+
 
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
@@ -190,8 +305,11 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        Intent intent = new Intent(getContext(), MainActivity.class);
-                        startActivity(intent);
+                        navigateToMainScreen(userData);
+//                        Intent intent = new Intent(getContext(), MainActivity.class);
+//                        intent.putExtra("USER_DATA", userData);
+//                        startActivity(intent);
+//                        requireActivity().finish();
                     }
                     return null;
                 },

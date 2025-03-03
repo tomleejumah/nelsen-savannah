@@ -52,6 +52,7 @@ class GoogleAuthHelper(
             val userData = UserData(
                 id = account.id ?: "",
                 email = account.email ?: "",
+                userTYpe = "",
                 displayName = account.displayName ?: "",
                 firstName = account.givenName ?: "",
                 lastName = account.familyName ?: "",
@@ -83,16 +84,6 @@ class GoogleAuthHelper(
 
     fun isUserSignedIn(): Boolean = auth.currentUser != null
 
-//    data class UserData(
-//        val id: String,
-//        val email: String,
-//        val displayName: String,
-//        val firstName: String,
-//        val lastName: String,
-//        val photoUrl: String,
-//        val idToken: String
-//    )
-
     fun signOut(onComplete: () -> Unit) {
         googleSignInClient.signOut().addOnCompleteListener {
             onComplete()
@@ -123,33 +114,5 @@ class GoogleAuthHelper(
                 FirebaseUserHelper.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
             }
         }
-//        usersRef.child(userData.id).get().addOnCompleteListener { task ->
-//            if (task.isSuccessful && task.result.exists()) {
-//                Log.d("FirebaseDB", "User already exists, skipping save")
-//                usersRef.child(userData.id).child("lastLogin").setValue(ServerValue.TIMESTAMP)
-//                onSuccess.invoke(true)
-//            } else {
-//                Log.d("FirebaseDB", "User does not exist, saving new user")
-//
-//                val user = hashMapOf(
-//                    "email" to userData.email,
-//                    "displayName" to userData.displayName,
-//                    "firstName" to userData.firstName,
-//                    "lastName" to userData.lastName,
-//                    "photoUrl" to userData.photoUrl,
-//                    "lastLogin" to ServerValue.TIMESTAMP
-//                )
-//
-//                usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
-//                    .addOnSuccessListener {
-//                        Log.d("FirebaseDB", "User data saved successfully!")
-//                        onSuccess(true)
-//                    }
-//                    .addOnFailureListener { exception ->
-//                        Log.e("FirebaseDB", "Failed to save user data", exception)
-//                        onError(exception)
-//                    }
-//            }
-//        }
     }
 }
