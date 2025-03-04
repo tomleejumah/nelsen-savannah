@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.Utils
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -65,6 +66,7 @@ class FacebookAuthHelper(private val activity: Activity) {
                     val firebaseUser = auth.currentUser
                     firebaseUser?.let {
                         // Call Graph API to fetch additional user info then save user data
+
                         fetchGraphDataAndSaveUser(it, token)
                     }
                 } else {
@@ -87,16 +89,28 @@ class FacebookAuthHelper(private val activity: Activity) {
                 ?.optJSONObject("data")
                 ?.optString("url") ?: (firebaseUser.photoUrl?.toString() ?: "")
 
+
             val userData = UserData(
                 id = firebaseUser.uid,
                 email = email,
+//                userTYpe = "",
                 displayName = displayName,
                 firstName = firstName,
                 lastName = lastName,
                 photoUrl = pictureUrl,
                 idToken = token.token
             )
-
+            //todo
+            val assignedRole = FirebaseDatabase.getInstance().reference
+                .child("roles").child(firebaseUser.uid).get().toString()
+            if (assignedRole.isEmpty()) {
+                val role = Utils.getState("userRole", "Mentee")
+                FirebaseDatabase.getInstance().reference.child("roles")
+                    .child(firebaseUser.uid).push().setValue(role)
+                userData.userRole = role
+            }else {
+                userData.userRole = assignedRole
+            }
             // Save the updated user data to Firebase
             saveUserToFirebase(userData)
             onLoginSuccessListeners.forEach { listener ->
@@ -110,41 +124,6 @@ class FacebookAuthHelper(private val activity: Activity) {
         request.parameters = parameters
         request.executeAsync()
     }
-//    private fun fetchGraphDataAndSaveUser(firebaseUser: FirebaseUser, token: AccessToken) {
-//        val request = GraphRequest.newMeRequest(token) { jsonObject, _ ->
-//            // Extract additional user info from the Graph API response
-//            val firstName = jsonObject?.optString("first_name") ?: ""
-//            val lastName = jsonObject?.optString("last_name") ?: ""
-//            val displayName = jsonObject?.optString("name") ?: (firebaseUser.displayName ?: "")
-//            val email = jsonObject?.optString("email") ?: (firebaseUser.email ?: "")
-//            // Extract picture URL (using large image type)
-//            val pictureUrl = jsonObject?.optJSONObject("picture")
-//                ?.optJSONObject("data")
-//                ?.optString("url") ?: (firebaseUser.photoUrl?.toString() ?: "")
-//
-//            val userData = UserData(
-//                id = firebaseUser.uid,
-//                email = email,
-//                displayName = displayName,
-//                firstName = firstName,
-//                lastName = lastName,
-//                photoUrl = pictureUrl,
-//                idToken = token.token
-//            )
-//
-//            // Save the updated user data to Firebase
-//            saveUserToFirebase(userData)
-//            onLoginSuccessListeners.forEach { listener ->
-//                listener.invoke(userData)
-//            }
-//        }
-//
-//        // Request additional fields from the Graph API
-//        val parameters = Bundle()
-//        parameters.putString("fields", "id,name,first_name,last_name,email,picture.type(large)")
-//        request.parameters = parameters
-//        request.executeAsync()
-//    }
 
     private val onLoginSuccessListeners = mutableListOf<(UserData) -> Unit>()
     private val onLoginErrorListeners = mutableListOf<(Exception) -> Unit>()

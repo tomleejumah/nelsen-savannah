@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.Utils
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -52,7 +53,6 @@ class GoogleAuthHelper(
             val userData = UserData(
                 id = account.id ?: "",
                 email = account.email ?: "",
-                userTYpe = "",
                 displayName = account.displayName ?: "",
                 firstName = account.givenName ?: "",
                 lastName = account.familyName ?: "",
@@ -65,8 +65,19 @@ class GoogleAuthHelper(
             auth.signInWithCredential(credential)
                 .addOnSuccessListener { authResult ->
                     // You can get additional Firebase user data here
-                    val firebaseUser = authResult.user
-                    firebaseUser?.let {
+                    val firebaseUser = authResult.user?.uid.toString()
+                    //todo
+                    firebaseUser.let {
+                        val assignedRole = FirebaseDatabase.getInstance().reference
+                            .child("roles").child(firebaseUser).get().toString()
+                        if (assignedRole.isEmpty()) {
+                            val role = Utils.getState("userRole", "Mentee")
+                            FirebaseDatabase.getInstance().reference.child("roles")
+                                .child(firebaseUser).push().setValue(role)
+                            userData.userRole = role
+                        }else {
+                            userData.userRole = assignedRole
+                        }
                         onSuccess(userData)
                     }
 

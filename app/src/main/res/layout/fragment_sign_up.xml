@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".Auth.Fragments.SignUpFragment">
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_margin="10dp"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp">
 
         <TextView
-            android:textStyle="bold"
+            android:id="@+id/image1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Create an account"
-            android:id="@+id/image1"
             android:layout_marginTop="30dp"
-            android:textSize="28sp"/>
+            android:text="Create an account"
+            android:textSize="28sp"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:id="@+id/lay1"
@@ -40,17 +40,18 @@
 
             <!-- Name Input -->
             <LinearLayout
-                android:padding="2dp"
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:baselineAligned="false"
                 android:orientation="horizontal"
-                android:weightSum="2"
-                android:layout_height="wrap_content">
+                android:padding="2dp"
+                android:weightSum="2">
+
                 <RelativeLayout
                     android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginRight="10dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content">
+                    android:layout_weight="1">
 
                     <EditText
                         android:id="@+id/FirstNameEditText"
@@ -65,12 +66,12 @@
                         android:textSize="16sp" />
 
 
-
                 </RelativeLayout>
+
                 <RelativeLayout
-                     android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content">
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
 
                     <EditText
                         android:id="@+id/LastNameEditText"
@@ -85,18 +86,17 @@
                         android:textSize="16sp" />
 
 
-
                 </RelativeLayout>
             </LinearLayout>
 
             <TextView
                 android:id="@+id/namesError"
-                android:visibility="gone"
-                android:layout_gravity="center_horizontal"
-                android:textColor="@color/red"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="12sp" />
+                android:layout_gravity="center_horizontal"
+                android:textColor="@color/red"
+                android:textSize="12sp"
+                android:visibility="gone" />
             <!-- Email Label -->
             <TextView
                 android:layout_width="wrap_content"
@@ -135,16 +135,16 @@
                     android:visibility="gone" />
 
             </RelativeLayout>
+
             <TextView
                 android:id="@+id/mailError"
-                android:visibility="gone"
-                android:layout_marginStart="10dp"
-                android:textColor="@color/red"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
                 android:text="Please enter your email"
-                android:textSize="12sp" />
-
+                android:textColor="@color/red"
+                android:textSize="12sp"
+                android:visibility="gone" />
 
 
             <!-- Password Label -->
@@ -156,7 +156,7 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
-                       <!-- Password Input -->
+            <!-- Password Input -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
@@ -183,25 +183,27 @@
                     android:layout_marginEnd="10dp"
                     android:src="@drawable/ic_hidden_pwsd" />
             </RelativeLayout>
+
             <TextView
                 android:id="@+id/passError"
-                android:visibility="gone"
-                android:layout_marginStart="10dp"
-                android:textColor="@color/red"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
                 android:text="Please enter your password"
-                android:textSize="12sp" />
+                android:textColor="@color/red"
+                android:textSize="12sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/checkKeepMeIn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/lay1"
-            android:id="@+id/checkKeepMeIn"
             android:text="Keep me signed in" />
 
         <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSignUp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/checkKeepMeIn"
@@ -209,27 +211,25 @@
             android:layout_marginTop="20dp"
             android:background="@drawable/btn_login_bg"
             android:backgroundTint="#03A9F4"
-            android:id="@+id/btnSignUp"
-            android:textAllCaps="false"
             android:text="Sign-Up"
-            />
+            android:textAllCaps="false" />
 
         <LinearLayout
             android:id="@+id/orSignInWith"
-            android:layout_marginTop="30dp"
-            android:layout_below="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_below="@+id/btnSignUp"
+            android:layout_marginTop="30dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_marginHorizontal="10dp"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="5dp"
-                android:src="@drawable/dotted"
-                android:layerType="software" />
+                android:layout_marginHorizontal="10dp"
+                android:layout_weight="1"
+                android:layerType="software"
+                android:src="@drawable/dotted" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -239,54 +239,54 @@
 
             <ImageView
 
-                android:layout_marginHorizontal="10dp"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="5dp"
-                android:src="@drawable/dotted"
-                android:layerType="software" />
+                android:layout_marginHorizontal="10dp"
+                android:layout_weight="1"
+                android:layerType="software"
+                android:src="@drawable/dotted" />
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_marginTop="30dp"
             android:id="@+id/OtherOptionSignIn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:layout_below="@+id/orSignInWith"
+            android:layout_marginTop="30dp"
             android:gravity="center"
+            android:orientation="horizontal"
             android:padding="5dp"
-            android:weightSum="2"
-            android:layout_below="@+id/orSignInWith">
+            android:weightSum="2">
 
 
             <Button
-                android:layout_marginEnd="8dp"
                 android:id="@+id/googleBtn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/edit_text_background"
-                app:backgroundTint="@null"
-                android:text="Google"
-                android:textStyle="bold"
                 android:drawableLeft="@drawable/ic_google"
-                android:textColor="#000" />
+                android:text="Google"
+                android:textColor="#000"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
 
             <Button
-                android:visibility="gone"
-                android:layout_marginEnd="8dp"
                 android:id="@+id/appleBtn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/edit_text_background"
-                app:backgroundTint="@null"
-                android:text="AppleID"
-                android:textStyle="bold"
-                android:textSize="12sp"
                 android:drawableLeft="@drawable/ic_apple"
-                android:textColor="#000" />
+                android:text="AppleID"
+                android:textColor="#000"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:backgroundTint="@null" />
 
             <Button
                 android:id="@+id/facebookBtn"
@@ -294,11 +294,11 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/edit_text_background"
-                app:backgroundTint="@null"
-                android:text="facebook"
-                android:textStyle="bold"
                 android:drawableLeft="@drawable/ic_facebook"
-                android:textColor="#000" />
+                android:text="facebook"
+                android:textColor="#000"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
 
         </LinearLayout>
 
