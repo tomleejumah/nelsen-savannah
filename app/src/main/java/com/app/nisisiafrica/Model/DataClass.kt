@@ -10,7 +10,7 @@ data class DataClass(
 data class UserData (
     var id: String,
     var email: String,
-    var userTYpe: String,
+    var userRole: String? = null,
     var displayName: String? = null,
     var firstName: String,
     var lastName: String,
@@ -29,7 +29,7 @@ data class UserData (
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
-        parcel.writeString(userTYpe)
+//        parcel.writeString(userTYpe)
         parcel.writeString(email)
         parcel.writeString(displayName)
         parcel.writeString(firstName)

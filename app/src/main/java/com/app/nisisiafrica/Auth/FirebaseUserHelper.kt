@@ -20,7 +20,7 @@ object FirebaseUserHelper {
         onError: ((Exception) -> Unit)?
     ) {
         //todo rectify if they login
-       val userRole = Utils.getState("userRole","Mentee")
+//       val userRole = Utils.getState("userRole","Mentee")
         val user = hashMapOf(
             "email" to userData.email,
             "displayName" to userData.displayName,
@@ -28,7 +28,7 @@ object FirebaseUserHelper {
             "lastName" to userData.lastName,
             "photoUrl" to userData.photoUrl,
             "lastLogin" to ServerValue.TIMESTAMP,
-            "userTYpe" to userRole
+            "userRole" to userData.userRole
         )
 
         usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
@@ -42,7 +42,7 @@ object FirebaseUserHelper {
             }
     }
 
-    private fun checkCurrentUser() {
+     fun checkCurrentUser() {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
             // User is signed in, get their data from Firebase

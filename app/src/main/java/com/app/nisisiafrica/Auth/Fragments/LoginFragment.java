@@ -31,6 +31,7 @@ import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
+import com.app.nisisiafrica.Utils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
@@ -111,16 +112,6 @@ public class LoginFragment extends Fragment {
         facebookAuthHelper.handleActivityResult(requestCode, resultCode, data);
     }
 
-    private void navigateToMainScreen(UserData userData) {
-        // Navigate to your main screen after successful login
-        Intent intent = new Intent(getContext(), MainActivity.class);
-        intent.putExtra("USER_DATA", userData);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-//        requireActivity().finish();
-
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -188,6 +179,7 @@ public class LoginFragment extends Fragment {
 
         view.findViewById(R.id.googleBtn).setOnClickListener(v -> googleAuthHelper.signIn());
         view.findViewById(R.id.facebookBtn).setOnClickListener(v -> {
+            Utils.setClickAnimation(v);
             List<String> permissions = Arrays.asList("email", "public_profile");
             facebookAuthHelper.signIn(permissions);
         });
@@ -199,6 +191,7 @@ public class LoginFragment extends Fragment {
 
 
         view.findViewById(R.id.btnLogin).setOnClickListener(v -> {
+            Utils.shakeView(v);
             String email = emailEDT.getText().toString();
             String password = passEDT.getText().toString();
 
@@ -228,6 +221,7 @@ public class LoginFragment extends Fragment {
 
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
+
               //todo add loading screen
                 FirebaseUser user = mAuth.getCurrentUser();
                 if (user != null) {
@@ -239,11 +233,6 @@ public class LoginFragment extends Fragment {
 
                             if (userData != null) {
                                 navigateToMainScreen(userData);
-//                                snackbarHandler.showSnackbar("Welcome Back", Snackbar.LENGTH_SHORT, 3);
-//                       todo         saveUserDataLocally(userData); // Optional: Save locally if needed
-
-                                // Delay navigation after showing the snackbar
-//                                new Handler().postDelayed(() -> navigateToMainScreen(userData),1000);
                             }
                         } else {
                             snackbarHandler.showSnackbar("Failed to fetch your data,\n please retry", Snackbar.LENGTH_LONG, 3);
@@ -261,18 +250,12 @@ public class LoginFragment extends Fragment {
                     } else if (exception instanceof FirebaseAuthInvalidUserException) {
                         failureMessage = "No account found with this email. Please sign up.";
                     }
-//                    else if (exception instanceof FirebaseAuthUserCollisionException) {
-//                        failureMessage = "This email is already in use. Try logging in instead.";
-//                    } else if (exception instanceof FirebaseAuthNetworkException) {
-//                        failureMessage = "Network error. Please check your internet connection.";
-//                    }
                 }
 
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
             }
         });
     }
-
 
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
@@ -294,7 +277,7 @@ public class LoginFragment extends Fragment {
                 exception -> {
                     // Handle error
                     Log.e("Auth", "Sign in failed", exception);
-                    Toast.makeText(getContext(), "Sign in failed", Toast.LENGTH_SHORT).show();
+                    snackbarHandler.showSnackbar("Sign in failed", Snackbar.LENGTH_SHORT, 3);
                     return null;
                 }
         );
@@ -306,10 +289,6 @@ public class LoginFragment extends Fragment {
                 isSuccess -> {
                     if (isSuccess) {
                         navigateToMainScreen(userData);
-//                        Intent intent = new Intent(getContext(), MainActivity.class);
-//                        intent.putExtra("USER_DATA", userData);
-//                        startActivity(intent);
-//                        requireActivity().finish();
                     }
                     return null;
                 },
@@ -319,4 +298,12 @@ public class LoginFragment extends Fragment {
                 }
         );
     }
+    private void navigateToMainScreen(UserData userData) {
+        // Navigate to your main screen after successful login
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        intent.putExtra("USER_DATA", userData);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+    }
+
 }
