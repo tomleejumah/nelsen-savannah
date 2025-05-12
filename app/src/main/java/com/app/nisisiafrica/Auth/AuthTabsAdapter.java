@@ -16,6 +16,9 @@ public class AuthTabsAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
+//        if (position == 0 ){
+//            return new LoginFragment();
+//        }else return new SignUpFragment();
         return switch (position) {
             case 1 -> new SignUpFragment();
             default -> new LoginFragment();

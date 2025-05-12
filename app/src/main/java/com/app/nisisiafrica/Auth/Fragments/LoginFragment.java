@@ -3,8 +3,8 @@ package com.app.nisisiafrica.Auth.Fragments;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -21,6 +21,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
@@ -34,9 +35,6 @@ import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
-import com.google.firebase.auth.FirebaseAuthInvalidUserException;
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -86,7 +84,8 @@ public class LoginFragment extends Fragment {
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
             // Handle successful login
             Toast.makeText(requireContext(), "Logged in as " + userData.getDisplayName(), Toast.LENGTH_SHORT).show();
-            navigateToMainScreen(userData);
+//            navigateToMainScreen(userData);
+            Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
             return null;
         });
 
@@ -108,15 +107,18 @@ public class LoginFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        // Pass activity result to the Facebook helper
         facebookAuthHelper.handleActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_login, container, false);
+        return inflater.inflate(R.layout.fragment_login, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         EditText emailEDT = view.findViewById(R.id.emailEditText);
         emailCheckIcon = view.findViewById(R.id.emailCheckIcon);
@@ -139,9 +141,7 @@ public class LoginFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (view.findViewById(R.id.mailError).getVisibility() == View.VISIBLE) {
-                    view.findViewById(R.id.mailError).setVisibility(View.GONE);
-                }
+                view.findViewById(R.id.mailError).setVisibility(View.GONE);
             }
         });
 
@@ -156,15 +156,20 @@ public class LoginFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (view.findViewById(R.id.passError).getVisibility() == View.VISIBLE) {
-                    view.findViewById(R.id.passError).setVisibility(View.GONE);
-                }
+                view.findViewById(R.id.passError).setVisibility(View.GONE);
             }
         });
 
+        emailCheckIcon.setOnClickListener(v -> {
+            Drawable current = emailCheckIcon.getDrawable();
+            Drawable iconB = ContextCompat.getDrawable(requireContext(), R.drawable.ic_error);
 
-        final boolean[] isPasswordVisible = {false}; // Using an array to allow modification inside OnClickListener
+            if (Utils.isSameDrawable(current, iconB)) {
+                emailEDT.setText("");
+            }
+        });
 
+        final boolean[] isPasswordVisible = {false};
         passwordToggleIcon.setOnClickListener(v -> {
             if (isPasswordVisible[0]) {
                 passEDT.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
@@ -174,65 +179,84 @@ public class LoginFragment extends Fragment {
                 passwordToggleIcon.setImageResource(R.drawable.ic_shown_pwsd);
             }
             isPasswordVisible[0] = !isPasswordVisible[0];
-            passEDT.setSelection(passEDT.getText().length()); // Keep cursor at the end
+            passEDT.setSelection(passEDT.getText().length());
         });
 
-        view.findViewById(R.id.googleBtn).setOnClickListener(v -> googleAuthHelper.signIn());
+        view.findViewById(R.id.googleBtnL).setOnClickListener(v -> {
+            Utils.setClickAnimation(v, () -> googleAuthHelper.signIn());
+        });
+
         view.findViewById(R.id.facebookBtn).setOnClickListener(v -> {
-            Utils.setClickAnimation(v);
             List<String> permissions = Arrays.asList("email", "public_profile");
-            facebookAuthHelper.signIn(permissions);
+            Utils.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
         });
 
         view.findViewById(R.id.txtForgotPwsd).setOnClickListener(v -> {
-            Intent intent = new Intent(requireActivity(), ForgotPasswordActivity.class);
-            startActivity(intent);
+            Utils.setClickAnimation(v, () -> {
+                startActivity(new Intent(requireActivity(), ForgotPasswordActivity.class));
+            });
         });
-
 
         view.findViewById(R.id.btnLogin).setOnClickListener(v -> {
-            Utils.shakeView(v);
-            String email = emailEDT.getText().toString();
-            String password = passEDT.getText().toString();
+            Utils.setClickAnimation(v, () -> {
+                String email = emailEDT.getText().toString();
+                String password = passEDT.getText().toString();
 
-            if (email.isEmpty() || password.isEmpty()) {
-                snackbarHandler.showSnackbar("Please fill in the blanks", Snackbar.LENGTH_SHORT, 2);
-                view.findViewById(R.id.mailError).setVisibility(email.isEmpty() ? View.VISIBLE : View.GONE);
-                view.findViewById(R.id.passError).setVisibility(password.isEmpty() ? View.VISIBLE : View.GONE);
+                if (email.isEmpty() || password.isEmpty()) {
+                    snackbarHandler.showSnackbar("Please fill in the blanks", Snackbar.LENGTH_SHORT, 2);
+                    view.findViewById(R.id.mailError).setVisibility(email.isEmpty() ? View.VISIBLE : View.GONE);
+                    view.findViewById(R.id.passError).setVisibility(password.isEmpty() ? View.VISIBLE : View.GONE);
+                    Utils.shakeView(view.findViewById(R.id.passParent));
+                    Utils.shakeView(view.findViewById(R.id.mailParent));
 
-            } else if (password.length() < 6) {
-                snackbarHandler.showSnackbar("Password must be at least \n 6 characters", Snackbar.LENGTH_SHORT, 3);
+                } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
+                    emailCheckIcon.setImageResource(R.drawable.ic_error);
+                    view.findViewById(R.id.mailError).setVisibility(View.VISIBLE);
+                    emailCheckIcon.setVisibility(View.VISIBLE);
+                    Utils.shakeView(view.findViewById(R.id.mailParent));
 
-            } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
-                emailCheckIcon.setImageResource(R.drawable.ic_error);
-                emailCheckIcon.setVisibility(View.VISIBLE);
-            } else {
-                login(email, password);
-            }
+                } else if (Utils.isValidPassword(password)) {
+                    snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
+                    Utils.shakeView(view.findViewById(R.id.passParent));
+
+                } else {
+                    login(email, password);
+                }
+            });
         });
-
-        return view;
     }
 
     private void login(String email, String password) {
+
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
 
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
 
-              //todo add loading screen
+                //todo add loading screen
                 FirebaseUser user = mAuth.getCurrentUser();
                 if (user != null) {
                     String userId = user.getUid();
                     // Fetch user data from Realtime Database
-                    usersRef.child(userId).get().addOnCompleteListener(dataTask -> {
+                    dbRef.child("users").child(userId).get().addOnCompleteListener(dataTask -> {
                         if (dataTask.isSuccessful() && dataTask.getResult().exists()) {
                             UserData userData = dataTask.getResult().getValue(UserData.class);
 
                             if (userData != null) {
-                                navigateToMainScreen(userData);
+
+                                dbRef.child("roles").get().addOnCompleteListener(task1 -> {
+                                    if (task1.isSuccessful() && task1.getResult().exists()) {
+                                        String role = task1.getResult().getValue(String.class);
+                                        userData.setUserRole(role);
+                                        goToNextActivity(userData);
+                                        Log.d("FirebaseRole", "Role: " + role);
+                                    } else {
+                                        Log.e("FirebaseRole", "Failed to get role");
+                                    }
+                                });
+
                             }
                         } else {
                             snackbarHandler.showSnackbar("Failed to fetch your data,\n please retry", Snackbar.LENGTH_LONG, 3);
@@ -241,17 +265,8 @@ public class LoginFragment extends Fragment {
                 }
 
             } else {
-                String failureMessage = "Authentication failed. Please try again.";
-                Exception exception = task.getException();
-
-                if (exception != null) {
-                    if (exception instanceof FirebaseAuthInvalidCredentialsException) {
-                        failureMessage = "Invalid credentials. Please check your email or  password.";
-                    } else if (exception instanceof FirebaseAuthInvalidUserException) {
-                        failureMessage = "No account found with this email. Please sign up.";
-                    }
-                }
-
+//                String failureMessage = getErrorString(task);
+                String failureMessage = Utils.getErrorString(task);
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
             }
         });
@@ -288,7 +303,8 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        navigateToMainScreen(userData);
+//                        navigateToMainScreen(userData);
+                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
                     }
                     return null;
                 },
@@ -297,13 +313,6 @@ public class LoginFragment extends Fragment {
                     return null;
                 }
         );
-    }
-    private void navigateToMainScreen(UserData userData) {
-        // Navigate to your main screen after successful login
-        Intent intent = new Intent(getContext(), MainActivity.class);
-        intent.putExtra("USER_DATA", userData);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
     }
 
 }

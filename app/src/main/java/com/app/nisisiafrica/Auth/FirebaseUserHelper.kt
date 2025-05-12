@@ -2,9 +2,7 @@ package com.app.nisisiafrica.Auth
 
 import android.util.Log
 import com.app.nisisiafrica.Model.UserData
-import com.app.nisisiafrica.Utils
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -19,7 +17,6 @@ object FirebaseUserHelper {
         onSuccess: ((Boolean) -> Unit)?,
         onError: ((Exception) -> Unit)?
     ) {
-        //todo rectify if they login
 //       val userRole = Utils.getState("userRole","Mentee")
         val user = hashMapOf(
             "email" to userData.email,
@@ -28,7 +25,7 @@ object FirebaseUserHelper {
             "lastName" to userData.lastName,
             "photoUrl" to userData.photoUrl,
             "lastLogin" to ServerValue.TIMESTAMP,
-            "userRole" to userData.userRole
+//            "userRole" to userData.userRole
         )
 
         usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
@@ -42,29 +39,60 @@ object FirebaseUserHelper {
             }
     }
 
-     fun checkCurrentUser() {
+    fun getCurrentUserAndData(userDataCallback: UserDataCallback) {
         val user = FirebaseAuth.getInstance().currentUser
-        if (user != null) {
-            // User is signed in, get their data from Firebase
-            val userRef = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(user.uid)
+        val dbRef = FirebaseDatabase.getInstance().reference
 
-            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        // User data found
-                        val email = snapshot.child("email").getValue(String::class.java)
-                        val name = snapshot.child("displayName").getValue(String::class.java)
-                        // ... get other fields
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("Firebase", "Error getting user data", error.toException())
-                }
-            })
+        if (user == null) {
+            userDataCallback.onUserDataReceived(null)
+            return
         }
-    }
 
+        val userRef = dbRef.child("users").child(user.uid)
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) {
+                    userDataCallback.onUserDataReceived(null)
+                    return
+                }
+
+                // User data found
+                val userData = UserData(
+                    id = snapshot.child("id").getValue(String::class.java) ?: "",
+                    email = snapshot.child("email").getValue(String::class.java) ?: "",
+//                            userRole = snapshot.child("userRole").getValue(String::class.java),
+                    displayName = snapshot.child("displayName")
+                        .getValue(String::class.java),
+                    firstName = snapshot.child("firstName").getValue(String::class.java)
+                        ?: "",
+                    lastName = snapshot.child("lastName").getValue(String::class.java)
+                        ?: "",
+                    photoUrl = snapshot.child("photoUrl").getValue(String::class.java),
+//                    idToken = snapshot.child("idToken").getValue(String::class.java)
+                )
+                dbRef.child("roles").child(user.uid)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val role = snapshot.getValue(String::class.java)
+                            userData.userRole = role ?: "Mentee"
+                            userDataCallback.onUserDataReceived(userData)
+                            if (!snapshot.exists()) {
+                                // Correctly set the role in Firebase
+                                dbRef.child("roles")
+                                    .child(user.uid)
+                                    .setValue("Mentee")
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            userDataCallback.onUserDataReceived(userData)
+                        }
+                    })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("Firebase", "Error getting user data", error.toException())
+            }
+        })
+    }
 }

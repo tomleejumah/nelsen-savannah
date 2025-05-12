@@ -1,27 +1,20 @@
 package com.app.nisisiafrica;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.View;
-import android.view.ViewTreeObserver;
-import android.view.animation.AnticipateInterpolator;
-import android.window.SplashScreenView;
+import android.util.Log;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
-import androidx.core.splashscreen.SplashScreen;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.app.customsnackbarlib.CustomSnackbar;
+import com.app.nisisiafrica.Auth.FirebaseUserHelper;
+import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
@@ -31,11 +24,16 @@ import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends ComponentActivity {
     private String userRole;
+    private UserData userData;
+    FirebaseUserHelper firebaseUserHelper;
+    private static final String TAG = "MainActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 //        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
-//        splashScreen.setKeepOnScreenCondition(() -> true );
+//        splashScreen.setKeepOnScreenCondition(() -> true);
+//        splashScreen.setOnExitAnimationListener(SplashScreenViewProvider::remove);
 
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -45,10 +43,12 @@ public class MainActivity extends ComponentActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("USER_DATA")) {
-            UserData userData = intent.getParcelableExtra("USER_DATA");
+             userData = intent.getParcelableExtra("USER_DATA");
 
+            //todo cache user data in room for a week before logging them out
             if (userData != null) {
                 String email = userData.getEmail();
                 String name = userData.getDisplayName();
@@ -59,6 +59,7 @@ public class MainActivity extends ComponentActivity {
                 userRole = userData.getUserRole();
 
                 Utils.saveState("userId", userId);
+                Log.d(TAG, "onCreate: "+ userData.getEmail());
 
                 if (TextUtils.isEmpty(userRole)) {
                     FirebaseDatabase.getInstance().getReference()
@@ -70,8 +71,8 @@ public class MainActivity extends ComponentActivity {
                                     String assignedRole = snapshot.getValue(String.class);
 
                                     if (TextUtils.isEmpty(assignedRole)) {
-                                        userRole = Utils.getState("userRole", "Mentee");
-
+//                                        userRole = Utils.getState("userRole", "Mentee");
+                                        userRole = "Mentee";
                                         userData.setUserRole(userRole);
                                         Utils.saveState("userRole", userRole);
 
@@ -109,7 +110,23 @@ public class MainActivity extends ComponentActivity {
                 }
             }
         } else {
-            userRole = Utils.getState("userRole", "Mentee");
+            //todo cache user data in room for a week before logging them out
+            firebaseUserHelper.getCurrentUserAndData(userData -> {
+                if (userData != null) {
+                    // Use the userData here
+                    String email = userData.getEmail();
+                    String name = userData.getDisplayName();
+                    String firstName = userData.getFirstName();
+                    String lastName = userData.getLastName();
+                    String photoUrl = userData.getPhotoUrl();
+                    String id = userData.getId();
+
+                } else {
+                    Log.d("User", "No user data found.");
+                    startActivity(new Intent(MainActivity.this, LoginSignUpActivity.class));
+                }
+            });
+
         }
     }
 }

@@ -20,6 +20,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 public class CustomSnackbar {
     private static final AnimatorSet animatorSet = new AnimatorSet();
+    @SuppressLint("StaticFieldLeak")
     private static View currentSnackbar = null;
     public static void show(ViewGroup rootView, String message, int duration, int type) {
         View customSnackbarView = createSnackbarView(rootView, message, type);
