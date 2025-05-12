@@ -16,4 +16,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.zen.overlapimagelistview.OverlapImageListView
+        android:id="@+id/overlapImage"
+        app:fillColor="#000000"
+        app:strokeWidth="4dp"
+        app:strokeColor="#FFFFFF"
+        app:circleCount="3"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        tools:ignore="MissingConstraints" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,6 +11,7 @@ import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 
 object FirebaseUserHelper {
+    private const val TAG = "FirebaseUserHelper"
     fun saveOrUpdateUser(
         userData: UserData,
         usersRef: DatabaseReference,
@@ -28,7 +29,7 @@ object FirebaseUserHelper {
 //            "userRole" to userData.userRole
         )
 
-        usersRef.child(userData.id).updateChildren(user as Map<String, Any>)
+        usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString()).updateChildren(user as Map<String, Any>)
             .addOnSuccessListener {
                 Log.d("FirebaseDB", "User data saved/updated successfully!")
                 onSuccess?.invoke(true)
@@ -43,12 +44,16 @@ object FirebaseUserHelper {
         val user = FirebaseAuth.getInstance().currentUser
         val dbRef = FirebaseDatabase.getInstance().reference
 
+        Log.d(TAG, "getCurrentUserAndData: ${user?.uid}")
+
         if (user == null) {
+            Log.d("Helper", "getCurrentUserAndData: No user found")
             userDataCallback.onUserDataReceived(null)
             return
         }
 
         val userRef = dbRef.child("users").child(user.uid)
+
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) {
@@ -73,6 +78,7 @@ object FirebaseUserHelper {
                 dbRef.child("roles").child(user.uid)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
+                            //todo rectify this mapping
                             val role = snapshot.getValue(String::class.java)
                             userData.userRole = role ?: "Mentee"
                             userDataCallback.onUserDataReceived(userData)

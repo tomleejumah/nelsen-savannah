@@ -32,7 +32,7 @@ class SplashActivity : AppCompatActivity() {
             Log.d(TAG, "onCreate: Intro called")
         } else if (FirebaseAuth.getInstance().currentUser != null) {
             intent = Intent(this, MainActivity::class.java)
-            Log.d(TAG, "onCreate: Main Called")
+            Log.d(TAG, "onCreate: Main Called "+ FirebaseAuth.getInstance().currentUser?.uid)
         } else {
             intent = Intent(this, LoginSignUpActivity::class.java)
             Log.d(TAG, "onCreate: Login Called")

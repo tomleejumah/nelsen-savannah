@@ -67,6 +67,7 @@ dependencies {
     //ui
     implementation project(':liquid_swipe')
     implementation project(':CustomSnackbarLib')
+    implementation project(':overlapimagelistview')
     implementation libs.core.splashscreen
     implementation libs.circleimageview
     implementation libs.swiperefreshlayout
