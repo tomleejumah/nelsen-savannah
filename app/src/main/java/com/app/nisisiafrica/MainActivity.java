@@ -25,7 +25,6 @@ import com.google.firebase.database.ValueEventListener;
 public class MainActivity extends ComponentActivity {
     private String userRole;
     private UserData userData;
-    FirebaseUserHelper firebaseUserHelper;
     private static final String TAG = "MainActivity";
 
     @Override
@@ -59,7 +58,8 @@ public class MainActivity extends ComponentActivity {
                 userRole = userData.getUserRole();
 
                 Utils.saveState("userId", userId);
-                Log.d(TAG, "onCreate: "+ userData.getEmail());
+
+                Log.d(TAG, "onCreate: Role "+ userData.getUserRole());
 
                 if (TextUtils.isEmpty(userRole)) {
                     FirebaseDatabase.getInstance().getReference()
@@ -68,8 +68,9 @@ public class MainActivity extends ComponentActivity {
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    //todo rectify this for regular user
                                     String assignedRole = snapshot.getValue(String.class);
-
+                                    Log.d(TAG, "onCreate: 2Role "+ assignedRole);
                                     if (TextUtils.isEmpty(assignedRole)) {
 //                                        userRole = Utils.getState("userRole", "Mentee");
                                         userRole = "Mentee";
@@ -111,7 +112,7 @@ public class MainActivity extends ComponentActivity {
             }
         } else {
             //todo cache user data in room for a week before logging them out
-            firebaseUserHelper.getCurrentUserAndData(userData -> {
+            FirebaseUserHelper.INSTANCE.getCurrentUserAndData(userData -> {
                 if (userData != null) {
                     // Use the userData here
                     String email = userData.getEmail();
@@ -120,10 +121,12 @@ public class MainActivity extends ComponentActivity {
                     String lastName = userData.getLastName();
                     String photoUrl = userData.getPhotoUrl();
                     String id = userData.getId();
+                    Log.d(TAG, "onCreate: 3Role"+userData.getUserRole());
 
                 } else {
                     Log.d("User", "No user data found.");
                     startActivity(new Intent(MainActivity.this, LoginSignUpActivity.class));
+                    finish();
                 }
             });
 

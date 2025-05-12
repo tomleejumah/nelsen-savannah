@@ -40,8 +40,8 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
         liquidPager = findViewById(R.id.liquidPager);
 
         // Retrieve the required views from the termsView
-        RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
-        MaterialCheckBox checkBox = termsView.findViewById(R.id.check_box);
+//        RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
+//        MaterialCheckBox checkBox = termsView.findViewById(R.id.check_box);
 
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -49,9 +49,9 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
             return insets;
         });
 
-        checkBox.setOnClickListener(v -> {
-           Utils.setClickAnimation(v, () -> {});
-        });
+//        checkBox.setOnClickListener(v -> {
+//           Utils.setClickAnimation(v, () -> {});
+//        });
 
         setupFullscreenUI();
         setupLiquidPager();

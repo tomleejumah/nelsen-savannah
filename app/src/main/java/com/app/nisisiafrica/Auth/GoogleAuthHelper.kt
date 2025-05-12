@@ -58,6 +58,8 @@ class GoogleAuthHelper(
             )
 
             // Sign in to Firebase
+//            Log.d(TAG, "handleSignInResult:ID ${userData.id}")
+//            Log.d(TAG, "handleSignInResult:IDToken ${userData.idToken}")
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             auth.signInWithCredential(credential)
                 .addOnSuccessListener { authResult ->
@@ -122,11 +124,14 @@ class GoogleAuthHelper(
         onSuccess: (Boolean) -> Unit,
         onError: (Exception) -> Unit
     ) {
+//        val loggedInUser = auth.currentUser
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
-        usersRef.child(userData.id).get().addOnCompleteListener { task ->
+        val loggedInUser = FirebaseAuth.getInstance().currentUser?.uid
+        Log.d(TAG, "saveUserToFirebase: ${loggedInUser.toString()}")
+        usersRef.child(loggedInUser.toString()).get().addOnCompleteListener { task ->
             if (task.isSuccessful && task.result.exists()) {
                 Log.d("FirebaseDB", "User already exists, updating last login (Google)")
-                usersRef.child(userData.id).child("lastLogin").setValue(ServerValue.TIMESTAMP)
+                usersRef.child(loggedInUser.toString()).child("lastLogin").setValue(ServerValue.TIMESTAMP)
                 onSuccess(true)
             } else {
                 Log.d("FirebaseDB", "User does not exist, saving new user (Google)")
