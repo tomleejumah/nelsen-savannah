@@ -1,18 +1,23 @@
 package com.app.nisisiafrica;
 
 import android.animation.ObjectAnimator;
-import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.TextView;
 
-import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
+import androidx.annotation.NonNull;
+
+import com.app.nisisiafrica.Model.UserData;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 
 import java.util.regex.Pattern;
 
@@ -34,8 +39,7 @@ public class Utils {
     }
 
     public static boolean isValidPassword(String password) {
-        // Password should have at least 6 characters
-        return password.length() >= 6;
+        return password.length() < 6;
     }
 
     public static <T> T getState( String key, T defValue) {
@@ -81,19 +85,19 @@ public class Utils {
         editor.apply();
     }
 
-    public static void setClickAnimation(View v) {
+    public static void setClickAnimation(View v,Runnable endAction) {
         v.animate()
                 .scaleX(0.8f)
                 .scaleY(0.8f)
-                .setDuration(25)
+                .setDuration(20)
                 .withEndAction(() -> {
                     v.animate()
                             .scaleX(1.0f)
                             .scaleY(1.0f)
                             .setDuration(25)
+                            .withEndAction(endAction)
                             .start();
-                })
-                .start();
+                }).start();
     }
 
     public static void shakeView(final View view) {
@@ -102,5 +106,67 @@ public class Utils {
         shakeAnimator.setDuration(500);
         shakeAnimator.start();
     }
+    @NonNull
+    public static String getErrorString(Task<?> task) {
+        String failureMessage = "Authentication failed. Please try again.";
+        Exception exception = task.getException();
 
+        if (exception != null) {
+            if (exception instanceof FirebaseAuthInvalidCredentialsException) {
+                failureMessage = "Invalid credentials. Please check your email or  password.";
+            } else if (exception instanceof FirebaseAuthInvalidUserException) {
+                failureMessage = "No account found with this email. Please sign up.";
+            }
+        }
+        return failureMessage;
+    }
+
+    public static void navigateToMainScreen(Context context, Class<?> destinationActivity, UserData userData) {
+        Intent intent = new Intent(context, destinationActivity);
+        intent.putExtra("USER_DATA", userData);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(intent);
+    }
+
+
+    // check to see if two drawable resources are the same
+    public static boolean isSameDrawable(Drawable current, Drawable iconB) {
+        if (current == null || iconB == null) {
+            return false;
+        }
+
+        // Option 1: Simple bitmap comparison
+        Bitmap bitmap1 = drawableToBitmap(current);
+        Bitmap bitmap2 = drawableToBitmap(iconB);
+        boolean result = bitmap1.sameAs(bitmap2);
+
+        // Clean up bitmaps
+        bitmap1.recycle();
+        bitmap2.recycle();
+
+        return result;
+    }
+
+    // Helper method to convert drawables to bitmaps
+    private static Bitmap drawableToBitmap(Drawable drawable) {
+        if (drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            if (bitmapDrawable.getBitmap() != null) {
+                return bitmapDrawable.getBitmap();
+            }
+        }
+
+        int width = drawable.getIntrinsicWidth();
+        int height = drawable.getIntrinsicHeight();
+        // Ensure valid dimensions (at least 1x1)
+        width = width > 0 ? width : 1;
+        height = height > 0 ? height : 1;
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
+    }
 }

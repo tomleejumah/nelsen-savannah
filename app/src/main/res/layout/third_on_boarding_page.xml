@@ -58,8 +58,7 @@
         android:fontFamily="@font/poppins_regular"
         android:includeFontPadding="false"
         android:letterSpacing="-0.01"
-        android:textColor="@color/white"
-        android:text="Looking for expert solutions to elevate your business? Whether it's web/android development,hosting, or tech consultancy, we’ve got you covered! to help you achieve your goals seamlessly."
+        android:text="We offer software development,\nhosting and tech consultancy to help you\n achieve your goals seamlessly."
         android:textSize="20sp" />
 
 </RelativeLayout>

@@ -16,7 +16,6 @@ public class CustomTabLayout {
         this.tab2 = tab2;
         this.indicator = indicator;
 
-        // Set default selected tab
         updateTabState(0);
 
         // Initialize indicator width based on tab1 width after layout has been measured
@@ -26,19 +25,9 @@ public class CustomTabLayout {
         });
 
         // Click Listeners for Tabs
-        tab1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                viewPager.setCurrentItem(0);
-            }
-        });
+        tab1.setOnClickListener(v -> viewPager.setCurrentItem(0));
 
-        tab2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                viewPager.setCurrentItem(1);
-            }
-        });
+        tab2.setOnClickListener(v -> viewPager.setCurrentItem(1));
 
         // ViewPager Listener
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {

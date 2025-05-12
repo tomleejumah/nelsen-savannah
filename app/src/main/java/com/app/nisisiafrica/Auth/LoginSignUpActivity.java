@@ -17,9 +17,7 @@ import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
 
 public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHandler {
-    private TextView tab1, tab2;
-    private View indicator;
-    private ViewPager2 viewPager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,10 +28,10 @@ public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHa
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        tab1 = findViewById(R.id.login);
-        tab2 = findViewById(R.id.sigUp);
-        indicator = findViewById(R.id.indicator);
-        viewPager = findViewById(R.id.myViewPager);
+        TextView tab1 = findViewById(R.id.login);
+        TextView tab2 = findViewById(R.id.sigUp);
+        View indicator = findViewById(R.id.indicator);
+        ViewPager2 viewPager = findViewById(R.id.myViewPager);
 
         // Set Adapter for ViewPager2
         viewPager.setAdapter(new AuthTabsAdapter(this));

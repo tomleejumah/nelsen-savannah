@@ -5,7 +5,6 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.app.nisisiafrica.Model.UserData
-import com.app.nisisiafrica.Utils
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -43,8 +42,6 @@ class GoogleAuthHelper(
         onSuccess: (UserData) -> Unit,
         onError: (Exception) -> Unit
     ) {
-//        val isMailSinged = isMailSignedIn()
-
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)
@@ -64,26 +61,37 @@ class GoogleAuthHelper(
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             auth.signInWithCredential(credential)
                 .addOnSuccessListener { authResult ->
-                    // You can get additional Firebase user data here
-                    val firebaseUser = authResult.user?.uid.toString()
-                    //todo
-                    firebaseUser.let {
-                        val assignedRole = FirebaseDatabase.getInstance().reference
-                            .child("roles").child(firebaseUser).get().toString()
-                        if (assignedRole.isEmpty()) {
-                            val role = Utils.getState("userRole", "Mentee")
-                            FirebaseDatabase.getInstance().reference.child("roles")
-                                .child(firebaseUser).push().setValue(role)
-                            userData.userRole = role
-                        }else {
-                            userData.userRole = assignedRole
-                        }
-                        onSuccess(userData)
-                    }
+                    val firebaseUser = authResult.user?.uid.orEmpty()
 
-                }.addOnFailureListener { exception ->
+                    FirebaseDatabase.getInstance().reference
+                        .child("roles")
+                        .child(firebaseUser)
+                        .get()
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                val snapshot = task.result
+                                if (snapshot.exists() && snapshot.children.iterator().hasNext()) {
+                                    val role = snapshot.children.first().getValue(String::class.java) ?: "Mentee"
+                                    userData.userRole = role
+                                } else {
+                                    // No role assigned yet; assign default role
+                                    FirebaseDatabase.getInstance().reference
+                                        .child("roles")
+                                        .child(firebaseUser)
+                                        .push()
+                                        .setValue("Mentee")
+                                    userData.userRole = "Mentee"
+                                }
+                                onSuccess(userData)
+                            } else {
+                                onError(task.exception ?: Exception("Failed to get role"))
+                            }
+                        }
+                }
+                .addOnFailureListener { exception ->
                     onError(exception)
                 }
+
 
         } catch (e: ApiException) {
             onError(e)
