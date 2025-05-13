@@ -18,7 +18,6 @@ object FirebaseUserHelper {
         onSuccess: ((Boolean) -> Unit)?,
         onError: ((Exception) -> Unit)?
     ) {
-//       val userRole = Utils.getState("userRole","Mentee")
         val user = hashMapOf(
             "email" to userData.email,
             "displayName" to userData.displayName,
@@ -26,12 +25,13 @@ object FirebaseUserHelper {
             "lastName" to userData.lastName,
             "photoUrl" to userData.photoUrl,
             "lastLogin" to ServerValue.TIMESTAMP,
-//            "userRole" to userData.userRole
+            "Bio" to ""
         )
 
-        usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString()).updateChildren(user as Map<String, Any>)
+        usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString())
+            .updateChildren(user as Map<String, Any>)
             .addOnSuccessListener {
-                Log.d("FirebaseDB", "User data saved/updated successfully!")
+                Log.d(TAG, "User data saved/updated successfully!")
                 onSuccess?.invoke(true)
             }
             .addOnFailureListener { exception ->
@@ -40,11 +40,38 @@ object FirebaseUserHelper {
             }
     }
 
+
+    fun getOrAssignUserRole(
+        firebaseUserId: String,
+        onSuccess: (String) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        val rolesRef = FirebaseDatabase.getInstance().reference
+
+        rolesRef.child("roles/${firebaseUserId}")
+        rolesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists() && snapshot.hasChild(firebaseUserId)) {
+                    val role = snapshot.child(firebaseUserId).getValue(String::class.java)
+                    Log.d("FirebaseDB", "User role fetched: $role")
+                    onSuccess(role ?: "Mentee")
+                } else {
+                    // Assign default role
+                    rolesRef.child("roles").child(firebaseUserId).setValue("Mentee")
+                    onSuccess("Mentee")
+                }
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                onError(error.toException())
+            }
+        })
+    }
+
     fun getCurrentUserAndData(userDataCallback: UserDataCallback) {
         val user = FirebaseAuth.getInstance().currentUser
         val dbRef = FirebaseDatabase.getInstance().reference
-
-        Log.d(TAG, "getCurrentUserAndData: ${user?.uid}")
 
         if (user == null) {
             Log.d("Helper", "getCurrentUserAndData: No user found")
@@ -63,37 +90,31 @@ object FirebaseUserHelper {
 
                 // User data found
                 val userData = UserData(
-                    id = snapshot.child("id").getValue(String::class.java) ?: "",
+                    id = user.uid,
                     email = snapshot.child("email").getValue(String::class.java) ?: "",
-//                            userRole = snapshot.child("userRole").getValue(String::class.java),
-                    displayName = snapshot.child("displayName")
-                        .getValue(String::class.java),
-                    firstName = snapshot.child("firstName").getValue(String::class.java)
-                        ?: "",
-                    lastName = snapshot.child("lastName").getValue(String::class.java)
-                        ?: "",
-                    photoUrl = snapshot.child("photoUrl").getValue(String::class.java),
-//                    idToken = snapshot.child("idToken").getValue(String::class.java)
-                )
-                dbRef.child("roles").child(user.uid)
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            //todo rectify this mapping
-                            val role = snapshot.getValue(String::class.java)
-                            userData.userRole = role ?: "Mentee"
-                            userDataCallback.onUserDataReceived(userData)
-                            if (!snapshot.exists()) {
-                                // Correctly set the role in Firebase
-                                dbRef.child("roles")
-                                    .child(user.uid)
-                                    .setValue("Mentee")
-                            }
-                        }
+//                    userRole = snapshot.child("userRole").getValue(String::class.java) ?: "Mentee",
+                    displayName = snapshot.child("displayName").getValue(String::class.java) ?: "",
+                    firstName = snapshot.child("firstName").getValue(String::class.java) ?: "",
+                    lastName = snapshot.child("lastName").getValue(String::class.java) ?: "",
+                    photoUrl = snapshot.child("photoUrl").getValue(String::class.java) ?: "",
+                    bio = snapshot.child("Bio").getValue(String::class.java) ?: ""
 
-                        override fun onCancelled(error: DatabaseError) {
-                            userDataCallback.onUserDataReceived(userData)
-                        }
-                    })
+//                    idToken = snapshot.child("idToken").getValue(String::class.jaServerValue.TIMESTAMP.toString()va)
+                )
+
+                getOrAssignUserRole(
+                    firebaseUserId = user.uid,
+                    onSuccess = { role ->
+                        // User role fetched/assigned successfully
+                        userData.userRole = role
+                        userDataCallback.onUserDataReceived(userData)
+                        Log.d("ROLE", "User role is $role")
+                    },
+                    onError = { exception ->
+                        Log.e("ROLE", "Error getting role: ${exception.message}")
+                        userDataCallback.onUserDataReceived(userData)
+                    }
+                )
             }
 
             override fun onCancelled(error: DatabaseError) {

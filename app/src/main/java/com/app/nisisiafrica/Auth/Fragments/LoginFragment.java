@@ -83,15 +83,14 @@ public class LoginFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
             // Handle successful login
-            Toast.makeText(requireContext(), "Logged in as " + userData.getDisplayName(), Toast.LENGTH_SHORT).show();
-//            navigateToMainScreen(userData);
             Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
             return null;
         });
 
         facebookAuthHelper.addOnLoginErrorListener(exception -> {
             // Handle login error
-            Toast.makeText(requireContext(), "Login failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e("Facebook", "Login failed", exception);
+            snackbarHandler.showSnackbar("Login failed please retry", Snackbar.LENGTH_SHORT, 3);
             return null;
         });
     }
@@ -226,64 +225,23 @@ public class LoginFragment extends Fragment {
             });
         });
     }
-
     private void login(String email, String password) {
-
+        //todo add loading screen
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
-
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-
-                //todo add loading screen
-                FirebaseUser user = mAuth.getCurrentUser();
-                if (user != null) {
-                    String userId = user.getUid();
-                    // Fetch user data from Realtime Database
-                    dbRef.child("users").child(userId).get().addOnCompleteListener(dataTask -> {
-                        if (dataTask.isSuccessful() && dataTask.getResult().exists()) {
-                            UserData userData = dataTask.getResult().getValue(UserData.class);
-
-                            if (userData != null) {
-
-                                dbRef.child("roles").get().addOnCompleteListener(task1 -> {
-                                    if (task1.isSuccessful() && task1.getResult().exists()) {
-                                        String role = task1.getResult().getValue(String.class);
-                                        userData.setUserRole(role);
-                                        goToNextActivity(userData);
-                                        Log.d("FirebaseRole", "Role: " + role);
-                                    } else {
-                                        Log.e("FirebaseRole", "Failed to get role");
-                                    }
-                                });
-
-                            }
-                        } else {
-                            snackbarHandler.showSnackbar("Failed to fetch your data,\n please retry", Snackbar.LENGTH_LONG, 3);
-                        }
-                    });
-                }
-
+                Utils.navigateToMainScreen(getContext(), MainActivity.class,null);
+                Log.d(TAG, "login: Success");
             } else {
-//                String failureMessage = getErrorString(task);
                 String failureMessage = Utils.getErrorString(task);
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
             }
         });
     }
-
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,
                 userData -> {
-                    // Success - you have all user data here
-                    String email = userData.getEmail();
-                    String name = userData.getDisplayName();
-                    String firstName = userData.getFirstName();
-                    String lastName = userData.getLastName();
-                    String photoUrl = userData.getPhotoUrl();
-                    String userId = userData.getId();
-
                     // Save to Firebase Realtime Database
                     goToNextActivity(userData);
 
@@ -297,13 +255,11 @@ public class LoginFragment extends Fragment {
                 }
         );
     }
-
     private void goToNextActivity(UserData userData) {
         googleAuthHelper.saveUserToFirebase(
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-//                        navigateToMainScreen(userData);
                         Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
                     }
                     return null;
@@ -314,5 +270,4 @@ public class LoginFragment extends Fragment {
                 }
         );
     }
-
 }

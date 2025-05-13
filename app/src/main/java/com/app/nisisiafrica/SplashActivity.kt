@@ -17,6 +17,7 @@ class SplashActivity : AppCompatActivity() {
     private val TAG = "SplashActivity"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //todo impl splashScreen
         enableEdgeToEdge()
         setContentView(R.layout.activity_splash)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -32,7 +33,6 @@ class SplashActivity : AppCompatActivity() {
             Log.d(TAG, "onCreate: Intro called")
         } else if (FirebaseAuth.getInstance().currentUser != null) {
             intent = Intent(this, MainActivity::class.java)
-            Log.d(TAG, "onCreate: Main Called "+ FirebaseAuth.getInstance().currentUser?.uid)
         } else {
             intent = Intent(this, LoginSignUpActivity::class.java)
             Log.d(TAG, "onCreate: Login Called")

@@ -38,6 +38,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -83,8 +84,8 @@ public class SignUpFragment extends Fragment {
 
         // Initialize the Facebook Auth Helper
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
+
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
-//            navigateToMainScreen(userData);
             Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
             return null;
         });
@@ -94,7 +95,6 @@ public class SignUpFragment extends Fragment {
             snackbarHandler.showSnackbar("Login failed: " + exception.getMessage(), Snackbar.LENGTH_SHORT, 3);
             return null;
         });
-
     }
 
     @Override
@@ -208,14 +208,14 @@ public class SignUpFragment extends Fragment {
                     }
                     view.findViewById(R.id.namesError).setVisibility(firstNameText.isEmpty() || lastNameText.isEmpty() ? View.VISIBLE : View.GONE);
 
-                } else if (Utils.isValidPassword(password)) {
-                    Utils.shakeView(view.findViewById(R.id.passwordLayout));
-                    snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
                 } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                     snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
                     emailCheckIcon.setImageResource(R.drawable.ic_error);
                     Utils.shakeView(view.findViewById(R.id.emailLayout));
                     emailCheckIcon.setVisibility(View.VISIBLE);
+                } else if (Utils.isValidPassword(password)) {
+                    Utils.shakeView(view.findViewById(R.id.passwordLayout));
+                    snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
                 } else {
                     signUp(firstNameText, lastNameText, email, password);
                 }
@@ -234,7 +234,6 @@ public class SignUpFragment extends Fragment {
 
         return view;
     }
-
     private void signUp(String firstNameText, String lastNameText, String email, String password) {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
@@ -247,8 +246,8 @@ public class SignUpFragment extends Fragment {
             map.put("email", email);
             map.put("firstName", firstNameText);
             map.put("displayName", "");
-            map.put("ID", id);
-            map.put("imageUrl", "default");
+            map.put("lastLogin", ServerValue.TIMESTAMP);
+            map.put("photoUrl", "default");
             map.put("Bio", "");
 
             dbRef.child("users").child(mAuth.getCurrentUser().getUid()).setValue(map).
@@ -259,7 +258,7 @@ public class SignUpFragment extends Fragment {
                                     id,
                                     email,
                                     "Mentee",
-                                    "",
+                                    firstNameText+" "+lastNameText, //display name
                                     firstNameText,
                                     lastNameText,
                                     "default",
@@ -273,28 +272,11 @@ public class SignUpFragment extends Fragment {
                     });
         });
     }
-
-    //todo use this
-    private void signOut() {
-        googleAuthHelper.signOut(() -> {
-            // Handle sign out completion
-            return null;
-        });
-    }
-
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,
                 userData -> {
-                    // Success - you have all user data here
-                    String email = userData.getEmail();
-                    String name = userData.getDisplayName();
-                    String firstName = userData.getFirstName();
-                    String lastName = userData.getLastName();
-                    String photoUrl = userData.getPhotoUrl();
-                    String userId = userData.getId();
-
-                    // Save to Firebase Realtime Database
+             // Save to Firebase Realtime Database
                     goToNextActivity(userData);
 
                     return null;
@@ -307,13 +289,11 @@ public class SignUpFragment extends Fragment {
                 }
         );
     }
-
     private void goToNextActivity(UserData userData) {
         googleAuthHelper.saveUserToFirebase(
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-//                        navigateToMainScreen(userData);
                         Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
                     }
                     return null;
@@ -325,14 +305,7 @@ public class SignUpFragment extends Fragment {
         );
     }
 
-    private void navigateToMainScreen(UserData userData) {
-        Intent intent = new Intent(getContext(), MainActivity.class);
-        intent.putExtra("USER_DATA", userData);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-    }
-
-    // Sign out
+    //todo Sign out
     public void signOut(Runnable onComplete) {
         if (googleAuthHelper != null) {
             googleAuthHelper.signOut(() -> {
