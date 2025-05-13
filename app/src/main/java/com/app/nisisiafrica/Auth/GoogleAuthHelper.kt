@@ -54,41 +54,31 @@ class GoogleAuthHelper(
                 firstName = account.givenName ?: "",
                 lastName = account.familyName ?: "",
                 photoUrl = account.photoUrl?.toString() ?: "",
-                idToken = account.idToken ?: ""
+                bio = ""
+//                idToken = account.idToken ?: ""
             )
 
             // Sign in to Firebase
-//            Log.d(TAG, "handleSignInResult:ID ${userData.id}")
-//            Log.d(TAG, "handleSignInResult:IDToken ${userData.idToken}")
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             auth.signInWithCredential(credential)
                 .addOnSuccessListener { authResult ->
-                    val firebaseUser = authResult.user?.uid.orEmpty()
+//                    val userId = authResult.user?.uid.orEmpty()
+                    val userId = authResult.user?.uid ?: return@addOnSuccessListener
+//                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnSuccessListener
 
-                    FirebaseDatabase.getInstance().reference
-                        .child("roles")
-                        .child(firebaseUser)
-                        .get()
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                val snapshot = task.result
-                                if (snapshot.exists() && snapshot.children.iterator().hasNext()) {
-                                    val role = snapshot.children.first().getValue(String::class.java) ?: "Mentee"
-                                    userData.userRole = role
-                                } else {
-                                    // No role assigned yet; assign default role
-                                    FirebaseDatabase.getInstance().reference
-                                        .child("roles")
-                                        .child(firebaseUser)
-                                        .push()
-                                        .setValue("Mentee")
-                                    userData.userRole = "Mentee"
-                                }
-                                onSuccess(userData)
-                            } else {
-                                onError(task.exception ?: Exception("Failed to get role"))
-                            }
+                    FirebaseUserHelper.getOrAssignUserRole(
+                        firebaseUserId = userId,
+                        onSuccess = { role ->
+                            // User role fetched/assigned successfully
+                            userData.userRole = role
+                            onSuccess(userData)
+                            Log.d("ROLE", "User role is $role")
+                        },
+                        onError = { exception ->
+                            Log.e("ROLE", "Error getting role: ${exception.message}")
                         }
+                    )
+
                 }
                 .addOnFailureListener { exception ->
                     onError(exception)
@@ -124,7 +114,6 @@ class GoogleAuthHelper(
         onSuccess: (Boolean) -> Unit,
         onError: (Exception) -> Unit
     ) {
-//        val loggedInUser = auth.currentUser
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
         val loggedInUser = FirebaseAuth.getInstance().currentUser?.uid
         Log.d(TAG, "saveUserToFirebase: ${loggedInUser.toString()}")

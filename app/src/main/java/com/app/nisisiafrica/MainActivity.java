@@ -17,15 +17,16 @@ import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends ComponentActivity {
-    private String userRole;
-    private UserData userData;
     private static final String TAG = "MainActivity";
+    private String userRole, currentUser, dbRef;
+    private UserData userData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +37,8 @@ public class MainActivity extends ComponentActivity {
 
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+//Get Current logged in User
+        currentUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -45,7 +48,7 @@ public class MainActivity extends ComponentActivity {
 
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("USER_DATA")) {
-             userData = intent.getParcelableExtra("USER_DATA");
+            userData = intent.getParcelableExtra("USER_DATA");
 
             //todo cache user data in room for a week before logging them out
             if (userData != null) {
@@ -57,22 +60,14 @@ public class MainActivity extends ComponentActivity {
                 String userId = userData.getId();
                 userRole = userData.getUserRole();
 
-                Utils.saveState("userId", userId);
-
-                Log.d(TAG, "onCreate: Role "+ userData.getUserRole());
-
                 if (TextUtils.isEmpty(userRole)) {
                     FirebaseDatabase.getInstance().getReference()
-                            .child("roles")
-                            .child(userId)
+                            .child("roles/" + currentUser)
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    //todo rectify this for regular user
                                     String assignedRole = snapshot.getValue(String.class);
-                                    Log.d(TAG, "onCreate: 2Role "+ assignedRole);
                                     if (TextUtils.isEmpty(assignedRole)) {
-//                                        userRole = Utils.getState("userRole", "Mentee");
                                         userRole = "Mentee";
                                         userData.setUserRole(userRole);
                                         Utils.saveState("userRole", userRole);
@@ -121,7 +116,8 @@ public class MainActivity extends ComponentActivity {
                     String lastName = userData.getLastName();
                     String photoUrl = userData.getPhotoUrl();
                     String id = userData.getId();
-                    Log.d(TAG, "onCreate: 3Role"+userData.getUserRole());
+                    Log.d(TAG, "onCreate: "+userData.getFirstName());
+                    Log.d(TAG, "onCreate: "+userData.getUserRole());
 
                 } else {
                     Log.d("User", "No user data found.");

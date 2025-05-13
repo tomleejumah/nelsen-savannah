@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.app.nisisiafrica.Model.UserData
-import com.app.nisisiafrica.Utils
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -66,7 +65,6 @@ class FacebookAuthHelper(private val activity: Activity) {
                     val firebaseUser = auth.currentUser
                     firebaseUser?.let {
                         // Call Graph API to fetch additional user info then save user data
-
                         fetchGraphDataAndSaveUser(it, token)
                     }
                 } else {
@@ -98,24 +96,27 @@ class FacebookAuthHelper(private val activity: Activity) {
                 firstName = firstName,
                 lastName = lastName,
                 photoUrl = pictureUrl,
-                idToken = token.token
+                bio = ""
+//                idToken = token.token
             )
-            //todo
-            val assignedRole = FirebaseDatabase.getInstance().reference
-                .child("roles").child(firebaseUser.uid).get().toString()
-            if (assignedRole.isEmpty()) {
-                val role = Utils.getState("userRole", "Mentee")
-                FirebaseDatabase.getInstance().reference.child("roles")
-                    .child(firebaseUser.uid).push().setValue(role)
-                userData.userRole = role
-            }else {
-                userData.userRole = assignedRole
-            }
-            // Save the updated user data to Firebase
-            saveUserToFirebase(userData)
-            onLoginSuccessListeners.forEach { listener ->
-                listener.invoke(userData)
-            }
+
+//            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            val userId = firebaseUser.uid
+
+                FirebaseUserHelper.getOrAssignUserRole(
+                    firebaseUserId = userId,
+                    onSuccess = { role ->
+                        userData.userRole = role
+                        // Save the updated user data to Firebase
+                        saveUserToFirebase(userData)
+                        onLoginSuccessListeners.forEach { listener ->
+                            listener.invoke(userData)
+                        }
+                    },
+                    onError = { exception ->
+                        Log.e("ROLE", "Error getting role: ${exception.message}")
+                    }
+                )
         }
 
         // Request additional fields from the Graph API
@@ -144,7 +145,8 @@ class FacebookAuthHelper(private val activity: Activity) {
             firstName = "",  // We can get this from Graph API if needed
             lastName = "",   // We can get this from Graph API if needed
             photoUrl = firebaseUser.photoUrl?.toString() ?: "",
-            idToken = token.token
+//            idToken = token.token
+            bio = ""
         )
     }
 

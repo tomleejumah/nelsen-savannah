@@ -15,7 +15,7 @@ data class UserData (
     var firstName: String,
     var lastName: String,
     var photoUrl: String? = null,
-    var idToken: String? = null
+    var bio: String? = null
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
@@ -29,13 +29,13 @@ data class UserData (
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
-//        parcel.writeString(userTYpe)
+        parcel.writeString(userRole)
         parcel.writeString(email)
         parcel.writeString(displayName)
         parcel.writeString(firstName)
         parcel.writeString(lastName)
         parcel.writeString(photoUrl)
-        parcel.writeString(idToken)
+        parcel.writeString(bio)
     }
 
     override fun describeContents(): Int {

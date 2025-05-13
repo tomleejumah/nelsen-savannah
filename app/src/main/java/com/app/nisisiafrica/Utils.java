@@ -123,7 +123,7 @@ public class Utils {
 
     public static void navigateToMainScreen(Context context, Class<?> destinationActivity, UserData userData) {
         Intent intent = new Intent(context, destinationActivity);
-        intent.putExtra("USER_DATA", userData);
+        if (userData != null) { intent.putExtra("USER_DATA", userData); }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
     }
