@@ -1,6 +1,8 @@
 package com.app.nisisiafrica;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -8,6 +10,7 @@ import android.util.Log;
 import androidx.activity.ComponentActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -16,12 +19,20 @@ import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Model.UserData;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.zen.overlapimagelistview.OverlapImageListView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends ComponentActivity {
     private static final String TAG = "MainActivity";
@@ -119,6 +130,38 @@ public class MainActivity extends ComponentActivity {
                     Log.d(TAG, "onCreate: "+userData.getFirstName());
                     Log.d(TAG, "onCreate: "+userData.getUserRole());
 
+                    OverlapImageListView overlapImage = findViewById(R.id.overlapImage);
+
+                    ArrayList<Bitmap> imageList = new ArrayList<>();
+
+                    List<Integer> imageResourceList = new ArrayList<>();
+                    imageResourceList.add(R.drawable.ic_check_green);
+                    imageResourceList.add(R.drawable.ic_google);
+                    imageResourceList.add(R.drawable.ic_facebook);
+
+                    for (int i = 0; i < imageResourceList.size(); i++) {
+                        int resId = imageResourceList.get(i);
+                        Glide.with(this)
+                                .asBitmap()
+                                .load(resId)
+                                .apply(RequestOptions.circleCropTransform())
+                                .into(new CustomTarget<Bitmap>() {
+                                    @Override
+                                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                                        imageList.add(resource);
+
+                                        // set the image after everything is loaded
+                                        if (imageList.size() == imageResourceList.size()) {
+                                            overlapImage.setImageList(imageList);
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onLoadCleared(@Nullable Drawable placeholder) {
+                                        // no-op
+                                    }
+                                });
+                    }
                 } else {
                     Log.d("User", "No user data found.");
                     startActivity(new Intent(MainActivity.this, LoginSignUpActivity.class));

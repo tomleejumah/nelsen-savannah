@@ -71,6 +71,7 @@ dependencies {
     implementation libs.core.splashscreen
     implementation libs.circleimageview
     implementation libs.swiperefreshlayout
+    implementation libs.glide
 
     //firebase
     implementation(platform(libs.firebase.bom))
