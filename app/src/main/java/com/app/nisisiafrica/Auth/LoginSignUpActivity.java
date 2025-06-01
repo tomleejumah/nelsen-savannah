@@ -15,6 +15,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
+import com.google.firebase.auth.ActionCodeSettings;
 
 public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHandler {
 
@@ -32,6 +33,8 @@ public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHa
         TextView tab2 = findViewById(R.id.sigUp);
         View indicator = findViewById(R.id.indicator);
         ViewPager2 viewPager = findViewById(R.id.myViewPager);
+
+//        ActionCodeSettings
 
         // Set Adapter for ViewPager2
         viewPager.setAdapter(new AuthTabsAdapter(this));

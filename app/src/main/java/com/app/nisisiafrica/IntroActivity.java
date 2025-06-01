@@ -30,9 +30,7 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-//        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
-//        splashScreen.setKeepOnScreenCondition(() -> true );
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_intro);
 
@@ -116,10 +114,10 @@ public class IntroActivity extends AppCompatActivity implements LiquidPagerFragm
 //        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(Utils::setClickAnimation);
 //        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(Utils::setClickAnimation);
 
-        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(v -> Utils.setClickAnimation(v, () -> {
-        }));
-        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(v -> Utils.setClickAnimation(v, () -> {
-        }));
+        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(v ->
+                Utils.setClickAnimation(v, () -> {}));
+        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(v ->
+                Utils.setClickAnimation(v, () -> {}));
 
         AppCompatButton button = termsView.findViewById(R.id.btn_proceed);
         button.setOnClickListener(v -> {
