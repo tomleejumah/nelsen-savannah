@@ -21,8 +21,10 @@
         android:theme="@style/Theme.NisisiAfrica"
         tools:targetApi="31">
         <activity
-            android:name=".SplashActivity"
-            android:exported="true">
+            android:name=".LauncherActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Nisisi.Splash"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
