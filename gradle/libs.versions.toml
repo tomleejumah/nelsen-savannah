@@ -20,6 +20,7 @@ playServicesIdentity = "18.1.0"
 swiperefreshlayout = "1.1.0"
 playServicesAuth = "21.3.0"
 kotlin = "2.1.0"
+dotsindicator = "5.0"
 
 [libraries]
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
@@ -30,6 +31,7 @@ facebook-login = { module = "com.facebook.android:facebook-login", version.ref =
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+dotsindicator = { module = "com.tbuonomo:dotsindicator", version.ref = "dotsindicator" }
 firebase-database = { module = "com.google.firebase:firebase-database" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }

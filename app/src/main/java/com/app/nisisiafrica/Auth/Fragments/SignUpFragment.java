@@ -34,6 +34,7 @@ import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
+import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -45,12 +46,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import kotlin.Unit;
+//todo switch completely to binding
 public class SignUpFragment extends Fragment {
     private static final String TAG = "SignUpFragment";
     private GoogleAuthHelper googleAuthHelper;
     private FacebookAuthHelper facebookAuthHelper;
     private ImageView emailCheckIcon;
     private SnackbarHandler snackbarHandler;
+    private FragmentSignUpBinding binding;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -115,15 +119,18 @@ public class SignUpFragment extends Fragment {
     @SuppressLint("SetTextI18n")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_sign_up, container, false);
+//        View view = inflater.inflate(R.layout.fragment_sign_up, container, false);
+
+        binding = FragmentSignUpBinding.inflate(inflater, container, false);
+        View view = binding.getRoot();
 
         Button googleBtn = view.findViewById(R.id.googleBtn);
         googleBtn.setOnClickListener(v -> {
             Utils.setClickAnimation(v, () -> googleAuthHelper.signIn());
         });
 
-        Button facebookLoginButton = view.findViewById(R.id.facebookBtn);
-        facebookLoginButton.setOnClickListener(v -> {
+
+        binding.facebookBtn.setOnClickListener(v -> {
             List<String> permissions = Arrays.asList("email", "public_profile");
             Utils.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
         });
@@ -136,6 +143,9 @@ public class SignUpFragment extends Fragment {
         ImageView passwordToggleIcon = view.findViewById(R.id.passwordToggleIcon);
         TextView namesError = view.findViewById(R.id.namesError);
 
+        binding.checkKeepMeIn.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Utils.saveState("keepMeIn", isChecked);
+        });
         emailEDT.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
@@ -262,7 +272,8 @@ public class SignUpFragment extends Fragment {
                                     firstNameText,
                                     lastNameText,
                                     "default",
-                                    ""
+                                    "",
+                                    System.currentTimeMillis()
                             );
                             Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
                         } else {
@@ -279,13 +290,13 @@ public class SignUpFragment extends Fragment {
              // Save to Firebase Realtime Database
                     goToNextActivity(userData);
 
-                    return null;
+                    return Unit.INSTANCE;
                 },
                 exception -> {
                     // Handle error
                     Log.e("Auth", "Sign in failed", exception);
                     snackbarHandler.showSnackbar("Sign in failed", Snackbar.LENGTH_SHORT, 3);
-                    return null;
+                    return Unit.INSTANCE;
                 }
         );
     }
@@ -296,25 +307,17 @@ public class SignUpFragment extends Fragment {
                     if (isSuccess) {
                         Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
                     }
-                    return null;
+                    return Unit.INSTANCE;
                 },
                 exception -> {
                     Log.e("Firebase", "Error saving user", exception);
-                    return null;
+                    return Unit.INSTANCE;
                 }
         );
     }
-
-    //todo Sign out
-    public void signOut(Runnable onComplete) {
-        if (googleAuthHelper != null) {
-            googleAuthHelper.signOut(() -> {
-                onComplete.run();
-                return null;
-            });
-        } else {
-            FirebaseAuth.getInstance().signOut();
-            onComplete.run();
-        }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 }
