@@ -13,6 +13,7 @@ import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -33,6 +34,7 @@ import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
+import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -45,6 +47,7 @@ import java.util.List;
 
 public class LoginFragment extends Fragment {
     private static final String TAG = "LoginFragment";
+    private FragmentLoginBinding binding;
     private GoogleAuthHelper googleAuthHelper;
     private FacebookAuthHelper facebookAuthHelper;
     private ImageView emailCheckIcon;
@@ -194,6 +197,10 @@ public class LoginFragment extends Fragment {
             Utils.setClickAnimation(v, () -> {
                 startActivity(new Intent(requireActivity(), ForgotPasswordActivity.class));
             });
+        });
+
+        binding.checkKeepMeIn.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Utils.saveState("keepMeIn", isChecked);
         });
 
         view.findViewById(R.id.btnLogin).setOnClickListener(v -> {

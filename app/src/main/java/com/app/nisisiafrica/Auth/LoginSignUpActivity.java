@@ -34,8 +34,6 @@ public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHa
         View indicator = findViewById(R.id.indicator);
         ViewPager2 viewPager = findViewById(R.id.myViewPager);
 
-//        ActionCodeSettings
-
         // Set Adapter for ViewPager2
         viewPager.setAdapter(new AuthTabsAdapter(this));
 //        viewPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
