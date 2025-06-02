@@ -34,6 +34,7 @@ import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
+import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -51,6 +52,7 @@ public class SignUpFragment extends Fragment {
     private FacebookAuthHelper facebookAuthHelper;
     private ImageView emailCheckIcon;
     private SnackbarHandler snackbarHandler;
+    private FragmentSignUpBinding binding;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -136,6 +138,9 @@ public class SignUpFragment extends Fragment {
         ImageView passwordToggleIcon = view.findViewById(R.id.passwordToggleIcon);
         TextView namesError = view.findViewById(R.id.namesError);
 
+        binding.checkKeepMeIn.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Utils.saveState("keepMeIn", isChecked);
+        });
         emailEDT.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {

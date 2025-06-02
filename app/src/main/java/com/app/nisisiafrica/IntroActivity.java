@@ -1,174 +1,149 @@
 package com.app.nisisiafrica;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatButton;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.viewpager.widget.ViewPager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
-import com.LiquidPager.liquid_swipe.LiquidPager;
-import com.app.nisisiafrica.Adapter.LiquidPagerAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
-import com.app.nisisiafrica.Fragment.LiquidPagerFragment;
-import com.google.android.material.checkbox.MaterialCheckBox;
+import com.tbuonomo.viewpagerdotsindicator.DotsIndicator;
 
-public class IntroActivity extends AppCompatActivity implements LiquidPagerFragment.OnTermsAndConditionsListener {
+public class IntroActivity extends AppCompatActivity{
     private static final String TAG = "IntroActivity";
-    private View termsView;
-    private ViewGroup rootLayout;
-    private LiquidPager liquidPager;
 
+    private ViewPager2 viewPager2;
+    private TextView btn_next,btn_prev;
+    private Button startNow;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_intro);
 
-        rootLayout = findViewById(R.id.main1);
-        liquidPager = findViewById(R.id.liquidPager);
+     viewPager2 = findViewById(R.id.viewPager2);
+        DotsIndicator dots_indicator = findViewById(R.id.dots_indicator);
+        btn_prev= findViewById(R.id.btn_prev);
+        btn_next = findViewById(R.id.btn_next);
+        startNow = findViewById(R.id.startNow);
+//        check_box = findViewById(R.id.check_box);
 
-        // Retrieve the required views from the termsView
-//        RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
-//        MaterialCheckBox checkBox = termsView.findViewById(R.id.check_box);
+        int[] layouts = new int[]{
+                R.layout.screen_one,
+                R.layout.screen_two,
+                R.layout.screen_one};
 
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+        MyViewPagerAdapter myViewPagerAdapter = new MyViewPagerAdapter(this, layouts);
+        viewPager2.setAdapter(myViewPagerAdapter);
+        final int[] currentItem = {viewPager2.getCurrentItem()};
+        final int[] totalPages = {viewPager2.getAdapter().getItemCount()};
+
+        viewPager2.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                int total = viewPager2.getAdapter().getItemCount();
+
+                btn_prev.setVisibility(position == 0 ? View.GONE : View.VISIBLE);
+                btn_next.setVisibility(position == total - 1 ? View.GONE : View.VISIBLE);
+                startNow.setVisibility(position == total - 1 ? View.VISIBLE : View.GONE);
+            }
         });
 
-//        checkBox.setOnClickListener(v -> {
-//           Utils.setClickAnimation(v, () -> {});
+
+        btn_next.setOnClickListener(v -> {
+            if (currentItem[0] < totalPages[0] - 1) {
+                viewPager2.setCurrentItem(currentItem[0] + 1, true);
+            }
+        });
+
+        btn_prev.setOnClickListener(v -> {
+            if (currentItem[0] > 0) {
+                viewPager2.setCurrentItem(currentItem[0] - 1, true);
+            }
+        });
+        startNow.setOnClickListener(v -> {
+            Utils.setClickAnimation(v, () -> {
+                Utils.saveState("is-FirstTime", false);
+                startActivity(new Intent(IntroActivity.this, LoginSignUpActivity.class));
+                finish();
+            });
+
+        });
+        dots_indicator.attachTo(viewPager2);
+//        check_box.setOnCheckedChangeListener((buttonView, isChcked) -> isChecked = isChcked);
+
+//        loginBtn.setOnClickListener(v -> {
+//            if (viewPager2.getCurrentItem() < layouts.length - 1) {
+//                viewPager2.setCurrentItem(viewPager2.getCurrentItem() + 1);
+//            }else {
+//                if (isChecked) {
+//                    //todo save to pref
+////                    Utils.saveState(IntroActivity.this,"is-FirstTime", true);
+//                    startActivity(new Intent(OnBoardingActivity.this,RegisterActivity.class));
+//                }else Utils.shakeView(check_box);
+//            }
+//        });
+//        findViewById(R.id.btn_skip).setOnClickListener(v ->{
+//            viewPager2.setCurrentItem(layouts.length - 1, true);
+////            txt_privacy_policy.setVisibility(View.VISIBLE);
 //        });
 
-        setupFullscreenUI();
-        setupLiquidPager();
+
+//        findViewById(R.id.txt_privacy_policy).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                openWebBrowser("https://sites.google.com/view/termsandconditionsspin/home");
+//            }
+//        });
     }
-
-
-    private void setupFullscreenUI() {
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                        View.SYSTEM_UI_FLAG_FULLSCREEN |
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        );
+    private void openWebBrowser(String url) {
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        startActivity(browserIntent);
     }
+    private static class MyViewPagerAdapter extends RecyclerView.Adapter<MyViewPagerAdapter.ViewHolder> {
 
-    private void setupLiquidPager() {
-        if (liquidPager != null) {
-            LiquidPagerAdapter adapter = new LiquidPagerAdapter(getSupportFragmentManager());
-            liquidPager.setAdapter(adapter);
+        private LayoutInflater layoutInflater;
+        private int[] layouts;
 
-            liquidPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-                @Override
-                public void onPageSelected(int position) {
-                    onTermsAndConditionsShown(position == 3);
-                }
-
-                @Override
-                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                }
-
-                @Override
-                public void onPageScrollStateChanged(int state) {
-                }
-            });
+        public MyViewPagerAdapter(Context context, int[] layouts) {
+            this.layoutInflater = LayoutInflater.from(context);
+            this.layouts = layouts;
         }
-    }
 
-    @Override
-    public void onTermsAndConditionsShown(boolean isShown) {
-        try {
-            // Access the termsView from the fragment directly
-            LiquidPagerFragment fragment = (LiquidPagerFragment) getSupportFragmentManager()
-                    .findFragmentByTag("android:switcher:" + liquidPager.getId() + ":" + liquidPager.getCurrentItem());
-            if (fragment != null && fragment.termsView != null) {
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = layoutInflater.inflate(layouts[viewType], parent, false);
+            return new ViewHolder(view);
+        }
 
-                if (isShown) {
-                    termsView = fragment.getView();
-                    assert termsView != null;
-                    setupTermsViewListeners(termsView);
+        @Override
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            // No need to bind data as layouts are static
+        }
 
-                }
+        @Override
+        public int getItemCount() {
+            return layouts.length;
+        }
 
+        @Override
+        public int getItemViewType(int position) {
+            return position;
+        }
+
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            public ViewHolder(View itemView) {
+                super(itemView);
             }
-        } catch (Exception e) {
-            Log.e("IntroActivity", "Error managing terms view visibility", e);
         }
-    }
-
-    private void setupTermsViewListeners(View termsView) {
-//        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(Utils::setClickAnimation);
-//        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(Utils::setClickAnimation);
-
-        termsView.findViewById(R.id.radio_btn_male).setOnClickListener(v ->
-                Utils.setClickAnimation(v, () -> {}));
-        termsView.findViewById(R.id.radio_btn_female).setOnClickListener(v ->
-                Utils.setClickAnimation(v, () -> {}));
-
-        AppCompatButton button = termsView.findViewById(R.id.btn_proceed);
-        button.setOnClickListener(v -> {
-            Utils.saveState("is-FirstTime", false);
-            Utils.setClickAnimation(v, () -> {
-
-                // Retrieve the required views from the termsView
-                RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
-                MaterialCheckBox checkBox = termsView.findViewById(R.id.check_box);
-
-                // Validate input fields and the checkbox
-                boolean inputsValid = validateInputs(termsView);
-                boolean checkBoxChecked = checkBox.isChecked();
-
-                if (inputsValid && checkBoxChecked) {
-                    // Make sure a radio button is selected before proceeding
-                    int selectedId = radioGroup.getCheckedRadioButtonId();
-                    if (selectedId == -1) {
-                        Utils.shakeView(radioGroup);
-                        return;
-                    }
-
-                    String role = ((RadioButton) termsView.findViewById(selectedId)).getText().toString();
-
-                    // Example logic: if role isn't "Mentor", then assign "Mentee"
-                    if (!role.equals("Mentor")) {
-                        role = "Mentee";
-                    }
-
-                    Utils.saveState("userRole", role);
-                    Utils.saveState("is-FirstTime", false);
-
-                    // Start the next activity
-                    Intent intent = new Intent(IntroActivity.this, LoginSignUpActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent);
-                } else {
-                    if (!checkBoxChecked) {
-                        Utils.shakeView(checkBox);
-                    }
-                    if (!inputsValid) {
-                        Utils.shakeView(radioGroup);
-                    }
-                }
-            });
-        });
-    }
-
-    private boolean validateInputs(View termsView) {
-        RadioGroup radioGroup = termsView.findViewById(R.id.sex_radio_group);
-        final int selectedGenderLayoutButtonId = radioGroup.getCheckedRadioButtonId();
-        return selectedGenderLayoutButtonId != -1;
     }
 }
