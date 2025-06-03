@@ -35,6 +35,7 @@ import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
+import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -44,7 +45,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.Arrays;
 import java.util.List;
 
-
+//todo switch completely to binding
 public class LoginFragment extends Fragment {
     private static final String TAG = "LoginFragment";
     private FragmentLoginBinding binding;
@@ -115,7 +116,10 @@ public class LoginFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_login, container, false);
+//        return inflater.inflate(R.layout.fragment_login, container, false);
+        binding = FragmentLoginBinding.inflate(inflater, container, false);
+
+        return binding.getRoot();
     }
 
     @Override
