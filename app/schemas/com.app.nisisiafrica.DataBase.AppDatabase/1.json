@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3b8c30b31b700cbd7cbf23757f2d3594",
+    "identityHash": "c07ab98f04e8c5d9cdabc0e3fb5c0a33",
     "entities": [
       {
         "tableName": "user_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `userRole` TEXT, `displayName` TEXT, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `photoUrl` TEXT, `bio` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `userRole` TEXT, `displayName` TEXT, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `photoUrl` TEXT, `bio` TEXT, `lastLogin` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -51,6 +51,11 @@
             "fieldPath": "bio",
             "columnName": "bio",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastLogin",
+            "columnName": "lastLogin",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -63,7 +68,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3b8c30b31b700cbd7cbf23757f2d3594')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c07ab98f04e8c5d9cdabc0e3fb5c0a33')"
     ]
   }
 }
