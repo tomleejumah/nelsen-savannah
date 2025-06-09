@@ -73,7 +73,7 @@ dependencies {
     androidTestImplementation libs.espresso.core
 
     //ui
-    implementation project(':liquid_swipe')
+//    implementation project(':liquid_swipe')
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
     implementation libs.dotsindicator

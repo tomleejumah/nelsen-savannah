@@ -130,7 +130,7 @@ public class LoginFragment extends Fragment {
         emailCheckIcon = view.findViewById(R.id.emailCheckIcon);
         EditText passEDT = view.findViewById(R.id.passwordEditText);
         ImageView passwordToggleIcon = view.findViewById(R.id.passwordToggleIcon);
-
+ 
         emailEDT.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
