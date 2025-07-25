@@ -21,6 +21,8 @@ swiperefreshlayout = "1.1.0"
 playServicesAuth = "21.3.0"
 kotlin = "2.1.0"
 dotsindicator = "5.0"
+navigationFragmentKtx = "2.9.2"
+navigationUiKtx = "2.9.2"
 
 [libraries]
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
@@ -48,6 +50,8 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 play-services-identity = { module = "com.google.android.gms:play-services-identity", version.ref = "playServicesIdentity" }
 swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

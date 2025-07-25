@@ -13,10 +13,8 @@ import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -35,15 +33,13 @@ import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
-import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.Arrays;
 import java.util.List;
+
+import kotlin.Unit;
 
 //todo switch completely to binding
 public class LoginFragment extends Fragment {
@@ -130,7 +126,7 @@ public class LoginFragment extends Fragment {
         emailCheckIcon = view.findViewById(R.id.emailCheckIcon);
         EditText passEDT = view.findViewById(R.id.passwordEditText);
         ImageView passwordToggleIcon = view.findViewById(R.id.passwordToggleIcon);
- 
+
         emailEDT.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
@@ -236,12 +232,13 @@ public class LoginFragment extends Fragment {
             });
         });
     }
+
     private void login(String email, String password) {
         //todo add loading screen
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                Utils.navigateToMainScreen(getContext(), MainActivity.class,null);
+                Utils.navigateToMainScreen(getContext(), MainActivity.class, null);
                 Log.d(TAG, "login: Success");
             } else {
                 String failureMessage = Utils.getErrorString(task);
@@ -249,6 +246,7 @@ public class LoginFragment extends Fragment {
             }
         });
     }
+
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,
@@ -256,16 +254,17 @@ public class LoginFragment extends Fragment {
                     // Save to Firebase Realtime Database
                     goToNextActivity(userData);
 
-                    return null;
+                    return Unit.INSTANCE;
                 },
                 exception -> {
                     // Handle error
                     Log.e("Auth", "Sign in failed", exception);
                     snackbarHandler.showSnackbar("Sign in failed", Snackbar.LENGTH_SHORT, 3);
-                    return null;
+                    return Unit.INSTANCE;
                 }
         );
     }
+
     private void goToNextActivity(UserData userData) {
         googleAuthHelper.saveUserToFirebase(
                 userData,
@@ -273,11 +272,11 @@ public class LoginFragment extends Fragment {
                     if (isSuccess) {
                         Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
                     }
-                    return null;
+                    return Unit.INSTANCE;
                 },
                 exception -> {
                     Log.e("Firebase", "Error saving user", exception);
-                    return null;
+                    return Unit.INSTANCE;
                 }
         );
     }

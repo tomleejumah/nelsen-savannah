@@ -68,12 +68,15 @@ dependencies {
     implementation libs.activity
     implementation libs.constraintlayout
     implementation libs.play.services.auth
+    implementation libs.navigation.fragment.ktx
+    implementation libs.navigation.ui.ktx
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 
     //ui
 //    implementation project(':liquid_swipe')
+    implementation 'com.github.ismaeldivita:chip-navigation-bar:1.4.0'
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
     implementation libs.dotsindicator
