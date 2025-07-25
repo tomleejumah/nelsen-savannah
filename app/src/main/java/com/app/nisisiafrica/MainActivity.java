@@ -11,9 +11,14 @@ import androidx.activity.ComponentActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.FirebaseUserHelper;
@@ -21,6 +26,9 @@ import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Auth.UserDataCallback;
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
+import com.app.nisisiafrica.Fragments.HomeFragments.HomeFragment;
+import com.app.nisisiafrica.Fragments.HomeFragments.NotificationsFragment;
+import com.app.nisisiafrica.Fragments.HomeFragments.SettingsFragment;
 import com.app.nisisiafrica.Model.UserData;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -34,6 +42,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.ismaeldivita.chipnavigation.ChipNavigationBar;
 import com.zen.overlapimagelistview.OverlapImageListView;
 
 import java.util.ArrayList;
@@ -47,13 +56,20 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Unit;
 
-public class MainActivity extends ComponentActivity {
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private final CompositeDisposable disposables = new CompositeDisposable(); // For RxJava cleanup
     private String userRole, currentUser;
     private UserData userData;
     private UserDao userDao;
     private Intent intent;
+    private FragmentManager fragmentManager;
+    private HomeFragment homeFragment = new HomeFragment();
+    private NotificationsFragment notificationsFragment = new NotificationsFragment();
+    private SettingsFragment settingsFragment = new SettingsFragment();
+    ChipNavigationBar chipNavigationBar;
+    private Fragment currentlyDisplayedFragment = null;
+    CardView cardChipNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +104,61 @@ public class MainActivity extends ComponentActivity {
         } else {
             handleCachedUser();
         }
-        overlapImage();
+//        overlapImage();
+        fragmentManager = getSupportFragmentManager();
+        preloadAllFragments();
+//        new Thread(() -> {
+            if (savedInstanceState == null) {
+                replaceFragment(homeFragment);
+            }
+//        }).start();
+
+        cardChipNavigation = findViewById(R.id.cardChipNavigation);
+        chipNavigationBar = findViewById(R.id.chipNavigationBar);
+        chipNavigationBar.setItemSelected(R.id.homeFragment, true);
+
+        chipNavigationBar.setOnItemSelectedListener(i -> {
+            if (i == R.id.homeFragment) {
+                replaceFragment(homeFragment);
+            } else if (i == R.id.notificationsFragment) {
+                replaceFragment(notificationsFragment);
+            } else if (i == R.id.settingsFragment) {
+                replaceFragment(settingsFragment);
+            }
+        });
+    }
+
+//    @Override
+//    public boolean onSupportNavigateUp() {
+//        return navController.navigateUp() || super.onSupportNavigateUp();
+//    }
+
+    private void preloadAllFragments() {
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.navHostFragment, homeFragment, "HOME_FRAGMENT");
+        fragmentTransaction.add(R.id.navHostFragment, notificationsFragment, "NOTIFICATIONS_FRAGMENT");
+        fragmentTransaction.add(R.id.navHostFragment, settingsFragment, "SETTINGS_FRAGMENT");
+        fragmentTransaction.hide(notificationsFragment);
+        fragmentTransaction.hide(settingsFragment);
+        fragmentTransaction.commitNow();
+    }
+
+    private void replaceFragment(Fragment fragmentToShow) {
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        if (currentlyDisplayedFragment != null) {
+            fragmentTransaction.hide(currentlyDisplayedFragment);
+        }
+
+        // Show the new fragment
+        if (fragmentToShow.isAdded()) {
+            fragmentTransaction.show(fragmentToShow);
+        } else {
+            fragmentTransaction.add(R.id.navHostFragment, fragmentToShow);
+        }
+
+        fragmentTransaction.commit();
+        currentlyDisplayedFragment = fragmentToShow;
     }
 
     private void handleFreshUserData(UserData userData) {
@@ -251,41 +321,4 @@ public class MainActivity extends ComponentActivity {
         disposables.clear();
     }
 
-    private void overlapImage() {
-        if (isDestroyed() || isFinishing()) return;
-        OverlapImageListView overlapImage = findViewById(R.id.overlapImage);
-
-        ArrayList<Bitmap> imageList = new ArrayList<>();
-
-        List<Integer> imageResourceList = new ArrayList<>();
-        imageResourceList.add(R.drawable.ic_check_green);
-        imageResourceList.add(R.drawable.ic_google);
-        imageResourceList.add(R.drawable.ic_facebook);
-
-        for (int i = 0; i < imageResourceList.size(); i++) {
-            int resId = imageResourceList.get(i);
-            Glide.with(MainActivity.this)
-                    .asBitmap()
-                    .load(resId)
-                    .apply(RequestOptions.circleCropTransform())
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource,
-                                                    @Nullable Transition<? super Bitmap> transition) {
-                            if (isDestroyed() || isFinishing()) return;
-                            imageList.add(resource);
-
-                            // set the image after everything is loaded
-                            if (imageList.size() == imageResourceList.size()) {
-                                overlapImage.setImageList(imageList);
-                            }
-                        }
-
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                            // no-op
-                        }
-                    });
-        }
-    }
 }
