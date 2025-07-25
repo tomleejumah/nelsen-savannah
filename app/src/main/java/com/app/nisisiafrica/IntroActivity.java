@@ -79,31 +79,6 @@ public class IntroActivity extends AppCompatActivity{
 
         });
         dots_indicator.attachTo(viewPager2);
-//        check_box.setOnCheckedChangeListener((buttonView, isChcked) -> isChecked = isChcked);
-
-//        loginBtn.setOnClickListener(v -> {
-//            if (viewPager2.getCurrentItem() < layouts.length - 1) {
-//                viewPager2.setCurrentItem(viewPager2.getCurrentItem() + 1);
-//            }else {
-//                if (isChecked) {
-//                    //todo save to pref
-////                    Utils.saveState(IntroActivity.this,"is-FirstTime", true);
-//                    startActivity(new Intent(OnBoardingActivity.this,RegisterActivity.class));
-//                }else Utils.shakeView(check_box);
-//            }
-//        });
-//        findViewById(R.id.btn_skip).setOnClickListener(v ->{
-//            viewPager2.setCurrentItem(layouts.length - 1, true);
-////            txt_privacy_policy.setVisibility(View.VISIBLE);
-//        });
-
-
-//        findViewById(R.id.txt_privacy_policy).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                openWebBrowser("https://sites.google.com/view/termsandconditionsspin/home");
-//            }
-//        });
     }
     private void openWebBrowser(String url) {
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));

@@ -33,6 +33,7 @@
     <color name="hint_text_color_dark">#BDBDBD</color>
 
     <color name="background_color_dark">#1E1E1E</color>
+    <color name="primary_blue">#091441</color>
     <color name="background_color_light">#FFFFFFFF</color>
     <color name="light_blue_600">#FF039BE5</color>
     <color name="light_blue_900">#FF01579B</color>
