@@ -19,6 +19,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.FirebaseUserHelper;
@@ -30,10 +31,7 @@ import com.app.nisisiafrica.Fragments.HomeFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.NotificationsFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.SettingsFragment;
 import com.app.nisisiafrica.Model.UserData;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.transition.Transition;
+
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -43,10 +41,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
-import com.zen.overlapimagelistview.OverlapImageListView;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -63,10 +57,11 @@ public class MainActivity extends AppCompatActivity {
     private UserData userData;
     private UserDao userDao;
     private Intent intent;
+    private SharedUserViewModel viewModel;
     private FragmentManager fragmentManager;
-    private HomeFragment homeFragment = new HomeFragment();
-    private NotificationsFragment notificationsFragment = new NotificationsFragment();
-    private SettingsFragment settingsFragment = new SettingsFragment();
+    private final HomeFragment homeFragment = new HomeFragment();
+    private final NotificationsFragment notificationsFragment = new NotificationsFragment();
+    private final SettingsFragment settingsFragment = new SettingsFragment();
     ChipNavigationBar chipNavigationBar;
     private Fragment currentlyDisplayedFragment = null;
     CardView cardChipNavigation;
@@ -97,21 +92,29 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        intent = getIntent();
-        if (intent != null && intent.hasExtra("USER_DATA")) {
-            userData = intent.getParcelableExtra("USER_DATA");
-            handleFreshUserData(userData);
-        } else {
-            handleCachedUser();
-        }
-//        overlapImage();
+//        intent = getIntent();
+//        if (intent != null && intent.hasExtra("USER_DATA")) {
+//            userData = intent.getParcelableExtra("USER_DATA");
+//            handleFreshUserData(userData);
+//        } else {
+//            handleCachedUser();
+//        }
+
+        
+        viewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
+        viewModel.getUserData().observe(this, data -> {
+            Log.d(TAG, "onCreate: weeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+            if (data != null) {
+                handleFreshUserData(data);
+            }else handleCachedUser();
+        });
+
         fragmentManager = getSupportFragmentManager();
         preloadAllFragments();
-//        new Thread(() -> {
+
             if (savedInstanceState == null) {
                 replaceFragment(homeFragment);
             }
-//        }).start();
 
         cardChipNavigation = findViewById(R.id.cardChipNavigation);
         chipNavigationBar = findViewById(R.id.chipNavigationBar);
@@ -214,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
         Utils.saveState("userRole", userRole);
         userData.setUserRole(userRole);
         saveToDb(userData);
+        viewModel.setUserData(userData);
         CustomSnackbar.show(findViewById(android.R.id.content),
                 "Welcome, " + userData.getFirstName() + "!",
                 Snackbar.LENGTH_SHORT, 5);
@@ -271,11 +275,14 @@ public class MainActivity extends AppCompatActivity {
                 userData = (cachedUserData == null || !cachedUserData.equals(fetchedUserData))
                         ? fetchedUserData : cachedUserData;
                 updateDb(userData);
+                viewModel.setUserData(userData);
+
                 Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
             } else {
                     Log.d(TAG, "No fetched data available");
                 if (cachedUserData != null) {
                     userData = cachedUserData;
+                    viewModel.setUserData(cachedUserData);
                     Log.d(TAG, "Using cached data as fallback");
                 } else {
                     Log.d(TAG, "No cached or cloud data, redirecting to login");

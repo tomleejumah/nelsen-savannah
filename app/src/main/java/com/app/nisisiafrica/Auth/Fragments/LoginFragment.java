@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
@@ -30,6 +31,7 @@ import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.SharedUserViewModel;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
@@ -270,7 +272,10 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
+                        SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+                        viewModel.setUserData(userData);
+
+                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
                     }
                     return Unit.INSTANCE;
                 },

@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
@@ -32,6 +33,7 @@ import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.SharedUserViewModel;
 import com.app.nisisiafrica.SnackbarHandler;
 import com.app.nisisiafrica.Utils;
 import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
@@ -91,13 +93,13 @@ public class SignUpFragment extends Fragment {
 
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
             Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
-            return null;
+            return Unit.INSTANCE;
         });
 
         facebookAuthHelper.addOnLoginErrorListener(exception -> {
             // Handle login error
             snackbarHandler.showSnackbar("Login failed: " + exception.getMessage(), Snackbar.LENGTH_SHORT, 3);
-            return null;
+            return Unit.INSTANCE;
         });
     }
 
@@ -275,7 +277,10 @@ public class SignUpFragment extends Fragment {
                                     "",
                                     System.currentTimeMillis()
                             );
-                            Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
+                            SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+                            viewModel.setUserData(userData);
+
+                            Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
                         } else {
                             String failureMessage = Utils.getErrorString(task);
                             snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
@@ -305,7 +310,11 @@ public class SignUpFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
+                        // Navigate to the next activity
+                        SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+                        viewModel.setUserData(userData);
+
+                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
                     }
                     return Unit.INSTANCE;
                 },
