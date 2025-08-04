@@ -62,6 +62,7 @@
 
     </LinearLayout>
     <androidx.cardview.widget.CardView
+        android:visibility="gone"
         android:id="@+id/top2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
