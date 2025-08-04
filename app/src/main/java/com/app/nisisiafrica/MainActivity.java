@@ -27,6 +27,7 @@ import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Auth.UserDataCallback;
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
+import com.app.nisisiafrica.Fragments.FullscreenDialogFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.NotificationsFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.SettingsFragment;
@@ -115,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
             if (savedInstanceState == null) {
                 replaceFragment(homeFragment);
             }
+//TODO: add dialog fragment
+ new FullscreenDialogFragment(this).show();
 
         cardChipNavigation = findViewById(R.id.cardChipNavigation);
         chipNavigationBar = findViewById(R.id.chipNavigationBar);
