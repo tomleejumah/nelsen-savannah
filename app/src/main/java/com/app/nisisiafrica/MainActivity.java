@@ -116,8 +116,7 @@ public class MainActivity extends AppCompatActivity {
             if (savedInstanceState == null) {
                 replaceFragment(homeFragment);
             }
-//TODO: add dialog fragment
- new FullscreenDialogFragment(this).show();
+//TODO: show dialog fragment once everyday  new FullscreenDialogFragment(this).show();
 
         cardChipNavigation = findViewById(R.id.cardChipNavigation);
         chipNavigationBar = findViewById(R.id.chipNavigationBar);

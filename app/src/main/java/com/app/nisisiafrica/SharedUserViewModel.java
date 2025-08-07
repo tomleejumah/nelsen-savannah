@@ -10,7 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.app.nisisiafrica.Model.UserData;
-
+//todo fix the loic issue of data accross
 public class SharedUserViewModel  extends AndroidViewModel {
     private static final String TAG = "SharedUserViewModel";
     private final MutableLiveData<UserData> userData = new MutableLiveData<>();
