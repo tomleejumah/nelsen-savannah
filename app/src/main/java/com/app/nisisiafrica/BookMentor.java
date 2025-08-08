@@ -1,7 +1,7 @@
 package com.app.nisisiafrica;
 
-import static java.security.AccessController.getContext;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -14,11 +14,25 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.Dao.UserDao;
+import com.app.nisisiafrica.Model.UserData;
+import com.google.firebase.auth.FirebaseAuth;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.core.SingleEmitter;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+
 public class BookMentor extends AppCompatActivity {
     private static final String TAG = "BookMentor";
     private RecyclerView recyclerView;
     private Button btnNext;
     private BookMentorStepAdapter adapter;
+    private UserDao userDao;
+    private String currentUser;
+    private UserData userData;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,12 +43,15 @@ public class BookMentor extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        userDao = App.getUserDao();
+//        currentUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         recyclerView = findViewById(R.id.recyclerView);
         btnNext = findViewById(R.id.btnNext);
 
         setupRecyclerView();
         setupNextButton();
+        getName();
     }
 
     private void setupRecyclerView() {
@@ -97,4 +114,36 @@ public class BookMentor extends AppCompatActivity {
 
         // Show success message or navigate to success screen
     }
+
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+
+    private void getName() {
+        Disposable disposable = userDao.getAllUsersRx()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(userDataList -> {
+                    if (!userDataList.isEmpty()) {
+                        // Just using the first user for this example
+                        UserData user = userDataList.get(0);
+
+                        adapter.setFirstName(user.getFirstName());
+                        adapter.setLastName(user.getLastName());
+
+                        Log.d(TAG, "First Name: " + user.getFirstName());
+                        Log.d(TAG, "Last Name: " + user.getLastName());
+                    } else {
+                        Log.d(TAG, "No users found.");
+                    }
+                }, throwable -> Log.e(TAG, "Error fetching user data", throwable));
+
+        compositeDisposable.add(disposable);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.clear();
+    }
+
 }

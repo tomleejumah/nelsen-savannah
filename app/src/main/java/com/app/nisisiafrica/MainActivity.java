@@ -75,8 +75,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Initialize database
-        AppDatabase appDatabase = AppDatabase.getInstance(this);
-        userDao = appDatabase.userDao();
+//        AppDatabase appDatabase = AppDatabase.getInstance(this);
+//        userDao = appDatabase.userDao();
+        userDao = App.getUserDao();
 
         // Check for logged-in user
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
