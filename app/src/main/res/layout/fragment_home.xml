@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
+    android:orientation="vertical"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
@@ -15,7 +16,7 @@
         android:layout_marginTop="15dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp"
+        android:padding="12dp"
         tools:ignore="MissingConstraints">
 
         <LinearLayout
@@ -43,7 +44,7 @@
                 android:fontFamily="@font/poppins_regular"
                 android:paddingEnd="20dp"
                 android:paddingBottom="5dp"
-                android:text=" with  guidance"
+                android:text="with  guidance"
                 android:textColor="#000000"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -54,11 +55,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1" />
-
+        
         <de.hdodenhof.circleimageview.CircleImageView
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:src="@drawable/profile" />
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_notifications" />
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:layout_marginStart="4dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/donation" />
 
     </LinearLayout>
     <androidx.cardview.widget.CardView
@@ -184,4 +190,5 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
-</RelativeLayout>
+
+</LinearLayout>

@@ -20,7 +20,13 @@
     <color name="disabled">#20C0C0C0</color>
     <color name="sea_green">#2E8B57</color>
     <color name="transparent">@android:color/transparent</color>
+    <color name="gray_light">#FFF5F5F5</color>
 
+    <!-- Timeline colors -->
+    <color name="timeline_completed">#4CAF50</color>   <!-- Green for completed -->
+    <color name="timeline_active">#FF9800</color>      <!-- Orange for active -->
+    <!-- <color name="timeline_inactive">#E0E0E0</color>    Gray for inactive -->
+    <color name="timeline_inactive">#000</color>    <!-- Gray for inactive -->
     <color name="radio_btn_deselected">#CCCCCC</color>
 
     <color name="yellow">#FCD267</color>
