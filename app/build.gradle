@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         applicationId "com.app.nisisiafrica"
-        minSdk 23
+        minSdk 26
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -78,6 +78,8 @@ dependencies {
 
     //ui
 //    implementation project(':liquid_swipe')
+    implementation 'com.github.vipulasri:timelineview:1.1.5'
+    implementation("com.kizitonwose.calendar:view:2.8.0")
     implementation 'com.github.ismaeldivita:chip-navigation-bar:1.4.0'
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
