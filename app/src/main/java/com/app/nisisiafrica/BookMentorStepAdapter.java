@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Color;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -119,7 +118,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     }
 
     class NameViewHolder extends RecyclerView.ViewHolder {
-
         EditText edtFirstName, edtLastName;
         TimelineView timeline;
 
@@ -132,23 +130,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-
-            if (isCompleted) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-            } else if (isEnabled) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-            } else {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.DASHED);
-            }
+        modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
@@ -158,11 +140,11 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             edtFirstName.setEnabled(isEnabled);
             edtLastName.setEnabled(isEnabled);
 
-            if (!isEnabled) return;
-
             // Set existing values if available
-            if (firstName != null) edtFirstName.setText(firstName);
-            if (lastName != null) edtLastName.setText(lastName);
+            if (firstName != null) edtFirstName.setText(getFirstName());
+            if (lastName != null) edtLastName.setText(getLastName());
+
+            if (!isEnabled) return;
 
             // Text change listeners to capture data immediately
             TextWatcher textWatcher = new TextWatcher() {
@@ -178,7 +160,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                     lastName = edtLastName.getText().toString().trim();
 
                     if (stepCompleteListener != null) {
-                        Log.d("TextWatcher", "Calling stepCompleteListener...");
                         stepCompleteListener.onStepDataChanged(STEP_NAME);
                     }
                 }
@@ -204,36 +185,25 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             timeline = itemView.findViewById(R.id.timeline);
         }
 
+        @SuppressLint("ClickableViewAccessibility")
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-            if (isCompleted) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-            } else if (isEnabled) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-            } else {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.DASHED);
-            }
+            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+
+            TextView tvMonthTitle = itemView.findViewById(R.id.tvMonthTitle);
+            YearMonth currentMonth = YearMonth.now();
+            tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
-
             itemView.setEnabled(isEnabled);
             itemView.setAlpha(isEnabled ? 1f : 0.5f);
 
             if (!isEnabled) return;
 
-            setupCalendar();
+            setupCalendar(isEnabled);
         }
 
-        private void setupCalendar() {
+        private void setupCalendar(boolean isEnabled) {
             // Set up day binder
             calendarView.setDayBinder(new MonthDayBinder<DayViewContainer>() {
                 @NonNull
@@ -281,6 +251,8 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
                 // Click listener for date selection
                 view.setOnClickListener(v -> {
+                    if (getAdapterPosition() != currentStep) return;
+
                     if (day != null && day.isAfter(LocalDate.now().minusDays(1))) {
                         // Only allow future dates
                         if (!bookedDates.contains(day)) {
@@ -289,7 +261,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                             calendarView.notifyCalendarChanged();
                             if (stepCompleteListener != null) {
                                 stepCompleteListener.onStepDataChanged(STEP_CALENDAR);
-//                                stepCompleteListener.updateNextButtonState();
                             }
                         } else {
                             Toast.makeText(context, "This date is not available", Toast.LENGTH_SHORT).show();
@@ -372,28 +343,14 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-            if (isCompleted) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-            } else if (isEnabled) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-            } else {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
-                timeline.setLineStyle(TimelineView.LineStyle.DASHED);
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-            }
+            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
             itemView.setEnabled(isEnabled);
+            itemView.findViewById(R.id.timePicker).setEnabled(isEnabled);
             itemView.setAlpha(isEnabled ? 1f : 0.5f);
-//            spinnerTimeSlots.setEnabled(isEnabled);
 
             if (!isEnabled) return;
 
@@ -430,7 +387,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                     selectedTime = LocalTime.of(hourOfDay, minute);
                     if (stepCompleteListener != null) {
                         stepCompleteListener.onStepDataChanged(STEP_TIME);
-//                        stepCompleteListener.updateNextButtonState();
                     }
                 });
 
@@ -471,20 +427,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-            if (isCompleted) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-            } else if (isEnabled) {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-            } else {
-                timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
-                timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-                timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), getAdapterPosition());
-            }
-
+            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
             itemView.setEnabled(isEnabled);
@@ -493,10 +436,10 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             if (!isEnabled) return;
             stepCompleteListener.onStepDataChanged(STEP_PAY);
 
-
             // Display booking summary
             String summary = buildBookingSummary();
             tvBookingSummary.setText(summary);
+            //todo update to mentor calender
         }
 
         private String buildBookingSummary() {
@@ -535,6 +478,25 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             case STEP_PAY -> true;
             default -> false;
         };
+    }
+
+    private void modifyTimeLine(boolean isEnabled, boolean isCompleted, TimelineView timeline,int position) {
+        if (isCompleted) {
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_check_green));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), (position));
+            timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
+        } else if (isEnabled) {
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
+            timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
+        } else {
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
+            timeline.setLineStyle(TimelineView.LineStyle.DASHED);
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -589,4 +551,13 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public String getLastName() {
         return lastName;
     }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
 }
