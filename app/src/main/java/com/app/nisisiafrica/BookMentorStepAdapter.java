@@ -169,10 +169,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             edtLastName.addTextChangedListener(textWatcher);
         }
 
-        public boolean isStepComplete() {
-            return firstName != null && !firstName.isEmpty() &&
-                    lastName != null && !lastName.isEmpty();
-        }
     }
 
     class CalendarViewHolder extends RecyclerView.ViewHolder {

@@ -1,21 +1,16 @@
 package com.app.nisisiafrica.Fragments
 
 import android.app.Dialog
-import android.app.DialogFragment
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
-import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import androidx.annotation.RequiresApi
 import com.app.nisisiafrica.R
 class FullscreenDialogFragment(context: Context) : Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen) {
 
@@ -25,7 +20,6 @@ class FullscreenDialogFragment(context: Context) : Dialog(context, android.R.sty
         val view = LayoutInflater.from(context).inflate(R.layout.fragment_fullscreen_dialog, null)
         setContentView(view)
     }
-
 
     override fun onStart() {
         super.onStart()

@@ -10,12 +10,12 @@ import android.view.ViewGroup;
 
 import com.app.nisisiafrica.R;
 
-public class NotificationsFragment extends Fragment {
+public class ChatFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_notifications, container, false);
+        return inflater.inflate(R.layout.fragment_chat, container, false);
     }
 }
