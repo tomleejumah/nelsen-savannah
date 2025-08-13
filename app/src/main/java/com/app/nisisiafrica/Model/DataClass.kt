@@ -8,6 +8,20 @@ import androidx.room.PrimaryKey
 data class DataClass(
    var userData : UserData
 )
+
+data class CourseItem(
+    val courseImageUrl: String,
+//    val isOnline: Boolean,
+    val tutorAvatarUrl: String,
+    val tutorName: String,
+    val courseTitle: String,
+    val duration: String,
+    val lessons: String,
+    val courseLink: String,
+//    val tutorProfileLink: String
+)
+
+
 @Entity(tableName = "user_data")
 data class UserData (
     @PrimaryKey var id: String,

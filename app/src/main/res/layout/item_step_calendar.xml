@@ -30,6 +30,7 @@
 
     <!-- Month Header -->
     <include
+        android:id="@+id/layoutMonthHeader"
         layout="@layout/calendar_month_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />

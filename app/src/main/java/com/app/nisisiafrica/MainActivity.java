@@ -1,16 +1,12 @@
 package com.app.nisisiafrica;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.activity.ComponentActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
@@ -24,12 +20,9 @@ import androidx.lifecycle.ViewModelProvider;
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
-import com.app.nisisiafrica.Auth.UserDataCallback;
 import com.app.nisisiafrica.Dao.UserDao;
-import com.app.nisisiafrica.DataBase.AppDatabase;
-import com.app.nisisiafrica.Fragments.FullscreenDialogFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.HomeFragment;
-import com.app.nisisiafrica.Fragments.HomeFragments.NotificationsFragment;
+import com.app.nisisiafrica.Fragments.HomeFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.SettingsFragment;
 import com.app.nisisiafrica.Model.UserData;
 
@@ -61,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedUserViewModel viewModel;
     private FragmentManager fragmentManager;
     private final HomeFragment homeFragment = new HomeFragment();
-    private final NotificationsFragment notificationsFragment = new NotificationsFragment();
+    private final ChatFragment chatFragment = new ChatFragment();
     private final SettingsFragment settingsFragment = new SettingsFragment();
     ChipNavigationBar chipNavigationBar;
     private Fragment currentlyDisplayedFragment = null;
@@ -126,8 +119,8 @@ public class MainActivity extends AppCompatActivity {
         chipNavigationBar.setOnItemSelectedListener(i -> {
             if (i == R.id.homeFragment) {
                 replaceFragment(homeFragment);
-            } else if (i == R.id.notificationsFragment) {
-                replaceFragment(notificationsFragment);
+            } else if (i == R.id.chatFragment) {
+                replaceFragment(chatFragment);
             } else if (i == R.id.settingsFragment) {
                 replaceFragment(settingsFragment);
             }
@@ -142,9 +135,9 @@ public class MainActivity extends AppCompatActivity {
     private void preloadAllFragments() {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.navHostFragment, homeFragment, "HOME_FRAGMENT");
-        fragmentTransaction.add(R.id.navHostFragment, notificationsFragment, "NOTIFICATIONS_FRAGMENT");
+        fragmentTransaction.add(R.id.navHostFragment, chatFragment, "CHAT_FRAGMENT");
         fragmentTransaction.add(R.id.navHostFragment, settingsFragment, "SETTINGS_FRAGMENT");
-        fragmentTransaction.hide(notificationsFragment);
+        fragmentTransaction.hide(chatFragment);
         fragmentTransaction.hide(settingsFragment);
         fragmentTransaction.commitNow();
     }
