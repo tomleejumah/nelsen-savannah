@@ -22,6 +22,7 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.app.nisisiafrica.CalendarBinder;
 import com.app.nisisiafrica.CoursesAdapter;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.SearchHistoryAdapter;
@@ -32,13 +33,19 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.github.vipulasri.timelineview.TimelineView;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.kizitonwose.calendar.view.CalendarView;
 import com.zen.overlapimagelistview.OverlapImageListView;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class HomeFragment extends Fragment {
     private SharedUserViewModel viewModel;
@@ -48,6 +55,12 @@ public class HomeFragment extends Fragment {
     private SearchHistoryAdapter searchHistoryAdapter;
     private CoursesAdapter coursesAdapter;
     private List<CourseItem>courseItemsList = new ArrayList<>();
+//    private CalendarView calendarView;
+    //todo read from firebase
+    private final Set<LocalDate> mySchedule = Set.of(
+            LocalDate.now().plusDays(2),
+            LocalDate.now().plusDays(5)
+    );
     private SharedPreferences prefs;
     private Gson gson = new Gson();
     private Type type = new TypeToken<List<String>>() {}.getType();
@@ -72,7 +85,32 @@ public class HomeFragment extends Fragment {
             //todo Open view all
         });
 
+        View calendarLayout = view.findViewById(R.id.layoutCalendar);
+        View monthHeader = calendarLayout.findViewById(R.id.layoutMonthHeader);
+        TimelineView timelineView = calendarLayout.findViewById(R.id.timeline);
+        timelineView.setVisibility(View.GONE);
+        TextView tvMonthTitle = monthHeader.findViewById(R.id.tvMonthTitle);
+        TextView dateHeader = calendarLayout.findViewById(R.id.dateHeader);
+        TextView txtDateInfo = calendarLayout.findViewById(R.id.txtDateInfo);
+        dateHeader.setText("Your Calender");
+        YearMonth currentMonth = YearMonth.now();
+        tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
+        txtDateInfo.setText("• Blue Underline: Your schedules");
 
+        //todo pass booked dates from database(firebase)
+        CalendarView calendarView = view.findViewById(R.id.calendarView);
+        CalendarBinder binder = new CalendarBinder(
+                requireContext(),
+                null,
+                mySchedule,
+                false,
+                date -> {
+                    // Handle date selection in fragment
+                    Toast.makeText(requireContext(), "Selected: " + date, Toast.LENGTH_SHORT).show();
+                    calendarView.notifyCalendarChanged();
+                }
+        );
+        binder.setup(calendarView,tvMonthTitle);
 
         searchView = view.findViewById(R.id.search_view);
         historyList = view.findViewById(R.id.history_list);
@@ -108,7 +146,7 @@ public class HomeFragment extends Fragment {
         rcCourses.setLayoutManager(layoutManager);
         //coursesList //todo fetch from db(firebase)
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye"));
+                "4 hrs","4","heye.com "));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye"));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
@@ -118,7 +156,7 @@ public class HomeFragment extends Fragment {
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye"));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye"));
+                "4 hrs","4","heye.com"));
         coursesAdapter = new CoursesAdapter(false,courseItemsList,getContext());
         rcCourses.setAdapter(coursesAdapter);
 //        coursesAdapter.notifyAll();

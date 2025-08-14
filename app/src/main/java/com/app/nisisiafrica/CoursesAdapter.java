@@ -45,8 +45,14 @@ public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHold
 
         holder.itemView.setOnClickListener(v -> {
             //todo Add webview->
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(courseItems.get(position).getCourseLink()));
+            String url = courseItems.get(position).getCourseLink();
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "https://" + url;
+            }
+
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             mContext.startActivity(browserIntent);
+
         });
     }
 
