@@ -77,8 +77,8 @@ public class BookMentor extends AppCompatActivity {
                     // Scroll to current step
                     recyclerView.smoothScrollToPosition(adapter.getCurrentStep());
                 }
-                updateButtonState(currentStep);
             }
+            updateButtonState(currentStep);
         });
     }
 
@@ -87,6 +87,7 @@ public class BookMentor extends AppCompatActivity {
 
         // Enable/disable button
         btnNext.setEnabled(isStepComplete);
+        Log.d(TAG, "updateButtonState: "+isStepComplete);
         btnNext.setAlpha(isStepComplete ? 1f : 0.5f);
 
         // Update button text based on current step

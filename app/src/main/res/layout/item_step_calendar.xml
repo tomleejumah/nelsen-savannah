@@ -21,6 +21,7 @@
     android:padding="16dp">
 
     <TextView
+        android:id="@+id/dateHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Select Date"
@@ -44,6 +45,7 @@
         android:layout_marginBottom="10dp" />
 
     <TextView
+        android:id="@+id/txtDateInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="• Red underline: Tutor is booked\n• Blue highlight: Your selection"

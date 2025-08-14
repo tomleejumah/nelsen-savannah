@@ -121,7 +121,9 @@
             android:layout_height="wrap_content"
             android:id="@+id/rcCourses"/>
 
-    <include 
+    <include
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:id="@+id/layoutCalendar"
         layout="@layout/item_step_calendar"/>
 

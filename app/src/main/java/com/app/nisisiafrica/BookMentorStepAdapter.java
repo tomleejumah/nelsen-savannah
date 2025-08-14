@@ -130,7 +130,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-        modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
@@ -186,142 +186,33 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             // Set timeline state
             modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
 
-            TextView tvMonthTitle = itemView.findViewById(R.id.tvMonthTitle);
-            YearMonth currentMonth = YearMonth.now();
-            tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
-
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
             itemView.setEnabled(isEnabled);
             itemView.setAlpha(isEnabled ? 1f : 0.5f);
 
             if (!isEnabled) return;
 
-            setupCalendar(isEnabled);
+            setupCalendar(calendarView);
         }
 
-        private void setupCalendar(boolean isEnabled) {
-            // Set up day binder
-            calendarView.setDayBinder(new MonthDayBinder<DayViewContainer>() {
-                @NonNull
-                @Override
-                public DayViewContainer create(@NonNull View view) {
-                    return new DayViewContainer(view);
-                }
+        private void setupCalendar(CalendarView calendarView) {
+            View view = itemView.findViewById(R.id.layoutMonthHeader);
+            TextView tvMonthTitle = view.findViewById(R.id.tvMonthTitle);
 
-                @Override
-                public void bind(@NonNull DayViewContainer container, CalendarDay day) {
-                    container.bind(day);
+            CalendarBinder binder = new CalendarBinder(context,
+                    bookedDates, null, true, date -> {
+                // Handle date selection in adapter
+                if (getAdapterPosition() != currentStep) return;
+                selectedDay = date;
+                if (stepCompleteListener != null) {
+//                    isStepComplete(STEP_CALENDAR);
+                    stepCompleteListener.onStepDataChanged(STEP_CALENDAR);
                 }
+                Toast.makeText(context, "Selected: " + date, Toast.LENGTH_SHORT).show();
+                calendarView.notifyCalendarChanged();
             });
 
-            // Set up month header binder
-            calendarView.setMonthHeaderBinder(new MonthHeaderFooterBinder<MonthViewContainer>() {
-                @NonNull
-                @Override
-                public MonthViewContainer create(@NonNull View view) {
-                    return new MonthViewContainer(view);
-                }
-
-                @Override
-                public void bind(@NonNull MonthViewContainer container, CalendarMonth month) {
-                    container.bind(month);
-                }
-            });
-
-            // Setup calendar range
-            YearMonth currentMonth = YearMonth.now();
-            YearMonth lastMonth = currentMonth.plusMonths(6);
-            calendarView.setup(currentMonth, lastMonth, java.time.DayOfWeek.SUNDAY);
-            calendarView.scrollToMonth(currentMonth);
-        }
-
-        class DayViewContainer extends ViewContainer {
-            TextView tvDayText;
-            View viewBookingIndicator;
-            LocalDate day;
-
-            public DayViewContainer(@NonNull View view) {
-                super(view);
-                tvDayText = view.findViewById(R.id.calendarDayText);
-                viewBookingIndicator = view.findViewById(R.id.viewBookingIndicator);
-
-                // Click listener for date selection
-                view.setOnClickListener(v -> {
-                    if (getAdapterPosition() != currentStep) return;
-
-                    if (day != null && day.isAfter(LocalDate.now().minusDays(1))) {
-                        // Only allow future dates
-                        if (!bookedDates.contains(day)) {
-                            // Only allow non-booked dates
-                            selectedDay = day;
-                            calendarView.notifyCalendarChanged();
-                            if (stepCompleteListener != null) {
-                                stepCompleteListener.onStepDataChanged(STEP_CALENDAR);
-                            }
-                        } else {
-                            Toast.makeText(context, "This date is not available", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            }
-
-            void bind(CalendarDay calendarDay) {
-
-                this.day = calendarDay.getDate();
-                tvDayText.setText(String.valueOf(day.getDayOfMonth()));
-
-                // Handle visibility for different month days
-                if (calendarDay.getPosition() == DayPosition.MonthDate) {
-                    tvDayText.setVisibility(View.VISIBLE);
-
-                    // Check if date is in the past
-                    boolean isPastDate = day.isBefore(LocalDate.now());
-                    boolean isBooked = bookedDates.contains(day);
-                    boolean isSelected = day.equals(selectedDay);
-
-                    if (isPastDate) {
-                        // Past dates - grayed out
-                        tvDayText.setBackgroundColor(Color.TRANSPARENT);
-                        tvDayText.setTextColor(Color.GRAY);
-                        viewBookingIndicator.setVisibility(View.GONE);
-                    } else if (isBooked) {
-                        // Booked dates - red underline, not selectable
-                        tvDayText.setBackgroundColor(Color.TRANSPARENT);
-                        tvDayText.setTextColor(Color.BLACK);
-                        viewBookingIndicator.setVisibility(View.VISIBLE);
-                        viewBookingIndicator.setBackgroundColor(ContextCompat.getColor(context, R.color.red));
-                    } else if (isSelected) {
-                        // Selected date - blue background
-                        tvDayText.setBackgroundColor(ContextCompat.getColor(context, R.color.blue));
-                        tvDayText.setTextColor(Color.WHITE);
-                        viewBookingIndicator.setVisibility(View.GONE);
-                    } else {
-                        // Available dates
-                        tvDayText.setBackgroundColor(Color.TRANSPARENT);
-                        tvDayText.setTextColor(Color.BLACK);
-                        viewBookingIndicator.setVisibility(View.GONE);
-                    }
-                } else {
-                    tvDayText.setVisibility(View.INVISIBLE);
-                    viewBookingIndicator.setVisibility(View.GONE);
-                }
-            }
-        }
-
-        // Month header container
-        class MonthViewContainer extends ViewContainer {
-            TextView tvMonthTitle;
-
-            public MonthViewContainer(@NonNull View view) {
-                super(view);
-                tvMonthTitle = view.findViewById(R.id.tvMonthTitle);
-            }
-
-            void bind(CalendarMonth month) {
-                tvMonthTitle.setText(month.getYearMonth().format(
-                        DateTimeFormatter.ofPattern("MMMM yyyy")
-                ));
-            }
+            binder.setup(calendarView, tvMonthTitle);
         }
     }
 
@@ -478,7 +369,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
     private void modifyTimeLine(boolean isEnabled, boolean isCompleted, TimelineView timeline,int position) {
         if (isCompleted) {
-            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_check_green));
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
             timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), (position));
             timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), (position));
             timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
