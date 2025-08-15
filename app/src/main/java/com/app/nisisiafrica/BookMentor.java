@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,14 +26,13 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public class BookMentor extends AppCompatActivity {
+public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener {
     private static final String TAG = "BookMentor";
     private RecyclerView recyclerView;
     private Button btnNext;
     private BookMentorStepAdapter adapter;
     private UserDao userDao;
-    private String currentUser;
-    private UserData userData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,15 +55,16 @@ public class BookMentor extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        adapter = new BookMentorStepAdapter(this);
+        adapter = new BookMentorStepAdapter(this,this);
         recyclerView.setLayoutManager(new LinearLayoutManager((this)));
         recyclerView.setAdapter(adapter);
         // Update UI based on step completion
-        adapter.setStepCompleteListener(this::updateButtonState);
+//        adapter.setStepCompleteListener(this::updateButtonState);
         // Initial button state
-        updateButtonState(adapter.getCurrentStep());
+//        updateButtonState(adapter.getCurrentStep());
     }
     private void setupNextButton() {
+        updateButtonState(adapter.getCurrentStep());
         btnNext.setOnClickListener(v -> {
             int currentStep = adapter.getCurrentStep();
 
@@ -78,7 +79,6 @@ public class BookMentor extends AppCompatActivity {
                     recyclerView.smoothScrollToPosition(adapter.getCurrentStep());
                 }
             }
-            updateButtonState(currentStep);
         });
     }
 
@@ -87,14 +87,13 @@ public class BookMentor extends AppCompatActivity {
 
         // Enable/disable button
         btnNext.setEnabled(isStepComplete);
-        Log.d(TAG, "updateButtonState: "+isStepComplete);
         btnNext.setAlpha(isStepComplete ? 1f : 0.5f);
 
         // Update button text based on current step
         switch (currentStep) {
             case BookMentorStepAdapter.STEP_NAME,
-                 BookMentorStepAdapter.STEP_TIME,
-                 BookMentorStepAdapter.STEP_CALENDAR:
+                 BookMentorStepAdapter.STEP_CALENDAR,
+                 BookMentorStepAdapter.STEP_TIME:
                 btnNext.setText("Next");
                 break;
             case BookMentorStepAdapter.STEP_PAY:
@@ -147,4 +146,14 @@ public class BookMentor extends AppCompatActivity {
         compositeDisposable.clear();
     }
 
+    @Override
+    public void onStepChanged(int step) {
+//        updateButtonState(step);
+        setupNextButton();
+    }
+
+    @Override
+    public void stepCompleteListener(boolean isComplete) {
+        setupNextButton();
+    }
 }

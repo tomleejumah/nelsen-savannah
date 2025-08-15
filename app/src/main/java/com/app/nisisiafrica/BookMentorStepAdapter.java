@@ -2,7 +2,6 @@ package com.app.nisisiafrica;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Color;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -18,17 +17,10 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.github.vipulasri.timelineview.TimelineView;
-import com.kizitonwose.calendar.core.CalendarDay;
-import com.kizitonwose.calendar.core.CalendarMonth;
-import com.kizitonwose.calendar.core.DayPosition;
 import com.kizitonwose.calendar.view.CalendarView;
-import com.kizitonwose.calendar.view.MonthDayBinder;
-import com.kizitonwose.calendar.view.MonthHeaderFooterBinder;
-import com.kizitonwose.calendar.view.ViewContainer;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,19 +39,17 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     private LocalDate selectedDay;
     private LocalTime selectedTime;
     private Set<LocalDate> bookedDates = new HashSet<>();
-    private StepCompleteListener stepCompleteListener;
+    private final StepCompleteListener stepCompleteListener;
 
-    // Callback interface for step completion
+    // Callback interface for step completion && changed status
     public interface StepCompleteListener {
-        void onStepDataChanged(int step);
+        void onStepChanged(int step);
+        void stepCompleteListener(boolean isComplete);
     }
 
-    public void setStepCompleteListener(StepCompleteListener listener) {
-        this.stepCompleteListener = listener;
-    }
-
-    public BookMentorStepAdapter(Context context) {
+    public BookMentorStepAdapter(Context context, StepCompleteListener listener) {
         this.context = context;
+        this.stepCompleteListener = listener;
         //todo pass dates fetched from mentor(from database)
         // Example booked dates - replace with actual data
         bookedDates.add(LocalDate.now().plusDays(2));
@@ -139,14 +129,18 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             itemView.setAlpha(isEnabled ? 1f : 0.5f);
             edtFirstName.setEnabled(isEnabled);
             edtLastName.setEnabled(isEnabled);
+            edtFirstName.requestFocus();
 
             // Set existing values if available
             if (firstName != null) edtFirstName.setText(getFirstName());
             if (lastName != null) edtLastName.setText(getLastName());
 
-            if (!isEnabled) return;
+//            if (!isEnabled) return;
+            // Trigger initial state update
+            if (stepCompleteListener != null) {
+                stepCompleteListener.onStepChanged(STEP_NAME);
+            }
 
-            // Text change listeners to capture data immediately
             TextWatcher textWatcher = new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -160,13 +154,14 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                     lastName = edtLastName.getText().toString().trim();
 
                     if (stepCompleteListener != null) {
-                        stepCompleteListener.onStepDataChanged(STEP_NAME);
+                        stepCompleteListener.stepCompleteListener(true);
                     }
                 }
             };
 
             edtFirstName.addTextChangedListener(textWatcher);
             edtLastName.addTextChangedListener(textWatcher);
+
         }
 
     }
@@ -192,6 +187,11 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
             if (!isEnabled) return;
 
+            // Trigger initial state update
+            if (stepCompleteListener != null) {
+                stepCompleteListener.onStepChanged(STEP_CALENDAR);
+            }
+
             setupCalendar(calendarView);
         }
 
@@ -205,10 +205,9 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                 if (getAdapterPosition() != currentStep) return;
                 selectedDay = date;
                 if (stepCompleteListener != null) {
-//                    isStepComplete(STEP_CALENDAR);
-                    stepCompleteListener.onStepDataChanged(STEP_CALENDAR);
+                    stepCompleteListener.stepCompleteListener(true);
                 }
-                Toast.makeText(context, "Selected: " + date, Toast.LENGTH_SHORT).show();
+//                Toast.makeText(context, "Selected: " + date, Toast.LENGTH_SHORT).show();
                 calendarView.notifyCalendarChanged();
             });
 
@@ -218,20 +217,17 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
     class TimeViewHolder extends RecyclerView.ViewHolder {
         TimePicker timePicker;
-//        Spinner spinnerTimeSlots;
         TimelineView timeline;
 
         public TimeViewHolder(@NonNull View itemView) {
             super(itemView);
             timePicker = itemView.findViewById(R.id.timePicker);
-//            spinnerTimeSlots = itemView.findViewById(R.id.spinnerTimeSlots);
             timeline = itemView.findViewById(R.id.timeline);
         }
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
             modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
-
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
@@ -241,39 +237,24 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
             if (!isEnabled) return;
 
+            // Trigger initial state update
+            if (stepCompleteListener != null) {
+                stepCompleteListener.onStepChanged(STEP_TIME);
+            }
+
             setupTimeSelection();
         }
 
         private void setupTimeSelection() {
-            // Option 1: Use spinner with predefined time slots
-//            List<String> timeSlots = generateTimeSlots();
-//            ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
-//                    android.R.layout.simple_spinner_item, timeSlots);
-//            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//            spinnerTimeSlots.setAdapter(adapter);
-//
-//            spinnerTimeSlots.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//                @Override
-//                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                    String timeString = timeSlots.get(position);
-//                    selectedTime = LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"));
-//                    if (stepCompleteListener != null) {
-//                        stepCompleteListener.onStepDataChanged(STEP_TIME);
-//                        stepCompleteListener.updateNextButtonState();
-//                    }
-//                }
-//
-//                @Override
-//                public void onNothingSelected(AdapterView<?> parent) {}
-//            });
+            //todo update ui to have time of day to select
 
-            // Option 2: Use TimePicker (if you prefer)
             if (timePicker != null) {
+//                boolean is24HourFormat = DateFormat.is24HourFormat(context);
                 timePicker.setIs24HourView(false);
                 timePicker.setOnTimeChangedListener((view, hourOfDay, minute) -> {
                     selectedTime = LocalTime.of(hourOfDay, minute);
                     if (stepCompleteListener != null) {
-                        stepCompleteListener.onStepDataChanged(STEP_TIME);
+                        stepCompleteListener.stepCompleteListener(true);
                     }
                 });
 
@@ -321,7 +302,10 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             itemView.setAlpha(isEnabled ? 1f : 0.5f);
 
             if (!isEnabled) return;
-            stepCompleteListener.onStepDataChanged(STEP_PAY);
+
+            if (stepCompleteListener != null) {
+                stepCompleteListener.onStepChanged(STEP_PAY);
+            }
 
             // Display booking summary
             String summary = buildBookingSummary();
@@ -350,9 +334,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             return sb.toString();
         }
 
-        public boolean isStepComplete() {
-            return true; // Payment step is always ready if reached
-        }
     }
 
     // Public methods for external step management
@@ -370,8 +351,8 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     private void modifyTimeLine(boolean isEnabled, boolean isCompleted, TimelineView timeline,int position) {
         if (isCompleted) {
             timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
-            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_completed), (position));
-            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_completed), (position));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
             timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
         } else if (isEnabled) {
             timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
@@ -402,9 +383,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         }
     }
 
-    public boolean isStepComplete() {
-        return selectedDay != null;
-    }
     public int getCurrentStep() {
         return currentStep;
     }
@@ -446,5 +424,4 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
-
 }
