@@ -279,7 +279,7 @@ public class SignUpFragment extends Fragment {
                             );
                             SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
                             viewModel.setUserData(userData);
-
+                            Utils.saveState("UserID",id);
                             Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
                         } else {
                             String failureMessage = Utils.getErrorString(task);
@@ -313,7 +313,7 @@ public class SignUpFragment extends Fragment {
                         // Navigate to the next activity
                         SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
                         viewModel.setUserData(userData);
-
+                        Utils.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
                         Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
                     }
                     return Unit.INSTANCE;
