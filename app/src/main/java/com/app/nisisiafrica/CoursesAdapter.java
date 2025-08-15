@@ -90,7 +90,6 @@ public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHold
 
             Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);
             Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
-//            Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);
         }
     }
 }

@@ -148,17 +148,19 @@ public class HomeFragment extends Fragment {
         rcCourses.setLayoutManager(layoutManager);
         //coursesList //todo fetch from db(firebase)
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye.com "));
+                "4 hrs","4","heye.com ",true));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye"));
+                "4 hrs","4","heye.com ",true));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye"));
+                "4 hrs","4","heye.com ",true));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye"));
+                "4 hrs","4","heye.com ",true));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye"));
+                "4 hrs","4","heye.com ",true));
         courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
-                "4 hrs","4","heye.com"));
+                "4 hrs","4","heye.com ",true));
+        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+                "4 hrs","4","heye.com ",true));
         coursesAdapter = new CoursesAdapter(false,courseItemsList,getContext());
         rcCourses.setAdapter(coursesAdapter);
 //        coursesAdapter.notifyAll();
