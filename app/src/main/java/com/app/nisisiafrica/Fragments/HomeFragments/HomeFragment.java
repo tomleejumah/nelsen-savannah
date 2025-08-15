@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Set;
 
 public class HomeFragment extends Fragment {
-    private SharedUserViewModel viewModel;
+    private static final String TAG = "HomeFragment";
     private UserData userData;
     private SearchView searchView;
     private RecyclerView historyList,rcCourses;
@@ -62,8 +62,8 @@ public class HomeFragment extends Fragment {
             LocalDate.now().plusDays(5)
     );
     private SharedPreferences prefs;
-    private Gson gson = new Gson();
-    private Type type = new TypeToken<List<String>>() {}.getType();
+    private final Gson gson = new Gson();
+    private final Type type = new TypeToken<List<String>>() {}.getType();
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -71,14 +71,16 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
 //        overlapImage(view);
-        viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+        SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
         viewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
+            Log.d("HomeFragment", "User Data Changed");
             if (data != null) {
                 Log.d("HomeFragment", "User First Name: " + data.getFirstName());
                 userData = data;
                 Toast.makeText(getActivity(), "Welcome " + data.getFirstName(), Toast.LENGTH_SHORT).show();
             }else Log.d("HomeFragment", "User data is null");
         });
+
         TextView txtSeeAll = view.findViewById(R.id.seeAll);
         txtSeeAll.setPaintFlags(txtSeeAll.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         txtSeeAll.setOnClickListener(v -> {

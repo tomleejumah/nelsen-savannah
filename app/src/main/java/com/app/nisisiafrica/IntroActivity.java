@@ -60,16 +60,19 @@ public class IntroActivity extends AppCompatActivity{
 
 
         btn_next.setOnClickListener(v -> {
-            if (currentItem[0] < totalPages[0] - 1) {
-                viewPager2.setCurrentItem(currentItem[0] + 1, true);
+            int current = viewPager2.getCurrentItem();
+            if (current < viewPager2.getAdapter().getItemCount() - 1) {
+                viewPager2.setCurrentItem(current + 1, true);
             }
         });
 
         btn_prev.setOnClickListener(v -> {
-            if (currentItem[0] > 0) {
-                viewPager2.setCurrentItem(currentItem[0] - 1, true);
+            int current = viewPager2.getCurrentItem();
+            if (current > 0) {
+                viewPager2.setCurrentItem(current - 1, true);
             }
         });
+
         startNow.setOnClickListener(v -> {
             Utils.setClickAnimation(v, () -> {
                 Utils.saveState("is-FirstTime", false);

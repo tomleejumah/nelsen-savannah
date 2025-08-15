@@ -37,6 +37,7 @@ import com.app.nisisiafrica.Utils;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
 import java.util.List;
@@ -240,6 +241,11 @@ public class LoginFragment extends Fragment {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
+                //todo get user id then move to next activity
+//                SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+//                viewModel.setUserData(userData);
+                String userID = mAuth.getCurrentUser().getUid();
+                Utils.saveState("UserID",userID);
                 Utils.navigateToMainScreen(getContext(), MainActivity.class, null);
                 Log.d(TAG, "login: Success");
             } else {
@@ -255,7 +261,6 @@ public class LoginFragment extends Fragment {
                 userData -> {
                     // Save to Firebase Realtime Database
                     goToNextActivity(userData);
-
                     return Unit.INSTANCE;
                 },
                 exception -> {
@@ -272,9 +277,11 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
+//                        Log.d(TAG, "goToNextActivity: Success");
+
                         SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
                         viewModel.setUserData(userData);
-
+                        Utils.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
                         Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
                     }
                     return Unit.INSTANCE;
