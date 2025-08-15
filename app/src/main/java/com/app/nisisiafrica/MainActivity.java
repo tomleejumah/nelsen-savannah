@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         currentUser = firebaseUser.getUid();
+//        Utils.saveState("UserID", currentUser);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -98,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
         
         viewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
         viewModel.getUserData().observe(this, data -> {
-            Log.d(TAG, "onCreate: weeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
             if (data != null) {
                 handleFreshUserData(data);
             }else handleCachedUser();
