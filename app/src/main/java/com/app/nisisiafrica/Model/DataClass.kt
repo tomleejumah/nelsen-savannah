@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.LocalDate
 
 data class DataClass(
    var userData : UserData
@@ -18,10 +19,21 @@ data class CourseItem(
     val duration: String,
     val lessons: String,
     val courseLink: String,
-//    val tutorProfileLink: String
+    val isLiked: Boolean,
 )
 
+data class MentorItem(
+    val mentorImageUrl: String,
+    val mentorName: String,
+    val mentorDescription: String,
+    val studentsCount: String,
+    val studentImages: List<String>,
+    val bookedDates: Set<LocalDate>,
+    val courses: List<CourseItem>,
+//    val mentorLink: String,
+)
 
+//todo remove the parceble boiler code
 @Entity(tableName = "user_data")
 data class UserData (
     @PrimaryKey var id: String,
