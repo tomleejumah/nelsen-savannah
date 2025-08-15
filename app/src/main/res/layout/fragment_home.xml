@@ -129,7 +129,82 @@
             android:id="@+id/layoutCalendar"
             layout="@layout/item_step_calendar"/>
 
-    </LinearLayout>
+        <RelativeLayout
+            android:padding="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:textStyle="bold"
+                android:text="Mentors" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="Show All"
+                android:id="@+id/ShowALl" />
+
+        </RelativeLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/rcMentorList"/>
+
+
+        <RelativeLayout
+            android:padding="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:textStyle="bold"
+                android:text="Other Resources" />
+
+        </RelativeLayout>
+        <LinearLayout
+            android:layout_marginBottom="50dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Our Online Store"
+                android:padding="10dp"
+                android:textStyle="bold"
+                android:maxLines="3"
+                app:drawableEndCompat="@drawable/ic_more"
+                android:layout_marginEnd="20dp" />
+            <TextView
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Donate to Us"
+                android:padding="10dp"
+                android:textStyle="bold"
+                android:maxLines="3"
+                app:drawableEndCompat="@drawable/ic_more"
+                android:layout_marginEnd="20dp" />
+        </LinearLayout>
+    </LinearLayout>
 
 </ScrollView>
