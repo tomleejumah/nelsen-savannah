@@ -1,116 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/drawerLayout"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-
     <LinearLayout
-        android:id="@+id/top1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="4dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="12dp">
+        android:orientation="vertical">
+        <LinearLayout
+            android:id="@+id/top1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:paddingEnd="20dp"
+                    android:text="Greatness Begins "
+                    android:textColor="#000000"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/gradient_pill"
+                    android:fontFamily="@font/poppins_regular"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="5dp"
+                    android:text="with  guidance"
+                    android:textColor="#000000"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_notifications" />
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:layout_marginStart="4dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/donation" />
+        </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:visibility="gone"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            app:layout_collapseMode="parallax">
+
+            <SearchView
+                android:layout_marginHorizontal="10dp"
+                android:background="@drawable/search_background"
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:iconifiedByDefault="false"
+                android:queryHint="Search..."
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/history_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="visible" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:padding="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/poppins_regular"
-                android:paddingEnd="20dp"
-                android:text="Greatness Begins "
-                android:textColor="#000000"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:textStyle="bold"
+                android:text="Top Courses" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/gradient_pill"
-                android:fontFamily="@font/poppins_regular"
-                android:paddingEnd="20dp"
-                android:paddingBottom="5dp"
-                android:text="with  guidance"
-                android:textColor="#000000"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="See All"
+                android:id="@+id/seeAll" />
 
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_notifications" />
-
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:layout_marginStart="4dp"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/donation" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_collapseMode="parallax">
-
-        <SearchView
-            android:layout_marginHorizontal="10dp"
-            android:background="@drawable/search_background"
-            android:id="@+id/search_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:iconifiedByDefault="false"
-            android:queryHint="Search..."
-            android:focusable="true"
-            android:focusableInTouchMode="true" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/history_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="visible" />
-    </LinearLayout>
-    <RelativeLayout
-        android:padding="12dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp">
-
-        <TextView
-           android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:textStyle="bold"
-            android:text="Top Courses" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:text="See All"
-            android:id="@+id/seeAll" />
-
-    </RelativeLayout>
+        </RelativeLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             app:layout_constraintLeft_toLeftOf="parent"
@@ -121,10 +123,13 @@
             android:layout_height="wrap_content"
             android:id="@+id/rcCourses"/>
 
-    <include
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/layoutCalendar"
-        layout="@layout/item_step_calendar"/>
+        <include
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/layoutCalendar"
+            layout="@layout/item_step_calendar"/>
 
-</LinearLayout>
+    </LinearLayout>
+
+
+</ScrollView>
