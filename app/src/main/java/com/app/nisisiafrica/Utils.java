@@ -43,7 +43,7 @@ public class Utils {
     }
 
     public static <T> T getState( String key, T defValue) {
-        if (appContext == null) throw new IllegalStateException("Utils not initialized");
+//        if (appContext == null) throw new IllegalStateException("Utils not initialized");
         SharedPreferences preferences = appContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
 //        SharedPreferences preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         Object result;
