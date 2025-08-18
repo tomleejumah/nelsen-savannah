@@ -55,7 +55,18 @@ public class HomeFragment extends Fragment {
     private SearchHistoryAdapter searchHistoryAdapter;
     private CoursesAdapter coursesAdapter;
     private List<CourseItem>courseItemsList = new ArrayList<>();
-//    private CalendarView calendarView;
+    private onScrollChangeListener scrollChangeListener;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof onScrollChangeListener) {
+            scrollChangeListener = (onScrollChangeListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnScrollChangeListener");
+        }
+    }
     //todo read from firebase
     private final Set<LocalDate> mySchedule = Set.of(
             LocalDate.now().plusDays(2),
@@ -165,7 +176,9 @@ public class HomeFragment extends Fragment {
         rcCourses.setAdapter(coursesAdapter);
 //        coursesAdapter.notifyAll();
 
-
+        view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                scrollChangeListener.onParentScroll(oldScrollY,scrollY);
+        });
         return view;
     }
 
@@ -218,5 +231,9 @@ public class HomeFragment extends Fragment {
                         }
                     });
         }
+    }
+
+    public interface onScrollChangeListener{
+        void onParentScroll(int oldY,int newY);
     }
 }
