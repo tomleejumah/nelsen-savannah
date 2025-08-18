@@ -37,6 +37,10 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -84,6 +88,8 @@ dependencies {
     implementation 'com.github.ismaeldivita:chip-navigation-bar:1.4.0'
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
+    implementation project (':fabtobottomnavigation')
+
     implementation libs.dotsindicator
     implementation libs.core.splashscreen
     implementation libs.circleimageview
