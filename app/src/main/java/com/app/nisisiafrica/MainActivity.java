@@ -26,7 +26,9 @@ import com.app.nisisiafrica.Fragments.HomeFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.HomeFragments.SettingsFragment;
 import com.app.nisisiafrica.Model.UserData;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.transformation.FabTransformationBehavior;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -35,6 +37,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
+import com.trinitymirror.fabtobottomnavigation.FabToBottomNavigationAnim;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -44,7 +47,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Unit;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements HomeFragment.onScrollChangeListener {
     private static final String TAG = "MainActivity";
     private final CompositeDisposable disposables = new CompositeDisposable(); // For RxJava cleanup
     private String userRole, currentUser;
@@ -58,7 +61,8 @@ public class MainActivity extends AppCompatActivity {
     private final SettingsFragment settingsFragment = new SettingsFragment();
     ChipNavigationBar chipNavigationBar;
     private Fragment currentlyDisplayedFragment = null;
-    CardView cardChipNavigation;
+    private FabToBottomNavigationAnim fabToBottomNavigationAnim;
+    private FloatingActionButton fabView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,7 +116,8 @@ public class MainActivity extends AppCompatActivity {
             }
 //TODO: show dialog fragment once everyday  new FullscreenDialogFragment(this).show();
 
-        cardChipNavigation = findViewById(R.id.cardChipNavigation);
+        CardView cardChipNavigation = findViewById(R.id.cardChipNavigation);
+            fabView = findViewById(R.id.fab);
         chipNavigationBar = findViewById(R.id.chipNavigationBar);
         chipNavigationBar.setItemSelected(R.id.homeFragment, true);
 
@@ -125,12 +130,26 @@ public class MainActivity extends AppCompatActivity {
                 replaceFragment(settingsFragment);
             }
         });
+
+        fabToBottomNavigationAnim = new FabToBottomNavigationAnim(fabView, cardChipNavigation);
+
+        fabView.setOnClickListener(v->{
+           fabToBottomNavigationAnim.showNavigationView();
+        });
     }
 
 //    @Override
 //    public boolean onSupportNavigateUp() {
 //        return navController.navigateUp() || super.onSupportNavigateUp();
 //    }
+
+    public void hideBottomBar(){
+        fabToBottomNavigationAnim.hideNavigationView();
+    }
+
+    public void showBottomBar(){
+        fabToBottomNavigationAnim.showNavigationView();
+    }
 
     private void preloadAllFragments() {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -322,6 +341,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         disposables.clear();
+    }
+
+    @Override
+    public void onParentScroll(int oldY, int newY) {
+//        if (oldY>newY)
+        if ((oldY > newY)) {
+            showBottomBar();
+        } else {
+            hideBottomBar();
+        }
+
     }
 
 }
