@@ -76,6 +76,7 @@ dependencies {
     implementation libs.play.services.auth
     implementation libs.navigation.fragment.ktx
     implementation libs.navigation.ui.ktx
+    implementation libs.firebase.firestore
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
@@ -89,13 +90,16 @@ dependencies {
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
     implementation project (':fabtobottomnavigation')
-
+    implementation ("com.hbb20:ccp:2.5.0")
     implementation libs.dotsindicator
     implementation libs.core.splashscreen
     implementation libs.circleimageview
     implementation libs.swiperefreshlayout
     implementation libs.glide
     annotationProcessor libs.compiler
+    implementation 'androidx.palette:palette:1.0.0'
+    implementation 'jp.wasabeef:glide-transformations:4.3.0'
+    implementation 'com.github.Dimezis:BlurView:version-3.1.0'
 
 
     //firebase
