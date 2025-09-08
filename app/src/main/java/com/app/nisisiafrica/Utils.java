@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 public class Utils {
     private static Context appContext;
+
     public static void init(Context context) {
         appContext = context.getApplicationContext();
     }

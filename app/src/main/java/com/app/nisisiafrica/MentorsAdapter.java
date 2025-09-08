@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -10,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Model.CourseItem;
@@ -40,8 +42,16 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
+        public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
+            holder.bind(mentorItems.get(position));
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(mContext, MentorProfileActivity.class);
+                    intent.putExtra("mentor", mentorItems.get(position).getMentorId());
+                    mContext.startActivity(intent);
+                }
+            });
         }
 
         @Override
@@ -54,30 +64,34 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
             return (isExpanded) ? mentorItems.size() : Math.min(mentorItems.size(),3);
         }
         public class ViewHolder extends RecyclerView.ViewHolder{
-        //todo cleanup
-            TextView tv_lessons, tv_duration, tv_course_title, tv_tutor_name;
-            CircleImageView iv_tutor_avatar, likeBtn;
-            ImageView iv_course_image;
+            private  CircleImageView ivTutorProfile;
+            private TextView tvTutorName;
+            private TextView tvTutorDescription;
+            private TextView tvStudentsCount;
+            private AppCompatButton btnBookNow;
+
             public ViewHolder(@NonNull View itemView) {
                 super(itemView);
-                tv_duration = itemView.findViewById(R.id.tv_duration);
-                tv_lessons = itemView.findViewById(R.id.tv_lessons);
-                tv_course_title = itemView.findViewById(R.id.tv_course_title);
-                tv_tutor_name = itemView.findViewById(R.id.tv_tutor_name);
-                iv_course_image = itemView.findViewById(R.id.iv_course_image);
-                iv_tutor_avatar = itemView.findViewById(R.id.iv_tutor_avatar);
-                likeBtn = itemView.findViewById(R.id.likeBtn);
+
+                ivTutorProfile = itemView.findViewById(R.id.iv_tutor_profile);
+                tvTutorName = itemView.findViewById(R.id.tv_tutor_name);
+                tvTutorDescription = itemView.findViewById(R.id.tv_tutor_description);
+                tvStudentsCount = itemView.findViewById(R.id.tv_students_count);
+                btnBookNow = itemView.findViewById(R.id.btn_book_now);
 
             }
 
-            void bind(CourseItem courseItem){
-                tv_duration.setText(courseItem.getDuration());
-                tv_lessons.setText(courseItem.getLessons());
-                tv_course_title.setText(courseItem.getCourseTitle());
-                tv_tutor_name.setText(courseItem.getTutorName());
+            void bind(MentorItem mentorItem){
+//                Glide.with(mContext).load(mentorItem.getMentorImageUrl()).into(ivTutorProfile);
+                tvTutorName.setText(mentorItem.getMentorName());
+                tvTutorDescription.setText(mentorItem.getMentorDescription());
+//                tvStudentsCount.setText(mentorItem.getStudentsCount());
+                btnBookNow.setOnClickListener(v -> {
+                    Intent intent = new Intent(mContext, BookMentor.class);
+                intent.putExtra("mentor", mentorItem.getMentorId());
+                mContext.startActivity(intent);
+                });
 
-                Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);
-                Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
             }
         }
 }

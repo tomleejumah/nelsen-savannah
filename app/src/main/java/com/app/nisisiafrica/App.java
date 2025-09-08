@@ -10,6 +10,7 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Utils.init(this);
         appDatabase = AppDatabase.getInstance(this);
 
     }

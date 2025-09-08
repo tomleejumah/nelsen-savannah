@@ -23,6 +23,7 @@ data class CourseItem(
 )
 
 data class MentorItem(
+    val mentorId: String,
     val mentorImageUrl: String,
     val mentorName: String,
     val mentorDescription: String,
