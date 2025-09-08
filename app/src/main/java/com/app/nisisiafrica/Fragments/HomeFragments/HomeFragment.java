@@ -24,7 +24,9 @@ import android.widget.Toast;
 
 import com.app.nisisiafrica.CalendarBinder;
 import com.app.nisisiafrica.CoursesAdapter;
+import com.app.nisisiafrica.MentorsAdapter;
 import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.SearchHistoryAdapter;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
@@ -35,6 +37,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.github.vipulasri.timelineview.TimelineView;
 import com.google.common.reflect.TypeToken;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import com.kizitonwose.calendar.view.CalendarView;
 import com.zen.overlapimagelistview.OverlapImageListView;
@@ -44,17 +47,21 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
     private UserData userData;
     private SearchView searchView;
-    private RecyclerView historyList,rcCourses;
+    private RecyclerView historyList,rcCourses,rcMentors;
     private SearchHistoryAdapter searchHistoryAdapter;
     private CoursesAdapter coursesAdapter;
+    private MentorsAdapter mentorsAdapter;
     private List<CourseItem>courseItemsList = new ArrayList<>();
+    private List<MentorItem> mentorItemsList = new ArrayList<>();
     private onScrollChangeListener scrollChangeListener;
 
     @Override
@@ -72,6 +79,14 @@ public class HomeFragment extends Fragment {
             LocalDate.now().plusDays(2),
             LocalDate.now().plusDays(5)
     );
+
+    //todo pass from firebase
+    private final Set<LocalDate>mentorSchedules = Set.of(
+            LocalDate.now().plusDays(16),
+            LocalDate.now().plusDays(17),
+            LocalDate.now().plusDays(18)
+    );
+
     private SharedPreferences prefs;
     private final Gson gson = new Gson();
     private final Type type = new TypeToken<List<String>>() {}.getType();
@@ -179,7 +194,37 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
                 scrollChangeListener.onParentScroll(oldScrollY,scrollY);
         });
+
+        //mentor
+        List<String>studentimages = new ArrayList<>();
+        studentimages.add("url");
+        studentimages.add("url");
+        studentimages.add("url");
+
+        rcMentors = view.findViewById(R.id.rcMentorList);
+        LinearLayoutManager layoutManager1 = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
+        rcMentors.setLayoutManager(layoutManager1);
+        //mentorList //todo fetch from db(firebase)
+        mentorItemsList.add(new MentorItem("1","url","Kendrick lamar","this is supposed to be desc but" + "I have to use place holder just to fit in","200",studentimages,mentorSchedules,courseItemsList));
+        mentorItemsList.add(new MentorItem("1","url","Kendrick lamar","this is supposed to be desc but" + "I have to use place holder just to fit in","200",studentimages,mentorSchedules,courseItemsList));
+        mentorItemsList.add(new MentorItem("1","url","Kendrick lamar","this is supposed to be desc but" + "I have to use place holder just to fit in","200",studentimages,mentorSchedules,courseItemsList));
+        mentorItemsList.add(new MentorItem("1","url","Kendrick lamar","this is supposed to be desc but" + "I have to use place holder just to fit in","200",studentimages,mentorSchedules,courseItemsList));
+        mentorItemsList.add(new MentorItem("1","url","Kendrick lamar","this is supposed to be desc but" + "I have to use place holder just to fit in","200",studentimages,mentorSchedules,courseItemsList));
+
+        mentorsAdapter =  new MentorsAdapter(false,mentorItemsList,getContext());
+        rcMentors.setHasFixedSize(true);
+//        rcMentors.setNestedScrollingEnabled(false);
+        rcMentors.setAdapter(mentorsAdapter);
+        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
+        params.height = calculateRecyclerViewHeight();
+        rcMentors.setLayoutParams(params);
+
         return view;
+    }
+
+    private int calculateRecyclerViewHeight() {
+        int itemCount = Math.min(mentorItemsList.size(), 3);
+        return itemCount * 250;
     }
 
     private void saveSearchHistory(String query) {

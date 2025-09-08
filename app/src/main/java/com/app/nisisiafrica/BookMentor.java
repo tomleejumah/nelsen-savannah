@@ -14,11 +14,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Model.UserData;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener {
     private static final String TAG = "BookMentor";
     private RecyclerView recyclerView;
-    private Button btnNext;
+    private ExtendedFloatingActionButton btnNext;
     private BookMentorStepAdapter adapter;
     private UserData userData;
 
@@ -49,8 +50,8 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
     }
     private void setupRecyclerView() {
         adapter = new BookMentorStepAdapter(this,this);
-        adapter.setFirstName(userData.getFirstName());
-        adapter.setLastName(userData.getLastName());
+//        adapter.setFirstName(userData.getFirstName());
+//        adapter.setLastName(userData.getLastName());
         recyclerView.setLayoutManager(new LinearLayoutManager((this)));
         recyclerView.setAdapter(adapter);
     }
@@ -87,6 +88,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 btnNext.setText("Next");
                 break;
             case BookMentorStepAdapter.STEP_PAY:
+                btnNext.shrink();
                 btnNext.setText("Book Now");
                 break;
         }
