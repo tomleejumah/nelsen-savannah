@@ -347,9 +347,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     public void onParentScroll(int oldY, int newY) {
 //        if (oldY>newY)
         if ((oldY > newY)) {
-            showBottomBar();
+//            showBottomBar();
         } else {
-            hideBottomBar();
+//            hideBottomBar();
         }
 
     }

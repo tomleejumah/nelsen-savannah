@@ -28,6 +28,7 @@ kotlin = "2.1.0"
 dotsindicator = "5.0"
 navigationFragmentKtx = "2.9.2"
 navigationUiKtx = "2.9.2"
+firebaseFirestore = "26.0.0"
 
 [libraries]
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
@@ -62,6 +63,7 @@ swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout"
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
