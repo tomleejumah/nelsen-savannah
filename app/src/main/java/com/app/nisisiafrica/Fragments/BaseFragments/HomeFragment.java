@@ -1,6 +1,7 @@
-package com.app.nisisiafrica.Fragments.HomeFragments;
+package com.app.nisisiafrica.Fragments.BaseFragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
@@ -22,22 +23,23 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.app.nisisiafrica.CalendarBinder;
-import com.app.nisisiafrica.CoursesAdapter;
-import com.app.nisisiafrica.MentorsAdapter;
+import com.app.nisisiafrica.Utils.CalendarBinder;
+import com.app.nisisiafrica.Adapters.CoursesAdapter;
+import com.app.nisisiafrica.ProfileActivity;
+import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
-import com.app.nisisiafrica.SearchHistoryAdapter;
+import com.app.nisisiafrica.QuestionnaireActivity;
+import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.github.vipulasri.timelineview.TimelineView;
 import com.google.common.reflect.TypeToken;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import com.kizitonwose.calendar.view.CalendarView;
 import com.zen.overlapimagelistview.OverlapImageListView;
@@ -47,9 +49,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class HomeFragment extends Fragment {
@@ -173,19 +173,21 @@ public class HomeFragment extends Fragment {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         rcCourses.setLayoutManager(layoutManager);
         //coursesList //todo fetch from db(firebase)
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
-        courseItemsList.add(new CourseItem("heye","heye","Juma Tomlee","Data Structures",
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
+                "4 hrs","4","heye.com ",true));
+        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D","heye","Juma Tomlee","Data Structures",
                 "4 hrs","4","heye.com ",true));
         coursesAdapter = new CoursesAdapter(false,courseItemsList,getContext());
         rcCourses.setAdapter(coursesAdapter);
@@ -218,6 +220,17 @@ public class HomeFragment extends Fragment {
         ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
         params.height = calculateRecyclerViewHeight();
         rcMentors.setLayoutParams(params);
+
+        view.findViewById(R.id.txtRecorgnizeMe).setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
+            startActivity(intent);
+        });
+
+        view.findViewById(R.id.imgDp).setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), ProfileActivity.class);
+            intent.putExtra("isMentor", false);
+            startActivity(intent);
+        });
 
         return view;
     }

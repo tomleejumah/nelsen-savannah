@@ -1,22 +1,21 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Model.MentorItem;
-import com.bumptech.glide.Glide;
+import com.app.nisisiafrica.ProfileActivity;
+import com.app.nisisiafrica.R;
 
 import java.util.List;
 
@@ -44,13 +43,10 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
             holder.bind(mentorItems.get(position));
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(mContext, MentorProfileActivity.class);
-                    intent.putExtra("mentor", mentorItems.get(position).getMentorId());
-                    mContext.startActivity(intent);
-                }
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(mContext, ProfileActivity.class);
+                intent.putExtra("mentor", mentorItems.get(position).getMentorId());
+                mContext.startActivity(intent);
             });
         }
 

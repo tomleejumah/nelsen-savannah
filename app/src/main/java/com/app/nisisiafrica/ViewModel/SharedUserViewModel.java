@@ -1,4 +1,4 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.ViewModel;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
@@ -9,8 +9,10 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.app.nisisiafrica.App;
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.Utils.Util;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
@@ -48,7 +50,7 @@ public class SharedUserViewModel  extends AndroidViewModel {
 //                        () -> Log.d(TAG, "No user found") // onComplete
 //                );
         disposables.add(
-                userDao.getUserByIdRx(Utils.getState("UserID", ""))
+                userDao.getUserByIdRx(Util.getState("UserID", ""))
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(

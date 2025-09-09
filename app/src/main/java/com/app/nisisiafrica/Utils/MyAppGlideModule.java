@@ -1,4 +1,4 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Utils;
 
 import android.content.Context;
 import android.util.Log;

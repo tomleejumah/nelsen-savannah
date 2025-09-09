@@ -1,4 +1,4 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Utils;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -8,6 +8,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import com.app.nisisiafrica.R;
 import com.kizitonwose.calendar.core.CalendarDay;
 import com.kizitonwose.calendar.core.CalendarMonth;
 import com.kizitonwose.calendar.core.DayPosition;

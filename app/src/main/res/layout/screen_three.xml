@@ -9,13 +9,13 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="450dp"
-        android:src="@drawable/nisisi_logo"
+        android:src="@drawable/screen_three"
         />
     <TextView
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome to Nisisi Africa"
+        android:text="Sports"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_gravity="center_horizontal"
@@ -25,7 +25,7 @@
         android:id="@+id/descriptionText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="We believe every child holds a spark. Through talent and tech, we guide them to grow, shine, and rise beyond limits"
+        android:text="We believe that sports are more than the game — they build discipline, resilience, and unity. We inspire children to dream big, both on and off the field."
         android:textSize="16sp"
         android:layout_gravity="center_horizontal"
         android:padding="16dp"

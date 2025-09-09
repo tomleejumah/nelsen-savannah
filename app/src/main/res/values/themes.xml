@@ -9,7 +9,7 @@
 
     <style name="Theme.Nisisi.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/nisisi_logo</item>
         <item name="postSplashScreenTheme">@style/Base.Theme.NisisiAfrica</item>
 <!--        <item name="android:windowIsTranslucent">false</item>-->
 <!--        <item name="android:windowDisablePreview">true</item>-->
