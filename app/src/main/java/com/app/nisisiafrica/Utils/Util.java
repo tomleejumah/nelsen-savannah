@@ -1,4 +1,4 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Utils;
 
 import android.animation.ObjectAnimator;
 import android.content.Context;
@@ -21,7 +21,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 
 import java.util.regex.Pattern;
 
-public class Utils {
+public class Util {
     private static Context appContext;
 
     public static void init(Context context) {

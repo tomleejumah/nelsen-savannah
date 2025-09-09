@@ -2,7 +2,6 @@ package com.app.nisisiafrica;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,7 +12,9 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
 import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener {

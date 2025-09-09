@@ -14,8 +14,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.SnackbarHandler;
-import com.google.firebase.auth.ActionCodeSettings;
+import com.app.nisisiafrica.Utils.SnackbarHandler;
 
 public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHandler {
 

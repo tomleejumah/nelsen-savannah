@@ -1,4 +1,4 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -10,12 +10,13 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.Utils.CalendarBinder;
+import com.app.nisisiafrica.R;
 import com.github.vipulasri.timelineview.TimelineView;
 import com.kizitonwose.calendar.view.CalendarView;
 

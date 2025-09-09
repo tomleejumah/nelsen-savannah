@@ -33,9 +33,9 @@ import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.SharedUserViewModel;
-import com.app.nisisiafrica.SnackbarHandler;
-import com.app.nisisiafrica.Utils;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.Utils.SnackbarHandler;
+import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -92,7 +92,7 @@ public class SignUpFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
 
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
-            Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
+            Util.navigateToMainScreen(requireContext(), MainActivity.class, userData);
             return Unit.INSTANCE;
         });
 
@@ -128,13 +128,13 @@ public class SignUpFragment extends Fragment {
 
         Button googleBtn = view.findViewById(R.id.googleBtn);
         googleBtn.setOnClickListener(v -> {
-            Utils.setClickAnimation(v, () -> googleAuthHelper.signIn());
+            Util.setClickAnimation(v, () -> googleAuthHelper.signIn());
         });
 
 
         binding.facebookBtn.setOnClickListener(v -> {
             List<String> permissions = Arrays.asList("email", "public_profile");
-            Utils.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
+            Util.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
         });
 
         EditText firstName = view.findViewById(R.id.FirstNameEditText);
@@ -146,7 +146,7 @@ public class SignUpFragment extends Fragment {
         TextView namesError = view.findViewById(R.id.namesError);
 
         binding.checkKeepMeIn.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            Utils.saveState("keepMeIn", isChecked);
+            Util.saveState("keepMeIn", isChecked);
         });
         emailEDT.addTextChangedListener(new TextWatcher() {
             @Override
@@ -201,7 +201,7 @@ public class SignUpFragment extends Fragment {
         });
 
         view.findViewById(R.id.btnSignUp).setOnClickListener(v -> {
-            Utils.setClickAnimation(v, () -> {
+            Util.setClickAnimation(v, () -> {
                 String email = emailEDT.getText().toString();
                 String password = passEDT.getText().toString();
                 String firstNameText = firstName.getText().toString();
@@ -213,20 +213,20 @@ public class SignUpFragment extends Fragment {
                     view.findViewById(R.id.passError).setVisibility(password.isEmpty() ? View.VISIBLE : View.GONE);
                     if (firstNameText.isEmpty()) {
                         namesError.setText("fill in  first name");
-                        Utils.shakeView(view.findViewById(R.id.emailEditText));
+                        Util.shakeView(view.findViewById(R.id.emailEditText));
                     } else if (lastNameText.isEmpty()) {
                         namesError.setText("fill in  last name");
-                        Utils.shakeView(view.findViewById(R.id.passwordEditText));
+                        Util.shakeView(view.findViewById(R.id.passwordEditText));
                     }
                     view.findViewById(R.id.namesError).setVisibility(firstNameText.isEmpty() || lastNameText.isEmpty() ? View.VISIBLE : View.GONE);
 
                 } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                     snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
                     emailCheckIcon.setImageResource(R.drawable.ic_error);
-                    Utils.shakeView(view.findViewById(R.id.emailLayout));
+                    Util.shakeView(view.findViewById(R.id.emailLayout));
                     emailCheckIcon.setVisibility(View.VISIBLE);
-                } else if (Utils.isValidPassword(password)) {
-                    Utils.shakeView(view.findViewById(R.id.passwordLayout));
+                } else if (Util.isValidPassword(password)) {
+                    Util.shakeView(view.findViewById(R.id.passwordLayout));
                     snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
                 } else {
                     signUp(firstNameText, lastNameText, email, password);
@@ -239,7 +239,7 @@ public class SignUpFragment extends Fragment {
             Drawable current = emailCheckIcon.getDrawable();
             Drawable iconB = ContextCompat.getDrawable(requireContext(), R.drawable.ic_error);
 
-            if (Utils.isSameDrawable(current, iconB)) {
+            if (Util.isSameDrawable(current, iconB)) {
                 emailEDT.setText("");
             }
         });
@@ -279,10 +279,10 @@ public class SignUpFragment extends Fragment {
                             );
                             SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
                             viewModel.setUserData(userData);
-                            Utils.saveState("UserID",id);
-                            Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
+                            Util.saveState("UserID",id);
+                            Util.navigateToMainScreen(requireContext(), MainActivity.class, null);
                         } else {
-                            String failureMessage = Utils.getErrorString(task);
+                            String failureMessage = Util.getErrorString(task);
                             snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
                         }
                     });
@@ -313,8 +313,8 @@ public class SignUpFragment extends Fragment {
                         // Navigate to the next activity
                         SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
                         viewModel.setUserData(userData);
-                        Utils.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
-                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
+                        Util.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
+                        Util.navigateToMainScreen(requireContext(), MainActivity.class, null);
                     }
                     return Unit.INSTANCE;
                 },
