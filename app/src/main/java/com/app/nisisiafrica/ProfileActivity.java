@@ -3,39 +3,32 @@ package com.app.nisisiafrica;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Build;
-import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.palette.graphics.Palette;
 
+import com.app.nisisiafrica.Utils.EdgeBlurImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.request.RequestOptions;
-import jp.wasabeef.glide.transformations.BlurTransformation;
 
-public class MentorProfileActivity extends AppCompatActivity {
+public class ProfileActivity extends AppCompatActivity {
     private View root;
-    private View gradientOverlay;  // Use this for the dynamic gradient background
-    private ImageView dpImage;  // Profile photo at top
+    private View gradientOverlay;
+    private EdgeBlurImageView dpImage;
     private TextView title;
     private CustomTarget<Bitmap> paletteTarget;
     private int defaultColor;
@@ -43,14 +36,16 @@ public class MentorProfileActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.archievement_layout);  // Your layout file
+        setContentView(R.layout.archievement_layout);
 
         root = findViewById(R.id.root);
         gradientOverlay = findViewById(R.id.gradientOverlay);
         dpImage = findViewById(R.id.dpImage);
+        dpImage.setBlurRadius(80f);
+
         defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray);
 
-        String imageUrl = "https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D";
+        String imageUrl = "https://plus.unsplash.com/premium_photo-1755617893484-e34cf4aaba3b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDkwfHRvd0paRnNrcEdnfHxlbnwwfHx8fHw%3D";
         loadAndStyle(imageUrl);
     }
 
@@ -68,7 +63,7 @@ public class MentorProfileActivity extends AppCompatActivity {
                 });
 
                 // Load the non-blurred image into the profile photo (top section only)
-                Glide.with(MentorProfileActivity.this)
+                Glide.with(ProfileActivity.this)
                         .load(url)
                         .apply(RequestOptions.circleCropTransform())
                         .placeholder(R.drawable.donation)
@@ -142,7 +137,7 @@ public class MentorProfileActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (paletteTarget != null) {
-            Glide.with(this).clear(paletteTarget);
+//            Glide.with(this).clear(paletteTarget);
         }
     }
 }

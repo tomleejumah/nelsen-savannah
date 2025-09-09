@@ -15,19 +15,30 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <ImageView
+<!--    <ImageView-->
+<!--        android:id="@+id/dpImage"-->
+<!--        android:layout_width="250dp"-->
+<!--        android:layout_height="250dp"-->
+<!--        android:src="@drawable/donation"-->
+<!--        android:scaleType="centerCrop"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        android:layout_marginTop="50dp"-->
+<!--        android:alpha="0.9"-->
+<!--        android:elevation="4dp" />-->
+
+    <com.app.nisisiafrica.Utils.EdgeBlurImageView
         android:id="@+id/dpImage"
         android:layout_width="250dp"
-    android:layout_height="250dp"
+        android:layout_height="250dp"
         android:src="@drawable/donation"
-    android:scaleType="centerCrop"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="50dp"
-    android:alpha="0.9"
-    android:elevation="4dp" />
-
-
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="50dp"
+        android:alpha="0.9"
+        android:elevation="4dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

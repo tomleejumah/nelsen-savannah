@@ -13,7 +13,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:paddingTop="16dp"
-            android:text="Discover &amp; Buy"
+            android:text="Talent &amp; Tech"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -25,11 +25,11 @@
             android:gravity="center"
             android:lineSpacingExtra="4dp"
             android:padding="16dp"
-            android:text="Browse a variety of fresh farm\n products, directly from local, farmers right in \n the palm of your hand."
+            android:text="From art and music to coding and design — we help children unlock their gifts, blend creativity with technology, and reimagine possibilities"
             android:textSize="16sp" />
         <ImageView
             android:layout_gravity="center"
             android:layout_width="300dp"
-            android:layout_height="450dp"/>
-<!--            android:src="@drawable/all_in_one_removebg" />-->
+            android:layout_height="450dp"
+            android:src="@drawable/nisis_kids" />
 </LinearLayout>

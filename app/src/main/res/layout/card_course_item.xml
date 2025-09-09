@@ -25,8 +25,10 @@
             <ImageView
                 android:id="@+id/iv_course_image"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="200dp"
+                android:maxHeight="10dp"
                 android:scaleType="centerCrop"
+                app:layout_constraintDimensionRatio="1:1"
                 android:src="@drawable/login" />
 
             <!-- Online Status Indicator -->
@@ -63,6 +65,7 @@
                     android:src="@drawable/donation" />
 
                 <TextView
+                    android:fontFamily="@font/poppins_bold"
                     android:id="@+id/tv_tutor_name"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -77,6 +80,7 @@
 
             <!-- Course Title -->
             <TextView
+                android:fontFamily="@font/poppins_regular"
                 android:id="@+id/tv_course_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

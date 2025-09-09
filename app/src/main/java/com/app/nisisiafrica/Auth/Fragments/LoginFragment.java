@@ -31,13 +31,12 @@ import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.SharedUserViewModel;
-import com.app.nisisiafrica.SnackbarHandler;
-import com.app.nisisiafrica.Utils;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.Utils.SnackbarHandler;
+import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
 import java.util.List;
@@ -86,7 +85,7 @@ public class LoginFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
             // Handle successful login
-            Utils.navigateToMainScreen(requireContext(), MainActivity.class, userData);
+            Util.navigateToMainScreen(requireContext(), MainActivity.class, userData);
             return null;
         });
 
@@ -169,7 +168,7 @@ public class LoginFragment extends Fragment {
             Drawable current = emailCheckIcon.getDrawable();
             Drawable iconB = ContextCompat.getDrawable(requireContext(), R.drawable.ic_error);
 
-            if (Utils.isSameDrawable(current, iconB)) {
+            if (Util.isSameDrawable(current, iconB)) {
                 emailEDT.setText("");
             }
         });
@@ -188,26 +187,26 @@ public class LoginFragment extends Fragment {
         });
 
         view.findViewById(R.id.googleBtnL).setOnClickListener(v -> {
-            Utils.setClickAnimation(v, () -> googleAuthHelper.signIn());
+            Util.setClickAnimation(v, () -> googleAuthHelper.signIn());
         });
 
         view.findViewById(R.id.facebookBtn).setOnClickListener(v -> {
             List<String> permissions = Arrays.asList("email", "public_profile");
-            Utils.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
+            Util.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
         });
 
         view.findViewById(R.id.txtForgotPwsd).setOnClickListener(v -> {
-            Utils.setClickAnimation(v, () -> {
+            Util.setClickAnimation(v, () -> {
                 startActivity(new Intent(requireActivity(), ForgotPasswordActivity.class));
             });
         });
 
         binding.checkKeepMeIn.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            Utils.saveState("keepMeIn", isChecked);
+            Util.saveState("keepMeIn", isChecked);
         });
 
         view.findViewById(R.id.btnLogin).setOnClickListener(v -> {
-            Utils.setClickAnimation(v, () -> {
+            Util.setClickAnimation(v, () -> {
                 String email = emailEDT.getText().toString();
                 String password = passEDT.getText().toString();
 
@@ -215,19 +214,19 @@ public class LoginFragment extends Fragment {
                     snackbarHandler.showSnackbar("Please fill in the blanks", Snackbar.LENGTH_SHORT, 2);
                     view.findViewById(R.id.mailError).setVisibility(email.isEmpty() ? View.VISIBLE : View.GONE);
                     view.findViewById(R.id.passError).setVisibility(password.isEmpty() ? View.VISIBLE : View.GONE);
-                    Utils.shakeView(view.findViewById(R.id.passParent));
-                    Utils.shakeView(view.findViewById(R.id.mailParent));
+                    Util.shakeView(view.findViewById(R.id.passParent));
+                    Util.shakeView(view.findViewById(R.id.mailParent));
 
                 } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                     snackbarHandler.showSnackbar("Please enter a valid email", Snackbar.LENGTH_SHORT, 2);
                     emailCheckIcon.setImageResource(R.drawable.ic_error);
                     view.findViewById(R.id.mailError).setVisibility(View.VISIBLE);
                     emailCheckIcon.setVisibility(View.VISIBLE);
-                    Utils.shakeView(view.findViewById(R.id.mailParent));
+                    Util.shakeView(view.findViewById(R.id.mailParent));
 
-                } else if (Utils.isValidPassword(password)) {
+                } else if (Util.isValidPassword(password)) {
                     snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
-                    Utils.shakeView(view.findViewById(R.id.passParent));
+                    Util.shakeView(view.findViewById(R.id.passParent));
 
                 } else {
                     login(email, password);
@@ -245,11 +244,11 @@ public class LoginFragment extends Fragment {
 //                SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
 //                viewModel.setUserData(userData);
                 String userID = mAuth.getCurrentUser().getUid();
-                Utils.saveState("UserID",userID);
-                Utils.navigateToMainScreen(getContext(), MainActivity.class, null);
+                Util.saveState("UserID",userID);
+                Util.navigateToMainScreen(getContext(), MainActivity.class, null);
                 Log.d(TAG, "login: Success");
             } else {
-                String failureMessage = Utils.getErrorString(task);
+                String failureMessage = Util.getErrorString(task);
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
             }
         });
@@ -281,8 +280,8 @@ public class LoginFragment extends Fragment {
 
                         SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
                         viewModel.setUserData(userData);
-                        Utils.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
-                        Utils.navigateToMainScreen(requireContext(), MainActivity.class, null);
+                        Util.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
+                        Util.navigateToMainScreen(requireContext(), MainActivity.class, null);
                     }
                     return Unit.INSTANCE;
                 },
