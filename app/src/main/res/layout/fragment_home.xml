@@ -60,6 +60,7 @@
                 android:src="@drawable/ic_notifications" />
 
             <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imgDp"
                 android:layout_marginStart="4dp"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
@@ -98,6 +99,7 @@
             android:layout_margin="10dp">
 
             <TextView
+                android:fontFamily="@font/poppins_bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
@@ -137,6 +139,7 @@
             android:layout_margin="6dp">
 
             <TextView
+                android:fontFamily="@font/poppins_bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
@@ -164,9 +167,10 @@
             android:padding="12dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp">
+            android:layout_margin="6dp">
 
             <TextView
+                android:fontFamily="@font/poppins_bold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
@@ -179,10 +183,10 @@
             android:layout_marginBottom="50dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginHorizontal="8dp"
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/txtRecorgnizeMe"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"

@@ -21,14 +21,15 @@ import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Dao.UserDao;
-import com.app.nisisiafrica.Fragments.HomeFragments.HomeFragment;
-import com.app.nisisiafrica.Fragments.HomeFragments.ChatFragment;
-import com.app.nisisiafrica.Fragments.HomeFragments.SettingsFragment;
+import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
+import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
+import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
 import com.app.nisisiafrica.Model.UserData;
 
+import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.transformation.FabTransformationBehavior;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -229,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void updateUserDataAndShowWelcome(UserData userData) {
-        Utils.saveState("userRole", userRole);
+        Util.saveState("userRole", userRole);
         userData.setUserRole(userRole);
         saveToDb(userData);
         viewModel.setUserData(userData);
@@ -239,10 +240,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void handleCachedUser() {
-        boolean keepMeIn = Utils.getState("keepMeIn", false);
+        boolean keepMeIn = Util.getState("keepMeIn", false);
         long cacheDurationDays = keepMeIn ? 7L : 3L;
         long cacheValidDuration = cacheDurationDays * 24 * 60 * 60 * 1000;
-        long lastAppBackground = Utils.getState("lastAppBackground", System.currentTimeMillis());
+        long lastAppBackground = Util.getState("lastAppBackground", System.currentTimeMillis());
         long currentTime = System.currentTimeMillis();
 
         if (currentTime - lastAppBackground > cacheValidDuration) {
@@ -334,7 +335,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     protected void onPause() {
         super.onPause();
         // Save app background time
-        Utils.saveState("lastAppBackground", System.currentTimeMillis());
+        Util.saveState("lastAppBackground", System.currentTimeMillis());
     }
 
     @Override

@@ -1,8 +1,7 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Adapters;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.R;
 import com.bumptech.glide.Glide;
 
 import java.util.List;
@@ -34,7 +34,7 @@ public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHold
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view= LayoutInflater.from(parent.getContext()).inflate(
-                isExpanded ? com.app.nisisiafrica.R.layout.card_course_item : R.layout.card_course_item_flex,parent,false);
+                isExpanded ? com.app.nisisiafrica.R.layout.card_course_item_flex : R.layout.card_course_item,parent,false);
 
         return new CoursesAdapter.ViewHolder(view);
     }
@@ -84,12 +84,12 @@ public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHold
 
         void bind(CourseItem courseItem){
             tv_duration.setText(courseItem.getDuration());
-            tv_lessons.setText(courseItem.getLessons());
+            tv_lessons.setText(courseItem.getLessons() + " Lessons");
             tv_course_title.setText(courseItem.getCourseTitle());
             tv_tutor_name.setText(courseItem.getTutorName());
 
             Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);
-            Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
+//            Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
         }
     }
 }

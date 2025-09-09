@@ -1,4 +1,4 @@
-package com.app.nisisiafrica;
+package com.app.nisisiafrica.Adapters;
 
 import android.view.LayoutInflater;
 import android.view.View;

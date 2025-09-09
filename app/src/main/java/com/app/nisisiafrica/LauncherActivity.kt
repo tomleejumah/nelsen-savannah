@@ -11,6 +11,7 @@ import com.app.nisisiafrica.Auth.LoginSignUpActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.firebase.auth.FirebaseAuth
 import androidx.lifecycle.lifecycleScope
+import com.app.nisisiafrica.Utils.Util
 import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
@@ -35,10 +36,10 @@ class LauncherActivity : AppCompatActivity() {
             insets
         }
 
-        Utils.init(this)
+        Util.init(this)
 
         lifecycleScope.launch {
-            val isFirstTime = Utils.getState("is-FirstTime", true)
+            val isFirstTime = Util.getState("is-FirstTime", true)
 //            val isFirstTime = true
             val intent: Intent = when {
                 isFirstTime -> {

@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
+import com.app.nisisiafrica.Utils.Util;
 import com.tbuonomo.viewpagerdotsindicator.DotsIndicator;
 
 public class IntroActivity extends AppCompatActivity{
@@ -40,7 +41,7 @@ public class IntroActivity extends AppCompatActivity{
         int[] layouts = new int[]{
                 R.layout.screen_one,
                 R.layout.screen_two,
-                R.layout.screen_one};
+                R.layout.screen_three};
 
         MyViewPagerAdapter myViewPagerAdapter = new MyViewPagerAdapter(this, layouts);
         viewPager2.setAdapter(myViewPagerAdapter);
@@ -74,8 +75,8 @@ public class IntroActivity extends AppCompatActivity{
         });
 
         startNow.setOnClickListener(v -> {
-            Utils.setClickAnimation(v, () -> {
-                Utils.saveState("is-FirstTime", false);
+            Util.setClickAnimation(v, () -> {
+                Util.saveState("is-FirstTime", false);
                 startActivity(new Intent(IntroActivity.this, LoginSignUpActivity.class));
                 finish();
             });

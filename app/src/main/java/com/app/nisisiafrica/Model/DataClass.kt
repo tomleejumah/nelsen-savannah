@@ -10,6 +10,20 @@ data class DataClass(
    var userData : UserData
 )
 
+enum class QuestionType { RADIO, CHECKBOX, TEXT }
+
+data class Question(
+    val id: String,
+    val text: String,
+    val type: QuestionType,
+    val options: List<String> = emptyList()
+)
+
+data class Section(
+    val id: String,
+    val title: String,
+    val questions: List<Question>
+)
 data class CourseItem(
     val courseImageUrl: String,
 //    val isOnline: Boolean,

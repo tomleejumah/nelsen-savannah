@@ -14,14 +14,17 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/nisisi_logo"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.NisisiAfrica"
         tools:targetApi="31">
         <activity
-            android:name=".MentorProfileActivity"
+            android:name=".QuestionnaireActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileActivity"
             android:exported="false" />
         <activity
             android:name=".BookMentor"
@@ -30,6 +33,7 @@
             android:name=".LauncherActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:label="Nisisi Africa"
             android:theme="@style/Theme.Nisisi.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
