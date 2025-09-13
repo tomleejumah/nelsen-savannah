@@ -90,6 +90,7 @@ dependencies {
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
     implementation project (':fabtobottomnavigation')
+//    implementation project(':blurview')
     implementation ("com.hbb20:ccp:2.5.0")
     implementation libs.dotsindicator
     implementation libs.core.splashscreen

@@ -32,7 +32,7 @@ interface UserDao {
         @Insert
         fun insertUserRx(user: UserData): Completable
 
-        @Query("SELECT * FROM user_data WHERE id = :userId")
+        @Query("SELECT * FROM user_data WHERE id LIKE :userId")
         fun getUserByIdRx(userId: String): Maybe<UserData>
 
         @Query("SELECT * FROM user_data")

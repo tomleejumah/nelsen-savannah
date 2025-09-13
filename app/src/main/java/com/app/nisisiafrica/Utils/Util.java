@@ -122,9 +122,10 @@ public class Util {
         return failureMessage;
     }
 
-    public static void navigateToMainScreen(Context context, Class<?> destinationActivity, UserData userData) {
+    public static void navigateToMainScreen(Context context, Class<?> destinationActivity, boolean isFromAuth) {
         Intent intent = new Intent(context, destinationActivity);
-        if (userData != null) { intent.putExtra("USER_DATA", userData); }
+//        if (userData != null) { intent.putExtra("USER_DATA", userData); }
+        intent.putExtra("IS_FROM_AUTH", isFromAuth);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
     }

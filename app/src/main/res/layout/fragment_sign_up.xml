@@ -212,7 +212,7 @@
             android:layout_below="@+id/checkKeepMeIn"
             android:layout_marginHorizontal="30dp"
             android:layout_marginTop="20dp"
-            android:background="@drawable/btn_login_bg"
+            android:background="@drawable/bg_card"
             android:backgroundTint="#03A9F4"
             android:text="Sign-Up"
             android:textAllCaps="false" />

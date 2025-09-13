@@ -25,10 +25,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
+import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
+import com.app.nisisiafrica.FirebaseCallback;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
@@ -51,10 +54,13 @@ public class LoginFragment extends Fragment {
     private FacebookAuthHelper facebookAuthHelper;
     private ImageView emailCheckIcon;
     private SnackbarHandler snackbarHandler;
+    private SharedUserViewModel sharedUserViewModel;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        sharedUserViewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
 
         ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -85,15 +91,18 @@ public class LoginFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
             // Handle successful login
-            Util.navigateToMainScreen(requireContext(), MainActivity.class, userData);
-            return null;
+            sharedUserViewModel.saveUserData(userData);
+            sharedUserViewModel.setUserData(userData);
+            Util.saveState("UserID",userData.getId());
+            Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
+            return Unit.INSTANCE;
         });
 
         facebookAuthHelper.addOnLoginErrorListener(exception -> {
             // Handle login error
             Log.e("Facebook", "Login failed", exception);
             snackbarHandler.showSnackbar("Login failed please retry", Snackbar.LENGTH_SHORT, 3);
-            return null;
+            return Unit.INSTANCE;
         });
     }
 
@@ -241,12 +250,33 @@ public class LoginFragment extends Fragment {
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 //todo get user id then move to next activity
-//                SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
-//                viewModel.setUserData(userData);
-                String userID = mAuth.getCurrentUser().getUid();
-                Util.saveState("UserID",userID);
-                Util.navigateToMainScreen(getContext(), MainActivity.class, null);
-                Log.d(TAG, "login: Success");
+                FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
+                    @Override
+                    public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
+                        Util.saveState("UserID",userData.getId());
+                        sharedUserViewModel.saveUserData(userData);
+                        sharedUserViewModel.setUserData(userData);
+
+                        Util.navigateToMainScreen(getContext(), MainActivity.class, true);
+                        Log.d(TAG, "login: Success");
+                    }
+
+                    @Override
+                    public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
+//                        FirebaseCallback.super.onMentorDataFetched(mentors);
+                    }
+
+                    @Override
+                    public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
+//                        FirebaseCallback.super.onMentorsIDFetched(mentorIds);
+                    }
+
+                    @Override
+                    public void onError(@org.jetbrains.annotations.Nullable Exception e) {
+//                        FirebaseCallback.super.onError(e);
+                    }
+                });
+
             } else {
                 String failureMessage = Util.getErrorString(task);
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
@@ -276,12 +306,12 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-//                        Log.d(TAG, "goToNextActivity: Success");
+//                        Util.saveState("UserID",userData.getId());
+                        Log.d(TAG, "login: Success"+userData.getId());
+                        sharedUserViewModel.saveUserData(userData);
+                        sharedUserViewModel.setUserData(userData);
 
-                        SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
-                        viewModel.setUserData(userData);
-                        Util.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
-                        Util.navigateToMainScreen(requireContext(), MainActivity.class, null);
+                        Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                     }
                     return Unit.INSTANCE;
                 },
