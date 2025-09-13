@@ -18,7 +18,7 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.customsnackbarlib.CustomSnackbar;
-import com.app.nisisiafrica.Auth.FirebaseUserHelper;
+import com.app.nisisiafrica.Utils.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;

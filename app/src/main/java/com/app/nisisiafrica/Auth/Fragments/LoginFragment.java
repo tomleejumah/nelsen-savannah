@@ -25,7 +25,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
-import com.app.nisisiafrica.Auth.FirebaseUserHelper;
+import com.app.nisisiafrica.Utils.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;

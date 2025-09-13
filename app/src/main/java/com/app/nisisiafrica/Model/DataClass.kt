@@ -48,7 +48,6 @@ data class MentorItem(
 //    val mentorLink: String,
 )
 
-//todo remove the parceble boiler code
 @Entity(tableName = "user_data")
 data class UserData (
     @PrimaryKey var id: String,
@@ -60,7 +59,9 @@ data class UserData (
     var photoUrl: String? = null,
     var bio: String? = null,
     var lastLogin: Long? = null
-) : Parcelable {
+)
+
+    : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
         parcel.readString() ?: "",

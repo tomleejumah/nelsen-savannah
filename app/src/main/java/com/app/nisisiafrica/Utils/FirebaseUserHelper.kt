@@ -1,4 +1,4 @@
-package com.app.nisisiafrica.Auth
+package com.app.nisisiafrica.Utils
 
 import android.content.Context
 import android.util.Log
@@ -136,7 +136,7 @@ object FirebaseUserHelper {
     }
 
     //todo update this when mentors get fed to db
-    fun getMentorData(firebaseCallback: FirebaseCallback, userID: String) {
+    fun getMentorData(userID: String, firebaseCallback: FirebaseCallback) {
         val dbRef = FirebaseDatabase.getInstance().reference
         if (userID.isEmpty()) {
             firebaseCallback.onMentorDataFetched(null)
@@ -149,13 +149,20 @@ object FirebaseUserHelper {
                 if (!snapshot.exists()) {
                     val mentorData = MentorItem(
                         mentorId = snapshot.child("mentorId").getValue(String::class.java) ?: "",
-                        mentorImageUrl = snapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
-                        mentorName = snapshot.child("mentorName").getValue(String::class.java) ?: "",
-                        mentorDescription = snapshot.child("mentorDescription").getValue(String::class.java) ?: "",
-                        studentsCount = snapshot.child("studentsCount").getValue(String::class.java) ?: "",
-                        studentImages = snapshot.child("studentImages").getValue(List::class.java) as? List<String> ?: listOf(),
-                        bookedDates = snapshot.child("bookedDates").getValue(Set::class.java) as? Set<LocalDate> ?: setOf()    ,
-                        courses = snapshot.child("courses").getValue(List::class.java) as? List<CourseItem> ?: listOf(),
+                        mentorImageUrl = snapshot.child("mentorImageUrl")
+                            .getValue(String::class.java) ?: "",
+                        mentorName = snapshot.child("mentorName").getValue(String::class.java)
+                            ?: "",
+                        mentorDescription = snapshot.child("mentorDescription")
+                            .getValue(String::class.java) ?: "",
+                        studentsCount = snapshot.child("studentsCount").getValue(String::class.java)
+                            ?: "",
+                        studentImages = snapshot.child("studentImages")
+                            .getValue(List::class.java) as? List<String> ?: listOf(),
+                        bookedDates = snapshot.child("bookedDates")
+                            .getValue(Set::class.java) as? Set<LocalDate> ?: setOf(),
+                        courses = snapshot.child("courses")
+                            .getValue(List::class.java) as? List<CourseItem> ?: listOf(),
 
                         )
                     firebaseCallback.onMentorDataFetched(mentorData)
@@ -168,6 +175,24 @@ object FirebaseUserHelper {
                 Log.e("Firebase", "Error getting user data", error.toException())
             }
         })
+    }
+
+    fun saveOrUpdateMentor(
+        mentorData: MentorItem,
+        mentorsRef: DatabaseReference,
+        onSuccess: ((Boolean) -> Unit)?,
+        onError: ((Exception) -> Unit)?
+    ) {
+        val mentor = hashMapOf(
+            "mentorId" to mentorData.mentorId,
+            "mentorImageUrl" to mentorData.mentorImageUrl,
+            "mentorName" to mentorData.mentorName,
+            "mentorDescription" to mentorData.mentorDescription,
+            "studentsCount" to mentorData.studentsCount,
+            "studentImages" to mentorData.studentImages,
+            "bookedDates" to mentorData.bookedDates,
+            "courses" to mentorData.courses
+        )
     }
 
 
