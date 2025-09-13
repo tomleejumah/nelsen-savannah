@@ -18,7 +18,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,7 +25,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
-import com.app.nisisiafrica.Auth.FirebaseUserHelper;
+import com.app.nisisiafrica.Utils.FirebaseUserHelper;
+import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.FirebaseCallback;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
@@ -113,8 +113,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         CircleImageView imgDp = view.findViewById(R.id.imgDp);
         viewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
             if (data != null) {
+                userData = data;
                 onUserDataReceived(data);
-                Log.d(TAG, "onCreateView: "+data.getPhotoUrl());
+                Log.d(TAG, "onCreateView: "+userData.getPhotoUrl());
                 Glide.with(this)
                         .load(data.getPhotoUrl())
                         .placeholder(R.drawable.donation)
@@ -237,7 +238,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         view.findViewById(R.id.imgDp).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), ProfileActivity.class);
-            intent.putExtra("isMentor", false);
+            intent.putExtra(Constants.IS_MENTOR, false);
+            intent.putExtra(Constants.USER_ID, userData.getId());
             startActivity(intent);
         });
 
@@ -358,8 +360,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         pendingRequests = mentorIds.size();
         for (String mentorId : mentorIds) {
             if (mentorId == null) break;
-            //todo fetch mentor data from firebase
-            FirebaseUserHelper.INSTANCE.getMentorData(this, mentorId);
+            FirebaseUserHelper.INSTANCE.getMentorData(mentorId,this );
         }
     }
 

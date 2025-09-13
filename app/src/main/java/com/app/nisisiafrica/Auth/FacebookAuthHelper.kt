@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.Utils.FirebaseUserHelper
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback

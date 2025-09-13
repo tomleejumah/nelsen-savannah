@@ -2,6 +2,7 @@ package com.app.nisisiafrica;
 
 import android.app.Application;
 
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.app.nisisiafrica.Dao.UserDao;
@@ -13,6 +14,9 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        //todo switch dark and light mode
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         Util.init(this);
         appDatabase = AppDatabase.getInstance(this);
 
