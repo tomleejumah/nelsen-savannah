@@ -21,6 +21,9 @@
         android:theme="@style/Theme.NisisiAfrica"
         tools:targetApi="31">
         <activity
+            android:name=".ViewAllActivity"
+            android:exported="false" />
+        <activity
             android:name=".QuestionnaireActivity"
             android:exported="false" />
         <activity
@@ -32,8 +35,8 @@
         <activity
             android:name=".LauncherActivity"
             android:exported="true"
-            android:launchMode="singleTop"
             android:label="Nisisi Africa"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.Nisisi.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

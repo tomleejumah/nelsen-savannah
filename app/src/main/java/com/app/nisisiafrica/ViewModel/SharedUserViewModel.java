@@ -18,7 +18,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-//todo fix the loic issue of data accross
+//todo fix the logic issue of data across
 public class SharedUserViewModel  extends AndroidViewModel {
     private static final String TAG = "SharedUserViewModel";
     private UserDao userDao;
@@ -34,34 +34,52 @@ public class SharedUserViewModel  extends AndroidViewModel {
         userData.setValue(data);
     }
 
-    @SuppressLint("CheckResult")
     public LiveData<UserData> getUserData() {
+        return userData;
+    }
 
-//        userDao.getAllUsersRx().subscribe(
-//                users -> Log.d(TAG, "Users found: " + users),
-//                error -> Log.e(TAG, "Error: ", error),
-//                () -> Log.d(TAG, "No users found") // onComplete
-//        );
-//
-//        userDao.getUserByIdRx(Utils.getState("UserID", ""))
-//                .subscribe(
-//                        user -> Log.d(TAG, "User found: " + user),
-//                        error -> Log.e(TAG, "Error: ", error),
-//                        () -> Log.d(TAG, "No user found") // onComplete
-//                );
+    @SuppressLint("CheckResult")
+    public LiveData<UserData> fetchingUserDataFromDB(String id) {
+
         disposables.add(
-                userDao.getUserByIdRx(Util.getState("UserID", ""))
+                userDao.getUserByIdRx(id)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
                                 user -> {
-                                    Log.d(TAG, "getUserData: " + user);
+                                    Log.d(TAG, "Fetched user: " + user);
                                     userData.setValue(user);
                                 },
-                                throwable -> Log.e(TAG, "Error fetching user data", throwable)
+                                throwable -> Log.e(TAG, "Error fetching user data", throwable),
+                                () -> Log.d(TAG, "No user found for id: " + id) // <-- works if Maybe<>
                         )
+//        );
         );
         return userData;
+    }
+
+    @SuppressLint("CheckResult")
+    public void saveUserData(UserData userData) {
+        userData.setId(Util.getState("UserID", ""));
+
+        userDao.insertUserRx(userData)
+                .subscribe(() -> {
+                    Log.d("ViewModel", "User inserted successfully");
+                }, throwable -> {
+                    Log.e("ViewModel", "Error inserting user", throwable);
+                });
+    }
+
+    public void updateUserData(UserData userData) {
+        disposables.add(
+                userDao.updateUserRx(userData)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                () -> Log.d(TAG, "User updated successfully"),
+                                throwable -> Log.e(TAG, "Error updating user", throwable)
+                        )
+        );
     }
 
     @Override

@@ -22,72 +22,77 @@ import java.util.List;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHolder> {
-        private final boolean isExpanded;
-        private final List<MentorItem> mentorItems;
-        private final Context mContext;
+    private  boolean isExpanded;
+    private  List<MentorItem> mentorItems;
+    private  Context mContext;
 
-    public MentorsAdapter(boolean isExpanded, List<MentorItem> mentorItems, Context mContext) {
-            this.isExpanded = isExpanded;
-            this.mentorItems = mentorItems;
-            this.mContext = mContext;
+    public MentorsAdapter(boolean isExpanded,Context mContext) {
+        this.isExpanded = isExpanded;
+        this.mContext = mContext;
+    }
+
+    public MentorsAdapter(List<MentorItem> mentorItems) {
+        this.mentorItems = mentorItems;
+    }
+
+
+    @NonNull
+    @Override
+    public MentorsAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_mentor, parent, false);
+
+        return new MentorsAdapter.ViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
+        holder.bind(mentorItems.get(position));
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(mContext, ProfileActivity.class);
+            intent.putExtra("mentor", mentorItems.get(position).getMentorId());
+            mContext.startActivity(intent);
+        });
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return super.getItemViewType(position);
+    }
+
+    @Override
+    public int getItemCount() {
+        return (isExpanded) ? mentorItems.size() : Math.min(mentorItems.size(), 3);
+    }
+
+    public class ViewHolder extends RecyclerView.ViewHolder {
+        private CircleImageView ivTutorProfile;
+        private TextView tvTutorName;
+        private TextView tvTutorDescription;
+        private TextView tvStudentsCount;
+        private AppCompatButton btnBookNow;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+
+            ivTutorProfile = itemView.findViewById(R.id.iv_tutor_profile);
+            tvTutorName = itemView.findViewById(R.id.tv_tutor_name);
+            tvTutorDescription = itemView.findViewById(R.id.tv_tutor_description);
+            tvStudentsCount = itemView.findViewById(R.id.tv_students_count);
+            btnBookNow = itemView.findViewById(R.id.btn_book_now);
+
         }
 
-        @NonNull
-        @Override
-        public MentorsAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view= LayoutInflater.from(parent.getContext()).inflate(R.layout.item_mentor ,parent,false);
-
-            return new MentorsAdapter.ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
-            holder.bind(mentorItems.get(position));
-            holder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(mContext, ProfileActivity.class);
-                intent.putExtra("mentor", mentorItems.get(position).getMentorId());
-                mContext.startActivity(intent);
-            });
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            return super.getItemViewType(position);
-        }
-
-        @Override
-        public int getItemCount() {
-            return (isExpanded) ? mentorItems.size() : Math.min(mentorItems.size(),3);
-        }
-        public class ViewHolder extends RecyclerView.ViewHolder{
-            private  CircleImageView ivTutorProfile;
-            private TextView tvTutorName;
-            private TextView tvTutorDescription;
-            private TextView tvStudentsCount;
-            private AppCompatButton btnBookNow;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-
-                ivTutorProfile = itemView.findViewById(R.id.iv_tutor_profile);
-                tvTutorName = itemView.findViewById(R.id.tv_tutor_name);
-                tvTutorDescription = itemView.findViewById(R.id.tv_tutor_description);
-                tvStudentsCount = itemView.findViewById(R.id.tv_students_count);
-                btnBookNow = itemView.findViewById(R.id.btn_book_now);
-
-            }
-
-            void bind(MentorItem mentorItem){
+        void bind(MentorItem mentorItem) {
 //                Glide.with(mContext).load(mentorItem.getMentorImageUrl()).into(ivTutorProfile);
-                tvTutorName.setText(mentorItem.getMentorName());
-                tvTutorDescription.setText(mentorItem.getMentorDescription());
+            tvTutorName.setText(mentorItem.getMentorName());
+            tvTutorDescription.setText(mentorItem.getMentorDescription());
 //                tvStudentsCount.setText(mentorItem.getStudentsCount());
-                btnBookNow.setOnClickListener(v -> {
-                    Intent intent = new Intent(mContext, BookMentor.class);
+            btnBookNow.setOnClickListener(v -> {
+                Intent intent = new Intent(mContext, BookMentor.class);
                 intent.putExtra("mentor", mentorItem.getMentorId());
                 mContext.startActivity(intent);
-                });
+            });
 
-            }
         }
+    }
 }

@@ -46,23 +46,22 @@
     <color name="light_blue_A200">#FF40C4FF</color>
     <color name="light_blue_A400">#FF00B0FF</color>
     <color name="black_overlay">#66000000</color>
-        <!-- Primary Colors -->
-        <color name="primary_gradient_start">#6366F1</color>
-        <color name="primary_gradient_end">#8B5CF6</color>
-        <color name="primary_dark">#4F46E5</color>
+    <!-- Primary Colors -->
+    <color name="primary_gradient_start">#6366F1</color>
+    <color name="primary_gradient_end">#8B5CF6</color>
+    <color name="primary_dark">#4F46E5</color>
 
-        <!-- Background Colors -->
-        <color name="background_primary">#F8FAFC</color>
-        <color name="background_secondary">#F1F5F9</color>
-        <color name="card_background">#FFFFFF</color>
+    <!-- Background Colors -->
+    <color name="background_primary">#F8FAFC</color>
+    <color name="background_secondary">#F1F5F9</color>
+    <color name="card_background">#FFFFFF</color>
 
-        <!-- Text Colors -->
-        <color name="text_primary">#1E293B</color>
-        <color name="text_secondary">#64748B</color>
-        <color name="text_tertiary">#94A3B8</color>
-
-        <!-- Accent Colors -->
-        <color name="accent_success">#10B981</color>
+    <!-- Text Colors -->
+    <color name="text_primary">#1E293B</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_tertiary">#94A3B8</color>
+    <color name="colorOverlay">#40FFFFFF</color>
+    <color name="accent_success">#10B981</color>
 
     <!-- Accent Colors -->
     <color name="accent_warning">#F59E0B</color>
