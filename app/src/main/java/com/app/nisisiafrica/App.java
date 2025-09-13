@@ -2,6 +2,8 @@ package com.app.nisisiafrica;
 
 import android.app.Application;
 
+import androidx.lifecycle.ProcessLifecycleOwner;
+
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Utils.Util;
@@ -13,6 +15,9 @@ public class App extends Application {
         super.onCreate();
         Util.init(this);
         appDatabase = AppDatabase.getInstance(this);
+
+        ProcessLifecycleOwner.get().getLifecycle()
+                .addObserver(new AppLifecycleObserver(this));
 
     }
     public static AppDatabase getAppDatabase() {
