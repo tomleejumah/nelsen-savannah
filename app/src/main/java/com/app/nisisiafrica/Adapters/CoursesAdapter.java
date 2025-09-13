@@ -34,7 +34,7 @@ public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHold
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view= LayoutInflater.from(parent.getContext()).inflate(
-                isExpanded ? com.app.nisisiafrica.R.layout.card_course_item_flex : R.layout.card_course_item,parent,false);
+                isExpanded ? com.app.nisisiafrica.R.layout.item_course_flex : R.layout.item_course,parent,false);
 
         return new CoursesAdapter.ViewHolder(view);
     }

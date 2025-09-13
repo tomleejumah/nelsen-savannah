@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
 import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
@@ -36,7 +37,8 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         });
 
         SharedUserViewModel viewModel = new ViewModelProvider((this)).get(SharedUserViewModel.class);
-        viewModel.getUserData().observe((this), data -> {
+        String userID = Util.getState("UserID", "");
+        viewModel.fetchingUserDataFromDB(userID).observe((this), data -> {
             if (data != null) {
                 Log.d("BookMentor", "User First Name: " + data.getFirstName());
                 userData = data;
