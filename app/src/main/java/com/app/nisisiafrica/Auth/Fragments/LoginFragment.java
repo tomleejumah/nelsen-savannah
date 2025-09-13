@@ -34,9 +34,9 @@ import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.app.nisisiafrica.Utils.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -93,7 +93,7 @@ public class LoginFragment extends Fragment {
             // Handle successful login
             sharedUserViewModel.saveUserData(userData);
             sharedUserViewModel.setUserData(userData);
-            Util.saveState("UserID",userData.getId());
+            Util.saveState("UserID", userData.getId());
             Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
@@ -249,11 +249,10 @@ public class LoginFragment extends Fragment {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                //todo get user id then move to next activity
                 FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
                     @Override
                     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
-                        Util.saveState("UserID",userData.getId());
+                        Util.saveState("UserID", userData.getId());
                         sharedUserViewModel.saveUserData(userData);
                         sharedUserViewModel.setUserData(userData);
 
@@ -263,17 +262,14 @@ public class LoginFragment extends Fragment {
 
                     @Override
                     public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
-//                        FirebaseCallback.super.onMentorDataFetched(mentors);
                     }
 
                     @Override
                     public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
-//                        FirebaseCallback.super.onMentorsIDFetched(mentorIds);
                     }
 
                     @Override
                     public void onError(@org.jetbrains.annotations.Nullable Exception e) {
-//                        FirebaseCallback.super.onError(e);
                     }
                 });
 
@@ -306,8 +302,7 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-//                        Util.saveState("UserID",userData.getId());
-                        Log.d(TAG, "login: Success"+userData.getId());
+                        Log.d(TAG, "login: Success" + userData.getId());
                         sharedUserViewModel.saveUserData(userData);
                         sharedUserViewModel.setUserData(userData);
 

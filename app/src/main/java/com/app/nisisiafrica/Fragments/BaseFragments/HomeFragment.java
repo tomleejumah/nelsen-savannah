@@ -108,18 +108,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-//        overlapImage(view);
         SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
-//        userData = viewModel.getUserData().getValue();
-
-//        viewModel.fetchingUserDataFromDB().observe(getViewLifecycleOwner(), data -> {
-//            Log.d("HomeFragment", "User Data Changed");
-//            if (data != null) {
-//                Log.d("HomeFragment", "User First Name: " + data.getFirstName());
-//                userData = data;
-//                Toast.makeText(getActivity(), "Welcome " + data.getFirstName(), Toast.LENGTH_SHORT).show();
-//            } else Log.d("HomeFragment", "User data is null");
-//        });
 
         CircleImageView imgDp = view.findViewById(R.id.imgDp);
         viewModel.getUserData().observe(getViewLifecycleOwner(), data -> {

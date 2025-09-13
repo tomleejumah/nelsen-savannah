@@ -19,23 +19,24 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 //todo fix the logic issue of data across
-public class SharedUserViewModel  extends AndroidViewModel {
+public class SharedUserViewModel extends AndroidViewModel {
     private static final String TAG = "SharedUserViewModel";
-    private UserDao userDao;
     private final MutableLiveData<UserData> userData = new MutableLiveData<>();
     private final CompositeDisposable disposables = new CompositeDisposable();
+    private UserDao userDao;
+
     public SharedUserViewModel(@NonNull Application application) {
         super(application);
         userDao = App.getUserDao();
     }
 
-    public void setUserData(UserData data) {
-        Log.d(TAG, "setUserData: "+userData.toString());
-        userData.setValue(data);
-    }
-
     public LiveData<UserData> getUserData() {
         return userData;
+    }
+
+    public void setUserData(UserData data) {
+        Log.d(TAG, "setUserData: " + userData.toString());
+        userData.setValue(data);
     }
 
     @SuppressLint("CheckResult")
@@ -53,7 +54,6 @@ public class SharedUserViewModel  extends AndroidViewModel {
                                 throwable -> Log.e(TAG, "Error fetching user data", throwable),
                                 () -> Log.d(TAG, "No user found for id: " + id) // <-- works if Maybe<>
                         )
-//        );
         );
         return userData;
     }
