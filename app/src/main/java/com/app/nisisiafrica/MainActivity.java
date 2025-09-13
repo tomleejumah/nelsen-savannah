@@ -21,12 +21,11 @@ import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Dao.UserDao;
-import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
+import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
-
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -56,16 +55,16 @@ import kotlin.Unit;
 public class MainActivity extends AppCompatActivity implements HomeFragment.onScrollChangeListener {
     private static final String TAG = "MainActivity";
     private final CompositeDisposable disposables = new CompositeDisposable(); // For RxJava cleanup
+    private final HomeFragment homeFragment = new HomeFragment();
+    private final ChatFragment chatFragment = new ChatFragment();
+    private final SettingsFragment settingsFragment = new SettingsFragment();
+    ChipNavigationBar chipNavigationBar;
     private String userRole, currentUser;
     private UserData userData;
     private UserDao userDao;
     private Intent intent;
     private SharedUserViewModel sharedUserViewModel1;
     private FragmentManager fragmentManager;
-    private final HomeFragment homeFragment = new HomeFragment();
-    private final ChatFragment chatFragment = new ChatFragment();
-    private final SettingsFragment settingsFragment = new SettingsFragment();
-    ChipNavigationBar chipNavigationBar;
     private Fragment currentlyDisplayedFragment = null;
     private FabToBottomNavigationAnim fabToBottomNavigationAnim;
     private FloatingActionButton fabView;
@@ -78,9 +77,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Initialize database
-//        AppDatabase appDatabase = AppDatabase.getInstance(this);
-//        userDao = appDatabase.userDao();
         userDao = App.getUserDao();
 
         // Check for logged-in user
@@ -101,27 +97,23 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         sharedUserViewModel1 = new ViewModelProvider(this).get(SharedUserViewModel.class);
         intent = getIntent();
-//        if (intent != null && intent.hasExtra("IS_FROM_AUTH")) {
-            boolean isFromAuth = intent.getBooleanExtra("IS_FROM_AUTH", false);
-            Log.d(TAG, "onCreate: isFromAuth: " + isFromAuth);
-            if (isFromAuth) {
-                //handle fresh data
-                sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::handleFreshUserData);
-            }else handleCachedUser();
-//        }
-
-        
+        boolean isFromAuth = intent.getBooleanExtra("IS_FROM_AUTH", false);
+        Log.d(TAG, "onCreate: isFromAuth: " + isFromAuth);
+        if (isFromAuth) {
+            //handle fresh data
+            sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::handleFreshUserData);
+        } else handleCachedUser();
 
         fragmentManager = getSupportFragmentManager();
         preloadAllFragments();
 
-            if (savedInstanceState == null) {
-                replaceFragment(homeFragment);
-            }
+        if (savedInstanceState == null) {
+            replaceFragment(homeFragment);
+        }
 //TODO: show dialog fragment once everyday  new FullscreenDialogFragment(this).show();
 
         CardView cardChipNavigation = findViewById(R.id.cardChipNavigation);
-            fabView = findViewById(R.id.fab);
+        fabView = findViewById(R.id.fab);
         chipNavigationBar = findViewById(R.id.chipNavigationBar);
         chipNavigationBar.setItemSelected(R.id.homeFragment, true);
 
@@ -137,8 +129,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         fabToBottomNavigationAnim = new FabToBottomNavigationAnim(fabView, cardChipNavigation);
 
-        fabView.setOnClickListener(v->{
-           fabToBottomNavigationAnim.showNavigationView();
+        fabView.setOnClickListener(v -> {
+            fabToBottomNavigationAnim.showNavigationView();
         });
     }
 
@@ -147,11 +139,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 //        return navController.navigateUp() || super.onSupportNavigateUp();
 //    }
 
-    public void hideBottomBar(){
+    public void hideBottomBar() {
         fabToBottomNavigationAnim.hideNavigationView();
     }
 
-    public void showBottomBar(){
+    public void showBottomBar() {
         fabToBottomNavigationAnim.showNavigationView();
     }
 
@@ -229,7 +221,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void updateUserDataAndShowWelcome(UserData userData) {
         Util.saveState("userRole", userRole);
         userData.setUserRole(userRole);
-//        saveToDb(userData);
         sharedUserViewModel1.updateUserData(userData);
         sharedUserViewModel1.setUserData(userData);
         CustomSnackbar.show(findViewById(android.R.id.content),
@@ -264,46 +255,45 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void fetchAndCompareUserData(UserData cachedUserData) {
-       FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
-           @Override
-           public void onUserDataReceived(@Nullable UserData fetchedUserData) {
-               if (fetchedUserData != null) {
-                   userData = !cachedUserData.equals(fetchedUserData)
-                           ? fetchedUserData : cachedUserData;
-//                   updateDb(userData);
-                   sharedUserViewModel1.updateUserData(userData);
-                   sharedUserViewModel1.setUserData(userData);
+        FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
+            @Override
+            public void onUserDataReceived(@Nullable UserData fetchedUserData) {
+                if (fetchedUserData != null) {
+                    userData = !cachedUserData.equals(fetchedUserData)
+                            ? fetchedUserData : cachedUserData;
+                    sharedUserViewModel1.updateUserData(userData);
+                    sharedUserViewModel1.setUserData(userData);
 
-                   Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
-               } else {
-                   Log.d(TAG, "No fetched data available...re using cached data");
-                   if (cachedUserData != null) {
-                       userData = cachedUserData;
-                       sharedUserViewModel1.setUserData(cachedUserData);
-                       Log.d(TAG, "Using cached data as fallback");
-                   } else {
-                       Log.d(TAG, "No cached or cloud data, redirecting to login");
-                       redirectToLogin();
-                   }
-               }
+                    Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+                } else {
+                    Log.d(TAG, "No fetched data available...re using cached data");
+                    if (cachedUserData != null) {
+                        userData = cachedUserData;
+                        sharedUserViewModel1.setUserData(cachedUserData);
+                        Log.d(TAG, "Using cached data as fallback");
+                    } else {
+                        Log.d(TAG, "No cached or cloud data, redirecting to login");
+                        redirectToLogin();
+                    }
+                }
 
-           }
+            }
 
-           @Override
-           public void onMentorDataFetched(@Nullable MentorItem mentors) {
-               // leave empty if unused
-           }
+            @Override
+            public void onMentorDataFetched(@Nullable MentorItem mentors) {
+                // leave empty if unused
+            }
 
-           @Override
-           public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
-               // leave empty if unused
-           }
+            @Override
+            public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
+                // leave empty if unused
+            }
 
-           @Override
-           public void onError(@Nullable Exception e) {
-               Log.e(TAG, "Error fetching data...Ru using cached data", e);
-           }
-       });
+            @Override
+            public void onError(@Nullable Exception e) {
+                Log.e(TAG, "Error fetching data...Ru using cached data", e);
+            }
+        });
 
     }
 
@@ -316,6 +306,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                         throwable -> Log.e(TAG, "Insert failed", throwable)
                 ));
     }
+
     private void updateDb(UserData userData) {
         disposables.add(userDao.updateUserRx(userData)
                 .subscribeOn(Schedulers.io())
@@ -325,6 +316,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                         throwable -> Log.e(TAG, "Failed to update user in DB", throwable)
                 ));
     }
+
     private void redirectToLogin() {
         startActivity(new Intent(this, LoginSignUpActivity.class));
         finish();
@@ -333,9 +325,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     @Override
     protected void onPause() {
         super.onPause();
-        // Save app background time
-        //todo use proper app state from andela med app
-        Util.saveState("lastAppBackground", System.currentTimeMillis());
     }
 
     @Override
