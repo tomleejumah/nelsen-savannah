@@ -57,10 +57,13 @@ public class SignUpFragment extends Fragment {
     private ImageView emailCheckIcon;
     private SnackbarHandler snackbarHandler;
     private FragmentSignUpBinding binding;
+    private SharedUserViewModel sharedUserViewModel;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        sharedUserViewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
 
         ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -92,7 +95,8 @@ public class SignUpFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
 
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
-            Util.navigateToMainScreen(requireContext(), MainActivity.class, userData);
+            sharedUserViewModel.saveUserData(userData);
+            Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
 
@@ -265,7 +269,8 @@ public class SignUpFragment extends Fragment {
             dbRef.child("users").child(mAuth.getCurrentUser().getUid()).setValue(map).
                     addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            dbRef.child("roles").child(id).push().setValue("Mentee");
+                            dbRef.child("roles").child(id).setValue("Mentee");
+//                            dbRef.child("roles").child(id).push().setValue("Mentee");
                             UserData userData = new UserData(
                                     id,
                                     email,
@@ -277,10 +282,10 @@ public class SignUpFragment extends Fragment {
                                     "",
                                     System.currentTimeMillis()
                             );
-                            SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
-                            viewModel.setUserData(userData);
+                            sharedUserViewModel.setUserData(userData);
+                            sharedUserViewModel.saveUserData(userData);
                             Util.saveState("UserID",id);
-                            Util.navigateToMainScreen(requireContext(), MainActivity.class, null);
+                            Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                         } else {
                             String failureMessage = Util.getErrorString(task);
                             snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
@@ -311,10 +316,10 @@ public class SignUpFragment extends Fragment {
                 isSuccess -> {
                     if (isSuccess) {
                         // Navigate to the next activity
-                        SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
-                        viewModel.setUserData(userData);
-                        Util.saveState("UserID",FirebaseAuth.getInstance().getCurrentUser().getUid());
-                        Util.navigateToMainScreen(requireContext(), MainActivity.class, null);
+                        sharedUserViewModel.setUserData(userData);
+                        sharedUserViewModel.saveUserData(userData);
+                        Util.saveState("UserID",userData.getId());
+                        Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                     }
                     return Unit.INSTANCE;
                 },

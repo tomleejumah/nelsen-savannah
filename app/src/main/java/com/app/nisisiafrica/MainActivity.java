@@ -24,6 +24,7 @@ import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
+import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
 
 import com.app.nisisiafrica.Utils.Util;
@@ -40,6 +41,10 @@ import com.google.firebase.database.ValueEventListener;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
 import com.trinitymirror.fabtobottomnavigation.FabToBottomNavigationAnim;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleEmitter;
@@ -55,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private UserData userData;
     private UserDao userDao;
     private Intent intent;
-    private SharedUserViewModel viewModel;
+    private SharedUserViewModel sharedUserViewModel1;
     private FragmentManager fragmentManager;
     private final HomeFragment homeFragment = new HomeFragment();
     private final ChatFragment chatFragment = new ChatFragment();
@@ -64,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private Fragment currentlyDisplayedFragment = null;
     private FabToBottomNavigationAnim fabToBottomNavigationAnim;
     private FloatingActionButton fabView;
+    //todo init viewmodel in application class
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return;
         }
         currentUser = firebaseUser.getUid();
-//        Utils.saveState("UserID", currentUser);
+        Util.saveState("UserID", currentUser);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -93,21 +99,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return insets;
         });
 
-//        intent = getIntent();
-//        if (intent != null && intent.hasExtra("USER_DATA")) {
-//            userData = intent.getParcelableExtra("USER_DATA");
-//            handleFreshUserData(userData);
-//        } else {
-//            handleCachedUser();
+        sharedUserViewModel1 = new ViewModelProvider(this).get(SharedUserViewModel.class);
+        intent = getIntent();
+//        if (intent != null && intent.hasExtra("IS_FROM_AUTH")) {
+            boolean isFromAuth = intent.getBooleanExtra("IS_FROM_AUTH", false);
+            Log.d(TAG, "onCreate: isFromAuth: " + isFromAuth);
+            if (isFromAuth) {
+                //handle fresh data
+                sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::handleFreshUserData);
+            }else handleCachedUser();
 //        }
 
         
-        viewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
-        viewModel.getUserData().observe(this, data -> {
-            if (data != null) {
-                handleFreshUserData(data);
-            }else handleCachedUser();
-        });
 
         fragmentManager = getSupportFragmentManager();
         preloadAllFragments();
@@ -181,12 +184,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void handleFreshUserData(UserData userData) {
-        if (userData == null) {
-            Log.e(TAG, "UserData is null, redirecting to login");
-            redirectToLogin();
-            return;
-        }
-
         userRole = userData.getUserRole();
 
         if (TextUtils.isEmpty(userRole)) {
@@ -232,8 +229,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void updateUserDataAndShowWelcome(UserData userData) {
         Util.saveState("userRole", userRole);
         userData.setUserRole(userRole);
-        saveToDb(userData);
-        viewModel.setUserData(userData);
+//        saveToDb(userData);
+        sharedUserViewModel1.updateUserData(userData);
+        sharedUserViewModel1.setUserData(userData);
         CustomSnackbar.show(findViewById(android.R.id.content),
                 "Welcome, " + userData.getFirstName() + "!",
                 Snackbar.LENGTH_SHORT, 5);
@@ -248,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         if (currentTime - lastAppBackground > cacheValidDuration) {
             Log.d(TAG, "Cache expired, logging out user");
-            disposables.add(userDao.deleteUserByIdRx(currentUser)
+            disposables.add(userDao.deleteUserByIdRx(userData.getId())
                     .subscribeOn(Schedulers.io())
                     .subscribe(
                             () -> Log.d(TAG, "User cache deleted"),
@@ -262,50 +260,51 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return;
         }
 
-       Log.d(TAG, "About to call getUserByIdRx with currentUser: " + currentUser);
-        disposables.add(userDao.getUserByIdRx(currentUser)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        cachedUserData -> {
-                            Log.d(TAG, "Using cached data");
-
-                            fetchAndCompareUserData(cachedUserData);
-
-                        },
-                        error -> {
-                            Log.e(TAG, "Error fetching cached user", error);
-                            fetchAndCompareUserData(null);
-                        },
-                        () -> {
-                            // onComplete - no data found (Maybe completed without emitting)
-                            Log.d(TAG, "No cached data found");
-                            fetchAndCompareUserData(null);
-                        }
-                ));
+        sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::fetchAndCompareUserData);
     }
 
     private void fetchAndCompareUserData(UserData cachedUserData) {
-        FirebaseUserHelper.INSTANCE.getCurrentUserAndData(fetchedUserData -> {
-            if (fetchedUserData != null) {
-                userData = (cachedUserData == null || !cachedUserData.equals(fetchedUserData))
-                        ? fetchedUserData : cachedUserData;
-                updateDb(userData);
-                viewModel.setUserData(userData);
+       FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
+           @Override
+           public void onUserDataReceived(@Nullable UserData fetchedUserData) {
+               if (fetchedUserData != null) {
+                   userData = !cachedUserData.equals(fetchedUserData)
+                           ? fetchedUserData : cachedUserData;
+//                   updateDb(userData);
+                   sharedUserViewModel1.updateUserData(userData);
+                   sharedUserViewModel1.setUserData(userData);
 
-                Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
-            } else {
-                    Log.d(TAG, "No fetched data available");
-                if (cachedUserData != null) {
-                    userData = cachedUserData;
-                    viewModel.setUserData(cachedUserData);
-                    Log.d(TAG, "Using cached data as fallback");
-                } else {
-                    Log.d(TAG, "No cached or cloud data, redirecting to login");
-                    redirectToLogin();
-                }
-            }
-        });
+                   Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+               } else {
+                   Log.d(TAG, "No fetched data available...re using cached data");
+                   if (cachedUserData != null) {
+                       userData = cachedUserData;
+                       sharedUserViewModel1.setUserData(cachedUserData);
+                       Log.d(TAG, "Using cached data as fallback");
+                   } else {
+                       Log.d(TAG, "No cached or cloud data, redirecting to login");
+                       redirectToLogin();
+                   }
+               }
+
+           }
+
+           @Override
+           public void onMentorDataFetched(@Nullable MentorItem mentors) {
+               // leave empty if unused
+           }
+
+           @Override
+           public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
+               // leave empty if unused
+           }
+
+           @Override
+           public void onError(@Nullable Exception e) {
+               Log.e(TAG, "Error fetching data...Ru using cached data", e);
+           }
+       });
+
     }
 
     private void saveToDb(UserData userData) {
@@ -335,6 +334,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     protected void onPause() {
         super.onPause();
         // Save app background time
+        //todo use proper app state from andela med app
         Util.saveState("lastAppBackground", System.currentTimeMillis());
     }
 

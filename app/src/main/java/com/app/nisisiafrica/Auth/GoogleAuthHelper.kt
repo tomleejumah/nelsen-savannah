@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.Utils.Util
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -117,13 +118,16 @@ class GoogleAuthHelper(
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
         val loggedInUser = FirebaseAuth.getInstance().currentUser?.uid
         Log.d(TAG, "saveUserToFirebase: ${loggedInUser.toString()}")
+        Util.saveState("UserID",loggedInUser.toString())
         usersRef.child(loggedInUser.toString()).get().addOnCompleteListener { task ->
             if (task.isSuccessful && task.result.exists()) {
                 Log.d("FirebaseDB", "User already exists, updating last login (Google)")
                 usersRef.child(loggedInUser.toString()).child("lastLogin").setValue(ServerValue.TIMESTAMP)
+                usersRef.child(loggedInUser.toString()).child("photoUrl").setValue(userData.photoUrl)
                 onSuccess(true)
             } else {
                 Log.d("FirebaseDB", "User does not exist, saving new user (Google)")
+                userData.id = loggedInUser.toString()
                 FirebaseUserHelper.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
             }
         }
