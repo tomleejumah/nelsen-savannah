@@ -130,7 +130,11 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             itemView.setAlpha(isEnabled ? 1f : 0.5f);
             edtFirstName.setEnabled(isEnabled);
             edtLastName.setEnabled(isEnabled);
-            edtFirstName.requestFocus();
+
+            if (firstName == null && lastName == null){
+                edtFirstName.requestFocus();
+            }else edtLastName.requestFocus();
+
 
             // Set existing values if available
             if (firstName != null) edtFirstName.setText(getFirstName());

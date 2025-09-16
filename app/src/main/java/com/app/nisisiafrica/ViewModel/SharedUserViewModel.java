@@ -12,9 +12,6 @@ import androidx.lifecycle.MutableLiveData;
 import com.app.nisisiafrica.App;
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.Model.UserData;
-import com.app.nisisiafrica.Utils.Util;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
@@ -42,7 +39,7 @@ public class SharedUserViewModel extends AndroidViewModel {
     }
 
     @SuppressLint("CheckResult")
-    public LiveData<UserData> fetchingUserDataFromDB(String id) {
+    public LiveData<UserData> fetchingCurrentUserDataFromDB(String id) {
 
         disposables.add(
                 userDao.getUserByIdRx(id)
@@ -50,7 +47,6 @@ public class SharedUserViewModel extends AndroidViewModel {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
                                 user -> {
-                                    Log.d(TAG, "Fetched user: " + user);
                                     userData.setValue(user);
                                 },
                                 throwable -> Log.e(TAG, "Error fetching user data", throwable),
@@ -62,8 +58,6 @@ public class SharedUserViewModel extends AndroidViewModel {
 
     @SuppressLint("CheckResult")
     public void saveUserData(UserData userData) {
-        userData.setId(Util.getState("UserID", ""));
-
         userDao.insertUserRx(userData)
                 .subscribe(() -> {
                     Log.d("ViewModel", "User inserted successfully");
