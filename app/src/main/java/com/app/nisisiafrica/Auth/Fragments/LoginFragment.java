@@ -25,7 +25,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
-import com.app.nisisiafrica.Auth.FirebaseUserHelper;
+import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
@@ -41,12 +42,14 @@ import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.List;
 
 import kotlin.Unit;
 
-//todo switch completely to binding
+//todo switch completely to binding also imp the firebase db helper
 public class LoginFragment extends Fragment {
     private static final String TAG = "LoginFragment";
     private FragmentLoginBinding binding;
@@ -249,7 +252,7 @@ public class LoginFragment extends Fragment {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
+                FirebaseDataBaseHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
                     @Override
                     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
                         Util.saveState("UserID", userData.getId());
@@ -266,6 +269,16 @@ public class LoginFragment extends Fragment {
 
                     @Override
                     public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
+                    }
+
+                    @Override
+                    public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
+//                        FirebaseCallback.super.onCoursesFetched(courses);
+                    }
+
+                    @Override
+                    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
+//                        FirebaseCallback.super.onMentorsFetched(mentors);
                     }
 
                     @Override

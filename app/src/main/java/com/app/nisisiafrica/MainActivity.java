@@ -15,17 +15,20 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.customsnackbarlib.CustomSnackbar;
-import com.app.nisisiafrica.Auth.FirebaseUserHelper;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
+import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
+import com.app.nisisiafrica.Utils.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -40,6 +43,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
 import com.trinitymirror.fabtobottomnavigation.FabToBottomNavigationAnim;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -52,15 +56,19 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Unit;
 
-public class MainActivity extends AppCompatActivity implements HomeFragment.onScrollChangeListener {
+public class MainActivity extends AppCompatActivity implements HomeFragment.onScrollChangeListener, FirebaseCallback {
     private static final String TAG = "MainActivity";
-    private final CompositeDisposable disposables = new CompositeDisposable(); // For RxJava cleanup
+    private final CompositeDisposable disposables = new CompositeDisposable();
     private final HomeFragment homeFragment = new HomeFragment();
     private final ChatFragment chatFragment = new ChatFragment();
     private final SettingsFragment settingsFragment = new SettingsFragment();
-    ChipNavigationBar chipNavigationBar;
+    private ChipNavigationBar chipNavigationBar;
     private String userRole, currentUser;
-    private UserData userData;
+    private UserData userData,cachedUserData;
+    private CourseItem courseItem;
+    private MentorItem mentorItem;
+    private List<MentorItem> mentorItemsList;
+    private List<CourseItem> courseItemsList;
     private UserDao userDao;
     private Intent intent;
     private SharedUserViewModel sharedUserViewModel1;
@@ -135,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
 //    @Override
-//    public boolean onSupportNavigateUp() {
+//    public boolean onSupporcoursestNavigateUp() {
 //        return navController.navigateUp() || super.onSupportNavigateUp();
 //    }
 
@@ -222,10 +230,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Util.saveState("userRole", userRole);
         userData.setUserRole(userRole);
         sharedUserViewModel1.updateUserData(userData);
-        sharedUserViewModel1.setUserData(userData);
-        CustomSnackbar.show(findViewById(android.R.id.content),
-                "Welcome, " + userData.getFirstName() + "!",
-                Snackbar.LENGTH_SHORT, 5);
+        SnackbarHandler snackbarHandler = (message, duration, type) -> {
+            CustomSnackbar.show(MainActivity.this, message, duration, type);
+        };
+        snackbarHandler.showSnackbar("Welcome, " + userData.getFirstName() + "!", Snackbar.LENGTH_LONG, 4);
+//        sharedUserViewModel1.setUserData(userData);
+//        CustomSnackbar.show(this,
+//                "Welcome, " + userData.getFirstName() + "!",
+//                Snackbar.LENGTH_SHORT, 4);
     }
 
     private void handleCachedUser() {
@@ -244,58 +256,72 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                             error -> Log.e(TAG, "Failed to delete user cache", error)
                     ));
 
-            FirebaseUserHelper.INSTANCE.signOutAll(this, () -> {
+            FirebaseDataBaseHelper.INSTANCE.signOutAll(this, () -> {
                 redirectToLogin();
                 return Unit.INSTANCE;
             });
             return;
         }
 
-        sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::fetchAndCompareUserData);
-    }
-
-    private void fetchAndCompareUserData(UserData cachedUserData) {
-        FirebaseUserHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
-            @Override
-            public void onUserDataReceived(@Nullable UserData fetchedUserData) {
-                if (fetchedUserData != null) {
-                    userData = !cachedUserData.equals(fetchedUserData)
-                            ? fetchedUserData : cachedUserData;
-                    sharedUserViewModel1.updateUserData(userData);
-                    sharedUserViewModel1.setUserData(userData);
-
-                    Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
-                } else {
-                    Log.d(TAG, "No fetched data available...re using cached data");
-                    if (cachedUserData != null) {
-                        userData = cachedUserData;
-                        sharedUserViewModel1.setUserData(cachedUserData);
-                        Log.d(TAG, "Using cached data as fallback");
-                    } else {
-                        Log.d(TAG, "No cached or cloud data, redirecting to login");
-                        redirectToLogin();
-                    }
-                }
-
-            }
-
-            @Override
-            public void onMentorDataFetched(@Nullable MentorItem mentors) {
-                // leave empty if unused
-            }
-
-            @Override
-            public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
-                // leave empty if unused
-            }
-
-            @Override
-            public void onError(@Nullable Exception e) {
-                Log.e(TAG, "Error fetching data...Ru using cached data", e);
-            }
+        sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, userData -> {
+            cachedUserData = userData;
+            FirebaseDataBaseHelper.INSTANCE.getUserAndData(MainActivity.this);
         });
 
+//        sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::fetchAndCompareUserData);
     }
+
+//    private void fetchAndCompareUserData(UserData cachedUserData) {
+//        FirebaseDataBaseHelper.INSTANCE.getUserAndData(this);
+
+//        FirebaseDataBaseHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
+//            @Override
+//            public void onUserDataReceived(@Nullable UserData fetchedUserData) {
+//                if (fetchedUserData != null) {
+//                    userData = !cachedUserData.equals(fetchedUserData)
+//                            ? fetchedUserData : cachedUserData;
+//
+//                   if(!userData.equals(cachedUserData)){
+//                       sharedUserViewModel1.updateUserData(userData);
+//                   }
+//                    //will update last login todo
+////
+////                    sharedUserViewModel1.setUserData(userData);
+//
+//                    Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+//                } else {
+//                    Log.d(TAG, "No fetched data available...re using cached data");
+//                    if (cachedUserData != null) {
+//                        userData = cachedUserData;
+//                        sharedUserViewModel1.setUserData(cachedUserData);
+//                        Log.d(TAG, "Using cached data as fallback");
+//                    } else {
+//                        Log.d(TAG, "No cached or cloud data, redirecting to login");
+//                        redirectToLogin();
+//                    }
+//                }
+//
+//            }
+//
+//            @Override
+//            public void onMentorDataFetched(@Nullable MentorItem mentors) {
+//            }
+//
+//            @Override
+//            public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
+//            }
+//
+//            @Override
+//            public void onCoursesFetched(@Nullable List<CourseItem> courses) {
+//            }
+//
+//            @Override
+//            public void onError(@Nullable Exception e) {
+//                Log.e(TAG, "Error fetching data...Ru using cached data", e);
+//            }
+//        });
+
+//    }
 
     private void saveToDb(UserData userData) {
         disposables.add(userDao.insertUserRx(userData)
@@ -344,4 +370,58 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     }
 
+    @Override
+    public void onUserDataReceived(@Nullable UserData fetchedUserData) {
+        if (fetchedUserData != null) {
+            userData = !cachedUserData.equals(fetchedUserData)
+                    ? fetchedUserData : cachedUserData;
+
+            if (!userData.equals(cachedUserData)) {
+                sharedUserViewModel1.updateUserData(userData);
+            }
+            //will update last login todo
+//
+//                    sharedUserViewModel1.setUserData(userData);
+
+            Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+        } else {
+            Log.d(TAG, "No fetched data available...re using cached data");
+            if (cachedUserData != null) {
+                userData = cachedUserData;
+                sharedUserViewModel1.setUserData(cachedUserData);
+                Log.d(TAG, "Using cached data as fallback");
+            } else {
+                Log.d(TAG, "No cached or cloud data, redirecting to login");
+                redirectToLogin();
+            }
+        }
+
+    }
+
+    @Override
+    public void onMentorDataFetched(@Nullable MentorItem mentors) {
+    }
+
+    @Override
+    public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
+    }
+
+    @Override
+    public void onCoursesFetched(@Nullable List<CourseItem> courses) {
+        Log.d(TAG, "onCoursesFetched: ");
+        if (courses == null) return;
+//        courseItemsList.addAll(courses);
+//        cour
+//        courseItemsList = courses;
+    }
+
+    @Override
+    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
+//        FirebaseCallback.super.onMentorsFetched(mentors);
+    }
+
+    @Override
+    public void onError(@Nullable Exception e) {
+        Log.e(TAG, "Error fetching data...Ru using cached data", e);
+    }
 }

@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -22,7 +23,8 @@ public class CustomSnackbar {
     private static final AnimatorSet animatorSet = new AnimatorSet();
     @SuppressLint("StaticFieldLeak")
     private static View currentSnackbar = null;
-    public static void show(ViewGroup rootView, String message, int duration, int type) {
+    public static void show(Activity activity, String message, int duration, int type) {
+        ViewGroup rootView = (ViewGroup) activity.getWindow().getDecorView();
         View customSnackbarView = createSnackbarView(rootView, message, type);
         showSnackbar(rootView, customSnackbarView, duration);
     }

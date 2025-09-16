@@ -3,6 +3,7 @@ package com.app.nisisiafrica.Adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,9 +14,11 @@ import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.BookMentor;
+import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
+import com.bumptech.glide.Glide;
 
 import java.util.List;
 
@@ -25,16 +28,13 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
     private  boolean isExpanded;
     private  List<MentorItem> mentorItems;
     private  Context mContext;
+    private static final String TAG = "MentorsAdapter";
 
-    public MentorsAdapter(boolean isExpanded,Context mContext) {
+    public MentorsAdapter(boolean isExpanded,Context mContext,List<MentorItem> mentorItems) {
         this.isExpanded = isExpanded;
         this.mContext = mContext;
-    }
-
-    public MentorsAdapter(List<MentorItem> mentorItems) {
         this.mentorItems = mentorItems;
     }
-
 
     @NonNull
     @Override
@@ -49,7 +49,9 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
         holder.bind(mentorItems.get(position));
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(mContext, ProfileActivity.class);
-            intent.putExtra("mentor", mentorItems.get(position).getMentorId());
+            intent.putExtra(Constants.IS_MENTOR, true);
+            intent.putExtra(Constants.MENTOR_ID, mentorItems.get(position).getMentorId());
+            Log.d(TAG, "onBindViewHolder: "+mentorItems.get(position).getMentorId());
             mContext.startActivity(intent);
         });
     }
@@ -83,7 +85,7 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
         }
 
         void bind(MentorItem mentorItem) {
-//                Glide.with(mContext).load(mentorItem.getMentorImageUrl()).into(ivTutorProfile);
+            Glide.with(mContext).load(mentorItem.getMentorImageUrl()).into(ivTutorProfile);
             tvTutorName.setText(mentorItem.getMentorName());
             tvTutorDescription.setText(mentorItem.getMentorDescription());
 //                tvStudentsCount.setText(mentorItem.getStudentsCount());
