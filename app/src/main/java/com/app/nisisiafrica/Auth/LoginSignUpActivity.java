@@ -43,7 +43,7 @@ public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHa
 
     @Override
     public void showSnackbar(String message, int duration, int type) {
-        RelativeLayout rootView = findViewById(R.id.rootView);
-        CustomSnackbar.show(rootView, message, duration, type);
+//        RelativeLayout rootView = findViewById(R.id.rootView);
+        CustomSnackbar.show(this, message, duration, type);
     }
 }

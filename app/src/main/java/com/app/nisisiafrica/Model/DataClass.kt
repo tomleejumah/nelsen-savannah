@@ -24,31 +24,30 @@ data class Section(
     val title: String,
     val questions: List<Question>
 )
+
 data class CourseItem(
-    val courseImageUrl: String,
-//    val isOnline: Boolean,
-    val tutorAvatarUrl: String,
-    val tutorName: String,
-    val courseTitle: String,
-    val duration: String,
-    val lessons: String,
-    val courseLink: String,
-    val isLiked: Boolean,
+    val tutorId: String = "",
+    val courseImageUrl: String = "",
+    val tutorAvatarUrl: String = "",
+    val tutorName: String = "",
+    val courseTitle: String = "",
+    val duration: String = "",
+    val lessons: String = "",
+    val courseLink: String = "",
+    val isLiked: Boolean = false
 )
 
 data class MentorItem(
-    val mentorId: String,
-    val mentorImageUrl: String,
-    val mentorName: String,
-    val mentorDescription: String,
-    val studentsCount: String,
-    val studentImages: List<String>,
-    val bookedDates: Set<LocalDate>,
-    val courses: List<CourseItem>,
-//    val mentorLink: String,
-)
+    val mentorId: String = "",
+    val mentorImageUrl: String = "",
+    val mentorName: String = "",
+    val mentorDescription: String = "",
+    val studentsCount: String? = null,
+    val studentImages: List<String>? = null,
+    val bookedDates: Set<LocalDate>? = null
 
-//todo remove the parceble boiler code
+//    val isOnline: Boolean = false
+)
 @Entity(tableName = "user_data")
 data class UserData (
     @PrimaryKey var id: String,
@@ -60,7 +59,9 @@ data class UserData (
     var photoUrl: String? = null,
     var bio: String? = null,
     var lastLogin: Long? = null
-) : Parcelable {
+)
+
+    : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
         parcel.readString() ?: "",

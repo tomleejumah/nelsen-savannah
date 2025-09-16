@@ -18,7 +18,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
-import com.app.nisisiafrica.Auth.FirebaseUserHelper;
+import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.FirebaseCallback;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
@@ -35,6 +34,7 @@ import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.QuestionnaireActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
+import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
 import com.app.nisisiafrica.ViewAllActivity;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.bumptech.glide.Glide;
@@ -51,6 +51,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.kizitonwose.calendar.view.CalendarView;
 import com.zen.overlapimagelistview.OverlapImageListView;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
 import java.time.LocalDate;
@@ -113,8 +115,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         CircleImageView imgDp = view.findViewById(R.id.imgDp);
         viewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
             if (data != null) {
+                userData = data;
                 onUserDataReceived(data);
-                Log.d(TAG, "onCreateView: "+data.getPhotoUrl());
+                Log.d(TAG, "onCreateView: " + userData.getPhotoUrl());
                 Glide.with(this)
                         .load(data.getPhotoUrl())
                         .placeholder(R.drawable.donation)
@@ -136,7 +139,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         timelineView.setVisibility(View.GONE);
         TextView tvMonthTitle = monthHeader.findViewById(R.id.tvMonthTitle);
         TextView dateHeader = calendarLayout.findViewById(R.id.dateHeader);
-         txtDateInfo = calendarLayout.findViewById(R.id.txtDateInfo);
+        txtDateInfo = calendarLayout.findViewById(R.id.txtDateInfo);
         dateHeader.setText("Your Calender");
         YearMonth currentMonth = YearMonth.now();
         tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
@@ -185,30 +188,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             }
         });
 
-        //courses
+        //getting courses from firebase
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         rcCourses.setLayoutManager(layoutManager);
-        //coursesList //todo fetch from db(firebase)
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        courseItemsList.add(new CourseItem("https://images.unsplash.com/photo-1755812321862-fc8396cd7961?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0N3x8fGVufDB8fHx8fA%3D%3D", "heye", "Juma Tomlee", "Data Structures",
-                "4 hrs", "4", "heye.com ", true));
-        coursesAdapter = new CoursesAdapter(false, courseItemsList, getContext());
+        coursesAdapter = new CoursesAdapter(courseItemsList, getContext());
         rcCourses.setAdapter(coursesAdapter);
-//        coursesAdapter.notifyAll();
 
         view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
             scrollChangeListener.onParentScroll(oldScrollY, scrollY);
@@ -220,15 +205,18 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         studentimages.add("url");
         studentimages.add("url");
 
+        //getting mentors from db
+
         rcMentors = view.findViewById(R.id.rcMentorList);
         LinearLayoutManager layoutManager1 = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         rcMentors.setLayoutManager(layoutManager1);
+        mentorsAdapter = new MentorsAdapter(false, getContext(), mentorItemsList);
+        rcMentors.setAdapter(mentorsAdapter);
+//        rcMentors.setHasFixedSize(true);
 
-        rcMentors.setHasFixedSize(true);
+
 //        rcMentors.setNestedScrollingEnabled(false);
-        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
-        params.height = calculateRecyclerViewHeight();
-        rcMentors.setLayoutParams(params);
+
 
         view.findViewById(R.id.txtRecorgnizeMe).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
@@ -237,7 +225,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         view.findViewById(R.id.imgDp).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), ProfileActivity.class);
-            intent.putExtra("isMentor", false);
+            intent.putExtra(Constants.IS_MENTOR, false);
+            intent.putExtra(Constants.USER_ID, userData.getId());
             startActivity(intent);
         });
 
@@ -248,9 +237,19 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         txtSeeAll.setOnClickListener(listener);
         showAll.setOnClickListener(listener);
 
-        getMentorsID();
+        fetchMentors();
+        fetchCourses();
+//        getMentorsID();
 
         return view;
+    }
+
+    private void fetchMentors() {
+        FirebaseDataBaseHelper.INSTANCE.fetchMentors(this);
+    }
+
+    private void fetchCourses() {
+        FirebaseDataBaseHelper.INSTANCE.fetchCourses(this);
     }
 
     private void getMentorsID() {
@@ -358,10 +357,34 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         pendingRequests = mentorIds.size();
         for (String mentorId : mentorIds) {
             if (mentorId == null) break;
+
             //todo fetch mentor data from firebase
-            FirebaseUserHelper.INSTANCE.getMentorData(this, mentorId);
+//            FirebaseDataBaseHelper.INSTANCE.getMentorData(mentorId,this );
         }
     }
+    @Override
+    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
+        Log.d("DEBUG", "Mentors received: " + mentors.size());
+        mentorItemsList.clear();
+        mentorItemsList.addAll(mentors);
+        Log.d("DEBUG", "List size after add: " + mentorItemsList.size());
+        mentorsAdapter.notifyDataSetChanged();
+
+        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
+        params.height = calculateRecyclerViewHeight();
+        rcMentors.setLayoutParams(params);
+    }
+//    @Override
+//    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
+////        List<MentorItem> mentorItems = new ArrayList<>();
+////        mentorItems.add(mentors);
+////        pendingRequests--;
+////        if (pendingRequests == 0) {
+//        mentorItemsList.clear();
+//        mentorItemsList.addAll(mentors);
+//        mentorsAdapter.notifyDataSetChanged();
+////        }
+//    }
 
     @Override
     public void onError(@org.jetbrains.annotations.Nullable Exception e) {
@@ -369,36 +392,28 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     @Override
-    public void onMentorDataFetched(@org.jetbrains.annotations.Nullable  MentorItem mentors) {
-        if (mentors == null) {
-            //todo hide mentor ui
-            return;
-        }
-        mentorItemsList.add(mentors);
-        pendingRequests--;
-        if (pendingRequests == 0) {
-
-            mentorsAdapter = new MentorsAdapter(false, getContext());
-            mentorsAdapter = new MentorsAdapter(mentorItemsList);
-            rcMentors.setAdapter(mentorsAdapter);
-            mentorsAdapter.notifyDataSetChanged();
-        }
+    public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
     }
-
 
     @Override
     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
         if (userData == null) return;
-      role = userData.getUserRole();
+        role = userData.getUserRole();
         if (role.equals("Mentor")) {
             //todo fetch mentor booked dates from firebase
-           txtDateInfo.setText("• RED Underline: Your Schedules");
+            txtDateInfo.setText("• RED Underline: Your Schedules");
 
-        }else {
+        } else {
             //todo fetch mentee booking dates from firebase
             txtDateInfo.setText("• Blue Underline: Your schedules");
         }
 
+    }
+
+    @Override
+    public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
+        courseItemsList.addAll(courses);
+        coursesAdapter.notifyDataSetChanged();
     }
 
     public interface onScrollChangeListener {

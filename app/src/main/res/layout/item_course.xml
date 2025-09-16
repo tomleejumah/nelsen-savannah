@@ -5,7 +5,7 @@
     android:layout_height="220dp"
     android:layout_marginEnd="4dp"
     android:layout_marginStart="8dp"
-    android:layout_marginVertical="8dp"
+    android:layout_marginVertical="4dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="4dp"
     android:foreground="?attr/selectableItemBackground"
@@ -65,6 +65,8 @@
                     android:src="@drawable/donation" />
 
                 <TextView
+                    android:gravity="center_vertical"
+                    android:drawableEnd="@drawable/ic_badge_verified"
                     android:fontFamily="@font/poppins_bold"
                     android:id="@+id/tv_tutor_name"
                     android:layout_width="0dp"
@@ -72,7 +74,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:text="Joseph Grover"
-                    android:textSize="12sp"
+                    android:textSize="16sp"
                     android:maxLines="1"
                     android:ellipsize="end" />
 
@@ -80,6 +82,7 @@
 
             <!-- Course Title -->
             <TextView
+                android:gravity="start"
                 android:fontFamily="@font/poppins_regular"
                 android:id="@+id/tv_course_title"
                 android:layout_width="match_parent"

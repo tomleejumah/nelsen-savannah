@@ -8,69 +8,107 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.app.nisisiafrica.EditProfileActivity;
+import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.ViewAllActivity;
 import com.bumptech.glide.Glide;
 
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHolder> {
-    private final boolean isExpanded;
+public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int TYPE_COMPACT = 0;
+    private static final int TYPE_EXPANDED = 1;
+    private static final int TYPE_UPDATE_PROFILE = 2;
     private final List<CourseItem> courseItems;
     private final Context mContext;
 
-    public CoursesAdapter(boolean isExpanded, List<CourseItem> courseItems, Context mContext) {
-        this.isExpanded = isExpanded;
+
+    public CoursesAdapter(List<CourseItem> courseItems, Context mContext) {
         this.courseItems = courseItems;
         this.mContext = mContext;
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view= LayoutInflater.from(parent.getContext()).inflate(
-                isExpanded ? com.app.nisisiafrica.R.layout.item_course_flex : R.layout.item_course,parent,false);
-
-        return new CoursesAdapter.ViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(courseItems.get(position));
-
-        holder.itemView.setOnClickListener(v -> {
-            //todo Add webview->
-            String url = courseItems.get(position).getCourseLink();
-            if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                url = "https://" + url;
-            }
-
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            mContext.startActivity(browserIntent);
-
-        });
-    }
-
     @Override
     public int getItemViewType(int position) {
-        return super.getItemViewType(position);
+        if (mContext instanceof MainActivity) {
+            return TYPE_COMPACT;
+        } else if (mContext instanceof ViewAllActivity) {
+            return TYPE_EXPANDED;
+        } else if (mContext instanceof EditProfileActivity) {
+            return TYPE_UPDATE_PROFILE;
+        }
+        return -1;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+
+        if (viewType == TYPE_COMPACT) {
+            View view = inflater.inflate(R.layout.item_course, parent, false);
+            return new CompactViewHolder(view);
+        } else if (viewType == TYPE_EXPANDED) {
+            View view = inflater.inflate(R.layout.item_course_flex, parent, false);
+//            return new ExpandedViewHolder(view);
+            return  new CompactViewHolder(view);
+        } else {
+            View view = inflater.inflate(R.layout.item_update_course, parent, false);
+            return new UpdateProfileViewHolder(view);
+        }
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        CourseItem item = courseItems.get(position);
+
+        if (holder instanceof CompactViewHolder) {
+            ((CompactViewHolder) holder).bind(item);
+
+            holder.itemView.setOnClickListener(v -> {
+                //todo Add webview->
+                String url = courseItems.get(position).getCourseLink();
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    url = "https://" + url;
+                }
+
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                mContext.startActivity(browserIntent);
+
+            });
+        } else if (holder instanceof UpdateProfileViewHolder) {
+            ((UpdateProfileViewHolder) holder).bind(item);
+            holder.itemView.setOnClickListener(v -> {
+                Toast.makeText(mContext, "working on update course feature",Toast.LENGTH_SHORT).show();
+            });
+        }
     }
 
     @Override
     public int getItemCount() {
-        return (isExpanded) ? courseItems.size() : Math.min(courseItems.size(),5);
-//        return mJobItems.size();
+        if (courseItems.isEmpty()) return 0;
+        int viewType = getItemViewType(0);
+        return (viewType == TYPE_COMPACT)
+                ? Math.min(courseItems.size(), 5)
+                : courseItems.size();
     }
-    public class ViewHolder extends RecyclerView.ViewHolder{
+
+
+     class CompactViewHolder extends RecyclerView.ViewHolder {
         TextView tv_lessons, tv_duration, tv_course_title, tv_tutor_name;
         CircleImageView iv_tutor_avatar, likeBtn;
         ImageView iv_course_image;
-        public ViewHolder(@NonNull View itemView) {
+
+        public CompactViewHolder(@NonNull View itemView) {
             super(itemView);
             tv_duration = itemView.findViewById(R.id.tv_duration);
             tv_lessons = itemView.findViewById(R.id.tv_lessons);
@@ -82,14 +120,36 @@ public class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.ViewHold
 
         }
 
-        void bind(CourseItem courseItem){
-            tv_duration.setText(courseItem.getDuration());
+        void bind(CourseItem courseItem) {
+            tv_duration.setText(courseItem.getDuration() + " Hours");
             tv_lessons.setText(courseItem.getLessons() + " Lessons");
             tv_course_title.setText(courseItem.getCourseTitle());
             tv_tutor_name.setText(courseItem.getTutorName());
 
             Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);
-//            Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
+            Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
+        }
+    }
+
+     class UpdateProfileViewHolder extends RecyclerView.ViewHolder {
+        TextView courseLink, courseTitle, lessons, duration,courseImageUrl;
+
+        public UpdateProfileViewHolder(@NonNull View view) {
+            super(view);
+            courseLink = view.findViewById(R.id.courseLink);
+            courseTitle = view.findViewById(R.id.courseTitle);
+            lessons = view.findViewById(R.id.lessons);
+            duration = view.findViewById(R.id.duration);
+            courseImageUrl = view.findViewById(R.id.courseImageUrl);
+
+        }
+
+        void bind(CourseItem courseItem) {
+            courseLink.setText(courseItem.getCourseLink());
+            courseImageUrl.setText(courseItem.getCourseImageUrl());
+            courseTitle.setText(courseItem.getCourseTitle());
+            lessons.setText(courseItem.getLessons());
+            duration.setText(courseItem.getDuration());
         }
     }
 }

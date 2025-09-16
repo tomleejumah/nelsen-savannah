@@ -1,48 +1,65 @@
 package com.app.nisisiafrica;
 
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.animation.ArgbEvaluator;
-import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
-import android.view.Window;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.palette.graphics.Palette;
 
+import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
+import com.app.nisisiafrica.Model.MentorItem;
+import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.Utils.EdgeBlurImageView;
+import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.request.RequestOptions;
-import com.google.android.material.appbar.CollapsingToolbarLayout;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Objects;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
-public class ProfileActivity extends AppCompatActivity {
-    private View gradientOverlay;
+public class ProfileActivity extends AppCompatActivity implements FirebaseCallback{
+    private ConstraintLayout gradientOverlay;
     private EdgeBlurImageView dpImage;
     private TextView title;
     private CustomTarget<Bitmap> paletteTarget;
     private int defaultColor;
-    ;
+    private String id,role;
+    boolean isFromMentor;
+    private SharedUserViewModel sharedUserViewModel;
+    private UserData userData;
+    private TextView tv_username,tvDescription;
+    BlurView blurViewName,blurViewDesc,blurViewDescHead,blurViewRc;
+    private static final String TAG = "ProfileActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,26 +73,102 @@ public class ProfileActivity extends AppCompatActivity {
             return insets;
         });
 
-        View root = findViewById(R.id.root);
-        gradientOverlay = findViewById(R.id.gradientOverlay);
+        Intent intent = getIntent();
+        if (intent != null) {
+             isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
+             id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.USER_ID);
+        }
+        Log.d(TAG, "onCreate: "+id);
+
+        title = findViewById(R.id.txtDescTittle);
+        title.setText(isFromMentor ? "Mentor Profile" : "Profile");
+        float radius = 20f;
+        BlurTarget target = findViewById(R.id.target);
+         blurViewName = findViewById(R.id.blurViewName);
+         blurViewDescHead = findViewById(R.id.blurViewDescHead);
+         blurViewDesc = findViewById(R.id.blurViewDesc);
+         blurViewRc = findViewById(R.id.bottomRc);
+        findViewById(R.id.iv_back).setOnClickListener(v -> finish());
+
+        tv_username = findViewById(R.id.tv_username);
+        tvDescription = findViewById(R.id.tv_Description);
+
+        if (isFromMentor){
+
+            FirebaseDataBaseHelper.INSTANCE.getMentorData(id,this);
+
+//            FirebaseDataBaseHelper.INSTANCE.getMentorData(id, new FirebaseCallback() {
+//                @Override
+//                public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
+//
+//                }
+//
+//                @Override
+//                public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
+//                    blurViewDesc.setVisibility(
+//                            TextUtils.isEmpty(mentors != null ? mentors.getMentorDescription() : null)
+//                                    ? View.GONE
+//                                    : View.VISIBLE
+//                    );
+//                    tvDescription.setText(mentors.getMentorDescription());
+//                    tv_username.setText(mentors.getMentorName());
+//
+//                    loadAndStyle(mentors.getMentorImageUrl());
+//                }
+//
+//                @Override
+//                public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
+//                }
+//
+//                @Override
+//                public void onError(@org.jetbrains.annotations.Nullable Exception e) {
+//                }
+//            });
+        }else {
+            sharedUserViewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
+            sharedUserViewModel.fetchingUserDataFromDB(id).observe(this, data -> {
+                if (data != null) {
+                    userData = data;
+                    loadAndStyle(userData.getPhotoUrl());
+                    blurViewDesc.setVisibility(
+                            TextUtils.isEmpty(data.getBio())
+                                    ? View.GONE
+                                    : View.VISIBLE
+                    );
+                    tvDescription.setText(userData.getBio());
+                    tv_username.setText(userData.getFirstName() + " " + userData.getLastName());
+
+                    if (Objects.equals(userData.getUserRole(), "Mentee")) {
+                        tv_username.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+                    }
+                }
+            });
+
+        }
+
+        gradientOverlay = findViewById(R.id.root);
         dpImage = findViewById(R.id.dpImage);
         dpImage.setBlurRadius(80f);
 
         defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray);
 
-        String imageUrl = "https://images.unsplash.com/photo-1756142007128-f431ede241cc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDg4fHRvd0paRnNrcEdnfHxlbnwwfHx8fHw%3D";
-        loadAndStyle(imageUrl);
+        setupBlur(target, radius, blurViewName, blurViewDescHead, blurViewDesc, blurViewRc);
 
-        float radius = 20f;
+        findViewById(R.id.iv_action).setOnClickListener(v -> {
+            Intent intent1 = new Intent(ProfileActivity.this, EditProfileActivity.class);
+            boolean isMentor = userData != null && Objects.equals(userData.getUserRole(), "Mentor");
+            intent1.putExtra(Constants.IS_MENTOR, isMentor);
+            intent1.putExtra(Constants.USER_ID, userData != null ? userData.getId() : id);
+            startActivity(intent1);
+        });
 
-        BlurTarget target = findViewById(R.id.target);
-        BlurView blurView = findViewById(R.id.blurViewName);
-        BlurView blurViewDescHead = findViewById(R.id.blurViewDescHead);
-        BlurView blurViewDesc = findViewById(R.id.blurViewDesc);
-        BlurView blurViewRc = findViewById(R.id.bottomRc);
-
-        setupBlur(target, radius, blurView, blurViewDescHead, blurViewDesc, blurViewRc);
-
+        ExtendedFloatingActionButton button = findViewById(R.id.btnNext);
+        button.setVisibility(!isFromMentor ? View.GONE : View.VISIBLE);
+        button.setText(!isFromMentor ? "" : "Book Now");
+        button.setOnClickListener(v -> {
+            Intent intent1 = new Intent(ProfileActivity.this, BookMentor.class);
+            startActivity(intent1);
+        });
     }
     private void setupBlur(BlurTarget target, float radius, BlurView... blurViews) {
         for (BlurView blurView : blurViews) {
@@ -85,7 +178,47 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
 
+    }
+
+    @Override
+    public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
+        if (mentors != null) {
+            blurViewDesc.setVisibility(
+                    TextUtils.isEmpty(mentors.getMentorDescription())
+                            ? View.GONE
+                            : View.VISIBLE
+            );
+            tvDescription.setText(mentors.getMentorDescription());
+            tv_username.setText(mentors.getMentorName());
+            loadAndStyle(mentors.getMentorImageUrl());
+        } else {
+            // Handle null case
+            blurViewDesc.setVisibility(View.GONE);
+            tvDescription.setText("");
+            tv_username.setText("");
+        }
+    }
+
+    @Override
+    public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
+    }
+
+    @Override
+    public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
+//        FirebaseCallback.super.onCoursesFetched(courses);
+    }
+
+    @Override
+    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
+//        FirebaseCallback.super.onMentorsFetched(mentors);
+    }
+
+    @Override
+    public void onError(@org.jetbrains.annotations.Nullable Exception e) {
+    }
 
     private void loadAndStyle(String url) {
         // Load as Bitmap for color extraction
@@ -142,12 +275,12 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Animate status bar to a darkened version of dominant (Spotify-style)
 //        int newStatus = darken(dominant, 0.2f);
-        Window w = getWindow();
-        int start = w.getStatusBarColor();
-        ValueAnimator va = ValueAnimator.ofObject(new ArgbEvaluator(), start, c1);
-        va.setDuration(350);
-        va.addUpdateListener(animation -> w.setStatusBarColor((int) animation.getAnimatedValue()));
-        va.start();
+//        Window w = getWindow();
+//        int start = w.getStatusBarColor();
+//        ValueAnimator va = ValueAnimator.ofObject(new ArgbEvaluator(), start, c1);
+//        va.setDuration(350);
+//        va.addUpdateListener(animation -> w.setStatusBarColor((int) animation.getAnimatedValue()));
+//        va.start();
 
         // Set readable text color based on dominant todo
         int textColor = isDark(dominant) ? Color.WHITE : Color.BLACK;
