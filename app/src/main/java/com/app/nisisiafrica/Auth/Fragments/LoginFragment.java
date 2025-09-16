@@ -25,17 +25,18 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
+import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
-import com.app.nisisiafrica.FirebaseCallback;
+import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.Utils.SnackbarHandler;
+import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
@@ -68,9 +69,8 @@ public class LoginFragment extends Fragment {
         ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    Log.d(TAG, "onActivityResult triggered");
                     if (result.getResultCode() == Activity.RESULT_OK) {
-                        Log.d(TAG, "Sign-in successful, checking data...");
+                        Log.d(TAG, "Sign-in successful, fetching data...");
                         if (result.getData() != null) {
                             Log.d(TAG, "Intent data: " + result.getData());
                         } else {
@@ -96,7 +96,7 @@ public class LoginFragment extends Fragment {
             // Handle successful login
             sharedUserViewModel.saveUserData(userData);
             sharedUserViewModel.setUserData(userData);
-            Util.saveState("UserID", userData.getId());
+//            Util.saveState(Constants.USER_ID, userData.getId());
             Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
@@ -255,7 +255,9 @@ public class LoginFragment extends Fragment {
                 FirebaseDataBaseHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
                     @Override
                     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
-                        Util.saveState("UserID", userData.getId());
+                        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                        Util.saveState(Constants.CURRENT_USER_ID, userId);
+                        userData.setId(userId);
                         sharedUserViewModel.saveUserData(userData);
                         sharedUserViewModel.setUserData(userData);
 
@@ -273,12 +275,10 @@ public class LoginFragment extends Fragment {
 
                     @Override
                     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
-//                        FirebaseCallback.super.onCoursesFetched(courses);
                     }
 
                     @Override
                     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-//                        FirebaseCallback.super.onMentorsFetched(mentors);
                     }
 
                     @Override
@@ -297,7 +297,6 @@ public class LoginFragment extends Fragment {
         googleAuthHelper.handleSignInResult(
                 data,
                 userData -> {
-                    // Save to Firebase Realtime Database
                     goToNextActivity(userData);
                     return Unit.INSTANCE;
                 },
@@ -315,10 +314,8 @@ public class LoginFragment extends Fragment {
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        Log.d(TAG, "login: Success" + userData.getId());
                         sharedUserViewModel.saveUserData(userData);
                         sharedUserViewModel.setUserData(userData);
-
                         Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                     }
                     return Unit.INSTANCE;

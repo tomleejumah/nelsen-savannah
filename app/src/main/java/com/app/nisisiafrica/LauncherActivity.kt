@@ -2,7 +2,6 @@ package com.app.nisisiafrica
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -16,13 +15,11 @@ import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
 
-    private val TAG = "SplashActivity"
     private var isReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Start splash screen
         val splashScreen = installSplashScreen()
-
         splashScreen.setKeepOnScreenCondition { !isReady }
 
         super.onCreate(savedInstanceState)
@@ -36,21 +33,16 @@ class LauncherActivity : AppCompatActivity() {
             insets
         }
 
-        Util.init(this)
-
         lifecycleScope.launch {
             val isFirstTime = Util.getState("is-FirstTime", true)
-//            val isFirstTime = true
             val intent: Intent = when {
                 isFirstTime -> {
-                    Log.d(TAG, "onCreate: Intro called")
                     Intent(this@LauncherActivity, IntroActivity::class.java)
                 }
                 FirebaseAuth.getInstance().currentUser != null -> {
                     Intent(this@LauncherActivity, MainActivity::class.java)
                 }
                 else -> {
-                    Log.d(TAG, "onCreate: Login Called")
                     Intent(this@LauncherActivity, LoginSignUpActivity::class.java)
                 }
             }
