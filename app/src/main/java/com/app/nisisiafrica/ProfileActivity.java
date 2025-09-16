@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.TextView;
@@ -25,7 +26,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.palette.graphics.Palette;
 
-import com.app.nisisiafrica.Utils.FirebaseUserHelper;
+import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.Utils.EdgeBlurImageView;
@@ -36,13 +38,15 @@ import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.Objects;
 
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
-public class ProfileActivity extends AppCompatActivity {
+public class ProfileActivity extends AppCompatActivity implements FirebaseCallback{
     private ConstraintLayout gradientOverlay;
     private EdgeBlurImageView dpImage;
     private TextView title;
@@ -53,6 +57,8 @@ public class ProfileActivity extends AppCompatActivity {
     private SharedUserViewModel sharedUserViewModel;
     private UserData userData;
     private TextView tv_username,tvDescription;
+    BlurView blurViewName,blurViewDesc,blurViewDescHead,blurViewRc;
+    private static final String TAG = "ProfileActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,48 +78,52 @@ public class ProfileActivity extends AppCompatActivity {
              isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
              id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.USER_ID);
         }
+        Log.d(TAG, "onCreate: "+id);
 
         title = findViewById(R.id.txtDescTittle);
         title.setText(isFromMentor ? "Mentor Profile" : "Profile");
         float radius = 20f;
         BlurTarget target = findViewById(R.id.target);
-        BlurView blurView = findViewById(R.id.blurViewName);
-        BlurView blurViewDescHead = findViewById(R.id.blurViewDescHead);
-        BlurView blurViewDesc = findViewById(R.id.blurViewDesc);
-        BlurView blurViewRc = findViewById(R.id.bottomRc);
+         blurViewName = findViewById(R.id.blurViewName);
+         blurViewDescHead = findViewById(R.id.blurViewDescHead);
+         blurViewDesc = findViewById(R.id.blurViewDesc);
+         blurViewRc = findViewById(R.id.bottomRc);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         tv_username = findViewById(R.id.tv_username);
         tvDescription = findViewById(R.id.tv_Description);
 
         if (isFromMentor){
-            FirebaseUserHelper.INSTANCE.getMentorData(id, new FirebaseCallback() {
-                @Override
-                public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
 
-                }
+            FirebaseDataBaseHelper.INSTANCE.getMentorData(id,this);
 
-                @Override
-                public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
-                    blurViewDesc.setVisibility(
-                            TextUtils.isEmpty(mentors != null ? mentors.getMentorDescription() : null)
-                                    ? View.GONE
-                                    : View.VISIBLE
-                    );
-                    tvDescription.setText(mentors.getMentorDescription());
-                    tv_username.setText(mentors.getMentorName());
-
-                    loadAndStyle(mentors.getMentorImageUrl());
-                }
-
-                @Override
-                public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
-                }
-
-                @Override
-                public void onError(@org.jetbrains.annotations.Nullable Exception e) {
-                }
-            });
+//            FirebaseDataBaseHelper.INSTANCE.getMentorData(id, new FirebaseCallback() {
+//                @Override
+//                public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
+//
+//                }
+//
+//                @Override
+//                public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
+//                    blurViewDesc.setVisibility(
+//                            TextUtils.isEmpty(mentors != null ? mentors.getMentorDescription() : null)
+//                                    ? View.GONE
+//                                    : View.VISIBLE
+//                    );
+//                    tvDescription.setText(mentors.getMentorDescription());
+//                    tv_username.setText(mentors.getMentorName());
+//
+//                    loadAndStyle(mentors.getMentorImageUrl());
+//                }
+//
+//                @Override
+//                public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
+//                }
+//
+//                @Override
+//                public void onError(@org.jetbrains.annotations.Nullable Exception e) {
+//                }
+//            });
         }else {
             sharedUserViewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
             sharedUserViewModel.fetchingUserDataFromDB(id).observe(this, data -> {
@@ -142,7 +152,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray);
 
-        setupBlur(target, radius, blurView, blurViewDescHead, blurViewDesc, blurViewRc);
+        setupBlur(target, radius, blurViewName, blurViewDescHead, blurViewDesc, blurViewRc);
 
         findViewById(R.id.iv_action).setOnClickListener(v -> {
             Intent intent1 = new Intent(ProfileActivity.this, EditProfileActivity.class);
@@ -168,7 +178,47 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
 
+    }
+
+    @Override
+    public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
+        if (mentors != null) {
+            blurViewDesc.setVisibility(
+                    TextUtils.isEmpty(mentors.getMentorDescription())
+                            ? View.GONE
+                            : View.VISIBLE
+            );
+            tvDescription.setText(mentors.getMentorDescription());
+            tv_username.setText(mentors.getMentorName());
+            loadAndStyle(mentors.getMentorImageUrl());
+        } else {
+            // Handle null case
+            blurViewDesc.setVisibility(View.GONE);
+            tvDescription.setText("");
+            tv_username.setText("");
+        }
+    }
+
+    @Override
+    public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
+    }
+
+    @Override
+    public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
+//        FirebaseCallback.super.onCoursesFetched(courses);
+    }
+
+    @Override
+    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
+//        FirebaseCallback.super.onMentorsFetched(mentors);
+    }
+
+    @Override
+    public void onError(@org.jetbrains.annotations.Nullable Exception e) {
+    }
 
     private void loadAndStyle(String url) {
         // Load as Bitmap for color extraction

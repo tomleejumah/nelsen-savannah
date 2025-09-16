@@ -10,6 +10,18 @@ import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Utils.Util;
 
 public class App extends Application {
+    /*
+    todo : for entire App
+    1)theme switch(dark mode etc)
+    2)View Model for all Activities/fragment(use the shared view model) global init of the view model
+    3) Caching of data
+    4) Pagination Imp for courses,mentors,Chats
+    5)Backup to google
+    6)Notifications and alarms
+    7)Sync with calender(google)
+    8)
+     */
+
     private static AppDatabase appDatabase;
     @Override
     public void onCreate() {
