@@ -5,7 +5,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.app.nisisiafrica.Model.UserData
-import com.app.nisisiafrica.Utils.FirebaseUserHelper
+import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper
 import com.app.nisisiafrica.Utils.Util
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -68,7 +68,7 @@ class GoogleAuthHelper(
                     val userId = authResult.user?.uid ?: return@addOnSuccessListener
 //                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnSuccessListener
 
-                    FirebaseUserHelper.getOrAssignUserRole(
+                    FirebaseDataBaseHelper.getOrAssignUserRole(
                         firebaseUserId = userId,
                         onSuccess = { role ->
                             // User role fetched/assigned successfully
@@ -129,7 +129,7 @@ class GoogleAuthHelper(
             } else {
                 Log.d("FirebaseDB", "User does not exist, saving new user (Google)")
                 userData.id = loggedInUser.toString()
-                FirebaseUserHelper.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
+                FirebaseDataBaseHelper.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
             }
         }
     }

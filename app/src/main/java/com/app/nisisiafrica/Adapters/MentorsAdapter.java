@@ -3,6 +3,7 @@ package com.app.nisisiafrica.Adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,16 +28,13 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
     private  boolean isExpanded;
     private  List<MentorItem> mentorItems;
     private  Context mContext;
+    private static final String TAG = "MentorsAdapter";
 
-    public MentorsAdapter(boolean isExpanded,Context mContext) {
+    public MentorsAdapter(boolean isExpanded,Context mContext,List<MentorItem> mentorItems) {
         this.isExpanded = isExpanded;
         this.mContext = mContext;
-    }
-
-    public MentorsAdapter(List<MentorItem> mentorItems) {
         this.mentorItems = mentorItems;
     }
-
 
     @NonNull
     @Override
@@ -53,6 +51,7 @@ public class MentorsAdapter extends RecyclerView.Adapter<MentorsAdapter.ViewHold
             Intent intent = new Intent(mContext, ProfileActivity.class);
             intent.putExtra(Constants.IS_MENTOR, true);
             intent.putExtra(Constants.MENTOR_ID, mentorItems.get(position).getMentorId());
+            Log.d(TAG, "onBindViewHolder: "+mentorItems.get(position).getMentorId());
             mContext.startActivity(intent);
         });
     }
