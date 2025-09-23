@@ -1,4 +1,4 @@
-package com.app.nisisiafrica.Utils;
+package com.app.nisisiafrica.Interfaces;
 
 public interface SnackbarHandler {
     void showSnackbar(String message, int duration, int type);

@@ -105,7 +105,7 @@ public class QuestionnaireActivity extends AppCompatActivity {
                 btnNext.setEnabled(false);
                 btnNext.setText("Submitted");
                 Toast.makeText(this, "Submitted. This form is now locked.", Toast.LENGTH_LONG).show();
-                // todo NOTE: later you'll persist to Room here. For now, answers are in SharedPreferences.
+                // todo NOTE:  persist to Room here. For now, answers are in SharedPreferences.
             }
         });
     }

@@ -15,7 +15,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.customsnackbarlib.CustomSnackbar;
@@ -24,11 +23,12 @@ import com.app.nisisiafrica.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
+import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
-import com.app.nisisiafrica.Utils.SnackbarHandler;
+import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -65,10 +65,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private ChipNavigationBar chipNavigationBar;
     private String userRole, currentUser;
     private UserData userData,cachedUserData;
-    private CourseItem courseItem;
-    private MentorItem mentorItem;
-    private List<MentorItem> mentorItemsList;
-    private List<CourseItem> courseItemsList;
     private UserDao userDao;
     private Intent intent;
     private SharedUserViewModel sharedUserViewModel1;
@@ -109,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Log.d(TAG, "onCreate: isFromAuth: " + isFromAuth);
         if (isFromAuth) {
             //handle fresh data
-            sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::handleFreshUserData);
+            sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, this::handleFreshUserData);
         } else handleCachedUser();
 
         fragmentManager = getSupportFragmentManager();
@@ -234,10 +230,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             CustomSnackbar.show(MainActivity.this, message, duration, type);
         };
         snackbarHandler.showSnackbar("Welcome, " + userData.getFirstName() + "!", Snackbar.LENGTH_LONG, 4);
-//        sharedUserViewModel1.setUserData(userData);
-//        CustomSnackbar.show(this,
-//                "Welcome, " + userData.getFirstName() + "!",
-//                Snackbar.LENGTH_SHORT, 4);
     }
 
     private void handleCachedUser() {
@@ -263,66 +255,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return;
         }
 
-        sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, userData -> {
+        sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, userData -> {
             cachedUserData = userData;
             FirebaseDataBaseHelper.INSTANCE.getUserAndData(MainActivity.this);
         });
 
-//        sharedUserViewModel1.fetchingUserDataFromDB(currentUser).observe(this, this::fetchAndCompareUserData);
     }
-
-//    private void fetchAndCompareUserData(UserData cachedUserData) {
-//        FirebaseDataBaseHelper.INSTANCE.getUserAndData(this);
-
-//        FirebaseDataBaseHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
-//            @Override
-//            public void onUserDataReceived(@Nullable UserData fetchedUserData) {
-//                if (fetchedUserData != null) {
-//                    userData = !cachedUserData.equals(fetchedUserData)
-//                            ? fetchedUserData : cachedUserData;
-//
-//                   if(!userData.equals(cachedUserData)){
-//                       sharedUserViewModel1.updateUserData(userData);
-//                   }
-//                    //will update last login todo
-////
-////                    sharedUserViewModel1.setUserData(userData);
-//
-//                    Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
-//                } else {
-//                    Log.d(TAG, "No fetched data available...re using cached data");
-//                    if (cachedUserData != null) {
-//                        userData = cachedUserData;
-//                        sharedUserViewModel1.setUserData(cachedUserData);
-//                        Log.d(TAG, "Using cached data as fallback");
-//                    } else {
-//                        Log.d(TAG, "No cached or cloud data, redirecting to login");
-//                        redirectToLogin();
-//                    }
-//                }
-//
-//            }
-//
-//            @Override
-//            public void onMentorDataFetched(@Nullable MentorItem mentors) {
-//            }
-//
-//            @Override
-//            public void onMentorsIDFetched(@Nullable List<String> mentorIds) {
-//            }
-//
-//            @Override
-//            public void onCoursesFetched(@Nullable List<CourseItem> courses) {
-//            }
-//
-//            @Override
-//            public void onError(@Nullable Exception e) {
-//                Log.e(TAG, "Error fetching data...Ru using cached data", e);
-//            }
-//        });
-
-//    }
-
     private void saveToDb(UserData userData) {
         disposables.add(userDao.insertUserRx(userData)
                 .subscribeOn(Schedulers.io())
@@ -380,10 +318,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 sharedUserViewModel1.updateUserData(userData);
             }
             //will update last login todo
-//
-//                    sharedUserViewModel1.setUserData(userData);
-
-            Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+        Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
         } else {
             Log.d(TAG, "No fetched data available...re using cached data");
             if (cachedUserData != null) {
@@ -409,15 +344,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     @Override
     public void onCoursesFetched(@Nullable List<CourseItem> courses) {
         Log.d(TAG, "onCoursesFetched: ");
-        if (courses == null) return;
-//        courseItemsList.addAll(courses);
-//        cour
-//        courseItemsList = courses;
     }
 
     @Override
     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-//        FirebaseCallback.super.onMentorsFetched(mentors);
     }
 
     @Override

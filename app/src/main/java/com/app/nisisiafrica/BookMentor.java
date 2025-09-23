@@ -37,12 +37,15 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         });
 
         SharedUserViewModel viewModel = new ViewModelProvider((this)).get(SharedUserViewModel.class);
-        String userID = Util.getState("UserID", "");
-        viewModel.fetchingUserDataFromDB(userID).observe((this), data -> {
+        String userID = Util.getState(Constants.CURRENT_USER_ID, "");
+        viewModel.fetchingCurrentUserDataFromDB(userID).observe((this), data -> {
             if (data != null) {
-                Log.d("BookMentor", "User First Name: " + data.getFirstName());
                 userData = data;
-            }else Log.d("BookMentor", "User data is null");
+                adapter.setFirstName(userData.getFirstName());
+                adapter.setLastName(userData.getLastName());
+                adapter.notifyDataSetChanged();
+
+            }else Log.d(TAG, "User data is null");
         });
 
         recyclerView = findViewById(R.id.recyclerView);
@@ -53,8 +56,6 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
     }
     private void setupRecyclerView() {
         adapter = new BookMentorStepAdapter(this,this);
-//        adapter.setFirstName(userData.getFirstName());
-//        adapter.setLastName(userData.getLastName());
         recyclerView.setLayoutManager(new LinearLayoutManager((this)));
         recyclerView.setAdapter(adapter);
     }

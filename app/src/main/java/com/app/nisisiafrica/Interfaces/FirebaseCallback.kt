@@ -1,4 +1,4 @@
-package com.app.nisisiafrica
+package com.app.nisisiafrica.Interfaces
 
 import com.app.nisisiafrica.Model.CourseItem
 import com.app.nisisiafrica.Model.MentorItem

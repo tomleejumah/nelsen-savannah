@@ -2,7 +2,8 @@ package com.app.nisisiafrica.Utils
 
 import android.content.Context
 import android.util.Log
-import com.app.nisisiafrica.FirebaseCallback
+import com.app.nisisiafrica.Constants
+import com.app.nisisiafrica.Interfaces.FirebaseCallback
 import com.app.nisisiafrica.Model.CourseItem
 import com.app.nisisiafrica.Model.MentorItem
 import com.app.nisisiafrica.Model.UserData
@@ -27,7 +28,7 @@ object FirebaseDataBaseHelper {
         onError: ((Exception) -> Unit)?
     ) {
         val user = hashMapOf(
-            "id" to FirebaseAuth.getInstance().currentUser?.uid.toString(),
+            "id" to Util.getState(Constants.CURRENT_USER_ID,""),
             "email" to userData.email,
             "displayName" to userData.displayName,
             "firstName" to userData.firstName,
@@ -40,7 +41,6 @@ object FirebaseDataBaseHelper {
         usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString())
             .updateChildren(user as Map<String, Any>)
             .addOnSuccessListener {
-                Log.d(TAG, "User data saved/updated successfully!")
                 onSuccess?.invoke(true)
             }
             .addOnFailureListener { exception ->
@@ -166,8 +166,6 @@ object FirebaseDataBaseHelper {
                             .getValue(List::class.java) as? List<String> ?: listOf(),
                         bookedDates = snapshot.child("bookedDates")
                             .getValue(Set::class.java) as? Set<LocalDate> ?: setOf(),
-//                        courses = snapshot.child("courses")
-//                            .getValue(List::class.java) as? List<CourseItem> ?: listOf(),
                     )
                     firebaseCallback.onMentorDataFetched(mentorData)
                 } else {
@@ -334,7 +332,6 @@ object FirebaseDataBaseHelper {
                     )
                     mentors.add(mentor)
                 }
-                Log.d(TAG,"Mentors fetched: $mentors")
                 firebaseCallback.onMentorsFetched(mentors)
             }
 
