@@ -2,7 +2,6 @@ package com.app.nisisiafrica.Auth;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -14,7 +13,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.Utils.SnackbarHandler;
+import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 
 public class LoginSignUpActivity extends AppCompatActivity implements SnackbarHandler {
 

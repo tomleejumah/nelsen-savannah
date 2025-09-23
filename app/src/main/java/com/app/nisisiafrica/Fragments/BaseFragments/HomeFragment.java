@@ -26,7 +26,7 @@ import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Constants;
-import com.app.nisisiafrica.FirebaseCallback;
+import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
@@ -100,7 +100,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         if (context instanceof onScrollChangeListener) {
             scrollChangeListener = (onScrollChangeListener) context;
         } else {
-            throw new RuntimeException(context.toString()
+            throw new RuntimeException(context
                     + " must implement OnScrollChangeListener");
         }
     }
@@ -117,11 +117,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (data != null) {
                 userData = data;
                 onUserDataReceived(data);
-                Log.d(TAG, "onCreateView: " + userData.getPhotoUrl());
                 Glide.with(this)
                         .load(data.getPhotoUrl())
                         .placeholder(R.drawable.donation)
-                        .error(R.drawable.ic_error)
+//                        .error(R.drawable.ic_error)
                         .into(imgDp);
             } else {
 
@@ -206,17 +205,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         studentimages.add("url");
 
         //getting mentors from db
-
         rcMentors = view.findViewById(R.id.rcMentorList);
         LinearLayoutManager layoutManager1 = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         rcMentors.setLayoutManager(layoutManager1);
         mentorsAdapter = new MentorsAdapter(false, getContext(), mentorItemsList);
         rcMentors.setAdapter(mentorsAdapter);
-//        rcMentors.setHasFixedSize(true);
-
-
-//        rcMentors.setNestedScrollingEnabled(false);
-
 
         view.findViewById(R.id.txtRecorgnizeMe).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
@@ -226,7 +219,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         view.findViewById(R.id.imgDp).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), ProfileActivity.class);
             intent.putExtra(Constants.IS_MENTOR, false);
-            intent.putExtra(Constants.USER_ID, userData.getId());
+            intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
             startActivity(intent);
         });
 
@@ -239,7 +232,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         fetchMentors();
         fetchCourses();
-//        getMentorsID();
 
         return view;
     }
@@ -312,43 +304,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         return gson.fromJson(json, type);
     }
 
-    private void overlapImage(View view) {
-        if (getActivity() == null) return;
-        OverlapImageListView overlapImage = view.findViewById(R.id.overlapImage);
 
-        ArrayList<Bitmap> imageList = new ArrayList<>();
-
-        List<Integer> imageResourceList = new ArrayList<>();
-        imageResourceList.add(R.drawable.ic_check_green);
-        imageResourceList.add(R.drawable.ic_google);
-        imageResourceList.add(R.drawable.ic_facebook);
-
-        for (int i = 0; i < imageResourceList.size(); i++) {
-            int resId = imageResourceList.get(i);
-            Glide.with(getActivity().getApplicationContext())
-                    .asBitmap()
-                    .load(resId)
-                    .apply(RequestOptions.circleCropTransform())
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource,
-                                                    @Nullable Transition<? super Bitmap> transition) {
-                            if (getActivity() == null) return;
-                            imageList.add(resource);
-
-                            // set the image after everything is loaded
-                            if (imageList.size() == imageResourceList.size()) {
-                                overlapImage.setImageList(imageList);
-                            }
-                        }
-
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                            // no-op
-                        }
-                    });
-        }
-    }
 
     @Override
     public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
@@ -418,5 +374,43 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     public interface onScrollChangeListener {
         void onParentScroll(int oldY, int newY);
+    }
+
+    private void overlapImage(View view) {
+        if (getActivity() == null) return;
+        OverlapImageListView overlapImage = view.findViewById(R.id.overlapImage);
+
+        ArrayList<Bitmap> imageList = new ArrayList<>();
+
+        List<Integer> imageResourceList = new ArrayList<>();
+        imageResourceList.add(R.drawable.ic_check_green);
+        imageResourceList.add(R.drawable.ic_google);
+        imageResourceList.add(R.drawable.ic_facebook);
+
+        for (int i = 0; i < imageResourceList.size(); i++) {
+            int resId = imageResourceList.get(i);
+            Glide.with(getActivity().getApplicationContext())
+                    .asBitmap()
+                    .load(resId)
+                    .apply(RequestOptions.circleCropTransform())
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource,
+                                                    @Nullable Transition<? super Bitmap> transition) {
+                            if (getActivity() == null) return;
+                            imageList.add(resource);
+
+                            // set the image after everything is loaded
+                            if (imageList.size() == imageResourceList.size()) {
+                                overlapImage.setImageList(imageList);
+                            }
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                            // no-op
+                        }
+                    });
+        }
     }
 }

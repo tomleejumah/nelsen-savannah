@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
+import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Model.MentorItem;
 import com.app.nisisiafrica.Model.UserData;
@@ -29,6 +30,7 @@ import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.database.FirebaseDatabase;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,11 +43,11 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import kotlin.Unit;
 
 public class EditProfileActivity extends AppCompatActivity {
-
     private static final String TAG = "EditProfileActivity";
     Dialog dialog;
     MaterialButton btnCancel, btnConfirm;
     boolean isMentor;
+    private UserData userData;
     private String id, firstName, lastName, description, name, dpImageUrl;
     private CourseItem courseItem;
     private MentorItem mentorItem;
@@ -67,18 +69,20 @@ public class EditProfileActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             isMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
-//            id = isMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.USER_ID);
-            id = intent.getStringExtra(Constants.USER_ID);
+            id = intent.getStringExtra(Constants.CURRENT_USER_ID);
             Log.d(TAG, "onCreate: " + id);
 
             SharedUserViewModel sharedUserViewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
-            sharedUserViewModel.fetchingUserDataFromDB(id).observe(this, data -> {
+            sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
                     firstName = data.getFirstName();
                     lastName = data.getLastName();
                     description = data.getBio();
                     dpImageUrl = data.getPhotoUrl();
                     name = firstName + " " + lastName;
+
+                    userData = data;
+
                     Glide.with(this).load(data.getPhotoUrl()).into((CircleImageView) findViewById(R.id.editprofileImage));
                     ((EditText) findViewById(R.id.FirstNameEditText)).setText(firstName);
                     ((EditText) findViewById(R.id.LastNameEditText)).setText(lastName);
@@ -133,7 +137,7 @@ public class EditProfileActivity extends AppCompatActivity {
             //update profile
             if (isMentor) {
                 name = firstName + " " + lastName;
-                updateMentorProfile(name, description, courseItem);
+                updateMentorProfile(name, description);
 
             } else {
                 updateMenteeProfile(firstName, lastName, description);
@@ -142,16 +146,15 @@ public class EditProfileActivity extends AppCompatActivity {
         });
     }
 
-    private void updateMentorProfile(String name, String description, CourseItem courseItem) {
+    private void updateMentorProfile(String name, String description) {
 
         //todo use realtime student count/images/booked dates
 
         mentorItem = new MentorItem(id, dpImageUrl, name, description, "", new ArrayList<>(), new HashSet<>());
-//                courseList);
         FirebaseDataBaseHelper.INSTANCE.saveOrUpdateMentor(mentorItem, aBoolean -> {
             Log.d(TAG, "updateMentorProfile: " + aBoolean);
             //update bio
-            if ( !mentorItem.getMentorDescription().isEmpty()){
+            if (!mentorItem.getMentorDescription().isEmpty()) {
                 FirebaseDataBaseHelper.INSTANCE.updateUserBio(id, mentorItem.getMentorDescription());
             }
             updateCourseList(id);
@@ -164,15 +167,21 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void updateMenteeProfile(String firstName, String lastName, String description) {
-//        FirebaseDataBaseHelper.INSTANCE.saveOrUpdateMentee(id, firstName, lastName, description, aBoolean -> {
-//            Log.d(TAG, "updateMenteeProfile: " + aBoolean);
-//            return Unit.INSTANCE;
-//        }, e -> {
-//            Log.e(TAG, "Failed to add mentee", e);
-//            return Unit.INSTANCE;
-//        });
-//
-//        }
+        userData.setFirstName(firstName);
+        userData.setLastName(lastName);
+        userData.setBio(description);
+        FirebaseDataBaseHelper.INSTANCE.saveOrUpdateUser(userData,
+                FirebaseDatabase.getInstance().getReference().child("users"), aBoolean -> {
+                    Log.d(TAG, "updateMenteeProfile: " + aBoolean);
+                    CustomSnackbar.show(this, "Profile Update", Snackbar.LENGTH_SHORT, 1);
+                    finish();
+                    return Unit.INSTANCE;
+                }, e -> {
+                    CustomSnackbar.show(this, "Failed check on your internet and retry", Snackbar.LENGTH_SHORT, 3);
+                    Log.e(TAG, "Failed to update user", e);
+                    return Unit.INSTANCE;
+                });
+
     }
 
     private void fetchCoursesById(String id) {
@@ -201,7 +210,6 @@ public class EditProfileActivity extends AppCompatActivity {
 
             @Override
             public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-//                FirebaseCallback.super.onMentorsFetched(mentors);
             }
 
             @Override
@@ -264,7 +272,7 @@ public class EditProfileActivity extends AppCompatActivity {
             String link = courseLink.getText().toString().trim();
             String imageUrl = courseImageUrl.getText().toString().trim();
 
-            courseItem = new CourseItem(id,imageUrl, dpImageUrl, name, title, duration, lessons, link, false);
+            courseItem = new CourseItem(id, imageUrl, dpImageUrl, name, title, duration, lessons, link, false);
             courseList.add(courseItem);
             coursesAdapter.notifyItemInserted(courseList.size() - 1);
             dialog.dismiss();
@@ -273,12 +281,18 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void updateCourseList(String mentorId) {
+        if (courseList.isEmpty()) {
+            CustomSnackbar.show(this, "Updated", Snackbar.LENGTH_SHORT, 4);
+            finish();
+            return;
+        }
         FirebaseDataBaseHelper.INSTANCE.saveOrUpdateCourse(courseItem, mentorId, aBoolean -> {
             Log.d(TAG, "updateCourseList: " + aBoolean);
-            CustomSnackbar.show(this, "Profile Update", Snackbar.LENGTH_SHORT, 4);
+            CustomSnackbar.show(this, "Profile Update & Course Success", Snackbar.LENGTH_SHORT, 4);
             finish();
             return Unit.INSTANCE;
         }, e -> {
+            CustomSnackbar.show(this, "Failed check on your internet and retry", Snackbar.LENGTH_SHORT, 3);
             Log.e(TAG, "Failed to add course", e);
             return Unit.INSTANCE;
         });

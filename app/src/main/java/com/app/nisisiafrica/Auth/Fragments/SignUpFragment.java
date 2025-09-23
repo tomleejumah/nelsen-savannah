@@ -30,11 +30,12 @@ import androidx.lifecycle.ViewModelProvider;
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
+import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
-import com.app.nisisiafrica.Utils.SnackbarHandler;
+import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
@@ -95,6 +96,7 @@ public class SignUpFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
 
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
+//            Util.saveState(Constants.USER_ID, userData.getId());
             sharedUserViewModel.saveUserData(userData);
             Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
             return Unit.INSTANCE;
@@ -284,7 +286,7 @@ public class SignUpFragment extends Fragment {
                             );
                             sharedUserViewModel.setUserData(userData);
                             sharedUserViewModel.saveUserData(userData);
-                            Util.saveState("UserID",id);
+                            Util.saveState(Constants.CURRENT_USER_ID,id);
                             Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                         } else {
                             String failureMessage = Util.getErrorString(task);
@@ -316,9 +318,11 @@ public class SignUpFragment extends Fragment {
                 isSuccess -> {
                     if (isSuccess) {
                         // Navigate to the next activity
+                        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                        userData.setId(userId);
                         sharedUserViewModel.setUserData(userData);
                         sharedUserViewModel.saveUserData(userData);
-                        Util.saveState("UserID",userData.getId());
+                        Util.saveState(Constants.CURRENT_USER_ID,FirebaseAuth.getInstance().getCurrentUser().getUid());
                         Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                     }
                     return Unit.INSTANCE;

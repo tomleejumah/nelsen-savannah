@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.palette.graphics.Palette;
 
+import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Model.CourseItem;
 import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
 import com.app.nisisiafrica.Model.MentorItem;
@@ -46,7 +48,7 @@ import java.util.Objects;
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
-public class ProfileActivity extends AppCompatActivity implements FirebaseCallback{
+public class ProfileActivity extends AppCompatActivity implements FirebaseCallback {
     private ConstraintLayout gradientOverlay;
     private EdgeBlurImageView dpImage;
     private TextView title;
@@ -60,6 +62,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     BlurView blurViewName,blurViewDesc,blurViewDescHead,blurViewRc;
     private static final String TAG = "ProfileActivity";
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,7 +79,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         Intent intent = getIntent();
         if (intent != null) {
              isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
-             id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.USER_ID);
+             id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.CURRENT_USER_ID);
         }
         Log.d(TAG, "onCreate: "+id);
 
@@ -94,39 +97,10 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         tvDescription = findViewById(R.id.tv_Description);
 
         if (isFromMentor){
-
             FirebaseDataBaseHelper.INSTANCE.getMentorData(id,this);
-
-//            FirebaseDataBaseHelper.INSTANCE.getMentorData(id, new FirebaseCallback() {
-//                @Override
-//                public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
-//
-//                }
-//
-//                @Override
-//                public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
-//                    blurViewDesc.setVisibility(
-//                            TextUtils.isEmpty(mentors != null ? mentors.getMentorDescription() : null)
-//                                    ? View.GONE
-//                                    : View.VISIBLE
-//                    );
-//                    tvDescription.setText(mentors.getMentorDescription());
-//                    tv_username.setText(mentors.getMentorName());
-//
-//                    loadAndStyle(mentors.getMentorImageUrl());
-//                }
-//
-//                @Override
-//                public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
-//                }
-//
-//                @Override
-//                public void onError(@org.jetbrains.annotations.Nullable Exception e) {
-//                }
-//            });
         }else {
             sharedUserViewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
-            sharedUserViewModel.fetchingUserDataFromDB(id).observe(this, data -> {
+            sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
                     userData = data;
                     loadAndStyle(userData.getPhotoUrl());
@@ -158,7 +132,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             Intent intent1 = new Intent(ProfileActivity.this, EditProfileActivity.class);
             boolean isMentor = userData != null && Objects.equals(userData.getUserRole(), "Mentor");
             intent1.putExtra(Constants.IS_MENTOR, isMentor);
-            intent1.putExtra(Constants.USER_ID, userData != null ? userData.getId() : id);
+            intent1.putExtra(Constants.CURRENT_USER_ID, userData != null ? userData.getId() : id);
             startActivity(intent1);
         });
 
@@ -208,12 +182,10 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
     @Override
     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
-//        FirebaseCallback.super.onCoursesFetched(courses);
     }
 
     @Override
     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-//        FirebaseCallback.super.onMentorsFetched(mentors);
     }
 
     @Override
