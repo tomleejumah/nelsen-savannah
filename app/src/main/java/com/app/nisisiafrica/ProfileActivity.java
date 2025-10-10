@@ -28,12 +28,12 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.palette.graphics.Palette;
 
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.Model.CourseItem;
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
-import com.app.nisisiafrica.Model.MentorItem;
-import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.Utils.EdgeBlurImageView;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
@@ -50,13 +50,13 @@ import eightbitlab.com.blurview.BlurView;
 
 public class ProfileActivity extends AppCompatActivity implements FirebaseCallback {
     private ConstraintLayout gradientOverlay;
-    private EdgeBlurImageView dpImage;
+    private EdgeBlurImageView  dpImage;
     private TextView title;
     private CustomTarget<Bitmap> paletteTarget;
     private int defaultColor;
     private String id,role;
     boolean isFromMentor;
-    private SharedUserViewModel sharedUserViewModel;
+    private UserViewModel sharedUserViewModel;
     private UserData userData;
     private TextView tv_username,tvDescription;
     BlurView blurViewName,blurViewDesc,blurViewDescHead,blurViewRc;
@@ -97,9 +97,9 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         tvDescription = findViewById(R.id.tv_Description);
 
         if (isFromMentor){
-            FirebaseDataBaseHelper.INSTANCE.getMentorData(id,this);
+            FirebaseRemoteDataSource.INSTANCE.getMentorData(id,this);
         }else {
-            sharedUserViewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
+            sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
             sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
                     userData = data;
@@ -122,7 +122,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         gradientOverlay = findViewById(R.id.root);
         dpImage = findViewById(R.id.dpImage);
-        dpImage.setBlurRadius(80f);
+        dpImage.setBlurRadius(30f);
 
         defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray);
 

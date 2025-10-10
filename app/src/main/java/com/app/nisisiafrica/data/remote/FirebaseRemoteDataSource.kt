@@ -1,12 +1,20 @@
-package com.app.nisisiafrica.Utils
+package com.app.nisisiafrica.data.remote
 
 import android.content.Context
 import android.util.Log
 import com.app.nisisiafrica.Constants
 import com.app.nisisiafrica.Interfaces.FirebaseCallback
-import com.app.nisisiafrica.Model.CourseItem
-import com.app.nisisiafrica.Model.MentorItem
-import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.Utils.Util
+import com.app.nisisiafrica.data.Model.CourseItem
+import com.app.nisisiafrica.data.Model.MentorItem
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
+import kotlinx.coroutines.flow.Flow
+import com.app.nisisiafrica.data.Model.UserData
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
@@ -15,17 +23,18 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 
-object FirebaseDataBaseHelper {
+object FirebaseRemoteDataSource {
     private const val TAG = "FirebaseUserHelper"
 
     //todo update to use paging and migrate to use suspending functions
     fun saveOrUpdateUser(
-        userData: UserData,
-        usersRef: DatabaseReference,
-        onSuccess: ((Boolean) -> Unit)?,
-        onError: ((Exception) -> Unit)?
+           userData: UserData,
+           usersRef: DatabaseReference,
+           onSuccess: ((Boolean) -> Unit)?,
+           onError: ((Exception) -> Unit)?
     ) {
         val user = hashMapOf(
             "id" to Util.getState(Constants.CURRENT_USER_ID,""),
@@ -279,7 +288,6 @@ object FirebaseDataBaseHelper {
             }
     }
 
-    //todo switch to paging for mentor and courses
     fun fetchCourses(
         firebaseCallback: FirebaseCallback
     ) {
@@ -291,18 +299,28 @@ object FirebaseDataBaseHelper {
                 val courses = mutableListOf<CourseItem>()
                 for (courseSnapshot in snapshot.children) {
                     val course = CourseItem(
-                        tutorId = courseSnapshot.child("mentorId").getValue(String::class.java) ?: "",
-                        courseImageUrl = courseSnapshot.child("courseImageUrl").getValue(String::class.java) ?: "",
-                        tutorAvatarUrl = courseSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
-                        tutorName = courseSnapshot.child("mentorName").getValue(String::class.java) ?: "",
-                        courseTitle = courseSnapshot.child("courseTitle").getValue(String::class.java) ?: "",
-                        duration = courseSnapshot.child("courseDuration").getValue(String::class.java) ?: "",
-                        lessons = courseSnapshot.child("courseLessons").getValue(String::class.java) ?: "",
-                        courseLink = courseSnapshot.child("courseLink").getValue(String::class.java) ?: "",
-                        isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java) ?: false
+                        tutorId = courseSnapshot.child("mentorId").getValue(String::class.java)
+                            ?: "",
+                        courseImageUrl = courseSnapshot.child("courseImageUrl")
+                            .getValue(String::class.java) ?: "",
+                        tutorAvatarUrl = courseSnapshot.child("mentorImageUrl")
+                            .getValue(String::class.java) ?: "",
+                        tutorName = courseSnapshot.child("mentorName").getValue(String::class.java)
+                            ?: "",
+                        courseTitle = courseSnapshot.child("courseTitle")
+                            .getValue(String::class.java) ?: "",
+                        duration = courseSnapshot.child("courseDuration")
+                            .getValue(String::class.java) ?: "",
+                        lessons = courseSnapshot.child("courseLessons").getValue(String::class.java)
+                            ?: "",
+                        courseLink = courseSnapshot.child("courseLink").getValue(String::class.java)
+                            ?: "",
+                        isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java)
+                            ?: false
                     )
                     courses.add(course)
                 }
+                courses.shuffle()
                 firebaseCallback.onCoursesFetched(courses)
             }
 
@@ -322,16 +340,24 @@ object FirebaseDataBaseHelper {
                 val mentors = mutableListOf<MentorItem>()
                 for (mentorSnapshot in snapshot.children) {
                     val mentor = MentorItem(
-                        mentorId = mentorSnapshot.child("mentorId").getValue(String::class.java) ?: "",
-                        mentorImageUrl = mentorSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
-                        mentorName = mentorSnapshot.child("mentorName").getValue(String::class.java) ?: "",
-                        mentorDescription = mentorSnapshot.child("mentorDescription").getValue(String::class.java) ?: "",
-                        studentsCount = mentorSnapshot.child("studentsCount").getValue(String::class.java),
-                        studentImages = mentorSnapshot.child("studentImages").getValue(List::class.java) as? List<String>,
-                        bookedDates = mentorSnapshot.child("bookedDates").getValue(Set::class.java) as? Set<LocalDate>
+                        mentorId = mentorSnapshot.child("mentorId").getValue(String::class.java)
+                            ?: "",
+                        mentorImageUrl = mentorSnapshot.child("mentorImageUrl")
+                            .getValue(String::class.java) ?: "",
+                        mentorName = mentorSnapshot.child("mentorName").getValue(String::class.java)
+                            ?: "",
+                        mentorDescription = mentorSnapshot.child("mentorDescription")
+                            .getValue(String::class.java) ?: "",
+                        studentsCount = mentorSnapshot.child("studentsCount")
+                            .getValue(String::class.java),
+                        studentImages = mentorSnapshot.child("studentImages")
+                            .getValue(List::class.java) as? List<String>,
+                        bookedDates = mentorSnapshot.child("bookedDates")
+                            .getValue(Set::class.java) as? Set<LocalDate>
                     )
                     mentors.add(mentor)
                 }
+                mentors.shuffle()
                 firebaseCallback.onMentorsFetched(mentors)
             }
 
@@ -340,6 +366,115 @@ object FirebaseDataBaseHelper {
             }
         })
     }
+
+    data class PagingKey(val startAfter: String?, val limit: Int)
+
+    fun getCoursesPagingSource(dbRef: DatabaseReference): PagingSource<PagingKey, CourseItem> {
+        return object : PagingSource<PagingKey, CourseItem>() {
+            override suspend fun load(params: LoadParams<PagingKey>): LoadResult<PagingKey, CourseItem> {
+                return try {
+                    val pageSize = params.loadSize.coerceAtLeast(10)
+                    val key = params.key ?: PagingKey(startAfter = null, limit = pageSize)
+
+                    var query = dbRef.child("courses")
+                        .orderByKey()
+                        .limitToFirst(pageSize + 1) // +1 to check if more pages exist
+
+                    if (key.startAfter != null) {
+                        query = query.startAfter(key.startAfter)
+                    }
+
+                    val snapshot = query.get().await()
+                    val allItems = snapshot.children.mapNotNull { courseSnapshot ->
+                        courseSnapshot.key?.let { key ->
+                            CourseItem(
+                                tutorId = courseSnapshot.child("mentorId").getValue(String::class.java) ?: "",
+                                courseImageUrl = courseSnapshot.child("courseImageUrl").getValue(String::class.java) ?: "",
+                                tutorAvatarUrl = courseSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
+                                tutorName = courseSnapshot.child("mentorName").getValue(String::class.java) ?: "",
+                                courseTitle = courseSnapshot.child("courseTitle").getValue(String::class.java) ?: "",
+                                duration = courseSnapshot.child("courseDuration").getValue(String::class.java) ?: "",
+                                lessons = courseSnapshot.child("courseLessons").getValue(String::class.java) ?: "",
+                                courseLink = courseSnapshot.child("courseLink").getValue(String::class.java) ?: "",
+                                isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java) ?: false
+                            ) to key
+                        }
+                    }
+
+                    val hasMore = allItems.size > pageSize
+                    val courses = allItems.take(pageSize).map { it.first }.shuffled()
+                    val keys = allItems.take(pageSize).map { it.second }
+
+                    LoadResult.Page(
+                        data = courses,
+                        prevKey = null, // Forward pagination only
+                        nextKey = if (hasMore) PagingKey(keys.lastOrNull(), pageSize) else null
+                    )
+                } catch (e: Exception) {
+                    LoadResult.Error(e)
+                }
+            }
+
+            override fun getRefreshKey(state: PagingState<PagingKey, CourseItem>): PagingKey? {
+                return null
+            }
+        }
+    }
+
+    fun getMentorsPagingSource(dbRef: DatabaseReference): PagingSource<PagingKey, MentorItem> {
+        return object : PagingSource<PagingKey, MentorItem>() {
+            override suspend fun load(params: LoadParams<PagingKey>): LoadResult<PagingKey, MentorItem> {
+                return try {
+                    val pageSize = params.loadSize.coerceAtLeast(10)
+                    val key = params.key ?: PagingKey(startAfter = null, limit = pageSize)
+
+                    var query = dbRef.child("mentors")
+                        .orderByKey()
+                        .limitToFirst(pageSize + 1)
+
+                    if (key.startAfter != null) {
+                        query = query.startAfter(key.startAfter)
+                    }
+
+                    val snapshot = query.get().await()
+                    val allItems = snapshot.children.mapNotNull { mentorSnapshot ->
+                        mentorSnapshot.key?.let { key ->
+                            MentorItem(
+                                mentorId = mentorSnapshot.child("mentorId").getValue(String::class.java) ?: "",
+                                mentorImageUrl = mentorSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
+                                mentorName = mentorSnapshot.child("mentorName").getValue(String::class.java) ?: "",
+                                mentorDescription = mentorSnapshot.child("mentorDescription").getValue(String::class.java) ?: "",
+                                studentsCount = mentorSnapshot.child("studentsCount").getValue(String::class.java),
+                                studentImages = mentorSnapshot.child("studentImages").getValue(Map::class.java)
+                                    ?.values?.mapNotNull { it.toString() } as? List<String>,
+                                bookedDates = mentorSnapshot.child("bookedDates").getValue(Map::class.java)
+                                    ?.values?.mapNotNull {
+                                        try { LocalDate.parse(it.toString()) } catch (_: Exception) { null }
+                                    }?.toSet()
+                            ) to key
+                        }
+                    }
+
+                    val hasMore = allItems.size > pageSize
+                    val mentors = allItems.take(pageSize).map { it.first }.shuffled()
+                    val keys = allItems.take(pageSize).map { it.second }
+
+                    LoadResult.Page(
+                        data = mentors,
+                        prevKey = null,
+                        nextKey = if (hasMore) PagingKey(keys.lastOrNull(), pageSize) else null
+                    )
+                } catch (e: Exception) {
+                    LoadResult.Error(e)
+                }
+            }
+
+            override fun getRefreshKey(state: PagingState<PagingKey, MentorItem>): PagingKey? {
+                return null
+            }
+        }
+    }
+
     fun signOutAll(context: Context, onComplete: () -> Unit) {
         GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
             .addOnCompleteListener {
@@ -353,5 +488,4 @@ object FirebaseDataBaseHelper {
         val userRef = dbRef.child("users").child(id)
         userRef.child("Bio").setValue(description)
     }
-
 }

@@ -5,8 +5,8 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.app.nisisiafrica.Constants
-import com.app.nisisiafrica.Model.UserData
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper
+import com.app.nisisiafrica.data.Model.UserData
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import com.app.nisisiafrica.Utils.Util
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -69,7 +69,7 @@ class GoogleAuthHelper(
                     Util.saveState(Constants.CURRENT_USER_ID, userId)
                     userData.id = userId
 
-                    FirebaseDataBaseHelper.getOrAssignUserRole(
+                    FirebaseRemoteDataSource.getOrAssignUserRole(
                         firebaseUserId = userId,
                         onSuccess = { role ->
                             // User role fetched/assigned successfully
@@ -128,7 +128,7 @@ class GoogleAuthHelper(
             } else {
                 Log.d("FirebaseDB", "User does not exist, saving new user (Google)")
                 userData.id = loggedInUser.toString()
-                FirebaseDataBaseHelper.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
+                FirebaseRemoteDataSource.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
             }
         }
     }

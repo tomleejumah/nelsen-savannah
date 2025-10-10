@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.app.nisisiafrica.Dao.UserDao
-import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.data.local.Dao.UserDao
+import com.app.nisisiafrica.data.Model.UserData
 
 @Database(entities = [UserData::class], version = 1, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
