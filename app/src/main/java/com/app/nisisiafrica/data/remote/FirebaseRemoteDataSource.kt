@@ -2,18 +2,14 @@ package com.app.nisisiafrica.data.remote
 
 import android.content.Context
 import android.util.Log
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.app.nisisiafrica.Constants
 import com.app.nisisiafrica.Interfaces.FirebaseCallback
 import com.app.nisisiafrica.Utils.Util
+import com.app.nisisiafrica.data.Model.Booking
 import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.MentorItem
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
-import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
-import kotlinx.coroutines.flow.Flow
 import com.app.nisisiafrica.data.Model.UserData
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -25,19 +21,22 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 object FirebaseRemoteDataSource {
     private const val TAG = "FirebaseUserHelper"
 
     //todo update to use paging and migrate to use suspending functions
     fun saveOrUpdateUser(
-           userData: UserData,
-           usersRef: DatabaseReference,
-           onSuccess: ((Boolean) -> Unit)?,
-           onError: ((Exception) -> Unit)?
+        userData: UserData,
+        usersRef: DatabaseReference,
+        onSuccess: ((Boolean) -> Unit)?,
+        onError: ((Exception) -> Unit)?
     ) {
         val user = hashMapOf(
-            "id" to Util.getState(Constants.CURRENT_USER_ID,""),
+            "id" to Util.getState(Constants.CURRENT_USER_ID, ""),
             "email" to userData.email,
             "displayName" to userData.displayName,
             "firstName" to userData.firstName,
@@ -90,6 +89,35 @@ object FirebaseRemoteDataSource {
         })
 
     }
+
+    suspend fun getBookedDates(userId: String): List<Booking> = suspendCoroutine { cont ->
+        val datesRef = FirebaseDatabase.getInstance().reference.child("bookedDates").child(userId)
+
+        datesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val dates = mutableListOf<Booking>()
+                for (dateSnapshot in snapshot.children) {
+                    val booking = Booking(
+                        id = dateSnapshot.child("id").getValue(Int::class.java) ?: 0,
+                        mentorId = dateSnapshot.child("mentorId").getValue(String::class.java)
+                            ?: "",
+                        studentId = dateSnapshot.child("studentId").getValue(String::class.java)
+                            ?: "",
+                        date = dateSnapshot.child("date").getValue(String::class.java) ?: "",
+                        time = dateSnapshot.child("time").getValue(String::class.java) ?: ""
+                    )
+
+                    dates.add(booking)
+                }
+                cont.resume(dates)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                cont.resumeWithException(error.toException())
+            }
+        })
+    }
+
 
     fun getUserAndData(
         firebaseCallback: FirebaseCallback
@@ -238,6 +266,7 @@ object FirebaseRemoteDataSource {
         val coursesRef = FirebaseDatabase.getInstance().reference.child("courses")
         val courseId: String = coursesRef.push().key.toString()
         val course = hashMapOf(
+            "courseId" to courseId,
             "tutorId" to tutorId,
             "courseImageUrl" to courseData.courseImageUrl,
             "mentorImageUrl" to courseData.tutorAvatarUrl,
@@ -299,6 +328,8 @@ object FirebaseRemoteDataSource {
                 val courses = mutableListOf<CourseItem>()
                 for (courseSnapshot in snapshot.children) {
                     val course = CourseItem(
+                        courseId = courseSnapshot.child("courseId").getValue(String::class.java)
+                            ?: "",
                         tutorId = courseSnapshot.child("mentorId").getValue(String::class.java)
                             ?: "",
                         courseImageUrl = courseSnapshot.child("courseImageUrl")
@@ -388,15 +419,26 @@ object FirebaseRemoteDataSource {
                     val allItems = snapshot.children.mapNotNull { courseSnapshot ->
                         courseSnapshot.key?.let { key ->
                             CourseItem(
-                                tutorId = courseSnapshot.child("mentorId").getValue(String::class.java) ?: "",
-                                courseImageUrl = courseSnapshot.child("courseImageUrl").getValue(String::class.java) ?: "",
-                                tutorAvatarUrl = courseSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
-                                tutorName = courseSnapshot.child("mentorName").getValue(String::class.java) ?: "",
-                                courseTitle = courseSnapshot.child("courseTitle").getValue(String::class.java) ?: "",
-                                duration = courseSnapshot.child("courseDuration").getValue(String::class.java) ?: "",
-                                lessons = courseSnapshot.child("courseLessons").getValue(String::class.java) ?: "",
-                                courseLink = courseSnapshot.child("courseLink").getValue(String::class.java) ?: "",
-                                isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java) ?: false
+                                courseId = courseSnapshot.child("courseId")
+                                    .getValue(String::class.java) ?: "",
+                                tutorId = courseSnapshot.child("mentorId")
+                                    .getValue(String::class.java) ?: "",
+                                courseImageUrl = courseSnapshot.child("courseImageUrl")
+                                    .getValue(String::class.java) ?: "",
+                                tutorAvatarUrl = courseSnapshot.child("mentorImageUrl")
+                                    .getValue(String::class.java) ?: "",
+                                tutorName = courseSnapshot.child("mentorName")
+                                    .getValue(String::class.java) ?: "",
+                                courseTitle = courseSnapshot.child("courseTitle")
+                                    .getValue(String::class.java) ?: "",
+                                duration = courseSnapshot.child("courseDuration")
+                                    .getValue(String::class.java) ?: "",
+                                lessons = courseSnapshot.child("courseLessons")
+                                    .getValue(String::class.java) ?: "",
+                                courseLink = courseSnapshot.child("courseLink")
+                                    .getValue(String::class.java) ?: "",
+                                isLiked = courseSnapshot.child("isLiked")
+                                    .getValue(Boolean::class.java) ?: false
                             ) to key
                         }
                     }
@@ -440,16 +482,27 @@ object FirebaseRemoteDataSource {
                     val allItems = snapshot.children.mapNotNull { mentorSnapshot ->
                         mentorSnapshot.key?.let { key ->
                             MentorItem(
-                                mentorId = mentorSnapshot.child("mentorId").getValue(String::class.java) ?: "",
-                                mentorImageUrl = mentorSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
-                                mentorName = mentorSnapshot.child("mentorName").getValue(String::class.java) ?: "",
-                                mentorDescription = mentorSnapshot.child("mentorDescription").getValue(String::class.java) ?: "",
-                                studentsCount = mentorSnapshot.child("studentsCount").getValue(String::class.java),
-                                studentImages = mentorSnapshot.child("studentImages").getValue(Map::class.java)
+                                mentorId = mentorSnapshot.child("mentorId")
+                                    .getValue(String::class.java) ?: "",
+                                mentorImageUrl = mentorSnapshot.child("mentorImageUrl")
+                                    .getValue(String::class.java) ?: "",
+                                mentorName = mentorSnapshot.child("mentorName")
+                                    .getValue(String::class.java) ?: "",
+                                mentorDescription = mentorSnapshot.child("mentorDescription")
+                                    .getValue(String::class.java) ?: "",
+                                studentsCount = mentorSnapshot.child("studentsCount")
+                                    .getValue(String::class.java),
+                                studentImages = mentorSnapshot.child("studentImages")
+                                    .getValue(Map::class.java)
                                     ?.values?.mapNotNull { it.toString() } as? List<String>,
-                                bookedDates = mentorSnapshot.child("bookedDates").getValue(Map::class.java)
+                                bookedDates = mentorSnapshot.child("bookedDates")
+                                    .getValue(Map::class.java)
                                     ?.values?.mapNotNull {
-                                        try { LocalDate.parse(it.toString()) } catch (_: Exception) { null }
+                                        try {
+                                            LocalDate.parse(it.toString())
+                                        } catch (_: Exception) {
+                                            null
+                                        }
                                     }?.toSet()
                             ) to key
                         }
