@@ -3,10 +3,12 @@ package com.app.nisisiafrica.Adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,14 +17,25 @@ import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.ViewAllActivity;
 import com.bumptech.glide.Glide;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.functions.FirebaseFunctions;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -82,11 +95,36 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         CourseItem item = getItem(position);
         if (item == null) return;
-
-        if (holder instanceof CompactViewHolder) {
+        if (holder instanceof CompactViewHolder ) {
             ((CompactViewHolder) holder).bind(item);
+            isLiked(item.getCourseId(),((CompactViewHolder) holder).likeBtn);
+            ((CompactViewHolder) holder).likeBtn.setOnClickListener(v -> {
+                if (v.getTag().equals("Like")){
+                    Toast.makeText(mContext, "Liked", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, ": "+item.getCourseId(), Toast.LENGTH_SHORT).show();
+                    FirebaseDatabase.getInstance().getReference().child("Likes").
+                            child((item.getCourseId())).child(Util.
+                                    getState(Constants.CURRENT_USER_ID, "")).setValue(true);
 
-            holder.itemView.setOnClickListener(v -> {
+//                    addNotification(item.getCourseId(),Util.getState(Constants.CURRENT_USER_ID,
+//                            ""),"Liked your Post", item.getTutorId());
+                    addNotification(item.getCourseId(), item.getTutorId(), "Liked your Post");
+
+                    notifyItemChanged(position);
+
+//                    saveLikedPost(item.getCourseId(), posts.getUserName(), posts.getDescription(),
+//                            posts.getPrice(), posts.getImageUrl(), posts.getPublisherID());
+                }else {
+                    notifyItemChanged(position);
+                    Toast.makeText(mContext, ": "+item.getCourseId(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, "Unliked", Toast.LENGTH_SHORT).show();
+                    FirebaseDatabase.getInstance().getReference().child("Likes").
+                            child((item.getCourseId())).child(Util.getState(Constants.CURRENT_USER_ID, "")).removeValue();
+                    removeLiked(item.getCourseId(),Util.getState(Constants.CURRENT_USER_ID, ""));
+                }
+            });
+
+            ((CompactViewHolder) holder).courseBody.setOnClickListener(v -> {
                 String url = item.getCourseLink();
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                     url = "https://" + url;
@@ -94,6 +132,9 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 mContext.startActivity(browserIntent);
             });
+//            ((CompactViewHolder) holder.courseBody.setOnClickListener(v -> {
+//
+//            });
         } else if (holder instanceof UpdateProfileViewHolder) {
             ((UpdateProfileViewHolder) holder).bind(item);
             holder.itemView.setOnClickListener(v -> {
@@ -115,9 +156,11 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
         TextView tv_lessons, tv_duration, tv_course_title, tv_tutor_name;
         CircleImageView iv_tutor_avatar, likeBtn;
         ImageView iv_course_image;
+        LinearLayout courseBody;
 
         public CompactViewHolder(@NonNull View itemView) {
             super(itemView);
+            courseBody = itemView.findViewById(R.id.courseBody);
             tv_duration = itemView.findViewById(R.id.tv_duration);
             tv_lessons = itemView.findViewById(R.id.tv_lessons);
             tv_course_title = itemView.findViewById(R.id.tv_course_title);
@@ -158,4 +201,101 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             duration.setText(courseItem.getDuration());
         }
     }
+
+//    private void addNotification(String postID, String senderId,String text,String coursePublisher) {
+//
+//        HashMap<String,Object> map=new HashMap<>();
+//
+//        map.put("senderId",senderId);
+//        map.put("text",text);
+//        map.put("courseID",postID);
+//
+//        if (!coursePublisher.equals(Util.getState(Constants.CURRENT_USER_ID, ""))){
+//            FirebaseDatabase.getInstance().getReference().child("Notifications").
+//                    child(coursePublisher).push().setValue(map);
+//        }
+//    }
+
+    private void addNotification(String postID, String coursePublisher, String text) {
+        String currentUserId = Util.getState(Constants.CURRENT_USER_ID, "");
+
+        if (coursePublisher.equals(currentUserId)) {
+            return;
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("coursePublisher", coursePublisher);
+        data.put("postID", postID);
+        data.put("text", text);
+
+        FirebaseFunctions.getInstance()
+                .getHttpsCallable("sendLikeNotification")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    Log.d("Notification", "Sent successfully");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Notification", "Failed to send", e);
+                });
+    }
+    private void removeLiked(String postId,String PublisherID){
+        DatabaseReference cartRef = FirebaseDatabase.getInstance().getReference().child("LIKED")
+                .child(Util.getState(Constants.CURRENT_USER_ID, ""));
+
+        Query query = cartRef.orderByChild("courseID").equalTo(postId);
+
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot itemSnapshot : dataSnapshot.getChildren()) {
+                    itemSnapshot.getRef().removeValue();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.e("Firebase", "onCancelled", databaseError.toException());
+            }
+        });
+    }
+
+    private void isLiked(String courseId, ImageView imageView){
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference()
+                .child("Likes").child(courseId);
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if(snapshot.child(Util.getState(Constants.CURRENT_USER_ID, "")).exists()){
+                    imageView.setImageResource(R.drawable.ic_liked);
+                    imageView.setTag("Liked");
+                } else {
+                    imageView.setImageResource(R.drawable.ic_like);
+                    imageView.setTag("Like");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+//    private void isLiked(String postId,ImageView imageView){
+//        FirebaseDatabase.getInstance().getReference().child("Likes").
+//                child(postId).addValueEventListener(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+//                        if(snapshot.child(Util.getState(Constants.CURRENT_USER_ID, "")).exists()){
+//                            imageView.setImageResource(R.drawable.ic_liked);
+//                            imageView.setTag("Liked");
+//                        }else {
+//                            imageView.setImageResource(R.drawable.ic_like);
+//                            imageView.setTag("Like");
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(@NonNull DatabaseError error) {
+//                    }
+//                });
+//    }
 }

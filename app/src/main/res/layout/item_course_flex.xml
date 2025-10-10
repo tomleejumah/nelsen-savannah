@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="160dp"
+    android:layout_width="180dp"
     android:layout_height="wrap_content"
     android:layout_marginEnd="12dp"
     android:layout_marginStart="8dp"
@@ -25,27 +25,31 @@
             <ImageView
                 android:id="@+id/iv_course_image"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="120dp"
+                android:minHeight="120dp"
+                android:maxHeight="200dp"
                 android:adjustViewBounds="true"
                 android:scaleType="centerCrop"
-                android:minWidth="120dp"
+                android:minWidth="150dp"
                 android:maxWidth="300dp"
                 android:src="@drawable/login"/>
 
 
             <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/likeBtn"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
                 android:layout_alignParentEnd="true"
                 android:padding="4dp"
                 android:layout_margin="8dp"
-                android:background="@color/white"
-                android:src="@drawable/ic_love"/>
+                android:background="@drawable/circle"
+                android:src="@drawable/ic_like"/>
 
         </RelativeLayout>
 
         <!-- Main Content -->
         <LinearLayout
+            android:id="@+id/courseBody"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -71,6 +75,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:text="Joseph Grover"
+                    android:drawableEnd="@drawable/ic_badge_verified"
                     android:textSize="12sp"
                     android:maxLines="1"
                     android:ellipsize="end" />

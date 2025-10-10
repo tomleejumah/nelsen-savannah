@@ -5,6 +5,8 @@ import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 data class DataClass(
    var userData : UserData
@@ -19,6 +21,20 @@ data class Question(
     val options: List<String> = emptyList()
 )
 
+data class Booking(
+    val id: Int,
+    val mentorId: String = "",
+    val studentId: String = "",
+    val date: String = "",
+    val time: String = ""
+){
+    fun toLocalDateTime(): LocalDateTime {
+        val localDate = LocalDate.parse(date)
+        val localTime = LocalTime.parse(time)
+        return LocalDateTime.of(localDate, localTime)
+    }
+}
+
 data class Section(
     val id: String,
     val title: String,
@@ -26,6 +42,7 @@ data class Section(
 )
 
 data class CourseItem(
+    val courseId: String= "",
     val tutorId: String = "",
     val courseImageUrl: String = "",
     val tutorAvatarUrl: String = "",
