@@ -27,6 +27,8 @@ import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
+import com.app.nisisiafrica.NotificationsActivity;
+import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.MentorItem;
@@ -60,24 +62,16 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
-    //todo read from firebase
-    private final Set<LocalDate> mySchedule = Set.of(
-            LocalDate.now().plusDays(2),
-            LocalDate.now().plusDays(5)
-    );
-    //todo pass from firebase
-    private final Set<LocalDate> mentorSchedules = Set.of(
-            LocalDate.now().plusDays(16),
-            LocalDate.now().plusDays(17),
-            LocalDate.now().plusDays(18)
-    );
+    private Set<LocalDate> mySchedule = new HashSet<>();
     private final Gson gson = new Gson();
     private final Type type = new TypeToken<List<String>>() {
     }.getType();
@@ -144,9 +138,19 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         YearMonth currentMonth = YearMonth.now();
         tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
 
-
-        //todo pass booked dates from database(firebase)
         CalendarView calendarView = view.findViewById(R.id.calendarView);
+        userViewModel.getBookedDates(Util.
+                getState(Constants.CURRENT_USER_ID, ""))
+                .observe(getViewLifecycleOwner(), bookings -> {
+                        if (bookings != null) {
+                            Set<LocalDate> dates = bookings.stream()
+                                    .map(b -> LocalDate.parse(b.getDate()))
+                                    .collect(Collectors.toSet());
+                            mySchedule.addAll(dates);
+                        calendarView.notifyCalendarChanged();
+                    }
+                });
+
         CalendarBinder binder = new CalendarBinder(
                 requireContext(),
                 null,
@@ -154,7 +158,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 false,
                 date -> {
                     // Handle date selection in fragment
-                    Toast.makeText(requireContext(), "Selected: " + date, Toast.LENGTH_SHORT).show();
                     calendarView.notifyCalendarChanged();
                 }
         );
@@ -199,7 +202,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         sharedViewModel.getCourses().observe(getViewLifecycleOwner(), pagingData -> {
             coursesAdapter.submitData(getLifecycle(), pagingData);
         });
-             //mentee url
+             //todo mentee url
         List<String> studentimages = new ArrayList<>();
         studentimages.add("url");
         studentimages.add("url");
@@ -229,6 +232,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             Intent intent = new Intent(getActivity(), ProfileActivity.class);
             intent.putExtra(Constants.IS_MENTOR, false);
             intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
+            startActivity(intent);
+        });
+
+        view.findViewById(R.id.imgNotification).setOnClickListener(v ->{
+            Intent intent = new Intent(getActivity(), NotificationsActivity.class);
             startActivity(intent);
         });
 
@@ -318,27 +326,25 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     @Override
     public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
         if (mentorIds == null) return;
-        //todo hide mentor ui
         pendingRequests = mentorIds.size();
         for (String mentorId : mentorIds) {
             if (mentorId == null) break;
 
-            //todo fetch mentor data from firebase
 //            FirebaseDataBaseHelper.INSTANCE.getMentorData(mentorId,this );
         }
     }
     @Override
     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
 //        Log.d("DEBUG", "Mentors received: " + mentors.size());
-        mentorItemsList.clear();
+//        mentorItemsList.clear();
 //        Collections.shuffle(mentors);
-        mentorItemsList.addAll(mentors);
-        Log.d("DEBUG", "List size after add: " + mentorItemsList.size());
-        mentorsAdapter.notifyDataSetChanged();
-
-        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
-        params.height = calculateRecyclerViewHeight();
-        rcMentors.setLayoutParams(params);
+//        mentorItemsList.addAll(mentors);
+//        Log.d("DEBUG", "List size after add: " + mentorItemsList.size());
+//        mentorsAdapter.notifyDataSetChanged();
+//
+//        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
+//        params.height = calculateRecyclerViewHeight();
+//        rcMentors.setLayoutParams(params);
     }
 //    @Override
 //    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
@@ -366,11 +372,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         if (userData == null) return;
         role = userData.getUserRole();
         if (role.equals("Mentor")) {
-            //todo fetch mentor booked dates from firebase
             txtDateInfo.setText("• RED Underline: Your Schedules");
 
         } else {
-            //todo fetch mentee booking dates from firebase
             txtDateInfo.setText("• Blue Underline: Your schedules");
         }
 
@@ -379,8 +383,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     @Override
     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
 //    Collections.shuffle(courses);
-        courseItemsList.addAll(courses);
-        coursesAdapter.notifyDataSetChanged();
+//        courseItemsList.addAll(courses);
+//        coursesAdapter.notifyDataSetChanged();
     }
 
     public interface onScrollChangeListener {

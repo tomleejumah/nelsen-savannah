@@ -2,23 +2,20 @@ package com.app.nisisiafrica;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
-import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -28,16 +25,16 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.palette.graphics.Palette;
 
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.data.Model.CourseItem;
-import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
-import com.app.nisisiafrica.data.Model.MentorItem;
-import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.Utils.EdgeBlurImageView;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
-import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 import org.jetbrains.annotations.NotNull;
@@ -49,18 +46,17 @@ import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
 public class ProfileActivity extends AppCompatActivity implements FirebaseCallback {
+    private static final String TAG = "ProfileActivity";
+    boolean isFromMentor;
+    BlurView blurViewName, blurViewDesc, blurViewDescHead, blurViewRc;
     private ConstraintLayout gradientOverlay;
-    private EdgeBlurImageView  dpImage;
-    private TextView title;
+    private EdgeBlurImageView dpImage;
     private CustomTarget<Bitmap> paletteTarget;
     private int defaultColor;
-    private String id,role;
-    boolean isFromMentor;
+    private String id, role;
     private UserViewModel sharedUserViewModel;
     private UserData userData;
-    private TextView tv_username,tvDescription;
-    BlurView blurViewName,blurViewDesc,blurViewDescHead,blurViewRc;
-    private static final String TAG = "ProfileActivity";
+    private TextView tv_username, tvDescription;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -78,27 +74,28 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         Intent intent = getIntent();
         if (intent != null) {
-             isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
-             id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.CURRENT_USER_ID);
+            isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
+            id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.CURRENT_USER_ID);
         }
-        Log.d(TAG, "onCreate: "+id);
 
-        title = findViewById(R.id.txtDescTittle);
+        TextView title = findViewById(R.id.txtDescTittle);
+        TextView myCourses = findViewById(R.id.myCourses);
         title.setText(isFromMentor ? "Mentor Profile" : "Profile");
+        myCourses.setText(isFromMentor ? "My Materials" : "My Courses");
         float radius = 20f;
         BlurTarget target = findViewById(R.id.target);
-         blurViewName = findViewById(R.id.blurViewName);
-         blurViewDescHead = findViewById(R.id.blurViewDescHead);
-         blurViewDesc = findViewById(R.id.blurViewDesc);
-         blurViewRc = findViewById(R.id.bottomRc);
+        blurViewName = findViewById(R.id.blurViewName);
+        blurViewDescHead = findViewById(R.id.blurViewDescHead);
+        blurViewDesc = findViewById(R.id.blurViewDesc);
+        blurViewRc = findViewById(R.id.bottomRc);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         tv_username = findViewById(R.id.tv_username);
         tvDescription = findViewById(R.id.tv_Description);
 
-        if (isFromMentor){
-            FirebaseRemoteDataSource.INSTANCE.getMentorData(id,this);
-        }else {
+        if (isFromMentor) {
+            FirebaseRemoteDataSource.INSTANCE.getMentorData(id, this);
+        } else {
             sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
             sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
@@ -144,6 +141,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             startActivity(intent1);
         });
     }
+
     private void setupBlur(BlurTarget target, float radius, BlurView... blurViews) {
         for (BlurView blurView : blurViews) {
             blurView.setupWith(target).setBlurRadius(radius);
@@ -205,11 +203,10 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                     applyColorsAnimated(dominant, vibrant, muted);
                 });
 
-                // Load the non-blurred image into the profile photo (top section only)
                 Glide.with(ProfileActivity.this)
                         .load(url)
                         .apply(RequestOptions.circleCropTransform())
-                        .placeholder(R.drawable.donation)
+//                        .placeholder(R.drawable.donation)
                         .into(dpImage);
             }
 

@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -16,9 +17,14 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
+import com.app.nisisiafrica.Worker.BookingWorker;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
@@ -40,6 +46,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
 import com.trinitymirror.fabtobottomnavigation.FabToBottomNavigationAnim;
 
@@ -47,6 +54,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -86,12 +94,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         // Check for logged-in user
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) {
-            Log.e(TAG, "No logged-in user, redirecting to login");
             redirectToLogin();
             return;
         }
         currentUser = firebaseUser.getUid();
-        Util.saveState("UserID", currentUser);
+        Util.saveState(Constants.CURRENT_USER_ID, currentUser);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -102,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         sharedUserViewModel1 = new ViewModelProvider(this).get(UserViewModel.class);
         intent = getIntent();
         boolean isFromAuth = intent.getBooleanExtra("IS_FROM_AUTH", false);
-        Log.d(TAG, "onCreate: isFromAuth: " + isFromAuth);
         if (isFromAuth) {
             //handle fresh data
             sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, this::handleFreshUserData);
@@ -136,6 +142,32 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         fabView.setOnClickListener(v -> {
             fabToBottomNavigationAnim.showNavigationView();
         });
+
+        //fcm init
+        initFCM();
+
+        getUserBookedDates(this);
+    }
+    private void initFCM() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w("FCM", "Token fetch failed", task.getException());
+                        return;
+                    }
+
+                    String token = task.getResult();
+                    String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+
+                    if (!userId.isEmpty()) {
+                        DatabaseReference ref = FirebaseDatabase.getInstance()
+                                .getReference("Tokens")
+                                .child(userId);
+                        ref.setValue(token)
+                                .addOnSuccessListener(aVoid -> Log.d("FCM", "Token saved"))
+                                .addOnFailureListener(e -> Log.e("FCM", "Token save failed", e));
+                    }
+                });
     }
 
 //    @Override
@@ -223,7 +255,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void updateUserDataAndShowWelcome(UserData userData) {
-        Util.saveState("userRole", userRole);
+        Util.saveState(Constants.USER_ROLE, userRole);
         userData.setUserRole(userRole);
         sharedUserViewModel1.updateUserData(userData);
         SnackbarHandler snackbarHandler = (message, duration, type) -> {
@@ -261,6 +293,35 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         });
 
     }
+
+    private void getUserBookedDates(Context context){
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(false)
+                .build();
+
+        boolean isMentor ="Mentor".equals(userRole) || Util.getState(Constants.USER_ROLE, "Mentee").equals("Mentor");
+
+        PeriodicWorkRequest periodicWorkRequest;
+        if (isMentor) {
+
+            periodicWorkRequest = new PeriodicWorkRequest.Builder(
+                    BookingWorker.class,
+                    1,
+                    TimeUnit.HOURS
+            ).setConstraints(constraints).build();
+        }else {
+            periodicWorkRequest = new PeriodicWorkRequest.Builder(
+                    BookingWorker.class,
+                    1,
+                    TimeUnit.DAYS).setConstraints(constraints).build();
+        }
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "periodic_backup",
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicWorkRequest);
+    }
+
     private void saveToDb(UserData userData) {
         disposables.add(userDao.insertUserRx(userData)
                 .subscribeOn(Schedulers.io())
