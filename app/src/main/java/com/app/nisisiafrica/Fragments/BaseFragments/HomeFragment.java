@@ -27,16 +27,17 @@ import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.Model.CourseItem;
-import com.app.nisisiafrica.Model.MentorItem;
-import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.ViewModel.SharedViewModel;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.QuestionnaireActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.ViewAllActivity;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
@@ -110,10 +111,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        SharedUserViewModel viewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+        UserViewModel userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
 
         CircleImageView imgDp = view.findViewById(R.id.imgDp);
-        viewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
+        userViewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
             if (data != null) {
                 userData = data;
                 onUserDataReceived(data);
@@ -187,18 +188,18 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             }
         });
 
-        //getting courses from firebase
+        SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         rcCourses.setLayoutManager(layoutManager);
-        coursesAdapter = new CoursesAdapter(courseItemsList, getContext());
+        coursesAdapter = new CoursesAdapter(getContext());
         rcCourses.setAdapter(coursesAdapter);
 
-        view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-            scrollChangeListener.onParentScroll(oldScrollY, scrollY);
+        sharedViewModel.getCourses().observe(getViewLifecycleOwner(), pagingData -> {
+            coursesAdapter.submitData(getLifecycle(), pagingData);
         });
-
-        //mentor
+             //mentee url
         List<String> studentimages = new ArrayList<>();
         studentimages.add("url");
         studentimages.add("url");
@@ -208,8 +209,16 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         rcMentors = view.findViewById(R.id.rcMentorList);
         LinearLayoutManager layoutManager1 = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         rcMentors.setLayoutManager(layoutManager1);
-        mentorsAdapter = new MentorsAdapter(false, getContext(), mentorItemsList);
+        mentorsAdapter = new MentorsAdapter(false, getContext());
         rcMentors.setAdapter(mentorsAdapter);
+
+        sharedViewModel.getMentors().observe(getViewLifecycleOwner(), pagingData -> {
+            mentorsAdapter.submitData(getLifecycle(), pagingData);
+        });
+
+        view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            scrollChangeListener.onParentScroll(oldScrollY, scrollY);
+        });
 
         view.findViewById(R.id.txtRecorgnizeMe).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
@@ -230,18 +239,18 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         txtSeeAll.setOnClickListener(listener);
         showAll.setOnClickListener(listener);
 
-        fetchMentors();
-        fetchCourses();
+//        fetchMentors();
+//        fetchCourses();
 
         return view;
     }
 
     private void fetchMentors() {
-        FirebaseDataBaseHelper.INSTANCE.fetchMentors(this);
+        FirebaseRemoteDataSource.INSTANCE.fetchMentors(this);
     }
 
     private void fetchCourses() {
-        FirebaseDataBaseHelper.INSTANCE.fetchCourses(this);
+        FirebaseRemoteDataSource.INSTANCE.fetchCourses(this);
     }
 
     private void getMentorsID() {
@@ -320,8 +329,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
     @Override
     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-        Log.d("DEBUG", "Mentors received: " + mentors.size());
+//        Log.d("DEBUG", "Mentors received: " + mentors.size());
         mentorItemsList.clear();
+//        Collections.shuffle(mentors);
         mentorItemsList.addAll(mentors);
         Log.d("DEBUG", "List size after add: " + mentorItemsList.size());
         mentorsAdapter.notifyDataSetChanged();
@@ -368,6 +378,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     @Override
     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
+//    Collections.shuffle(courses);
         courseItemsList.addAll(courses);
         coursesAdapter.notifyDataSetChanged();
     }

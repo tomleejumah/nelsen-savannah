@@ -32,9 +32,9 @@ import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.MainActivity;
-import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
@@ -58,13 +58,13 @@ public class SignUpFragment extends Fragment {
     private ImageView emailCheckIcon;
     private SnackbarHandler snackbarHandler;
     private FragmentSignUpBinding binding;
-    private SharedUserViewModel sharedUserViewModel;
+    private UserViewModel sharedUserViewModel;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        sharedUserViewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+        sharedUserViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
 
         ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),

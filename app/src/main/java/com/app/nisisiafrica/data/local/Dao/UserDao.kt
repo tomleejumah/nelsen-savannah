@@ -1,4 +1,4 @@
-package com.app.nisisiafrica.Dao
+package com.app.nisisiafrica.data.local.Dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -6,7 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 
-import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.data.Model.UserData
 import io.reactivex.rxjava3.core.*
 
 @Dao
