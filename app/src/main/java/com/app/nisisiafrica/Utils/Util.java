@@ -14,7 +14,6 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 
-import com.app.nisisiafrica.Model.UserData;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;

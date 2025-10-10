@@ -4,8 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import com.app.nisisiafrica.Model.UserData
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper
+import com.app.nisisiafrica.data.Model.UserData
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -104,7 +104,7 @@ class FacebookAuthHelper(private val activity: Activity) {
 //            val userId = FirebaseAuth.getInstance().currentUser?.uid
             val userId = firebaseUser.uid
 
-                FirebaseDataBaseHelper.getOrAssignUserRole(
+                FirebaseRemoteDataSource.getOrAssignUserRole(
                     firebaseUserId = userId,
                     onSuccess = { role ->
                         userData.userRole = role
@@ -174,7 +174,7 @@ class FacebookAuthHelper(private val activity: Activity) {
                 onSuccess?.invoke(true)
             } else {
                 Log.d("FirebaseDB", "User does not exist, saving new user (Facebook)")
-                FirebaseDataBaseHelper.saveOrUpdateUser(userData, usersRef, null, null)
+                FirebaseRemoteDataSource.saveOrUpdateUser(userData, usersRef, null, null)
             }
         }
     }

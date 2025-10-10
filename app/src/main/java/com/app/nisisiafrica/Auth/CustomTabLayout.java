@@ -18,18 +18,15 @@ public class CustomTabLayout {
 
         updateTabState(0);
 
-        // Initialize indicator width based on tab1 width after layout has been measured
         tab1.post(() -> {
             indicator.getLayoutParams().width = tab1.getWidth();
             indicator.requestLayout();
         });
 
-        // Click Listeners for Tabs
         tab1.setOnClickListener(v -> viewPager.setCurrentItem(0));
 
         tab2.setOnClickListener(v -> viewPager.setCurrentItem(1));
 
-        // ViewPager Listener
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {

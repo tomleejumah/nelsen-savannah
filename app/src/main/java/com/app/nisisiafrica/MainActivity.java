@@ -19,18 +19,18 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
-import com.app.nisisiafrica.Dao.UserDao;
+import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.Model.CourseItem;
-import com.app.nisisiafrica.Model.MentorItem;
-import com.app.nisisiafrica.Model.UserData;
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private UserData userData,cachedUserData;
     private UserDao userDao;
     private Intent intent;
-    private SharedUserViewModel sharedUserViewModel1;
+    private UserViewModel sharedUserViewModel1;
     private FragmentManager fragmentManager;
     private Fragment currentlyDisplayedFragment = null;
     private FabToBottomNavigationAnim fabToBottomNavigationAnim;
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return insets;
         });
 
-        sharedUserViewModel1 = new ViewModelProvider(this).get(SharedUserViewModel.class);
+        sharedUserViewModel1 = new ViewModelProvider(this).get(UserViewModel.class);
         intent = getIntent();
         boolean isFromAuth = intent.getBooleanExtra("IS_FROM_AUTH", false);
         Log.d(TAG, "onCreate: isFromAuth: " + isFromAuth);
@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                             error -> Log.e(TAG, "Failed to delete user cache", error)
                     ));
 
-            FirebaseDataBaseHelper.INSTANCE.signOutAll(this, () -> {
+            FirebaseRemoteDataSource.INSTANCE.signOutAll(this, () -> {
                 redirectToLogin();
                 return Unit.INSTANCE;
             });
@@ -257,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, userData -> {
             cachedUserData = userData;
-            FirebaseDataBaseHelper.INSTANCE.getUserAndData(MainActivity.this);
+            FirebaseRemoteDataSource.INSTANCE.getUserAndData(MainActivity.this);
         });
 
     }
