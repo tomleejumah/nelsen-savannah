@@ -18,11 +18,11 @@ public class App extends Application {
         2b) Repositories scoped on feature/domain
         2c) DaggerHilt
         3) Caching of data
-        4) Pagination Imp for courses,mentors,Chats
+        4) Pagination Imp for courses,mentors,Chats == done(chats remaining)
         5) Backup to google
         6) Notifications and alarms
         7) Sync with calender(google)
-        8)
+        8) Add FCM for Notifications for the app
      **/
 
     private static AppDatabase appDatabase;

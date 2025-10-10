@@ -10,21 +10,27 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.app.nisisiafrica.App;
+import com.app.nisisiafrica.data.Model.Booking;
 import com.app.nisisiafrica.data.Repository.CoursesRepository;
 import com.app.nisisiafrica.data.Repository.MentorRepository;
+import com.app.nisisiafrica.data.Repository.UserRepository;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.data.Model.UserData;
+
+import java.time.LocalDate;
+import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-//todo fix the logic issue of data across
+//todo switch to kotlin
 public class UserViewModel extends AndroidViewModel {
     private static final String TAG = "SharedUserViewModel";
     private final MutableLiveData<UserData> userData = new MutableLiveData<>();
     private final CompositeDisposable disposables = new CompositeDisposable();
     private UserDao userDao;
+    private UserRepository userRepository = new UserRepository();
 
     public UserViewModel(@NonNull Application application) {
         super(application);
@@ -52,7 +58,7 @@ public class UserViewModel extends AndroidViewModel {
                                     userData.setValue(user);
                                 },
                                 throwable -> Log.e(TAG, "Error fetching user data", throwable),
-                                () -> Log.d(TAG, "No user found for id: " + id) // <-- works if Maybe<>
+                                () -> Log.d(TAG, "No user found for id: " + id)
                         )
         );
         return userData;
@@ -78,6 +84,10 @@ public class UserViewModel extends AndroidViewModel {
                                 throwable -> Log.e(TAG, "Error updating user", throwable)
                         )
         );
+    }
+
+    public LiveData<List<Booking>>getBookedDates(String userId){
+        return userRepository.getUserBookedDatesLive(userId);
     }
 
     @Override
