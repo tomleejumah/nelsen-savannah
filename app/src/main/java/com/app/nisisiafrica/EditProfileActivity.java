@@ -22,11 +22,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.Model.CourseItem;
-import com.app.nisisiafrica.Model.MentorItem;
-import com.app.nisisiafrica.Model.UserData;
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -72,7 +72,7 @@ public class EditProfileActivity extends AppCompatActivity {
             id = intent.getStringExtra(Constants.CURRENT_USER_ID);
             Log.d(TAG, "onCreate: " + id);
 
-            SharedUserViewModel sharedUserViewModel = new ViewModelProvider(this).get(SharedUserViewModel.class);
+            UserViewModel sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
             sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
                     firstName = data.getFirstName();
@@ -111,7 +111,7 @@ public class EditProfileActivity extends AppCompatActivity {
         if (isMentor) {
             LinearLayoutManager layoutManager = new LinearLayoutManager((this), LinearLayoutManager.VERTICAL, false);
             rcCourses.setLayoutManager(layoutManager);
-            coursesAdapter = new CoursesAdapter(courseList, this);
+            coursesAdapter = new CoursesAdapter( this);
             rcCourses.setAdapter(coursesAdapter);
             setUpDialog();
             fetchCoursesById(id);
@@ -151,11 +151,11 @@ public class EditProfileActivity extends AppCompatActivity {
         //todo use realtime student count/images/booked dates
 
         mentorItem = new MentorItem(id, dpImageUrl, name, description, "", new ArrayList<>(), new HashSet<>());
-        FirebaseDataBaseHelper.INSTANCE.saveOrUpdateMentor(mentorItem, aBoolean -> {
+        FirebaseRemoteDataSource.INSTANCE.saveOrUpdateMentor(mentorItem, aBoolean -> {
             Log.d(TAG, "updateMentorProfile: " + aBoolean);
             //update bio
             if (!mentorItem.getMentorDescription().isEmpty()) {
-                FirebaseDataBaseHelper.INSTANCE.updateUserBio(id, mentorItem.getMentorDescription());
+                FirebaseRemoteDataSource.INSTANCE.updateUserBio(id, mentorItem.getMentorDescription());
             }
             updateCourseList(id);
             return Unit.INSTANCE;
@@ -170,7 +170,7 @@ public class EditProfileActivity extends AppCompatActivity {
         userData.setFirstName(firstName);
         userData.setLastName(lastName);
         userData.setBio(description);
-        FirebaseDataBaseHelper.INSTANCE.saveOrUpdateUser(userData,
+        FirebaseRemoteDataSource.INSTANCE.saveOrUpdateUser(userData,
                 FirebaseDatabase.getInstance().getReference().child("users"), aBoolean -> {
                     Log.d(TAG, "updateMenteeProfile: " + aBoolean);
                     CustomSnackbar.show(this, "Profile Update", Snackbar.LENGTH_SHORT, 1);
@@ -185,7 +185,7 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void fetchCoursesById(String id) {
-        FirebaseDataBaseHelper.INSTANCE.fetchCoursesByMentorId(id, new FirebaseCallback() {
+        FirebaseRemoteDataSource.INSTANCE.fetchCoursesByMentorId(id, new FirebaseCallback() {
             @Override
             public void onUserDataReceived(@Nullable UserData userData) {
 
@@ -286,7 +286,7 @@ public class EditProfileActivity extends AppCompatActivity {
             finish();
             return;
         }
-        FirebaseDataBaseHelper.INSTANCE.saveOrUpdateCourse(courseItem, mentorId, aBoolean -> {
+        FirebaseRemoteDataSource.INSTANCE.saveOrUpdateCourse(courseItem, mentorId, aBoolean -> {
             Log.d(TAG, "updateCourseList: " + aBoolean);
             CustomSnackbar.show(this, "Profile Update & Course Success", Snackbar.LENGTH_SHORT, 4);
             finish();

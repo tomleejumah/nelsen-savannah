@@ -1,8 +1,8 @@
 package com.app.nisisiafrica.Interfaces
 
-import com.app.nisisiafrica.Model.CourseItem
-import com.app.nisisiafrica.Model.MentorItem
-import com.app.nisisiafrica.Model.UserData
+import com.app.nisisiafrica.data.Model.CourseItem
+import com.app.nisisiafrica.data.Model.MentorItem
+import com.app.nisisiafrica.data.Model.UserData
 
 interface FirebaseCallback {
     fun onUserDataReceived(userData: UserData?){}

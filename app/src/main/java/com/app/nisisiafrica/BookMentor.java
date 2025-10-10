@@ -13,9 +13,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
-import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.Utils.Util;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 
 public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener {
@@ -36,7 +36,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
             return insets;
         });
 
-        SharedUserViewModel viewModel = new ViewModelProvider((this)).get(SharedUserViewModel.class);
+        UserViewModel viewModel = new ViewModelProvider((this)).get(UserViewModel.class);
         String userID = Util.getState(Constants.CURRENT_USER_ID, "");
         viewModel.fetchingCurrentUserDataFromDB(userID).observe((this), data -> {
             if (data != null) {

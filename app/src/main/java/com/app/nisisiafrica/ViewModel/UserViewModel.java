@@ -10,21 +10,23 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.app.nisisiafrica.App;
-import com.app.nisisiafrica.Dao.UserDao;
-import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.data.Repository.CoursesRepository;
+import com.app.nisisiafrica.data.Repository.MentorRepository;
+import com.app.nisisiafrica.data.local.Dao.UserDao;
+import com.app.nisisiafrica.data.Model.UserData;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 //todo fix the logic issue of data across
-public class SharedUserViewModel extends AndroidViewModel {
+public class UserViewModel extends AndroidViewModel {
     private static final String TAG = "SharedUserViewModel";
     private final MutableLiveData<UserData> userData = new MutableLiveData<>();
     private final CompositeDisposable disposables = new CompositeDisposable();
     private UserDao userDao;
 
-    public SharedUserViewModel(@NonNull Application application) {
+    public UserViewModel(@NonNull Application application) {
         super(application);
         userDao = App.getUserDao();
     }

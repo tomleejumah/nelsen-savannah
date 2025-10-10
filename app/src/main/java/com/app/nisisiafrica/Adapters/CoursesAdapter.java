@@ -11,11 +11,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.paging.PagingDataAdapter;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.MainActivity;
-import com.app.nisisiafrica.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.ViewAllActivity;
 import com.bumptech.glide.Glide;
@@ -24,16 +26,26 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> {
     private static final int TYPE_COMPACT = 0;
     private static final int TYPE_EXPANDED = 1;
     private static final int TYPE_UPDATE_PROFILE = 2;
-    private final List<CourseItem> courseItems;
     private final Context mContext;
 
+    private static final DiffUtil.ItemCallback<CourseItem> DIFF_CALLBACK = new DiffUtil.ItemCallback<CourseItem>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull CourseItem oldItem, @NonNull CourseItem newItem) {
+            return oldItem.getCourseLink().equals(newItem.getCourseLink()); // Use unique identifier
+        }
 
-    public CoursesAdapter(List<CourseItem> courseItems, Context mContext) {
-        this.courseItems = courseItems;
+        @Override
+        public boolean areContentsTheSame(@NonNull CourseItem oldItem, @NonNull CourseItem newItem) {
+            return oldItem.equals(newItem);
+        }
+    };
+
+    public CoursesAdapter(Context mContext) {
+        super(DIFF_CALLBACK);
         this.mContext = mContext;
     }
 
@@ -59,8 +71,7 @@ public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return new CompactViewHolder(view);
         } else if (viewType == TYPE_EXPANDED) {
             View view = inflater.inflate(R.layout.item_course_flex, parent, false);
-//            return new ExpandedViewHolder(view);
-            return  new CompactViewHolder(view);
+            return new CompactViewHolder(view);
         } else {
             View view = inflater.inflate(R.layout.item_update_course, parent, false);
             return new UpdateProfileViewHolder(view);
@@ -69,41 +80,38 @@ public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        CourseItem item = courseItems.get(position);
+        CourseItem item = getItem(position);
+        if (item == null) return;
 
         if (holder instanceof CompactViewHolder) {
             ((CompactViewHolder) holder).bind(item);
 
             holder.itemView.setOnClickListener(v -> {
-                //todo Add webview->
-                String url = courseItems.get(position).getCourseLink();
+                String url = item.getCourseLink();
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                     url = "https://" + url;
                 }
-
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 mContext.startActivity(browserIntent);
-
             });
         } else if (holder instanceof UpdateProfileViewHolder) {
             ((UpdateProfileViewHolder) holder).bind(item);
             holder.itemView.setOnClickListener(v -> {
-                Toast.makeText(mContext, "working on update course feature",Toast.LENGTH_SHORT).show();
+                Toast.makeText(mContext, "working on update course feature", Toast.LENGTH_SHORT).show();
             });
         }
     }
 
     @Override
     public int getItemCount() {
-        if (courseItems.isEmpty()) return 0;
+        if (super.getItemCount() == 0) return 0;
         int viewType = getItemViewType(0);
         return (viewType == TYPE_COMPACT)
-                ? Math.min(courseItems.size(), 5)
-                : courseItems.size();
+                ? Math.min(super.getItemCount(), 5)
+                : super.getItemCount();
     }
 
-
-     class CompactViewHolder extends RecyclerView.ViewHolder {
+    class CompactViewHolder extends RecyclerView.ViewHolder {
         TextView tv_lessons, tv_duration, tv_course_title, tv_tutor_name;
         CircleImageView iv_tutor_avatar, likeBtn;
         ImageView iv_course_image;
@@ -117,7 +125,6 @@ public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             iv_course_image = itemView.findViewById(R.id.iv_course_image);
             iv_tutor_avatar = itemView.findViewById(R.id.iv_tutor_avatar);
             likeBtn = itemView.findViewById(R.id.likeBtn);
-
         }
 
         void bind(CourseItem courseItem) {
@@ -131,8 +138,8 @@ public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-     class UpdateProfileViewHolder extends RecyclerView.ViewHolder {
-        TextView courseLink, courseTitle, lessons, duration,courseImageUrl;
+    class UpdateProfileViewHolder extends RecyclerView.ViewHolder {
+        TextView courseLink, courseTitle, lessons, duration, courseImageUrl;
 
         public UpdateProfileViewHolder(@NonNull View view) {
             super(view);
@@ -141,7 +148,6 @@ public class CoursesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             lessons = view.findViewById(R.id.lessons);
             duration = view.findViewById(R.id.duration);
             courseImageUrl = view.findViewById(R.id.courseImageUrl);
-
         }
 
         void bind(CourseItem courseItem) {

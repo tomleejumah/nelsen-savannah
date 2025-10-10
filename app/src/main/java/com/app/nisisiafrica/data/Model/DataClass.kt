@@ -1,4 +1,4 @@
-package com.app.nisisiafrica.Model
+package com.app.nisisiafrica.data.Model
 
 import android.os.Parcel
 import android.os.Parcelable
@@ -71,7 +71,7 @@ data class UserData (
         parcel.readString() ?: "",
         parcel.readString() ?: "",
         parcel.readString() ?: "",
-        parcel.readLong() ?: 0
+        parcel.readLong()
 
     )
 

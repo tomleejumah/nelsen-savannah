@@ -26,19 +26,19 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Constants;
-import com.app.nisisiafrica.Model.CourseItem;
-import com.app.nisisiafrica.Utils.FirebaseDataBaseHelper;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.MainActivity;
-import com.app.nisisiafrica.Model.MentorItem;
-import com.app.nisisiafrica.Model.UserData;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
-import com.app.nisisiafrica.ViewModel.SharedUserViewModel;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -58,13 +58,13 @@ public class LoginFragment extends Fragment {
     private FacebookAuthHelper facebookAuthHelper;
     private ImageView emailCheckIcon;
     private SnackbarHandler snackbarHandler;
-    private SharedUserViewModel sharedUserViewModel;
+    private UserViewModel sharedUserViewModel;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        sharedUserViewModel = new ViewModelProvider(requireActivity()).get(SharedUserViewModel.class);
+        sharedUserViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
 
         ActivityResultLauncher<Intent> launcher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -252,7 +252,7 @@ public class LoginFragment extends Fragment {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                FirebaseDataBaseHelper.INSTANCE.getUserAndData(new FirebaseCallback() {
+                FirebaseRemoteDataSource.INSTANCE.getUserAndData(new FirebaseCallback() {
                     @Override
                     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
                         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();

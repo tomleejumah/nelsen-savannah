@@ -21,9 +21,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.app.nisisiafrica.Model.Question;
-import com.app.nisisiafrica.Model.QuestionType;
-import com.app.nisisiafrica.Model.Section;
+import com.app.nisisiafrica.data.Model.Question;
+import com.app.nisisiafrica.data.Model.QuestionType;
+import com.app.nisisiafrica.data.Model.Section;
 
 import java.util.ArrayList;
 import java.util.Arrays;
