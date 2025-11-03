@@ -4,12 +4,13 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 data class DataClass(
-   var userData : UserData
+    var userData: UserData
 )
 
 enum class QuestionType { RADIO, CHECKBOX, TEXT }
@@ -27,7 +28,7 @@ data class Booking(
     val studentId: String = "",
     val date: String = "",
     val time: String = ""
-){
+) {
     fun toLocalDateTime(): LocalDateTime {
         val localDate = LocalDate.parse(date)
         val localTime = LocalTime.parse(time)
@@ -42,7 +43,7 @@ data class Section(
 )
 
 data class CourseItem(
-    val courseId: String= "",
+    val courseId: String = "",
     val tutorId: String = "",
     val courseImageUrl: String = "",
     val tutorAvatarUrl: String = "",
@@ -65,8 +66,25 @@ data class MentorItem(
 
 //    val isOnline: Boolean = false
 )
+
+data class Chatroom(
+    val chatroomId: String = "",
+    val userIds: List<String> = emptyList(),
+    val lastMessageTimestamp: Timestamp? = null,
+    val lastMessageSenderId: String = "",
+    val lastMessage: String? = null,
+    val unreadCount: Map<String, Int> = emptyMap()
+)
+
+data class Message(
+    private var message: String? = null,
+    var senderId: String? = null,
+    var timestamp: Timestamp
+
+)
+
 @Entity(tableName = "user_data")
-data class UserData (
+data class UserData(
     @PrimaryKey var id: String,
     var email: String,
     var userRole: String? = null,
