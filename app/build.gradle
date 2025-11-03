@@ -100,6 +100,7 @@ dependencies {
     implementation 'androidx.palette:palette:1.0.0'
     implementation libs.blurview
     implementation libs.paging.runtime
+    implementation 'com.github.discord:OverlappingPanels:0.1.5'
 
     // Paging 3 (with coroutines support)
     implementation "androidx.paging:paging-runtime-ktx:3.3.2"
@@ -119,6 +120,8 @@ dependencies {
     implementation libs.firebase.database
     implementation libs.firebase.messaging
     implementation libs.firebase.functions
+    implementation 'com.google.firebase:firebase-firestore-ktx'
+    implementation 'com.firebaseui:firebase-ui-firestore:9.1.1'
     //google cloud auth
     implementation libs.credentials
     implementation libs.credentials.play.services.auth

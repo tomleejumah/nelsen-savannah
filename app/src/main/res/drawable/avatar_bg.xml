@@ -1,0 +1,6 @@
+    <!-- drawable/avatar_bg.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+<solid android:color="#000000"/>
+<corners android:radius="50dp"/>
+</shape>
+

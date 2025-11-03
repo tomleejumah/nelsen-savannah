@@ -220,3 +220,198 @@
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+<!--<com.google.android.material.card.MaterialCardView-->
+<!--xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--android:layout_width="match_parent"-->
+<!--android:layout_height="wrap_content"-->
+<!--android:layout_margin="16dp"-->
+<!--app:cardCornerRadius="24dp"-->
+<!--app:cardElevation="8dp"-->
+<!--app:strokeColor="#10B981"-->
+<!--app:strokeWidth="1dp">-->
+
+<!--<LinearLayout-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:background="@drawable/gradient_background_farmer_profile"-->
+<!--    android:orientation="vertical"-->
+<!--    android:padding="24dp">-->
+
+<!--    &lt;!&ndash; Header Section &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="center_vertical"-->
+<!--        android:layout_marginBottom="16dp">-->
+
+<!--        <com.google.android.material.card.MaterialCardView-->
+<!--            android:layout_width="64dp"-->
+<!--            android:layout_height="64dp"-->
+<!--            app:cardCornerRadius="16dp"-->
+<!--            app:cardElevation="4dp"-->
+<!--            app:cardBackgroundColor="#10B981">-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="32dp"-->
+<!--                android:layout_height="32dp"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:src="@drawable/ic_person"-->
+<!--                app:tint="@android:color/white" />-->
+<!--        </com.google.android.material.card.MaterialCardView>-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:layout_marginStart="16dp"-->
+<!--            android:orientation="vertical">-->
+
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="FARMER PROFILE"-->
+<!--                android:textColor="#94A3B8"-->
+<!--                android:textSize="10sp"-->
+<!--                android:letterSpacing="0.1"-->
+<!--                android:textStyle="bold" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/farmerName"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="John Kamau"-->
+<!--                android:textColor="#FFFFFF"-->
+<!--                android:textSize="20sp"-->
+<!--                android:textStyle="bold"-->
+<!--                android:layout_marginTop="4dp" />-->
+<!--        </LinearLayout>-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; Divider &ndash;&gt;-->
+<!--    <View-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="1dp"-->
+<!--        android:background="#334155"-->
+<!--        android:layout_marginVertical="16dp" />-->
+
+<!--    &lt;!&ndash; Phone Section &ndash;&gt;-->
+<!--    <com.google.android.material.card.MaterialCardView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="12dp"-->
+<!--        app:cardCornerRadius="12dp"-->
+<!--        app:cardElevation="0dp"-->
+<!--        app:cardBackgroundColor="#1E293B">-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:padding="16dp">-->
+
+<!--            <com.google.android.material.card.MaterialCardView-->
+<!--                android:layout_width="40dp"-->
+<!--                android:layout_height="40dp"-->
+<!--                app:cardCornerRadius="8dp"-->
+<!--                app:cardElevation="0dp"-->
+<!--                app:cardBackgroundColor="#1010B981">-->
+
+<!--                <ImageView-->
+<!--                    android:layout_width="20dp"-->
+<!--                    android:layout_height="20dp"-->
+<!--                    android:layout_gravity="center"-->
+<!--                    android:src="@drawable/ic_phone"-->
+<!--                    app:tint="#10B981" />-->
+<!--            </com.google.android.material.card.MaterialCardView>-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:layout_marginStart="12dp"-->
+<!--                android:orientation="vertical">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Phone"-->
+<!--                    android:textColor="#94A3B8"-->
+<!--                    android:textSize="12sp" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/farmerPhone"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="+254 712 345 678"-->
+<!--                    android:textColor="#FFFFFF"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:layout_marginTop="2dp" />-->
+<!--            </LinearLayout>-->
+<!--        </LinearLayout>-->
+<!--    </com.google.android.material.card.MaterialCardView>-->
+
+<!--    &lt;!&ndash; Email Section &ndash;&gt;-->
+<!--    <com.google.android.material.card.MaterialCardView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:cardCornerRadius="12dp"-->
+<!--        app:cardElevation="0dp"-->
+<!--        app:cardBackgroundColor="#1E293B">-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:padding="16dp">-->
+
+<!--            <com.google.android.material.card.MaterialCardView-->
+<!--                android:layout_width="40dp"-->
+<!--                android:layout_height="40dp"-->
+<!--                app:cardCornerRadius="8dp"-->
+<!--                app:cardElevation="0dp"-->
+<!--                app:cardBackgroundColor="#1014B8A6">-->
+
+<!--                <ImageView-->
+<!--                    android:layout_width="20dp"-->
+<!--                    android:layout_height="20dp"-->
+<!--                    android:layout_gravity="center"-->
+<!--                    android:src="@drawable/ic_email"-->
+<!--                    app:tint="#14B8A6" />-->
+<!--            </com.google.android.material.card.MaterialCardView>-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:layout_marginStart="12dp"-->
+<!--                android:orientation="vertical">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Email"-->
+<!--                    android:textColor="#94A3B8"-->
+<!--                    android:textSize="12sp" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/farmerEmail"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="j.kamau@example.com"-->
+<!--                    android:textColor="#FFFFFF"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:layout_marginTop="2dp" />-->
+<!--            </LinearLayout>-->
+<!--        </LinearLayout>-->
+<!--    </com.google.android.material.card.MaterialCardView>-->
+
+<!--</LinearLayout>-->
+<!--</com.google.android.material.card.MaterialCardView>-->
