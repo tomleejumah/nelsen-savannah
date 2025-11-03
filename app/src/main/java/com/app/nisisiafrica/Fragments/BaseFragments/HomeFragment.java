@@ -169,7 +169,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         historyList.setLayoutManager(new LinearLayoutManager(getContext()));
         searchHistoryAdapter = new SearchHistoryAdapter(getSearchHistory(), query -> {
-            searchView.setQuery(query, true); // Fill and submit
+            searchView.setQuery(query, true);
         });
         historyList.setAdapter(searchHistoryAdapter);
 

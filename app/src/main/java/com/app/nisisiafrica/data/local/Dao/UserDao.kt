@@ -10,7 +10,7 @@ import com.app.nisisiafrica.data.Model.UserData
 import io.reactivex.rxjava3.core.*
 
 @Dao
-interface UserDao {
+interface  UserDao {
 
         // Coroutines (for Kotlin)
         @Insert

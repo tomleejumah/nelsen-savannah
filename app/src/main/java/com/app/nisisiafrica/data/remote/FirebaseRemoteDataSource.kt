@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.data.remote
 
+import android.R.attr.query
 import android.content.Context
 import android.util.Log
 import androidx.paging.PagingSource
@@ -8,17 +9,23 @@ import com.app.nisisiafrica.Constants
 import com.app.nisisiafrica.Interfaces.FirebaseCallback
 import com.app.nisisiafrica.Utils.Util
 import com.app.nisisiafrica.data.Model.Booking
+import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.MentorItem
 import com.app.nisisiafrica.data.Model.UserData
+import com.firebase.ui.firestore.paging.FirestorePagingSource
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import kotlin.coroutines.resume
@@ -90,6 +97,8 @@ object FirebaseRemoteDataSource {
 
     }
 
+
+    //todo switch to view paging and update the ui to a scrollable (each item should have its event)
     suspend fun getBookedDates(userId: String): List<Booking> = suspendCoroutine { cont ->
         val datesRef = FirebaseDatabase.getInstance().reference.child("bookedDates").child(userId)
 
@@ -409,7 +418,7 @@ object FirebaseRemoteDataSource {
 
                     var query = dbRef.child("courses")
                         .orderByKey()
-                        .limitToFirst(pageSize + 1) // +1 to check if more pages exist
+                        .limitToFirst(pageSize + 1)
 
                     if (key.startAfter != null) {
                         query = query.startAfter(key.startAfter)
@@ -528,6 +537,46 @@ object FirebaseRemoteDataSource {
         }
     }
 
+    fun getChatRoomsPagingSource(): PagingSource<QuerySnapshot, Chatroom> {
+        val firestore = FirebaseFirestore.getInstance()
+        val auth = FirebaseAuth.getInstance()
+        val currentUserId = auth.currentUser?.uid
+            ?: return InvalidPagingSource()
+
+        val query = firestore.collection("chatRooms")
+            .whereArrayContains("userIds", currentUserId)
+            .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
+
+        return object : PagingSource<QuerySnapshot, Chatroom>() {
+            override suspend fun load(params: LoadParams<QuerySnapshot>): LoadResult<QuerySnapshot, Chatroom> {
+                return try {
+                    val pageSize = params.loadSize.coerceAtLeast(20)
+
+                    val currentQuery = params.key?.let {
+                        query.startAfter(it.documents.last()).limit(pageSize.toLong())
+                    } ?: query.limit(pageSize.toLong())
+
+                    val snapshot = currentQuery.get().await()
+
+                    LoadResult.Page(
+                        data = snapshot.toObjects(Chatroom::class.java),
+                        prevKey = null,
+                        nextKey = if (snapshot.size() == pageSize) snapshot else null
+                    )
+                } catch (e: Exception) {
+                    LoadResult.Error(e)
+                }
+            }
+
+            override fun getRefreshKey(state: PagingState<QuerySnapshot, Chatroom>) = null
+        }
+    }
+
+    private class InvalidPagingSource<K : Any, V : Any> : PagingSource<K, V>() {
+        override suspend fun load(params: LoadParams<K>) =
+            LoadResult.Error<K, V>(IllegalStateException("User not authenticated"))
+        override fun getRefreshKey(state: PagingState<K, V>) = null
+    }
     fun signOutAll(context: Context, onComplete: () -> Unit) {
         GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
             .addOnCompleteListener {
