@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
     android:id="@+id/main"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".MainActivity">
-    <LinearLayout
+
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
+
         <LinearLayout
             android:id="@+id/top1"
             android:layout_width="match_parent"
@@ -54,20 +55,29 @@
                 android:layout_weight="1" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent">
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="8dp">
 
                 <ImageView
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:id="@+id/imgNotification"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:srcCompat="@drawable/ic_notifications" />
 
                 <TextView
+                    android:clickable="true"
+                    android:focusable="true"
                     android:id="@+id/notifCounter"
                     android:layout_width="18dp"
                     android:layout_height="22dp"
@@ -78,207 +88,224 @@
                     android:textColor="@color/black"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="@+id/imgNotification"
-                    app:layout_constraintTop_toTopOf="@+id/imgNotification"
                     app:layout_constraintEnd_toEndOf="@+id/imgNotification"
                     app:layout_constraintHorizontal_bias="0.963"
-                    app:layout_constraintStart_toStartOf="@+id/imgNotification" />
+                    app:layout_constraintStart_toStartOf="@+id/imgNotification"
+                    app:layout_constraintTop_toTopOf="@+id/imgNotification" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/imgDp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="4dp"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="8dp"
                 android:src="@drawable/donation" />
         </LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:overScrollMode="never"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
 
         <LinearLayout
-            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_collapseMode="parallax">
-
-            <SearchView
-                android:layout_marginHorizontal="10dp"
-                android:background="@drawable/search_background"
-                android:id="@+id/search_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:iconifiedByDefault="false"
-                android:queryHint="Search..."
-                android:focusable="true"
-                android:focusableInTouchMode="true" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/history_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="visible" />
-        </LinearLayout>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:layout_marginStart="10dp"
-                android:textAlignment="center"
-                android:padding="2dp"
-                android:fontFamily="@font/poppins_bold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:textSize="19sp"
-                android:textStyle="bold"
-                android:text="Top Courses" />
-
-            <TextView
-                android:textAlignment="center"
-                android:layout_marginEnd="18dp"
-                android:fontFamily="@font/poppins_regular"
-                android:onClick="goToViewAll"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="See All"
-                android:id="@+id/seeAll" />
-
-        </RelativeLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/rcCourses"/>
-
-        <androidx.cardview.widget.CardView
-            android:layout_marginTop="10dp"
-            android:layout_marginHorizontal="10dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            android:foreground="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true">
-
-        <include
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/layoutCalendar"
-            layout="@layout/item_step_calendar"/>
-
-        </androidx.cardview.widget.CardView>
-
-        <RelativeLayout
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="6dp">
-
-            <TextView
-                android:padding="4dp"
-                android:layout_marginStart="10dp"
-                android:textAlignment="center"
-                android:textSize="19sp"
-                android:fontFamily="@font/poppins_bold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:textStyle="bold"
-                android:text="Mentors" />
-
-            <TextView
-                android:padding="4dp"
-                android:textAlignment="center"
-                android:layout_marginEnd="18dp"
-                android:onClick="goToViewAll"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="Show More"
-                android:id="@+id/ShowALl" />
-
-        </RelativeLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/rcMentorList"/>
-
-
-        <RelativeLayout
-            android:padding="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="6dp">
-
-            <TextView
-                android:textAlignment="center"
-                android:textSize="19sp"
-                android:fontFamily="@font/poppins_bold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:textStyle="bold"
-                android:text="Other Resources" />
-
-        </RelativeLayout>
-        <LinearLayout
-            android:layout_marginBottom="50dp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/txtRecorgnizeMe"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Recorgnize me"
-                android:padding="10dp"
-                android:textStyle="bold"
-                android:maxLines="3"
-                app:drawableEndCompat="@drawable/ic_more"
-                />
-            <TextView
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Our Online Store"
-                android:padding="10dp"
-                android:textStyle="bold"
-                android:maxLines="3"
-                app:drawableEndCompat="@drawable/ic_more"
-                 />
-            <TextView
-                android:layout_marginBottom="20dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Donate to Us"
-                android:padding="10dp"
-                android:textStyle="bold"
-                android:maxLines="3"
-                app:drawableEndCompat="@drawable/ic_more"
-                 />
-        </LinearLayout>
-    </LinearLayout>
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_collapseMode="parallax">
 
-</ScrollView>
+                <SearchView
+                    android:id="@+id/search_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="10dp"
+                    android:background="@drawable/search_background"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:iconifiedByDefault="false"
+                    android:queryHint="Search..." />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/history_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="visible" />
+            </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="10dp"
+                    android:fontFamily="@font/poppins_bold"
+                    android:padding="2dp"
+                    android:text="Top Courses"
+                    android:textAlignment="center"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/seeAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="18dp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:onClick="goToViewAll"
+                    android:text="See All"
+                    android:textAlignment="center" />
+
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rcCourses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <include
+                    android:id="@+id/layoutCalendar"
+                    layout="@layout/item_step_calendar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </androidx.cardview.widget.CardView>
+
+            <RelativeLayout
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="10dp"
+                    android:fontFamily="@font/poppins_bold"
+                    android:padding="4dp"
+                    android:text="Mentors"
+                    android:textAlignment="center"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/ShowALl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="18dp"
+                    android:onClick="goToViewAll"
+                    android:padding="4dp"
+                    android:text="Show More"
+                    android:textAlignment="center" />
+
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rcMentorList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="6dp"
+                android:padding="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:fontFamily="@font/poppins_bold"
+                    android:text="Other Resources"
+                    android:textAlignment="center"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="50dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtRecorgnizeMe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:maxLines="3"
+                    android:padding="10dp"
+                    android:text="Recorgnize me"
+                    android:textStyle="bold"
+                    app:drawableEndCompat="@drawable/ic_more" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:maxLines="3"
+                    android:padding="10dp"
+                    android:text="Our Online Store"
+                    android:textStyle="bold"
+                    app:drawableEndCompat="@drawable/ic_more" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:maxLines="3"
+                    android:padding="10dp"
+                    android:text="Donate to Us"
+                    android:textStyle="bold"
+                    app:drawableEndCompat="@drawable/ic_more" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

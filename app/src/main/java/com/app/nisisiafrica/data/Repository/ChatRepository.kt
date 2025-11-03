@@ -1,0 +1,21 @@
+package com.app.nisisiafrica.data.Repository
+
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.app.nisisiafrica.data.Model.Chatroom
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
+import kotlinx.coroutines.flow.Flow
+
+class ChatRepository(
+    private val
+    remoteDataSource: FirebaseRemoteDataSource
+) {
+
+    fun getChatRooms(): Flow<PagingData<Chatroom>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20, enablePlaceholders = false),
+            pagingSourceFactory = { remoteDataSource.getChatRoomsPagingSource() }
+        ).flow
+    }
+}
