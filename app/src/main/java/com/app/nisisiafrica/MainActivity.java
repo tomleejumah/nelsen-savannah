@@ -70,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private final HomeFragment homeFragment = new HomeFragment();
     private final ChatFragment chatFragment = new ChatFragment();
     private final SettingsFragment settingsFragment = new SettingsFragment();
-    private ChipNavigationBar chipNavigationBar;
     private String userRole, currentUser;
     private UserData userData,cachedUserData;
     private UserDao userDao;
@@ -124,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         CardView cardChipNavigation = findViewById(R.id.cardChipNavigation);
         fabView = findViewById(R.id.fab);
-        chipNavigationBar = findViewById(R.id.chipNavigationBar);
+        ChipNavigationBar chipNavigationBar = findViewById(R.id.chipNavigationBar);
         chipNavigationBar.setItemSelected(R.id.homeFragment, true);
 
         chipNavigationBar.setOnItemSelectedListener(i -> {
@@ -148,6 +147,34 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         getUserBookedDates(this);
     }
+    private void preloadAllFragments() {
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.navHostFragment, homeFragment, "HOME_FRAGMENT");
+        fragmentTransaction.add(R.id.navHostFragment, chatFragment, "CHAT_FRAGMENT");
+        fragmentTransaction.add(R.id.navHostFragment, settingsFragment, "SETTINGS_FRAGMENT");
+        fragmentTransaction.hide(chatFragment);
+        fragmentTransaction.hide(settingsFragment);
+        fragmentTransaction.commitNow();
+    }
+
+    private void replaceFragment(Fragment fragmentToShow) {
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        if (currentlyDisplayedFragment != null) {
+            fragmentTransaction.hide(currentlyDisplayedFragment);
+        }
+
+        // Show the new fragment
+        if (fragmentToShow.isAdded()) {
+            fragmentTransaction.show(fragmentToShow);
+        } else {
+            fragmentTransaction.add(R.id.navHostFragment, fragmentToShow);
+        }
+
+        fragmentTransaction.commit();
+        currentlyDisplayedFragment = fragmentToShow;
+    }
+
     private void initFCM() {
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
@@ -181,34 +208,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     public void showBottomBar() {
         fabToBottomNavigationAnim.showNavigationView();
-    }
-
-    private void preloadAllFragments() {
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.navHostFragment, homeFragment, "HOME_FRAGMENT");
-        fragmentTransaction.add(R.id.navHostFragment, chatFragment, "CHAT_FRAGMENT");
-        fragmentTransaction.add(R.id.navHostFragment, settingsFragment, "SETTINGS_FRAGMENT");
-        fragmentTransaction.hide(chatFragment);
-        fragmentTransaction.hide(settingsFragment);
-        fragmentTransaction.commitNow();
-    }
-
-    private void replaceFragment(Fragment fragmentToShow) {
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        if (currentlyDisplayedFragment != null) {
-            fragmentTransaction.hide(currentlyDisplayedFragment);
-        }
-
-        // Show the new fragment
-        if (fragmentToShow.isAdded()) {
-            fragmentTransaction.show(fragmentToShow);
-        } else {
-            fragmentTransaction.add(R.id.navHostFragment, fragmentToShow);
-        }
-
-        fragmentTransaction.commit();
-        currentlyDisplayedFragment = fragmentToShow;
     }
 
     private void handleFreshUserData(UserData userData) {
