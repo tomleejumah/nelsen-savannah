@@ -17,7 +17,7 @@ public class App extends Application {
         2) View Model for all Activities/fragment(use the shared view model) global init of the view model
         2b) Repositories scoped on feature/domain
         2c) DaggerHilt
-        3) Caching of data
+        3) Caching of data(to much repetion of init in firebase remote helper)
         4) Pagination Imp for courses,mentors,Chats == done(chats remaining)
         5) Backup to google
         6) Notifications and alarms
