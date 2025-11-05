@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".Fragments.BaseFragments.ChatFragment">
 
@@ -221,7 +222,7 @@
                         </LinearLayout>
 
                         <!-- Action Button -->
-                        <Button
+                        <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/btnMessage"
                             android:layout_width="match_parent"
                             android:layout_height="56dp"
@@ -321,7 +322,7 @@
                     app:layout_constraintTop_toTopOf="parent">
 
                     <ImageButton
-                        android:id="@+id/btnBack"
+                        android:id="@+id/ic_back"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
@@ -389,7 +390,6 @@
                     <EditText
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
                         android:id="@+id/etMessage"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -403,12 +403,12 @@
                     <ImageButton
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
+                        android:foreground="?attr/selectableItemBackgroundBorderless"
                         android:id="@+id/btnSend"
                         android:layout_width="44dp"
                         android:layout_height="44dp"
                         android:layout_marginStart="12dp"
-                        android:background="@drawable/send_btn_bg"
+                        android:background="@drawable/input_bg"
                         android:src="@drawable/ic_send" />
                 </LinearLayout>
 

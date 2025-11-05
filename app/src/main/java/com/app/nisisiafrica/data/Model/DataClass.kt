@@ -77,10 +77,23 @@ data class Chatroom(
 )
 
 data class Message(
+    val messageId : String,
     private var message: String? = null,
     var senderId: String? = null,
     var timestamp: Timestamp
+)
 
+data class Event(
+    val eventId: String = "",
+    val userId: String = "",
+    val title: String = "",
+    val date: Timestamp,
+    val startTime: String = "",
+    val endTime: String = "",
+    val eventType: Int = 0, // 1 = appointment, 2 = app event
+    val mentorId: String? = null, // only for appointments
+    val status: Int = 0, // 0 = upcoming, 1 = completed, 2 = today
+    val description: String? = null
 )
 
 @Entity(tableName = "user_data")

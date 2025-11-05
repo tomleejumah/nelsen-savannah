@@ -14,4 +14,8 @@ class ChatViewModel(private val chatRepository: ChatRepository): ViewModel() {
     val chatRooms: LiveData<PagingData<Chatroom>> = chatRepository.getChatRooms()
         .cachedIn(viewModelScope)
         .asLiveData()
+
+    fun createAnnounceChatRoom() {
+        chatRepository.initAnnouncementChatRoom()
+    }
 }
