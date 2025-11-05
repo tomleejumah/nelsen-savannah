@@ -9,7 +9,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.Chatroom
+import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
+import de.hdodenhof.circleimageview.CircleImageView
 
 class ChatAdapter : PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CALLBACK) {
 
@@ -24,7 +26,7 @@ class ChatAdapter : PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CAL
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val tvAvatar: TextView = itemView.findViewById(R.id.tvAvatar)
+        private val tvAvatar: CircleImageView = itemView.findViewById(R.id.tvAvatar)
         private val tvName: TextView = itemView.findViewById(R.id.tvName)
         private val tvLastMsg: TextView = itemView.findViewById(R.id.tvLastMsg)
         private val tvUnread: TextView = itemView.findViewById(R.id.tvUnread)
@@ -32,13 +34,25 @@ class ChatAdapter : PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CAL
         fun bind(chatroom: Chatroom) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-            // Get other user's name (you'll need to fetch from users collection)
             tvName.text = getOtherUserName(chatroom, currentUserId)
-
-            // Last message
             tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
 
-            // Unread count
+            if (chatroom.chatroomId == "announcements") {
+                tvName.text = "Announcements"
+                Glide.with(tvAvatar.context)
+                    .load(R.drawable.nisisi_logo)
+                    .into(tvAvatar)
+
+            } else {
+                tvName.text = getOtherUserName(chatroom, currentUserId)
+//              todo get user avatar from chatroom.lastMessageSenderId
+                Glide.with(tvAvatar.context)
+                    .load(R.drawable.ic_person)
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(tvAvatar)
+            }
+            tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
             val unreadCount = chatroom.unreadCount[currentUserId] ?: 0
             if (unreadCount > 0) {
                 tvUnread.visibility = View.VISIBLE
@@ -48,7 +62,7 @@ class ChatAdapter : PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CAL
             }
 
             // Avatar placeholder
-            tvAvatar.text = tvName.text.firstOrNull()?.toString() ?: "?"
+//            tvAvatar.text = tvName.text.firstOrNull()?.toString() ?: "?"
         }
 
         private fun getOtherUserName(chatroom: Chatroom, currentUserId: String): String {

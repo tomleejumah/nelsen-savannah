@@ -1,8 +1,9 @@
 package com.app.nisisiafrica.data.remote
 
-import android.R.attr.query
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.app.nisisiafrica.Constants
@@ -11,21 +12,22 @@ import com.app.nisisiafrica.Utils.Util
 import com.app.nisisiafrica.data.Model.Booking
 import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.Model.CourseItem
+import com.app.nisisiafrica.data.Model.Event
 import com.app.nisisiafrica.data.Model.MentorItem
 import com.app.nisisiafrica.data.Model.UserData
-import com.firebase.ui.firestore.paging.FirestorePagingSource
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import kotlin.coroutines.resume
@@ -537,6 +539,22 @@ object FirebaseRemoteDataSource {
         }
     }
 
+    fun initAnnouncementChatRoom(){
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("chatRooms").document("announcements")
+            .set(
+                hashMapOf(
+                    "chatroomId" to "announcements",
+                    "userIds" to FieldValue.arrayUnion(userId),
+                    "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                    "lastMessage" to "Welcome to announcements"
+                ),
+                SetOptions.merge()
+            )
+    }
+
     fun getChatRoomsPagingSource(): PagingSource<QuerySnapshot, Chatroom> {
         val firestore = FirebaseFirestore.getInstance()
         val auth = FirebaseAuth.getInstance()
@@ -577,6 +595,63 @@ object FirebaseRemoteDataSource {
             LoadResult.Error<K, V>(IllegalStateException("User not authenticated"))
         override fun getRefreshKey(state: PagingState<K, V>) = null
     }
+
+    private val database = FirebaseDatabase.getInstance()
+    private val eventsRef = database.getReference("events")
+
+    fun createEvent(event: Event, callback: (Boolean) -> Unit) {
+        val eventId = eventsRef.push().key ?: return
+        eventsRef.child(eventId).setValue(event.copy(eventId = eventId))
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }
+
+    fun getUserEvents(): LiveData<List<Event>> {
+        val liveData = MutableLiveData<List<Event>>()
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            return object : LiveData<List<Event>>() {
+                private val listener = object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val events = snapshot.children.mapNotNull {
+                            it.getValue(Event::class.java)
+                        }.sortedBy { it.date }
+                        value = events
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("EventRepo", "Error: ${error.message}")
+                    }
+                }
+
+                override fun onActive() {
+                    eventsRef.orderByChild("userId").equalTo(userId)
+                        .addValueEventListener(listener)
+                }
+
+                override fun onInactive() {
+                    eventsRef.removeEventListener(listener)
+                }
+            }
+
+    }
+
+    fun bookMentor(mentorId: String, date: Long, startTime: String, endTime: String) {
+//        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+//        val event = Event(
+//            userId = userId,
+//            title = "Meet Mentor",
+//            date = date,
+//            startTime = startTime,
+//            endTime = endTime,
+//            eventType = 1,
+//            mentorId = mentorId,
+//            status = 0
+//        )
+//        createEvent(event) { success ->
+//            Log.d("EventRepo", if (success) "Event created" else "Failed")
+//        }
+    }
+
     fun signOutAll(context: Context, onComplete: () -> Unit) {
         GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
             .addOnCompleteListener {

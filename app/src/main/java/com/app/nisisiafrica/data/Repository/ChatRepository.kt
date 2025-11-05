@@ -7,15 +7,16 @@ import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import kotlinx.coroutines.flow.Flow
 
-class ChatRepository(
-    private val
-    remoteDataSource: FirebaseRemoteDataSource
-) {
+class ChatRepository() {
 
     fun getChatRooms(): Flow<PagingData<Chatroom>> {
         return Pager(
             config = PagingConfig(pageSize = 20, enablePlaceholders = false),
-            pagingSourceFactory = { remoteDataSource.getChatRoomsPagingSource() }
+            pagingSourceFactory = { FirebaseRemoteDataSource.getChatRoomsPagingSource() }
         ).flow
+    }
+
+    fun initAnnouncementChatRoom(){
+        FirebaseRemoteDataSource.initAnnouncementChatRoom()
     }
 }

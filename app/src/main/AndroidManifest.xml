@@ -113,6 +113,7 @@
             android:exported="true" />
         <activity
             android:name=".MainActivity"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true" />
     </application>
 
