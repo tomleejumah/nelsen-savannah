@@ -87,7 +87,7 @@ data class Event(
     val eventId: String = "",
     val userId: String = "",
     val title: String = "",
-    val date: Timestamp,
+    val date: Long = 0L,
     val startTime: String = "",
     val endTime: String = "",
     val eventType: Int = 0, // 1 = appointment, 2 = app event

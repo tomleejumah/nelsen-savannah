@@ -55,20 +55,20 @@
                 android:layout_weight="1" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
                 android:padding="8dp">
 
                 <ImageView
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
                     android:id="@+id/imgNotification"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -76,13 +76,13 @@
                     app:srcCompat="@drawable/ic_notifications" />
 
                 <TextView
-                    android:clickable="true"
-                    android:focusable="true"
                     android:id="@+id/notifCounter"
                     android:layout_width="18dp"
                     android:layout_height="22dp"
                     android:layout_marginBottom="18dp"
                     android:background="@drawable/circle"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:text="0"
                     android:textAlignment="center"
                     android:textColor="@color/black"
@@ -109,9 +109,9 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
-        android:overScrollMode="never"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:overScrollMode="never">
 
 
         <LinearLayout
@@ -143,7 +143,7 @@
                     android:layout_height="wrap_content"
                     android:visibility="visible" />
             </LinearLayout>
-
+            <!--//courses-->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
@@ -183,6 +183,151 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+            <LinearLayout
+                android:id="@+id/emptyStateView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="48dp">
+
+                <!-- Icon Container -->
+                <FrameLayout
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_marginBottom="24dp">
+
+                    <!-- Circle Background -->
+                    <View
+                        android:id="@+id/circleBackground"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:background="@drawable/empty_state_circle" />
+
+                    <!-- Calendar Icon -->
+                    <LinearLayout
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/calendar_bg"
+                        android:orientation="vertical"
+                        android:elevation="4dp">
+
+                        <!-- Calendar Header -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="15dp"
+                            android:background="@color/light_blue_900" />
+
+                        <!-- Calendar Dots -->
+                        <GridLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:columnCount="3"
+                            android:rowCount="3"
+                            android:padding="8dp"
+                            android:alignmentMode="alignMargins">
+
+                            <View style="@style/CalendarDot" />
+
+                            <View style="@style/CalendarDot" />
+
+                            <View style="@style/CalendarDot" />
+
+                            <View style="@style/CalendarDot" />
+
+                            <View style="@style/CalendarDot" />
+
+                            <View style="@style/CalendarDot" />
+                        </GridLayout>
+                    </LinearLayout>
+
+                    <!-- Plus Icon -->
+                    <ImageView
+                        android:id="@+id/plusIcon"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_marginEnd="-0dp"
+                        android:layout_marginBottom="-3dp"
+                        android:src="@drawable/ic_add_circle"
+                        android:elevation="6dp"
+                        app:tint="#4CAF50" />
+                </FrameLayout>
+
+                <!-- Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No Events Yet"
+                    android:textSize="24sp"
+                    android:textColor="#212121"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Description -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="You don't have any upcoming events scheduled.\nStart by booking a mentor session."
+                    android:textSize="12sp"
+                    android:textColor="#757575"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- CTA Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBookMentor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Book a Mentor"
+                    android:backgroundTint="@color/purple_700"
+                    android:textSize="15sp"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp"
+                    app:cornerRadius="8dp" />
+
+            </LinearLayout>
+
+            <!--            //events-->
+            <!--            <LinearLayout-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:orientation="horizontal">-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="0dp"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:text="Upcoming Events"-->
+            <!--                    android:layout_weight="1"/>-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:id="@+id/btnViewAll"-->
+            <!--                    android:text="View All  " />-->
+            <!--            </LinearLayout>-->
+            <TextView
+                android:id="@+id/tvSeeMore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_button"
+                android:drawablePadding="8dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="See More"
+                android:textColor="@color/black"
+                android:layout_gravity="center_horizontal"
+                android:textSize="16sp"
+                android:gravity="center_vertical"
+                app:drawableStartCompat="@drawable/ic_down_circle" />
+
+            <!-- Show 3 events -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvUpcomingEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -192,6 +337,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
+                android:visibility="gone"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
 
