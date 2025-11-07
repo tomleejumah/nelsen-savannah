@@ -30,6 +30,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NisisiAfrica"
         tools:targetApi="31">
+        <activity
+            android:name=".ViewAllEvents"
+            android:exported="false" />
+
         <service
             android:name=".Service.FCMService"
             android:exported="false">
@@ -47,6 +51,7 @@
             android:name=".Service.BookingsAlarmService"
             android:exported="false"
             android:foregroundServiceType="shortService" />
+
         <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
@@ -113,8 +118,8 @@
             android:exported="true" />
         <activity
             android:name=".MainActivity"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

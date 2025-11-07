@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.Fragments.BaseFragments;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,9 +12,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,23 +25,30 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
+import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
+import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.NotificationsActivity;
-import com.app.nisisiafrica.Utils.Util;
-import com.app.nisisiafrica.ViewModel.SharedViewModel;
-import com.app.nisisiafrica.data.Model.CourseItem;
-import com.app.nisisiafrica.data.Model.MentorItem;
-import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.QuestionnaireActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
-import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewAllActivity;
+import com.app.nisisiafrica.ViewAllEvents;
+import com.app.nisisiafrica.ViewModel.EventViewModel;
+import com.app.nisisiafrica.ViewModel.EventViewModelFactory;
+import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.Event;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.Repository.EventRepository;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
@@ -71,10 +80,10 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
-    private Set<LocalDate> mySchedule = new HashSet<>();
     private final Gson gson = new Gson();
     private final Type type = new TypeToken<List<String>>() {
     }.getType();
+    private Set<LocalDate> mySchedule = new HashSet<>();
     private UserData userData;
     private SearchView searchView;
     private int pendingRequests = 0;
@@ -140,13 +149,13 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         CalendarView calendarView = view.findViewById(R.id.calendarView);
         userViewModel.getBookedDates(Util.
-                getState(Constants.CURRENT_USER_ID, ""))
+                        getState(Constants.CURRENT_USER_ID, ""))
                 .observe(getViewLifecycleOwner(), bookings -> {
-                        if (bookings != null) {
-                            Set<LocalDate> dates = bookings.stream()
-                                    .map(b -> LocalDate.parse(b.getDate()))
-                                    .collect(Collectors.toSet());
-                            mySchedule.addAll(dates);
+                    if (bookings != null) {
+                        Set<LocalDate> dates = bookings.stream()
+                                .map(b -> LocalDate.parse(b.getDate()))
+                                .collect(Collectors.toSet());
+                        mySchedule.addAll(dates);
                         calendarView.notifyCalendarChanged();
                     }
                 });
@@ -176,7 +185,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         searchView.setOnClickListener(v -> {
             //todo
         });
-
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -190,8 +198,60 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 return false;
             }
         });
-
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+
+        EventRepository repository = new EventRepository();
+        EventViewModelFactory factory = new EventViewModelFactory(repository);
+        EventViewModel eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
+
+        EventAdapter adapter = new EventAdapter();
+        RecyclerView rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
+        rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvUpcomingEvents.setAdapter(adapter);
+
+        eventViewModel.getUserEvents().observe(getViewLifecycleOwner(), events -> {
+
+            if (events.isEmpty()) {
+                view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
+                rvUpcomingEvents.setVisibility(View.GONE);
+
+                // Fade in empty state
+//                view.findViewById(R.id.emptyStateView).startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in));
+//
+//                // Pulse the circle background
+//                View circleView =  view.findViewById(R.id.emptyStateView).findViewById(R.id.circleBackground);
+//                circleView.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.pulse));
+//
+//                // Bounce the plus icon
+//                @SuppressLint("CutPasteId") ImageView plusIcon =  view.findViewById(R.id.emptyStateView).findViewById(R.id.plusIcon);
+//                plusIcon.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.bounce));
+
+            } else {
+               view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
+               rvUpcomingEvents.setVisibility(View.VISIBLE);
+//                adapter.submitList(events);
+                List<Event> upcoming = events.stream()
+                        .filter(e -> e.getDate() >= System.currentTimeMillis())
+                        .limit(3)
+                        .collect(Collectors.toList());
+                adapter.submitList(upcoming);
+            }
+             view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
+        });
+
+        //todo update
+        view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), ViewAllActivity.class);
+                intent.putExtra("isCourses", false);
+            startActivity(intent);
+        });
+
+        view.findViewById(R.id.tvSeeMore).setOnClickListener(v -> {
+                    Intent intent = new Intent(getActivity(), ViewAllActivity.class);
+                    intent.putExtra("isCourses", false);
+                    startActivity(intent);
+                }
+        );
 
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
@@ -202,7 +262,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         sharedViewModel.getCourses().observe(getViewLifecycleOwner(), pagingData -> {
             coursesAdapter.submitData(getLifecycle(), pagingData);
         });
-             //todo mentee url
+        //todo mentee url
         List<String> studentimages = new ArrayList<>();
         studentimages.add("url");
         studentimages.add("url");
@@ -235,7 +295,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             startActivity(intent);
         });
 
-        view.findViewById(R.id.imgNotification).setOnClickListener(v ->{
+        view.findViewById(R.id.imgNotification).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), NotificationsActivity.class);
             startActivity(intent);
         });
@@ -322,7 +382,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
 
-
     @Override
     public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
         if (mentorIds == null) return;
@@ -333,6 +392,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //            FirebaseDataBaseHelper.INSTANCE.getMentorData(mentorId,this );
         }
     }
+
     @Override
     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
 //        Log.d("DEBUG", "Mentors received: " + mentors.size());
@@ -355,9 +415,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //        mentorItemsList.clear();
 //        mentorItemsList.addAll(mentors);
 //        mentorsAdapter.notifyDataSetChanged();
-////        }
-//    }
 
+    /// /        }
+//    }
     @Override
     public void onError(@org.jetbrains.annotations.Nullable Exception e) {
         Log.e("FirebaseQuery", "Error: ", e);
@@ -385,10 +445,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //    Collections.shuffle(courses);
 //        courseItemsList.addAll(courses);
 //        coursesAdapter.notifyDataSetChanged();
-    }
-
-    public interface onScrollChangeListener {
-        void onParentScroll(int oldY, int newY);
     }
 
     private void overlapImage(View view) {
@@ -427,5 +483,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                         }
                     });
         }
+    }
+
+    public interface onScrollChangeListener {
+        void onParentScroll(int oldY, int newY);
     }
 }
