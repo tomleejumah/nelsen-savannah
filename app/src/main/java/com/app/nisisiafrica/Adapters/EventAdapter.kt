@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.Adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +10,7 @@ import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.Event
 import com.google.android.material.card.MaterialCardView
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
@@ -41,10 +43,12 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
         private val dottedLine: View = itemView.findViewById(R.id.dottedLine)
         private val eventCard: MaterialCardView = itemView.findViewById(R.id.eventCard)
 
+        @SuppressLint("SetTextI18n")
         fun bind(event: Event, isLast: Boolean) {
             // Format date
             val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-            tvEventDate.text = dateFormat.format(event.date.toDate())
+//            tvEventDate.text = dateFormat.format(event.date.toDate())
+            tvEventDate.text = dateFormat.format(Date(event.date))
 
             tvEventTitle.text = event.title
             tvEventTime.text = "${event.startTime} - ${event.endTime}"
@@ -54,14 +58,14 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
 
             // Set colors based on status
             when (event.status) {
-                0 -> { // Upcoming
+                0 -> { //todo
 //                    timelineDot.setBackgroundResource(R.drawable.timeline_dot_upcoming)
                     eventCard.strokeColor = 0xFFFF9800.toInt()
                     tvEventBadge.text = "Upcoming"
                     tvEventBadge.setBackgroundColor(0xFFFFF3E0.toInt())
                     tvEventBadge.setTextColor(0xFFF57C00.toInt())
                 }
-                1 -> { // Completed
+                1 -> { //todo
 //                    timelineDot.setBackgroundResource(R.drawable.timeline_dot_completed)
                     eventCard.strokeColor = 0xFF4CAF50.toInt()
                     eventCard.alpha = 0.7f
