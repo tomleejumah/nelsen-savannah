@@ -10,10 +10,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.Chatroom
 import com.bumptech.glide.Glide
+import com.discord.panels.OverlappingPanelsLayout
 import com.google.firebase.auth.FirebaseAuth
 import de.hdodenhof.circleimageview.CircleImageView
 
-class ChatAdapter : PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CALLBACK) {
+class ChatAdapter (
+    private val onChatroomClick: (Chatroom) -> Unit
+): PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -59,6 +62,10 @@ class ChatAdapter : PagingDataAdapter<Chatroom, ChatAdapter.ViewHolder>(DIFF_CAL
                 tvUnread.text = unreadCount.toString()
             } else {
                 tvUnread.visibility = View.GONE
+            }
+
+            itemView.setOnClickListener {
+                onChatroomClick(chatroom)
             }
 
             // Avatar placeholder
