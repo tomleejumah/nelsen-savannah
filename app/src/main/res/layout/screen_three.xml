@@ -9,13 +9,14 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="450dp"
-        android:src="@drawable/screen_three"
+        android:src="@drawable/image_three"
         />
+
     <TextView
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sports"
+        android:text="Youth Empowerment"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_gravity="center_horizontal"
@@ -25,11 +26,12 @@
         android:id="@+id/descriptionText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="We believe that sports are more than the game — they build discipline, resilience, and unity. We inspire children to dream big, both on and off the field."
+        android:text="We believe in nurturing the potential within every young person — helping them grow, find direction, and build the confidence to shape their own future."
         android:textSize="16sp"
         android:layout_gravity="center_horizontal"
         android:padding="16dp"
         android:lineSpacingExtra="4dp"
         android:gravity="center" />
+
 
 </LinearLayout>
