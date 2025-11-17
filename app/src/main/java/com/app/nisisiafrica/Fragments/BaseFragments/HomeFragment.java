@@ -81,8 +81,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
     private final Gson gson = new Gson();
-    private final Type type = new TypeToken<List<String>>() {
-    }.getType();
+    private final Type type = new TypeToken<List<String>>() {}.getType();
     private Set<LocalDate> mySchedule = new HashSet<>();
     private UserData userData;
     private SearchView searchView;
@@ -277,6 +276,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         sharedViewModel.getMentors().observe(getViewLifecycleOwner(), pagingData -> {
             mentorsAdapter.submitData(getLifecycle(), pagingData);
+
         });
 
         view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
@@ -395,16 +395,18 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     @Override
     public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-//        Log.d("DEBUG", "Mentors received: " + mentors.size());
-//        mentorItemsList.clear();
-//        Collections.shuffle(mentors);
-//        mentorItemsList.addAll(mentors);
-//        Log.d("DEBUG", "List size after add: " + mentorItemsList.size());
-//        mentorsAdapter.notifyDataSetChanged();
-//
-//        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
-//        params.height = calculateRecyclerViewHeight();
-//        rcMentors.setLayoutParams(params);
+   /*     Log.d("DEBUG", "Mentors received: " + mentors.size());
+        mentorItemsList.clear();
+        Collections.shuffle(mentors);
+        mentorItemsList.addAll(mentors);
+        Log.d("DEBUG", "List size after add: " + mentorItemsList.size());
+        mentorsAdapter.notifyDataSetChanged();
+
+        ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
+        params.height = calculateRecyclerViewHeight();
+        rcMentors.setLayoutParams(params);
+
+    */
     }
 //    @Override
 //    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
@@ -416,7 +418,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //        mentorItemsList.addAll(mentors);
 //        mentorsAdapter.notifyDataSetChanged();
 
-    /// /        }
+//          }
 //    }
     @Override
     public void onError(@org.jetbrains.annotations.Nullable Exception e) {
