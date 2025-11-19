@@ -1,12 +1,16 @@
 package com.app.nisisiafrica.Fragments.BaseFragments;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +23,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -54,6 +59,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.github.vipulasri.timelineview.TimelineView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.common.reflect.TypeToken;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -72,7 +78,9 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -289,10 +297,39 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
 
         view.findViewById(R.id.imgDp).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), ProfileActivity.class);
-            intent.putExtra(Constants.IS_MENTOR, false);
-            intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
-            startActivity(intent);
+
+                    PopupMenu popup = new PopupMenu(getContext(), view);
+                    popup.getMenu().add("Profile");
+                    popup.getMenu().add("Search");
+                    popup.getMenu().add("More");
+                    popup.getMenu().add("Logout");
+
+                    popup.setOnMenuItemClickListener(item -> {
+                        String title = item.getTitle().toString();
+
+                        switch (title) {
+                            case "Profile":
+                                Intent intent = new Intent(getActivity(), ProfileActivity.class);
+                                intent.putExtra(Constants.IS_MENTOR, false);
+                                intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
+                                startActivity(intent);
+                                break;
+                            case "Search":
+                                //open search activity
+                                break;
+                            case "More":
+                                showToolsSheet();
+                                break;
+                            case "Logout":
+                               //todo are you sure you want to logout dialog
+                                break;
+                        }
+
+                        return true;
+                    });
+
+                    popup.show();
+
         });
 
         view.findViewById(R.id.imgNotification).setOnClickListener(v -> {
@@ -312,6 +349,17 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         return view;
     }
+
+
+    private void showToolsSheet() {
+        BottomSheetDialog sheet = new BottomSheetDialog(getContext());
+        View view = getLayoutInflater().inflate(R.layout.bottom_sheet, null);
+
+
+        sheet.setContentView(view);
+        sheet.show();
+    }
+
 
     private void fetchMentors() {
         FirebaseRemoteDataSource.INSTANCE.fetchMentors(this);

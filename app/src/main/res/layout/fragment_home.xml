@@ -307,6 +307,7 @@
             <!--                    android:text="View All  " />-->
             <!--            </LinearLayout>-->
             <TextView
+                android:visibility="gone"
                 android:id="@+id/tvSeeMore"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
