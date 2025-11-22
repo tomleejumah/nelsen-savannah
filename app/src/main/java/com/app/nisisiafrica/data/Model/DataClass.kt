@@ -77,10 +77,42 @@ data class Chatroom(
 )
 
 data class Message(
-    val messageId : String,
+    val messageId: String,
     private var message: String? = null,
     var senderId: String? = null,
     var timestamp: Timestamp
+)
+
+data class LikeNotificationRequest(
+    var coursePublisher: String,
+    var postID: String,
+    var text: String
+)
+
+data class NotificationResponse(
+    var success: Boolean,
+    var message: String,
+    var notificationId: String,
+    var fcmSent: Boolean
+)
+
+data class NotificationListResponse(
+    val notifications: List<NotificationData> = emptyList()
+)
+
+data class NotificationData(
+    var id: String = "",
+    var senderId: String = "",
+    var text: String = "",
+    var courseID: String = "",
+    var type: String = "",
+    var timestamp: Long = 0L,
+    var read: Boolean = false,
+
+    @Transient var senderName: String? = null,
+    @Transient var senderAvatar: String? = null,
+    @Transient var courseName: String? = null,
+    @Transient var courseImage: String? = null
 )
 
 data class Event(
