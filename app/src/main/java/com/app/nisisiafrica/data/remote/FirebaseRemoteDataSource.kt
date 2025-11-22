@@ -271,11 +271,23 @@ object FirebaseRemoteDataSource {
     fun saveOrUpdateCourse(
         courseData: CourseItem,
         tutorId: String,
-        onSuccess: ((Boolean) -> Unit)?,
-        onError: ((Exception) -> Unit)?
+        onSuccess: ((Boolean) -> Unit)? = null,
+        onError: ((Exception) -> Unit)? = null
     ) {
         val coursesRef = FirebaseDatabase.getInstance().reference.child("courses")
-        val courseId: String = coursesRef.push().key.toString()
+        var courseId = courseData.courseId
+//            ?: coursesRef.push().key
+        if (courseId.isEmpty()){
+            courseId = coursesRef.push().key.toString()
+        }
+
+
+//        if (courseId == null) {
+//
+//            onError?.invoke(Exception("Failed to generate course ID"))
+//            return
+//        }
+
         val course = hashMapOf(
             "courseId" to courseId,
             "tutorId" to tutorId,
@@ -287,7 +299,8 @@ object FirebaseRemoteDataSource {
             "courseLessons" to courseData.lessons,
             "courseLink" to courseData.courseLink
         )
-        coursesRef.child(coursesRef.push().key.toString())
+
+        coursesRef.child(courseId)
             .updateChildren(course as Map<String, Any>)
             .addOnSuccessListener {
                 Log.d(TAG, "Course data saved/updated successfully!")
@@ -298,6 +311,7 @@ object FirebaseRemoteDataSource {
                 onError?.invoke(exception)
             }
     }
+
 
     fun saveOrUpdateMentor(
         mentorData: MentorItem,
@@ -432,7 +446,7 @@ object FirebaseRemoteDataSource {
                             CourseItem(
                                 courseId = courseSnapshot.child("courseId")
                                     .getValue(String::class.java) ?: "",
-                                tutorId = courseSnapshot.child("mentorId")
+                                tutorId = courseSnapshot.child("tutorId")
                                     .getValue(String::class.java) ?: "",
                                 courseImageUrl = courseSnapshot.child("courseImageUrl")
                                     .getValue(String::class.java) ?: "",

@@ -19,12 +19,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
+import com.app.nisisiafrica.Interfaces.NotificationApiService;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.ViewAllActivity;
+import com.app.nisisiafrica.data.Model.LikeNotificationRequest;
+import com.app.nisisiafrica.data.Model.NotificationResponse;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -38,6 +44,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> {
     private static final int TYPE_COMPACT = 0;
@@ -108,7 +117,7 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
 
 //                    addNotification(item.getCourseId(),Util.getState(Constants.CURRENT_USER_ID,
 //                            ""),"Liked your Post", item.getTutorId());
-                    addNotification(item.getCourseId(), item.getTutorId(), "Liked your Post");
+                    addNotification(item.getCourseId(), item.getTutorId(), "Liked your Course: ");
 
                     notifyItemChanged(position);
 
@@ -216,7 +225,7 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
 //        }
 //    }
 
-    private void addNotification(String postID, String coursePublisher, String text) {
+    /*private void addNotification(String postID, String coursePublisher, String text) {
         String currentUserId = Util.getState(Constants.CURRENT_USER_ID, "");
 
         if (coursePublisher.equals(currentUserId)) {
@@ -237,6 +246,56 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 .addOnFailureListener(e -> {
                     Log.e("Notification", "Failed to send", e);
                 });
+    }
+     */
+
+    private static final String TAG = "CoursesAdapter";
+    private void addNotification(String courseId, String tutorId, String text) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Log.e(TAG, "User not authenticated");
+            return;
+        }
+
+        currentUser.getIdToken(true).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                String firebaseToken = task.getResult().getToken();
+
+                // Create request
+                LikeNotificationRequest request = new LikeNotificationRequest(tutorId,courseId,text);
+
+                // Call API
+                NotificationApiService service = ApiClient.getNotificationService();
+                Call<NotificationResponse> call = service.sendLikeNotification(
+                        "Bearer " + firebaseToken,
+                        request
+                );
+
+                call.enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<NotificationResponse> call,
+                                           Response<NotificationResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            NotificationResponse result = response.body();
+                            if (result.getSuccess()) {
+                                Log.d(TAG, "Notification sent successfully");
+                            } else {
+                                Log.w(TAG, "Notification failed: " + result.getMessage());
+                            }
+                        } else {
+                            Log.e(TAG, "API Error: " + response.code());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<NotificationResponse> call, Throwable t) {
+                        Log.e(TAG, "Network error: " + t.getMessage());
+                    }
+                });
+            } else {
+                Log.e(TAG, "Failed to get Firebase token");
+            }
+        });
     }
     private void removeLiked(String postId,String PublisherID){
         DatabaseReference cartRef = FirebaseDatabase.getInstance().getReference().child("LIKED")

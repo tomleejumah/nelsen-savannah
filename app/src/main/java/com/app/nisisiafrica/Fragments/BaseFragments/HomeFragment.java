@@ -41,6 +41,7 @@ import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.QuestionnaireActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
+import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewAllActivity;
 import com.app.nisisiafrica.ViewAllEvents;
@@ -104,6 +105,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private SharedPreferences prefs;
     private String role;
     private TextView txtDateInfo;
+    private TextView notifCounter;
+    private ImageView imgNotification;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -297,8 +300,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
 
         view.findViewById(R.id.imgDp).setOnClickListener(v -> {
-
-                    PopupMenu popup = new PopupMenu(getContext(), view);
+            Log.d(TAG, "onCreateView: clicked ");
+                    PopupMenu popup = new PopupMenu(getContext(), v);
                     popup.getMenu().add("Profile");
                     popup.getMenu().add("Search");
                     popup.getMenu().add("More");
@@ -344,12 +347,41 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         txtSeeAll.setOnClickListener(listener);
         showAll.setOnClickListener(listener);
 
+        notifCounter = view.findViewById(R.id.notifCounter);
+        imgNotification = view.findViewById(R.id.imgNotification);
+
 //        fetchMentors();
 //        fetchCourses();
 
         return view;
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+        setupNotificationCounter();
+    }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        NotificationCounter.stopListening();
+    }
+
+    private void setupNotificationCounter() {
+        NotificationCounter.startListening(count -> {
+            if (count > 0) {
+                notifCounter.setVisibility(View.VISIBLE);
+                notifCounter.setText(count > 99 ? "99+" : String.valueOf(count));
+            } else {
+                notifCounter.setVisibility(View.GONE);
+            }
+        });
+
+        imgNotification.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), NotificationsActivity.class);
+            startActivity(intent);
+        });
+    }
 
     private void showToolsSheet() {
         BottomSheetDialog sheet = new BottomSheetDialog(getContext());
