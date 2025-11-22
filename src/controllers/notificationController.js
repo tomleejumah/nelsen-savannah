@@ -28,8 +28,6 @@ export const sendLikeNotification = async (req, res) => {
       read: false,
     };
 
-    console.log(`courseID ${notificationData.courseID}`);
-
     const notificationRef = await admin
       .database()
       .ref(`Notifications/${coursePublisher}`)
