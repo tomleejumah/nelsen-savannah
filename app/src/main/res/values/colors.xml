@@ -21,6 +21,8 @@
     <color name="sea_green">#2E8B57</color>
     <color name="transparent">@android:color/transparent</color>
     <color name="gray_light">#FFF5F5F5</color>
+    <color name="gray_dark">#FF808080</color>
+    <color name="unread_background">#F5F5F5</color>
 
     <!-- Timeline colors -->
     <color name="timeline_completed">#373636</color>   <!-- Green for completed -->
