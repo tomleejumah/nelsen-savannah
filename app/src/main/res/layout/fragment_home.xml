@@ -169,7 +169,6 @@
                     android:layout_centerVertical="true"
                     android:layout_marginEnd="18dp"
                     android:fontFamily="@font/poppins_regular"
-                    android:onClick="goToViewAll"
                     android:text="See All"
                     android:textAlignment="center" />
 
@@ -376,7 +375,6 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:layout_marginEnd="18dp"
-                    android:onClick="goToViewAll"
                     android:padding="4dp"
                     android:text="Show More"
                     android:textAlignment="center" />
