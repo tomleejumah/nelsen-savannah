@@ -1,10 +1,7 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import './config/firebase.js';
 import notificationRoutes from './routes/notifications.js';
 import chatRoutes from './routes/chat.js';
-
-dotenv.config();
 
 const app = express();
 app.use(express.json());
