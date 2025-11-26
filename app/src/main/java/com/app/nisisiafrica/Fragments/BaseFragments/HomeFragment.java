@@ -33,6 +33,7 @@ import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
+import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
@@ -86,6 +87,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function0;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
@@ -324,7 +327,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                                 showToolsSheet();
                                 break;
                             case "Logout":
-                               //todo are you sure you want to logout dialog
+                                FirebaseRemoteDataSource.INSTANCE.signOutAll(getContext(), () -> {
+                                    startActivity(new Intent(getActivity(), LoginSignUpActivity.class));
+                                    return null;
+                                });
                                 break;
                         }
 

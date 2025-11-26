@@ -32,6 +32,7 @@ public class ChatFragment extends Fragment {
     private ChatAdapter adapter;
     private ChatViewModel viewModel;
     private String role;
+    String chatroomId;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -44,7 +45,8 @@ public class ChatFragment extends Fragment {
         role = Util.getState(Constants.USER_ROLE,"Mentee");
 
         adapter = new ChatAdapter(chatroom -> {
-            String chatroomId = chatroom.getChatroomId();
+             chatroomId = chatroom.getChatroomId().isEmpty() ? "announcements" : chatroom.getChatroomId();
+
             String currentUserId = Util.getState(Constants.CURRENT_USER_ID, "");
             binding.overlappingPanels.openEndPanel();
 
@@ -98,7 +100,6 @@ public class ChatFragment extends Fragment {
 
         binding.overlappingPanels.registerEndPanelStateListeners(newState -> {
             if (newState instanceof PanelState.Opening) {
-
                 chipNavigationBar.setVisibility(View.GONE);
             } else if (newState instanceof PanelState.Opened) {
                 chipNavigationBar.setVisibility(View.GONE);

@@ -2,6 +2,7 @@ package com.app.nisisiafrica.Utils;
 
 import androidx.annotation.NonNull;
 
+import com.app.nisisiafrica.Constants;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
@@ -45,7 +46,8 @@ public class NotificationCounter {
 
     public static void stopListening() {
         if (listener != null) {
-            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+//            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            String currentUserId = Util.getState(Constants.CURRENT_USER_ID, "");
             FirebaseDatabase.getInstance()
                     .getReference("Notifications")
                     .child(currentUserId)
