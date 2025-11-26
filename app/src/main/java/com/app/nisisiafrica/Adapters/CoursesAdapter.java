@@ -109,8 +109,6 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             isLiked(item.getCourseId(),((CompactViewHolder) holder).likeBtn);
             ((CompactViewHolder) holder).likeBtn.setOnClickListener(v -> {
                 if (v.getTag().equals("Like")){
-                    Toast.makeText(mContext, "Liked", Toast.LENGTH_SHORT).show();
-                    Toast.makeText(mContext, ": "+item.getCourseId(), Toast.LENGTH_SHORT).show();
                     FirebaseDatabase.getInstance().getReference().child("Likes").
                             child((item.getCourseId())).child(Util.
                                     getState(Constants.CURRENT_USER_ID, "")).setValue(true);
@@ -125,8 +123,6 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
 //                            posts.getPrice(), posts.getImageUrl(), posts.getPublisherID());
                 }else {
                     notifyItemChanged(position);
-                    Toast.makeText(mContext, ": "+item.getCourseId(), Toast.LENGTH_SHORT).show();
-                    Toast.makeText(mContext, "Unliked", Toast.LENGTH_SHORT).show();
                     FirebaseDatabase.getInstance().getReference().child("Likes").
                             child((item.getCourseId())).child(Util.getState(Constants.CURRENT_USER_ID, "")).removeValue();
                     removeLiked(item.getCourseId(),Util.getState(Constants.CURRENT_USER_ID, ""));
@@ -322,11 +318,13 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference()
                 .child("Likes").child(courseId);
 
+        imageView.setImageResource(R.drawable.ic_liked);
+
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if(snapshot.child(Util.getState(Constants.CURRENT_USER_ID, "")).exists()){
-                    imageView.setImageResource(R.drawable.ic_liked);
+//                    imageView.setImageResource(R.drawable.ic_liked);
                     imageView.setTag("Liked");
                 } else {
                     imageView.setImageResource(R.drawable.ic_like);
@@ -335,26 +333,10 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                imageView.setImageResource(R.drawable.ic_like);
+                imageView.setTag("Like");
+            }
         });
     }
-//    private void isLiked(String postId,ImageView imageView){
-//        FirebaseDatabase.getInstance().getReference().child("Likes").
-//                child(postId).addValueEventListener(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-//                        if(snapshot.child(Util.getState(Constants.CURRENT_USER_ID, "")).exists()){
-//                            imageView.setImageResource(R.drawable.ic_liked);
-//                            imageView.setTag("Liked");
-//                        }else {
-//                            imageView.setImageResource(R.drawable.ic_like);
-//                            imageView.setTag("Like");
-//                        }
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(@NonNull DatabaseError error) {
-//                    }
-//                });
-//    }
 }
