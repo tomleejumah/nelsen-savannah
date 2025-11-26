@@ -1,7 +1,11 @@
 package com.app.nisisiafrica;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -10,6 +14,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -24,19 +30,19 @@ import androidx.work.WorkManager;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
-import com.app.nisisiafrica.Worker.BookingWorker;
-import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.data.Model.CourseItem;
-import com.app.nisisiafrica.data.Model.MentorItem;
-import com.app.nisisiafrica.data.Model.UserData;
-import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.Worker.BookingWorker;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.local.Dao.UserDao;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -66,20 +72,22 @@ import kotlin.Unit;
 
 public class MainActivity extends AppCompatActivity implements HomeFragment.onScrollChangeListener, FirebaseCallback {
     private static final String TAG = "MainActivity";
+    private static final String CHANNEL_ID = "nisisi_notifications";
+    private static int REQUEST_CODE_NOTIFICATIONS = 210;
     private final CompositeDisposable disposables = new CompositeDisposable();
     private final HomeFragment homeFragment = new HomeFragment();
     private final ChatFragment chatFragment = new ChatFragment();
     private final SettingsFragment settingsFragment = new SettingsFragment();
     private String userRole, currentUser;
-    private UserData userData,cachedUserData;
+    private UserData userData, cachedUserData;
     private UserDao userDao;
     private Intent intent;
     private UserViewModel sharedUserViewModel1;
     private FragmentManager fragmentManager;
     private Fragment currentlyDisplayedFragment = null;
+    //todo init viewmodel in application class
     private FabToBottomNavigationAnim fabToBottomNavigationAnim;
     private FloatingActionButton fabView;
-    //todo init viewmodel in application class
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +106,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         }
         currentUser = firebaseUser.getUid();
         Util.saveState(Constants.CURRENT_USER_ID, currentUser);
+
+        requestNotificationPermission();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -147,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         getUserBookedDates(this);
     }
+
     private void preloadAllFragments() {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.navHostFragment, homeFragment, "HOME_FRAGMENT");
@@ -156,6 +167,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         fragmentTransaction.hide(settingsFragment);
         fragmentTransaction.commitNow();
     }
+
+//    @Override
+//    public boolean onSupporcoursestNavigateUp() {
+//        return navController.navigateUp() || super.onSupportNavigateUp();
+//    }
 
     private void replaceFragment(Fragment fragmentToShow) {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -196,11 +212,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                     }
                 });
     }
-
-//    @Override
-//    public boolean onSupporcoursestNavigateUp() {
-//        return navController.navigateUp() || super.onSupportNavigateUp();
-//    }
 
     public void hideBottomBar() {
         fabToBottomNavigationAnim.hideNavigationView();
@@ -272,7 +283,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         if (currentTime - lastAppBackground > cacheValidDuration) {
             Log.d(TAG, "Cache expired, logging out user");
-            disposables.add(userDao.deleteUserByIdRx(userData.getId())
+            String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+//            disposables.add(userDao.deleteUserByIdRx(userData.getId())
+            disposables.add(userDao.deleteUserByIdRx(userId)
                     .subscribeOn(Schedulers.io())
                     .subscribe(
                             () -> Log.d(TAG, "User cache deleted"),
@@ -293,13 +306,53 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     }
 
-    private void getUserBookedDates(Context context){
+    //todo create multiple channels based with action also migrate them to enum class
+    private void requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        REQUEST_CODE_NOTIFICATIONS);
+            }
+        } else createNotificationChannel();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQUEST_CODE_NOTIFICATIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                createNotificationChannel();
+            } else {
+                CustomSnackbar.show(MainActivity.this, "To receive updates consider " +
+                        "enabling notifications", Snackbar.LENGTH_LONG, 4);
+            }
+        }
+    }
+
+
+    private void createNotificationChannel() {
+        CharSequence name = "Nisisi Notifications";
+        String description = "Notifications for likes, comments, and messages";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
+
+        NotificationManager notificationManager =
+                getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+    private void getUserBookedDates(Context context) {
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
                 .setRequiresBatteryNotLow(false)
                 .build();
 
-        boolean isMentor ="Mentor".equals(userRole) || Util.getState(Constants.USER_ROLE, "Mentee").equals("Mentor");
+        boolean isMentor = "Mentor".equals(userRole) || Util.getState(Constants.USER_ROLE, "Mentee").equals("Mentor");
 
         PeriodicWorkRequest periodicWorkRequest;
         if (isMentor) {
@@ -309,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                     1,
                     TimeUnit.HOURS
             ).setConstraints(constraints).build();
-        }else {
+        } else {
             periodicWorkRequest = new PeriodicWorkRequest.Builder(
                     BookingWorker.class,
                     1,
@@ -378,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 sharedUserViewModel1.updateUserData(userData);
             }
             //will update last login todo
-        Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+            Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
         } else {
             Log.d(TAG, "No fetched data available...re using cached data");
             if (cachedUserData != null) {

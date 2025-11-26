@@ -66,7 +66,6 @@ public class FCMService extends FirebaseMessagingService {
 
     private void showNotification(String title, String body, String courseId,
                                   String senderId, String type) {
-        createNotificationChannel();
 
         // Create intent to open app when notification is clicked
         Intent intent = new Intent(this, MainActivity.class);
@@ -97,39 +96,4 @@ public class FCMService extends FirebaseMessagingService {
         int notificationId = (int) System.currentTimeMillis();
         notificationManager.notify(notificationId, builder.build());
     }
-
-    private void createNotificationChannel() {
-        CharSequence name = "Nisisi Notifications";
-        String description = "Notifications for likes, comments, and messages";
-        int importance = NotificationManager.IMPORTANCE_HIGH;
-
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-        channel.setDescription(description);
-
-        NotificationManager notificationManager =
-                getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
-    }
 }
-
-//    private void showNotification(String title, String body, String courseId) {
-//        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-//                .setSmallIcon(R.drawable.ic_notifications)
-//                .setContentTitle(title)
-//                .setContentBody(body)
-//                .setPriority(NotificationCompat.PRIORITY_HIGH)
-//                .setAutoCancel(true);
-//
-//        // Add intent to open course when clicked
-//        Intent intent = new Intent(this, CourseActivity.class);
-//        intent.putExtra("courseId", courseId);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(
-//                this, 0, intent, PendingIntent.FLAG_IMMUTABLE
-//        );
-//        builder.setContentIntent(pendingIntent);
-//
-//        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-//        manager.notify(0, builder.build());
-//    }
-//}
-
