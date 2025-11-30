@@ -1,22 +1,16 @@
 package com.app.nisisiafrica.Fragments.BaseFragments;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
@@ -34,7 +28,6 @@ import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
-import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.NotificationsActivity;
@@ -45,7 +38,6 @@ import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewAllActivity;
-import com.app.nisisiafrica.ViewAllEvents;
 import com.app.nisisiafrica.ViewModel.EventViewModel;
 import com.app.nisisiafrica.ViewModel.EventViewModelFactory;
 import com.app.nisisiafrica.ViewModel.SharedViewModel;
@@ -80,15 +72,11 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
@@ -391,7 +379,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     private void showToolsSheet() {
         BottomSheetDialog sheet = new BottomSheetDialog(getContext());
-        View view = getLayoutInflater().inflate(R.layout.bottom_sheet, null);
+        View view = getLayoutInflater().inflate(R.layout.home_options_sheet, null);
 
 
         sheet.setContentView(view);
