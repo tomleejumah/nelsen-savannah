@@ -77,9 +77,15 @@
             android:label="Nisisi Africa"
             android:launchMode="singleTop"
             android:theme="@style/Theme.Nisisi.Splash">
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.MAIN" />
-
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:scheme="https"
+                    android:host="nisisi.firebaseapp.com"
+                    android:pathPrefix="/__/auth/links" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

@@ -1,12 +1,15 @@
 package com.app.nisisiafrica;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewOutlineProvider;
@@ -15,7 +18,9 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -35,7 +40,10 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -56,7 +64,8 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private String id, role;
     private UserViewModel sharedUserViewModel;
     private UserData userData;
-    private TextView tv_username, tvDescription;
+    private TextView tv_username, tvDescription,tvProfileName,tvAbout,tvRole;
+    private Uri videoUri, photoUri;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -92,6 +101,9 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         tv_username = findViewById(R.id.tv_username);
         tvDescription = findViewById(R.id.tv_Description);
+        tvProfileName = findViewById(R.id.tvProfileName);
+        tvAbout = findViewById(R.id.tvAbout);
+        tvRole = findViewById(R.id.tvRole);
 
         if (isFromMentor) {
             FirebaseRemoteDataSource.INSTANCE.getMentorData(id, this);
@@ -100,16 +112,24 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
                     userData = data;
-                    loadAndStyle(userData.getPhotoUrl());
+//                    loadAndStyle(userData.getPhotoUrl());
+                    Glide.with(ProfileActivity.this)
+                            .load(userData.getPhotoUrl())
+                            .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.ic_person)
+                            .into(dpImage);
                     blurViewDesc.setVisibility(
                             TextUtils.isEmpty(data.getBio())
                                     ? View.GONE
                                     : View.VISIBLE
                     );
                     tvDescription.setText(userData.getBio());
-                    tv_username.setText(userData.getFirstName() + " " + userData.getLastName());
-
+//                    tv_username.setText(userData.getFirstName() + " " + userData.getLastName());
+                    tvProfileName.setText(userData.getFirstName() + " " + userData.getLastName());
+                    tvRole.setText(userData.getUserRole());
+                    tvAbout.setText(userData.getBio());
                     if (Objects.equals(userData.getUserRole(), "Mentee")) {
+
                         tv_username.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
                     }
                 }
@@ -123,7 +143,11 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray);
 
-        setupBlur(target, radius, blurViewName, blurViewDescHead, blurViewDesc, blurViewRc);
+        findViewById(R.id.btn_Menu).setOnClickListener(v -> {
+            showToolsSheet();
+        });
+
+//        setupBlur(target, radius, blurViewName, blurViewDescHead, blurViewDesc, blurViewRc);
 
         findViewById(R.id.iv_action).setOnClickListener(v -> {
             Intent intent1 = new Intent(ProfileActivity.this, EditProfileActivity.class);
@@ -135,11 +159,82 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         ExtendedFloatingActionButton button = findViewById(R.id.btnNext);
         button.setVisibility(!isFromMentor ? View.GONE : View.VISIBLE);
+        findViewById(R.id.btn_Menu).setVisibility(isFromMentor ? View.GONE : View.VISIBLE);
+        findViewById(R.id.iv_action).setVisibility(isFromMentor ? View.GONE : View.VISIBLE);
         button.setText(!isFromMentor ? "" : "Book Now");
         button.setOnClickListener(v -> {
             Intent intent1 = new Intent(ProfileActivity.this, BookMentor.class);
             startActivity(intent1);
         });
+    }
+
+    private void showToolsSheet() {
+        BottomSheetDialog sheet = new BottomSheetDialog((this));
+        View view = getLayoutInflater().inflate(R.layout.upload_options, null);
+
+        CardView uploadDocuments = view.findViewById(R.id.uploadDocuments);
+        CardView uploadMedia = view.findViewById(R.id.uploadMedia);
+        CardView captureMedia = view.findViewById(R.id.captureMedia);
+
+        if (isFromMentor) {
+            uploadDocuments.setVisibility(View.GONE);
+        } else uploadDocuments.setVisibility(View.VISIBLE);
+
+        uploadMedia.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*"});
+            startActivityForResult(intent, 1002);
+        });
+
+        uploadDocuments.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/pdf");
+            startActivityForResult(intent, 1001);
+        });
+
+        captureMedia.setOnClickListener(v -> {
+            String[] options = {"Image", "Video"};
+            new AlertDialog.Builder(this)
+                    .setItems(options, (d, which) -> {
+                        if (which == 0) captureImage();
+                        else captureVideo();
+                    }).show();
+
+        });
+
+        sheet.setContentView(view);
+        sheet.show();
+    }
+
+    private Uri createMediaUri(String type) {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.MediaColumns.DISPLAY_NAME, "cap_" + System.currentTimeMillis());
+        values.put(MediaStore.MediaColumns.MIME_TYPE,
+                type.equals("image") ? "image/jpeg" : "video/mp4");
+
+        return getContentResolver().insert(
+                type.equals("image") ?
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI :
+                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                values
+        );
+    }
+
+    private void captureImage() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        photoUri = createMediaUri("image");
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        startActivityForResult(intent, 1003);
+    }
+
+    private void captureVideo() {
+        Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        videoUri = createMediaUri("video");
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, videoUri);
+        startActivityForResult(intent, 1003);
     }
 
     private void setupBlur(BlurTarget target, float radius, BlurView... blurViews) {
@@ -151,6 +246,51 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode != RESULT_OK) return;
+
+        Uri uri = null;
+
+        if (requestCode == 1001 || requestCode == 1002) {
+            if (data != null) uri = data.getData();
+        } else if (requestCode == 1003) {
+            uri = (photoUri != null) ? photoUri : videoUri;
+        }
+
+        if (uri == null) return;
+
+        if (requestCode == 1001) uploadPdfToFirebase(uri);
+        else uploadMediaToFirebase(uri);
+    }
+
+    private void uploadPdfToFirebase(Uri uri) {
+        StorageReference ref = FirebaseStorage.getInstance()
+                .getReference("docs/" + System.currentTimeMillis() + ".pdf");
+
+       /* ref.putFile(uri)
+                .addOnSuccessListener(task -> {})
+                .addOnFailureListener(e -> {}); */
+    }
+
+    private void uploadMediaToFirebase(Uri uri) {
+        String type = getContentResolver().getType(uri);
+
+        String ext;
+        if (type != null && type.startsWith("image")) ext = ".jpg";
+        else ext = ".mp4";
+
+        /*
+        StorageReference ref = FirebaseStorage.getInstance()
+                .getReference("media/" + System.currentTimeMillis() + ext);
+
+        ref.putFile(uri);
+         */
+    }
+
+
+    @Override
     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
 
     }
@@ -158,14 +298,17 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     @Override
     public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
         if (mentors != null) {
-            blurViewDesc.setVisibility(
-                    TextUtils.isEmpty(mentors.getMentorDescription())
-                            ? View.GONE
-                            : View.VISIBLE
-            );
-            tvDescription.setText(mentors.getMentorDescription());
-            tv_username.setText(mentors.getMentorName());
-            loadAndStyle(mentors.getMentorImageUrl());
+
+            Glide.with(ProfileActivity.this)
+                    .load(mentors.getMentorImageUrl())
+                    .apply(RequestOptions.circleCropTransform())
+                    .into(dpImage);
+            tvProfileName.setText(mentors.getMentorName());
+            tvRole.setText("Mentor");
+            tvAbout.setText(mentors.getMentorDescription());
+//            tvDescription.setText(mentors.getMentorDescription());
+//            tv_username.setText(mentors.getMentorName());
+//            loadAndStyle(mentors.getMentorImageUrl());
         } else {
             // Handle null case
             blurViewDesc.setVisibility(View.GONE);
@@ -195,12 +338,12 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         paletteTarget = new CustomTarget<>() {
             @Override
             public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                // Extract colors from the unprocessed bitmap (accurate for Palette)
+
                 Palette.from(resource).generate(palette -> {
                     int dominant = palette != null ? palette.getDominantColor(defaultColor) : defaultColor;
                     int vibrant = palette != null ? palette.getVibrantColor(dominant) : dominant;
                     int muted = palette != null ? palette.getMutedColor(dominant) : dominant;
-                    applyColorsAnimated(dominant, vibrant, muted);
+//                    applyColorsAnimated(dominant, vibrant, muted);
                 });
 
                 Glide.with(ProfileActivity.this)
