@@ -46,9 +46,7 @@ class LauncherActivity : AppCompatActivity() {
                     Intent(this@LauncherActivity, LoginSignUpActivity::class.java)
                 }
             }
-
             isReady = true
-
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
             finish()
