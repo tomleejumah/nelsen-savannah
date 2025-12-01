@@ -611,16 +611,54 @@ object FirebaseRemoteDataSource {
     }
 
     private val database = FirebaseDatabase.getInstance()
-    private val eventsRef = database.getReference("events")
-
-    fun createEvent(event: Event, callback: (Boolean) -> Unit) {
-        val eventId = eventsRef.push().key ?: return
-        eventsRef.child(eventId).setValue(event.copy(eventId = eventId))
-            .addOnSuccessListener { callback(true) }
-            .addOnFailureListener { callback(false) }
-    }
+    private val eventsRef = database.getReference("Events")
 
     fun getUserEvents(): LiveData<List<Event>> {
+        val liveData = MutableLiveData<List<Event>>()
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return liveData
+
+        val globalList = mutableListOf<Event>()
+        val personalList = mutableListOf<Event>()
+
+        fun mergeAndEmit() {
+            val merged = (globalList + personalList)
+                .distinctBy { it.eventId }
+                .sortedBy { it.date }
+            liveData.postValue(merged)
+        }
+
+        // --- Global events (eventType = 1) ---
+        eventsRef.orderByChild("eventType").equalTo(1.0)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    globalList.clear()
+                    for (child in snapshot.children) {
+                        child.getValue(Event::class.java)?.let { globalList.add(it) }
+                    }
+                    mergeAndEmit()
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
+
+        eventsRef.orderByChild("participants/$uid").equalTo(true)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    personalList.clear()
+                    for (child in snapshot.children) {
+                        child.getValue(Event::class.java)?.let { personalList.add(it) }
+                    }
+                    mergeAndEmit()
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
+        return liveData
+    }
+
+
+
+    fun getUserEvets(): LiveData<List<Event>> {
         val liveData = MutableLiveData<List<Event>>()
             val userId = FirebaseAuth.getInstance().currentUser?.uid
             return object : LiveData<List<Event>>() {
@@ -648,6 +686,23 @@ object FirebaseRemoteDataSource {
             }
 
     }
+
+    fun createEvent(event: Event, onComplete: (Boolean) -> Unit) {
+        val eventId = eventsRef.push().key ?: return onComplete(false)
+
+        val finalEvent = event.copy(eventId = eventId)
+
+        eventsRef.child(eventId)
+            .setValue(finalEvent)
+            .addOnCompleteListener { onComplete(it.isSuccessful) }
+    }
+/*
+    fun createEventa(event: Event, callback: (Boolean) -> Unit) {
+        val eventId = eventsRef.push().key ?: return
+        eventsRef.child(eventId).setValue(event.copy(eventId = eventId))
+            .addOnSuccessListener { callback(true) }
+            .addOnFailureListener { callback(false) }
+    }*/
 
     fun bookMentor(mentorId: String, date: Long, startTime: String, endTime: String) {
 //        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return

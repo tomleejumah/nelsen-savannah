@@ -125,7 +125,8 @@ data class Event(
     val eventType: Int = 0, // 1 = appointment, 2 = app event
     val mentorId: String? = null, // only for appointments
     val status: Int = 0, // 0 = upcoming, 1 = completed, 2 = today
-    val description: String? = null
+    val description: String? = null,
+    val participants: Map<String, Boolean>? = null
 )
 
 @Entity(tableName = "user_data")
