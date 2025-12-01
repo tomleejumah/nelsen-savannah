@@ -104,7 +104,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:padding="8dp"
-                android:src="@drawable/donation" />
+                android:src="@drawable/ic_person" />
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -175,6 +175,7 @@
             </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView
+                tools:itemCount="5"
                 android:id="@+id/rcCourses"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -325,6 +326,7 @@
 
             <!-- Show 3 events -->
             <androidx.recyclerview.widget.RecyclerView
+                tools:itemCount="3"
                 android:id="@+id/rvUpcomingEvents"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -382,6 +384,7 @@
             </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView
+                tools:itemCount="3"
                 android:id="@+id/rcMentorList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -452,7 +455,6 @@
                     android:textStyle="bold"
                     app:drawableEndCompat="@drawable/ic_more" />
             </LinearLayout>
-
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

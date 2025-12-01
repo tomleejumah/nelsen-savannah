@@ -7,7 +7,16 @@ import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 
 class EventRepository {
 
-    val events: LiveData<List<Event>> = FirebaseRemoteDataSource.getUserEvents()
+//    val events: LiveData<List<Event>> = FirebaseRemoteDataSource.getUserEvents()
+
+    private val dataSource = FirebaseRemoteDataSource
+//        FirebaseRemoteDataSource()
+
+    val events: LiveData<List<Event>> = dataSource.getUserEvents()
+
+    fun createEvent(event: Event, onComplete: (Boolean) -> Unit) {
+        dataSource.createEvent(event, onComplete)
+    }
 
 //    private val eventsRef = FirebaseDatabase.getInstance().getReference("events")
 //

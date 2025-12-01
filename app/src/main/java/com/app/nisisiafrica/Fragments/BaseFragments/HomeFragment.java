@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
@@ -30,6 +31,7 @@ import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
+import com.app.nisisiafrica.CreateEventActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.ProfileActivity;
@@ -74,6 +76,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -84,7 +87,8 @@ import kotlin.jvm.functions.Function0;
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
     private final Gson gson = new Gson();
-    private final Type type = new TypeToken<List<String>>() {}.getType();
+    private final Type type = new TypeToken<List<String>>() {
+    }.getType();
     private Set<LocalDate> mySchedule = new HashSet<>();
     private UserData userData;
     private SearchView searchView;
@@ -101,6 +105,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private TextView txtDateInfo;
     private TextView notifCounter;
     private ImageView imgNotification;
+    private Button btnBookMentor;
+    private EventViewModel eventViewModel;
+    private RecyclerView rvUpcomingEvents;
+    private EventAdapter eventAdapter;
+    private ImageView plusIcon;
+//todo make a init views method!!!!!!!
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -119,25 +129,59 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         UserViewModel userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        EventRepository repository = new EventRepository();
+        EventViewModelFactory factory = new EventViewModelFactory(repository);
+        eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
+
+        eventAdapter = new EventAdapter();
+        rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
+        rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvUpcomingEvents.setAdapter(eventAdapter);
+
+        btnBookMentor = view.findViewById(R.id.btnBookMentor);
+        plusIcon = view.findViewById(R.id.plusIcon);
 
         CircleImageView imgDp = view.findViewById(R.id.imgDp);
         userViewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
-            if (data != null) {
-                userData = data;
-                onUserDataReceived(data);
-                Glide.with(this)
-                        .load(data.getPhotoUrl())
-                        .placeholder(R.drawable.donation)
-//                        .error(R.drawable.ic_error)
-                        .into(imgDp);
-            } else {
+            if (data == null) return;
 
+            userData = data;
+            onUserDataReceived(data);
+            Glide.with(this)
+                    .load(data.getPhotoUrl())
+//                    .placeholder(R.drawable.donation)
+//                        .error(R.drawable.ic_error)
+                    .into(imgDp);
+
+            if (userData.getUserRole().equals("Mentor")) {
+                plusIcon.setVisibility(View.VISIBLE);
+            } else {
+                plusIcon.setVisibility(View.GONE);
+            }
+
+            getEvents(data, view);
+
+        });
+
+        btnBookMentor.setOnClickListener(v -> {
+            if (userData.getUserRole().equals("Mentor")) {
+                Intent intent = new Intent(getActivity(), CreateEventActivity.class);
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(getActivity(), ViewAllActivity.class);
+                intent.putExtra("isCourses", false);
+                startActivity(intent);
             }
         });
 
         view.findViewById(R.id.imgNotification).setOnClickListener(v -> {
-            //todo handle navigation to Notifications fragment
-//            Toast.makeText(getActivity(), "Notifications", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getActivity(), NotificationsActivity.class);
+            startActivity(intent);
+        });
+
+        view.findViewById(R.id.plusIcon).setOnClickListener(v->{
+            Intent intent = new Intent(getActivity(), CreateEventActivity.class);
+            startActivity(intent);
         });
 
         View calendarLayout = view.findViewById(R.id.layoutCalendar);
@@ -204,49 +248,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
-        EventRepository repository = new EventRepository();
-        EventViewModelFactory factory = new EventViewModelFactory(repository);
-        EventViewModel eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
-
-        EventAdapter adapter = new EventAdapter();
-        RecyclerView rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
-        rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvUpcomingEvents.setAdapter(adapter);
-
-        eventViewModel.getUserEvents().observe(getViewLifecycleOwner(), events -> {
-
-            if (events.isEmpty()) {
-                view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
-                rvUpcomingEvents.setVisibility(View.GONE);
-
-                // Fade in empty state
-//                view.findViewById(R.id.emptyStateView).startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in));
-//
-//                // Pulse the circle background
-//                View circleView =  view.findViewById(R.id.emptyStateView).findViewById(R.id.circleBackground);
-//                circleView.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.pulse));
-//
-//                // Bounce the plus icon
-//                @SuppressLint("CutPasteId") ImageView plusIcon =  view.findViewById(R.id.emptyStateView).findViewById(R.id.plusIcon);
-//                plusIcon.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.bounce));
-
-            } else {
-               view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
-               rvUpcomingEvents.setVisibility(View.VISIBLE);
-//                adapter.submitList(events);
-                List<Event> upcoming = events.stream()
-                        .filter(e -> e.getDate() >= System.currentTimeMillis())
-                        .limit(3)
-                        .collect(Collectors.toList());
-                adapter.submitList(upcoming);
-            }
-             view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
-        });
-
         //todo update
         view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), ViewAllActivity.class);
-                intent.putExtra("isCourses", false);
+            intent.putExtra("isCourses", false);
             startActivity(intent);
         });
 
@@ -295,40 +300,40 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         view.findViewById(R.id.imgDp).setOnClickListener(v -> {
             Log.d(TAG, "onCreateView: clicked ");
-                    PopupMenu popup = new PopupMenu(getContext(), v);
-                    popup.getMenu().add("Profile");
-                    popup.getMenu().add("Search");
-                    popup.getMenu().add("More");
-                    popup.getMenu().add("Logout");
+            PopupMenu popup = new PopupMenu(getContext(), v);
+            popup.getMenu().add("Profile");
+            popup.getMenu().add("Search");
+            popup.getMenu().add("More");
+            popup.getMenu().add("Logout");
 
-                    popup.setOnMenuItemClickListener(item -> {
-                        String title = item.getTitle().toString();
+            popup.setOnMenuItemClickListener(item -> {
+                String title = item.getTitle().toString();
 
-                        switch (title) {
-                            case "Profile":
-                                Intent intent = new Intent(getActivity(), ProfileActivity.class);
-                                intent.putExtra(Constants.IS_MENTOR, false);
-                                intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
-                                startActivity(intent);
-                                break;
-                            case "Search":
-                                //open search activity
-                                break;
-                            case "More":
-                                showToolsSheet();
-                                break;
-                            case "Logout":
-                                FirebaseRemoteDataSource.INSTANCE.signOutAll(getContext(), () -> {
-                                    startActivity(new Intent(getActivity(), LoginSignUpActivity.class));
-                                    return null;
-                                });
-                                break;
-                        }
+                switch (title) {
+                    case "Profile":
+                        Intent intent = new Intent(getActivity(), ProfileActivity.class);
+                        intent.putExtra(Constants.IS_MENTOR, false);
+                        intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
+                        startActivity(intent);
+                        break;
+                    case "Search":
+                        //open search activity
+                        break;
+                    case "More":
+                        showToolsSheet();
+                        break;
+                    case "Logout":
+                        FirebaseRemoteDataSource.INSTANCE.signOutAll(getContext(), () -> {
+                            startActivity(new Intent(getActivity(), LoginSignUpActivity.class));
+                            return null;
+                        });
+                        break;
+                }
 
-                        return true;
-                    });
+                return true;
+            });
 
-                    popup.show();
+            popup.show();
 
         });
 
@@ -352,6 +357,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         return view;
     }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -487,10 +493,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 //    @Override
 //    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-////        List<MentorItem> mentorItems = new ArrayList<>();
-////        mentorItems.add(mentors);
-////        pendingRequests--;
-////        if (pendingRequests == 0) {
+
+    /// /        List<MentorItem> mentorItems = new ArrayList<>();
+    /// /        mentorItems.add(mentors);
+    /// /        pendingRequests--;
+    /// /        if (pendingRequests == 0) {
 //        mentorItemsList.clear();
 //        mentorItemsList.addAll(mentors);
 //        mentorsAdapter.notifyDataSetChanged();
@@ -509,14 +516,37 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     @Override
     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
         if (userData == null) return;
-        role = userData.getUserRole();
-        if (role.equals("Mentor")) {
-            txtDateInfo.setText("• RED Underline: Your Schedules");
+//        getEvents(userData);
+//        role = userData.getUserRole();
+//        if (role.equals("Mentor")) {
+//            txtDateInfo.setText("• RED Underline: Your Schedules");
+//
+//        } else {
+//            txtDateInfo.setText("• Blue Underline: Your schedules");
+//        }
 
-        } else {
-            txtDateInfo.setText("• Blue Underline: Your schedules");
-        }
+    }
 
+    private void getEvents(UserData userData, View view) {
+        eventViewModel.getUserEvents().observe(getViewLifecycleOwner(), events -> {
+
+            if (events.isEmpty()) {
+                view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
+                rvUpcomingEvents.setVisibility(View.GONE);
+                btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Add Notification" : "Book a mentor");
+
+            } else {
+                view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
+                rvUpcomingEvents.setVisibility(View.VISIBLE);
+//                adapter.submitList(events);
+                List<Event> upcoming = events.stream()
+                        .filter(e -> e.getDate() >= System.currentTimeMillis())
+                        .limit(3)
+                        .collect(Collectors.toList());
+                eventAdapter.submitList(upcoming);
+            }
+            view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
+        });
     }
 
     @Override
