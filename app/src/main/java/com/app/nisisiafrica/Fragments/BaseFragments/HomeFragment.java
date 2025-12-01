@@ -28,6 +28,7 @@ import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
+import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.NotificationsActivity;
@@ -77,6 +78,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function0;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
