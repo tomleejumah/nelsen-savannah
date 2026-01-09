@@ -252,7 +252,7 @@ public class SignUpFragment extends Fragment {
 
         return view;
     }
-    private void signUp(String firstNameText, String lastNameText, String email, String password) {
+/*    private void signUp(String firstNameText, String lastNameText, String email, String password) {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
 
@@ -295,6 +295,8 @@ public class SignUpFragment extends Fragment {
                     });
         });
     }
+
+ */
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,
