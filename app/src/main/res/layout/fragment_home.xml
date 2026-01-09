@@ -384,6 +384,7 @@
             </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView
+                android:nestedScrollingEnabled="false"
                 tools:itemCount="3"
                 android:id="@+id/rcMentorList"
                 android:layout_width="match_parent"

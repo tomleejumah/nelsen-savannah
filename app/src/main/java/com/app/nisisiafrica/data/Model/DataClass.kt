@@ -122,9 +122,9 @@ data class Event(
     val date: Long = 0L,
     val startTime: String = "",
     val endTime: String = "",
-    val eventType: Int = 0, // 1 = appointment, 2 = app event
-    val mentorId: String? = null, // only for appointments
-    val status: Int = 0, // 0 = upcoming, 1 = completed, 2 = today
+    val eventType: Int = 0,
+    val mentorId: String? = null,
+    val status: Int = 0,
     val description: String? = null,
     val participants: Map<String, Boolean>? = null
 )

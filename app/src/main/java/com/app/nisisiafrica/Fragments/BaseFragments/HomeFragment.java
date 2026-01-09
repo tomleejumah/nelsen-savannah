@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.paging.LoadState;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,7 +29,6 @@ import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
-import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.CreateEventActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
@@ -80,7 +80,6 @@ import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
@@ -177,7 +176,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             startActivity(intent);
         });
 
-        view.findViewById(R.id.plusIcon).setOnClickListener(v->{
+        view.findViewById(R.id.plusIcon).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), CreateEventActivity.class);
             startActivity(intent);
         });
@@ -284,8 +283,48 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         sharedViewModel.getMentors().observe(getViewLifecycleOwner(), pagingData -> {
             mentorsAdapter.submitData(getLifecycle(), pagingData);
-
         });
+        mentorsAdapter.addLoadStateListener(loadState -> {
+            if (loadState.getRefresh() instanceof LoadState.NotLoading) {
+                rcMentors.post(() -> {
+                    mentorsAdapter.notifyDataSetChanged(); // Force rebind
+                    rcMentors.measure(
+                            View.MeasureSpec.makeMeasureSpec(rcMentors.getWidth(), View.MeasureSpec.EXACTLY),
+                            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                    );
+                    ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
+                    params.height = rcMentors.getMeasuredHeight();
+                    rcMentors.setLayoutParams(params);
+                });
+            }
+            return Unit.INSTANCE;
+        });
+
+
+       /* mentorsAdapter.addLoadStateListener(loadState -> {
+            if (loadState.getRefresh() instanceof LoadState.NotLoading) {
+                rcMentors.post(() -> {
+                    ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
+                    params.height = calculateRecyclerViewHeight();
+                    rcMentors.setLayoutParams(params);
+                });
+            }
+            return Unit.INSTANCE;
+        });
+
+
+
+
+        mentorsAdapter.addLoadStateListener(loadState -> {
+            if (loadState.getRefresh() instanceof LoadState.NotLoading) {
+                rcMentors.post(() -> {
+                    rcMentors.requestLayout();
+                });
+            }
+            return Unit.INSTANCE;
+        });
+
+        */
 
         view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
             scrollChangeListener.onParentScroll(oldScrollY, scrollY);
@@ -387,8 +426,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private void showToolsSheet() {
         BottomSheetDialog sheet = new BottomSheetDialog(getContext());
         View view = getLayoutInflater().inflate(R.layout.home_options_sheet, null);
-
-
         sheet.setContentView(view);
         sheet.show();
     }
