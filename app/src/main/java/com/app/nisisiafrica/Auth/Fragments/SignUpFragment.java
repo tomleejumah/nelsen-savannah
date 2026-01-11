@@ -32,6 +32,7 @@ import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.VerifyEmailActivity;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
@@ -40,6 +41,7 @@ import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.databinding.FragmentSignUpBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
@@ -297,6 +299,78 @@ public class SignUpFragment extends Fragment {
     }
 
  */
+
+
+    private void signUp(String firstNameText, String lastNameText, String email, String password) {
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
+
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnSuccessListener(authResult -> {
+
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    if (user == null) return;
+
+                    String id = user.getUid();
+
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("lastName", lastNameText);
+                    map.put("email", email);
+                    map.put("firstName", firstNameText);
+                    map.put("displayName", "");
+                    map.put("lastLogin", ServerValue.TIMESTAMP);
+                    map.put("photoUrl", "default");
+                    map.put("Bio", "");
+
+                    dbRef.child("users").child(id).setValue(map)
+                            .addOnSuccessListener(v -> {
+
+                                dbRef.child("roles").child(id).setValue("Mentee");
+
+                                // Send verification email
+                                user.sendEmailVerification()
+                                        .addOnSuccessListener(vv -> {
+                                            // Save state: waiting for verification
+                                            Util.saveState("AUTH_STATE", "VERIFY_EMAIL");
+
+                                            snackbarHandler.showSnackbar(
+                                                    "Verification email sent. Check your inbox.",
+                                                    Snackbar.LENGTH_LONG,
+                                                    3
+                                            );
+
+                                            // Navigate to Verify screen, NOT Main
+                                            Util.navigateToMainScreen(
+                                                    requireContext(),
+                                                    VerifyEmailActivity.class,
+                                                    true
+                                            );
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            snackbarHandler.showSnackbar(
+                                                    "Failed to send verification email",
+                                                    Snackbar.LENGTH_SHORT,
+                                                    3
+                                            );
+                                        });
+
+                            })
+                            .addOnFailureListener(e -> {
+                                snackbarHandler.showSnackbar(
+                                        e.getMessage(),
+                                        Snackbar.LENGTH_SHORT,
+                                        3
+                                );
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    snackbarHandler.showSnackbar(
+                            e.getMessage(),
+                            Snackbar.LENGTH_SHORT,
+                            3
+                    );
+                });
+    }
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,

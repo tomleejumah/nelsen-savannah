@@ -33,6 +33,48 @@ class LauncherActivity : AppCompatActivity() {
             insets
         }
 
+
+        lifecycleScope.launch {
+
+            val isFirstTime = Util.getState("is-FirstTime", true)
+            val auth = FirebaseAuth.getInstance()
+            val user = auth.currentUser
+
+            val intent = when {
+                isFirstTime -> {
+                    Intent(this@LauncherActivity, IntroActivity::class.java)
+                }
+
+                user == null -> {
+                    Intent(this@LauncherActivity, LoginSignUpActivity::class.java)
+                }
+
+                else -> {
+                    // Force fresh truth from Firebase
+                    user.reload().addOnSuccessListener {
+
+                        if (user.isEmailVerified) {
+                            startActivity(
+                                Intent(this@LauncherActivity, MainActivity::class.java)
+                            )
+                        } else {
+                            startActivity(
+                                Intent(this@LauncherActivity, VerifyEmailActivity::class.java)
+                            )
+                        }
+
+                        finish()
+                    }
+                    return@launch
+                }
+            }
+
+            isReady = true
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            finish()
+        }
+/*
         lifecycleScope.launch {
             val isFirstTime = Util.getState("is-FirstTime", true)
             val intent: Intent = when {
@@ -51,5 +93,7 @@ class LauncherActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+
+ */
     }
 }
