@@ -4,18 +4,31 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.app.nisisiafrica.data.Model.Event
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
+import com.facebook.appevents.ml.Utils
 
 class EventRepository {
-
     private val dataSource = FirebaseRemoteDataSource
 
-    val events: LiveData<List<Event>> = dataSource.getUserEvents()
 
-    fun loadMore() = dataSource.loadNextPage()
 
-    fun createEvent(event: Event, onComplete: (Boolean) -> Unit) =
-        dataSource.createEvent(event, onComplete)
+    private val _events = MutableLiveData<List<Event>>()
+    val events: LiveData<List<Event>> = _events
 
+    suspend fun fetchEventss(uid: String) {
+        val result = dataSource.getNext3Items(uid)
+        _events.postValue(result)
+    }
+
+
+    // This function "waits" for the data source before posting the result
+    suspend fun loadMoreEvents(pageSize: Int) {
+//        val result = dataSource.getUserEvents(pageSize)
+//        _events.postValue(result)
+    }
+//    val events: LiveData<List<Event>> = dataSource.getUserEvents()
+//    fun loadMore() = dataSource.loadNextPage()
+//    fun createEvent(event: Event, onComplete: (Boolean) -> Unit) =
+//        dataSource.createEvent(event, onComplete)
 
   /*  private val eventsRef = FirebaseDatabase.getInstance().getReference("events")
 

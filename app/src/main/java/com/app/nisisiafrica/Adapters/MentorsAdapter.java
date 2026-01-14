@@ -99,7 +99,8 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
 
             btnBookNow.setOnClickListener(v -> {
                 Intent intent = new Intent(mContext, BookMentor.class);
-                intent.putExtra("mentor", mentorItem.getMentorId());
+                intent.putExtra(Constants.MENTOR_ID, mentorItem.getMentorId());
+                intent.putExtra(Constants.MENTOR_NAME, mentorItem.getMentorName());
                 mContext.startActivity(intent);
             });
         }

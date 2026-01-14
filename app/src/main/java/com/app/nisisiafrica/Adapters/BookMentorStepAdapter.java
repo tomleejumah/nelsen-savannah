@@ -15,8 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.github.vipulasri.timelineview.TimelineView;
 import com.kizitonwose.calendar.view.CalendarView;
 
@@ -29,24 +29,18 @@ import java.util.List;
 import java.util.Set;
 
 public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private static final String TAG = "BookMentorStepAdapter";
     public static final int STEP_NAME = 0;
     public static final int STEP_CALENDAR = 1;
     public static final int STEP_TIME = 2;
     public static final int STEP_PAY = 3;
+    private static final String TAG = "BookMentorStepAdapter";
     private final Context context;
+    private final StepCompleteListener stepCompleteListener;
     private int currentStep = 0;
     private String firstName, lastName;
     private LocalDate selectedDay;
     private LocalTime selectedTime;
     private Set<LocalDate> bookedDates = new HashSet<>();
-    private final StepCompleteListener stepCompleteListener;
-
-    // Callback interface for step completion && changed status
-    public interface StepCompleteListener {
-        void onStepChanged(int step);
-        void stepCompleteListener(boolean isComplete);
-    }
 
     public BookMentorStepAdapter(Context context, StepCompleteListener listener) {
         this.context = context;
@@ -108,9 +102,107 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         };
     }
 
+    // Public methods for external step management
+    public boolean isStepComplete(int step) {
+        return switch (step) {
+            case STEP_NAME -> firstName != null && !firstName.isEmpty() &&
+                    lastName != null && !lastName.isEmpty();
+            case STEP_CALENDAR -> selectedDay != null;
+            case STEP_TIME -> selectedTime != null;
+            case STEP_PAY -> true;
+            default -> false;
+        };
+    }
+
+    private void modifyTimeLine(boolean isEnabled, boolean isCompleted, TimelineView timeline, int position) {
+        if (isCompleted) {
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
+            timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
+        } else if (isEnabled) {
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
+            timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
+        } else {
+            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
+            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
+            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
+            timeline.setLineStyle(TimelineView.LineStyle.DASHED);
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void moveToNextStep() {
+        if (currentStep < 3) {
+            currentStep++;
+            notifyDataSetChanged();
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void moveToPreviousStep() {
+        if (currentStep > 0) {
+            currentStep--;
+            notifyDataSetChanged();
+        }
+    }
+
+    public int getCurrentStep() {
+        return currentStep;
+    }
+
+    // Setter for booked dates
+    public void setBookedDates(Set<LocalDate> bookedDates) {
+        this.bookedDates = bookedDates;
+    }
+
+    // Public methods to get booking data
+    public String getSelectedDateFormatted() {
+        return selectedDay != null ? selectedDay.toString() : null; // yyyy-MM-dd format
+    }
+
+    public LocalDate getSelectedDate() {
+        return selectedDay;
+    }
+
+    public LocalTime getSelectedTime() {
+        return selectedTime;
+    }
+
+    public String getSelectedTimeFormatted() {
+        return selectedTime != null ? selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")) : null;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    // Callback interface for step completion && changed status
+    public interface StepCompleteListener {
+        void onStepChanged(int step);
+
+        void stepCompleteListener(boolean isComplete);
+    }
+
     class NameViewHolder extends RecyclerView.ViewHolder {
         EditText edtFirstName, edtLastName;
         TimelineView timeline;
+        TextWatcher textWatcher;
+        boolean ignoreTextChange = false;
 
         public NameViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -120,9 +212,14 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         }
 
         public void bind(boolean isEnabled, boolean isCompleted) {
-            // Set timeline state
-            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+            // Remove old watchers first
+            if (textWatcher != null) {
+                edtFirstName.removeTextChangedListener(textWatcher);
+                edtLastName.removeTextChangedListener(textWatcher);
+            }
 
+            // Set timeline state
+            modifyTimeLine(isEnabled, isCompleted, timeline, getAdapterPosition());
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
             // Set view state
@@ -131,32 +228,49 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             edtFirstName.setEnabled(isEnabled);
             edtLastName.setEnabled(isEnabled);
 
-            if (firstName == null && lastName == null){
+            // Set existing values with flag to ignore TextWatcher
+            ignoreTextChange = true;
+            if (getFirstName() != null) {
+                edtFirstName.setText(getFirstName());
+            }
+            if (getLastName() != null) {
+                edtLastName.setText(getLastName());
+            }
+            ignoreTextChange = false;
+
+            // Handle focus
+            if (getFirstName() != null && getLastName() != null) {
+                edtLastName.requestFocus();
+            } else if (getFirstName() == null) {
                 edtFirstName.requestFocus();
-            }else edtLastName.requestFocus();
+            } else {
+                edtLastName.requestFocus();
+            }
 
-
-            // Set existing values if available
-            if (firstName != null) edtFirstName.setText(getFirstName());
-            if (lastName != null) edtLastName.setText(getLastName());
-
-//            if (!isEnabled) return;
             // Trigger initial state update
             if (stepCompleteListener != null) {
                 stepCompleteListener.onStepChanged(STEP_NAME);
             }
 
-            TextWatcher textWatcher = new TextWatcher() {
+            // Create and add TextWatcher
+            textWatcher = new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
 
                 @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
 
                 @Override
                 public void afterTextChanged(Editable s) {
+                    // Ignore programmatic setText calls
+                    if (ignoreTextChange) return;
+
                     firstName = edtFirstName.getText().toString().trim();
+                    setFirstName(firstName);
                     lastName = edtLastName.getText().toString().trim();
+                    setLastName(lastName);
 
                     if (stepCompleteListener != null) {
                         stepCompleteListener.stepCompleteListener(true);
@@ -166,9 +280,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
             edtFirstName.addTextChangedListener(textWatcher);
             edtLastName.addTextChangedListener(textWatcher);
-
         }
-
     }
 
     class CalendarViewHolder extends RecyclerView.ViewHolder {
@@ -184,7 +296,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         @SuppressLint("ClickableViewAccessibility")
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+            modifyTimeLine(isEnabled, isCompleted, timeline, getAdapterPosition());
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
             itemView.setEnabled(isEnabled);
@@ -232,7 +344,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+            modifyTimeLine(isEnabled, isCompleted, timeline, getAdapterPosition());
 
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
@@ -300,7 +412,7 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
         public void bind(boolean isEnabled, boolean isCompleted) {
             // Set timeline state
-            modifyTimeLine(isEnabled,isCompleted, timeline,getAdapterPosition());
+            modifyTimeLine(isEnabled, isCompleted, timeline, getAdapterPosition());
             timeline.initLine(TimelineView.getTimeLineViewType(getAdapterPosition(), getItemCount()));
 
             itemView.setEnabled(isEnabled);
@@ -339,94 +451,5 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             return sb.toString();
         }
 
-    }
-
-    // Public methods for external step management
-    public boolean isStepComplete(int step) {
-        return switch (step) {
-            case STEP_NAME -> firstName != null && !firstName.isEmpty() &&
-                    lastName != null && !lastName.isEmpty();
-            case STEP_CALENDAR -> selectedDay != null;
-            case STEP_TIME -> selectedTime != null;
-            case STEP_PAY -> true;
-            default -> false;
-        };
-    }
-
-    private void modifyTimeLine(boolean isEnabled, boolean isCompleted, TimelineView timeline,int position) {
-        if (isCompleted) {
-            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_completed));
-            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
-            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
-            timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-        } else if (isEnabled) {
-            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_active));
-            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_active), (position));
-            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
-            timeline.setLineStyle(TimelineView.LineStyle.NORMAL);
-        } else {
-            timeline.setMarker(ContextCompat.getDrawable(context, R.drawable.marker_inactive));
-            timeline.setStartLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
-            timeline.setEndLineColor(ContextCompat.getColor(context, R.color.timeline_inactive), (position));
-            timeline.setLineStyle(TimelineView.LineStyle.DASHED);
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void moveToNextStep() {
-        if (currentStep < 3) {
-            currentStep++;
-            notifyDataSetChanged();
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void moveToPreviousStep() {
-        if (currentStep > 0) {
-            currentStep--;
-            notifyDataSetChanged();
-        }
-    }
-
-    public int getCurrentStep() {
-        return currentStep;
-    }
-
-    // Setter for booked dates
-    public void setBookedDates(Set<LocalDate> bookedDates) {
-        this.bookedDates = bookedDates;
-    }
-
-    // Public methods to get booking data
-    public String getSelectedDateFormatted() {
-        return selectedDay != null ? selectedDay.toString() : null; // yyyy-MM-dd format
-    }
-
-    public LocalDate getSelectedDate() {
-        return selectedDay;
-    }
-
-    public LocalTime getSelectedTime() {
-        return selectedTime;
-    }
-
-    public String getSelectedTimeFormatted() {
-        return selectedTime != null ? selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")) : null;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 }

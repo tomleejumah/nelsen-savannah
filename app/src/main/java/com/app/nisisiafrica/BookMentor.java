@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -13,10 +14,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
-import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.Event;
+import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import kotlin.Unit;
 
 public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener {
     private static final String TAG = "BookMentor";
@@ -24,6 +37,8 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
     private ExtendedFloatingActionButton btnNext;
     private BookMentorStepAdapter adapter;
     private UserData userData;
+    private String mentorId, mentorName;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +51,12 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
             return insets;
         });
 
+        Intent intent = getIntent();
+        if (intent != null) {
+            mentorId = intent.getStringExtra(Constants.MENTOR_ID);
+            mentorName = intent.getStringExtra(Constants.MENTOR_NAME);
+        }
+
         UserViewModel viewModel = new ViewModelProvider((this)).get(UserViewModel.class);
         String userID = Util.getState(Constants.CURRENT_USER_ID, "");
         viewModel.fetchingCurrentUserDataFromDB(userID).observe((this), data -> {
@@ -45,7 +66,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 adapter.setLastName(userData.getLastName());
                 adapter.notifyDataSetChanged();
 
-            }else Log.d(TAG, "User data is null");
+            } else Log.d(TAG, "User data is null");
         });
 
         recyclerView = findViewById(R.id.recyclerView);
@@ -54,11 +75,13 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         setupRecyclerView();
         setupNextButton();
     }
+
     private void setupRecyclerView() {
-        adapter = new BookMentorStepAdapter(this,this);
+        adapter = new BookMentorStepAdapter(this, this);
         recyclerView.setLayoutManager(new LinearLayoutManager((this)));
         recyclerView.setAdapter(adapter);
     }
+
     private void setupNextButton() {
         updateButtonState(adapter.getCurrentStep());
         btnNext.setOnClickListener(v -> {
@@ -109,7 +132,107 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         // TODO: Implement payment logic
 
         // Show success message or navigate to success screen
+
+
+        // Get participant IDs
+        String mentorId2 = mentorId; // or however you get mentor ID
+        String menteeId = Util.getState(Constants.CURRENT_USER_ID, "");
+
+// Create participants map
+//        Map<String, Boolean> participants = new HashMap<>();
+//        participants.put(mentorId2, true);
+//        participants.put(menteeId, true);
+
+        List<String> participants = new ArrayList<>();
+        participants.add(mentorId2);
+        participants.add(menteeId);
+
+// Parse date and time
+        String dateStr = adapter.getSelectedDateFormatted(); // yyyy-MM-dd
+        String timeStr = adapter.getSelectedTimeFormatted(); // HH:mm
+
+// Convert date string to timestamp
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        long dateTimestamp = 0L;
+        try {
+            Date parsedDate = sdf.parse(dateStr);
+            if (parsedDate != null) {
+                dateTimestamp = parsedDate.getTime();
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+// Calculate end time (start time + 2 hours)
+        String endTime = "";
+        try {
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            Date startDate = timeFormat.parse(timeStr);
+            if (startDate != null) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(startDate);
+                calendar.add(Calendar.HOUR_OF_DAY, 2); // Add 2 hours
+                endTime = timeFormat.format(calendar.getTime());
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+
+        Event event = new Event(
+                "",// eventId (will be set in createEvent)
+                "",
+                dateTimestamp,                                // date
+                timeStr,                                      // startTime
+                endTime,                                      // endTime (start + 2 hours)
+                "",
+                mentorId2,
+                menteeId,
+                mentorName,
+                "", //todo get user name from cache
+                0,                                            // status
+                null,                                         // description
+                participants                                  // participants map
+        );
+
+        FirebaseRemoteDataSource.INSTANCE.createEvent(event,event.getMentorId(), event.getMenteeId(), success ->{
+            if (success) {
+                Log.d(TAG, "Event created successfully");
+                // Navigate or show success message
+            } else {
+                Log.e(TAG, "Failed to create event");
+            }
+            return Unit.INSTANCE;
+        });
+
+// Create the event
+     /*   Event event = new Event(
+                "",                                           // eventId (will be set in createEvent)
+                menteeId,                                     // userId (current user)
+//      todo update this   adapter.getFirstName() + " " + adapter.getLastName(), // title
+                "Mentor Appointment :" + mentorName,
+                dateTimestamp,                                // date
+                timeStr,                                      // startTime
+                endTime,                                      // endTime (start + 2 hours)
+                0,                                            // eventType
+                mentorId2,                                     // mentorId
+                0,                                            // status
+                null,                                         // description
+                participants                                  // participants map
+        );
+      */
+
+// Save the event
+//        FirebaseRemoteDataSource.INSTANCE.createEvent(event, success -> {
+//            if (success) {
+//                Log.d(TAG, "Event created successfully");
+//                // Navigate or show success message
+//            } else {
+//                Log.e(TAG, "Failed to create event");
+//            }
+//      return Unit.INSTANCE;  });
     }
+
     @Override
     public void onStepChanged(int step) {
         setupNextButton();
