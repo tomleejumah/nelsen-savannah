@@ -117,16 +117,28 @@ data class NotificationData(
 
 data class Event(
     val eventId: String = "",
-    val userId: String = "",
+//    val userId: String = "",
     val title: String = "",
     val date: Long = 0L,
     val startTime: String = "",
     val endTime: String = "",
-    val eventType: Int = 0,
-    val mentorId: String? = null,
+    val eventType: String = "",
+    val mentorId: String = "",      // Change from String? to String
+    val menteeId: String = "",      // Add this field
+    val mentorName: String = "",
+    val menteeName: String = "",
     val status: Int = 0,
     val description: String? = null,
-    val participants: Map<String, Boolean>? = null
+//    val participants: Map<String, Boolean>? = null
+    val participants: List<String>? = null
+)
+
+data class Announcement(
+    val id: String = "",
+    val title: String = "",
+    val description: String = "",
+    val date: Long = 0L,
+    val targetAudience: String = "all"  // "all", "mentors", "mentees"
 )
 
 @Entity(tableName = "user_data")

@@ -74,6 +74,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -128,10 +129,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         UserViewModel userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+
         EventRepository repository = new EventRepository();
         EventViewModelFactory factory = new EventViewModelFactory(repository);
         eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
-
         eventAdapter = new EventAdapter();
         rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
         rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -563,28 +564,56 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //        }
 
     }
-
     private void getEvents(UserData userData, View view) {
-        eventViewModel.getUserEvents().observe(getViewLifecycleOwner(), events -> {
+
+        // 1. Set up the observer (only do this once)
+        eventViewModel.getEvents().observe(getViewLifecycleOwner(), events -> {
+
+            Log.d(TAG, "getEvents: Received " + events.size() + " events");
 
             if (events.isEmpty()) {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
                 rvUpcomingEvents.setVisibility(View.GONE);
                 btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Add Notification" : "Book a mentor");
-
             } else {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
                 rvUpcomingEvents.setVisibility(View.VISIBLE);
-//                adapter.submitList(events);
+
+                // Filter for upcoming events
                 List<Event> upcoming = events.stream()
                         .filter(e -> e.getDate() >= System.currentTimeMillis())
                         .limit(3)
                         .collect(Collectors.toList());
+
                 eventAdapter.submitList(upcoming);
+                view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
             }
-            view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
         });
+
+        // 2. Trigger the actual data fetch
+        eventViewModel.fetchEvents(Util.getState(Constants.CURRENT_USER_ID, ""));
     }
+//    private void getEvents(UserData userData, View view) {
+//        eventViewModel.getUserEvents().observe(getViewLifecycleOwner(), events -> {
+//
+//            if (events.isEmpty()) {
+//                view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
+//                rvUpcomingEvents.setVisibility(View.GONE);
+//                btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Add Notification" : "Book a mentor");
+//
+//            } else {
+//                view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
+//                rvUpcomingEvents.setVisibility(View.VISIBLE);
+////                adapter.submitList(events);
+//                List<Event> upcoming = events.stream()
+//                        .filter(e -> e.getDate() >= System.currentTimeMillis())
+//                        .limit(3)
+//                        .collect(Collectors.toList());
+//                eventAdapter.submitList(upcoming);
+//            }
+//            view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
+//        });
+//    }
 
     @Override
     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {

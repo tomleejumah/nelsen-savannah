@@ -50,6 +50,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Objects;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 
@@ -58,6 +59,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     boolean isFromMentor;
     BlurView blurViewName, blurViewDesc, blurViewDescHead, blurViewRc;
     private ConstraintLayout gradientOverlay;
+    private CircleImageView imgDp;
     private EdgeBlurImageView dpImage;
     private CustomTarget<Bitmap> paletteTarget;
     private int defaultColor;
@@ -97,6 +99,8 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         blurViewDescHead = findViewById(R.id.blurViewDescHead);
         blurViewDesc = findViewById(R.id.blurViewDesc);
         blurViewRc = findViewById(R.id.bottomRc);
+        imgDp = findViewById(R.id.imgDp);
+
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         tv_username = findViewById(R.id.tv_username);
@@ -117,7 +121,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                             .load(userData.getPhotoUrl())
                             .apply(RequestOptions.circleCropTransform())
                         .placeholder(R.drawable.ic_person)
-                            .into(dpImage);
+                            .into(imgDp);
                     blurViewDesc.setVisibility(
                             TextUtils.isEmpty(data.getBio())
                                     ? View.GONE
@@ -164,6 +168,8 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         button.setText(!isFromMentor ? "" : "Book Now");
         button.setOnClickListener(v -> {
             Intent intent1 = new Intent(ProfileActivity.this, BookMentor.class);
+            intent1.putExtra(Constants.MENTOR_ID, id);
+            intent1.putExtra(Constants.MENTOR_NAME, tvProfileName.getText().toString());
             startActivity(intent1);
         });
     }
@@ -302,7 +308,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             Glide.with(ProfileActivity.this)
                     .load(mentors.getMentorImageUrl())
                     .apply(RequestOptions.circleCropTransform())
-                    .into(dpImage);
+                    .into(imgDp);
             tvProfileName.setText(mentors.getMentorName());
             tvRole.setText("Mentor");
             tvAbout.setText(mentors.getMentorDescription());

@@ -9,6 +9,7 @@ import androidx.paging.PagingState
 import com.app.nisisiafrica.Constants
 import com.app.nisisiafrica.Interfaces.FirebaseCallback
 import com.app.nisisiafrica.Utils.Util
+import com.app.nisisiafrica.data.Model.Announcement
 import com.app.nisisiafrica.data.Model.Booking
 import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.Model.CourseItem
@@ -613,111 +614,169 @@ object FirebaseRemoteDataSource {
     private val db = FirebaseDatabase.getInstance()
     private val eventsRef = db.getReference("Events")
     private val liveData = MutableLiveData<List<Event>>()
-    private val cachedEvents = mutableListOf<Event>()
+    private var cachedEvents = mutableListOf<Event>()
     private val pageSize = 5
     private var lastGlobalTs: Long? = null
     private var lastPersonalTs: Long? = null
 
-    fun getUserEvents(): LiveData<List<Event>> {
-        loadNextPage()
-        return liveData
-    }
+    suspend fun getNext3Items(uid: String): List<Event> {
+        val now = System.currentTimeMillis()
 
-    fun loadNextPage() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        Log.d("RemoteDataSource","Called ......uuuuuuuuu")
 
-        val globalQuery = if (lastGlobalTs == null) {
-            eventsRef.orderByChild("timestamp")
-                .limitToLast(pageSize)
-        } else {
-            eventsRef.orderByChild("timestamp")
-                .endAt(lastGlobalTs!!.toDouble())
-                .limitToLast(pageSize)
-        }
+        try {
+            // 1. Fetch user's events (from now onwards)
+            val userEventIds = db.getReference("UserEvents/$uid")
+                .orderByValue()  // Order by timestamp
+                .startAt(now.toDouble())  // From now onwards
+                .limitToFirst(5)  // Get a few extra for filtering
+                .get()
+                .await()
+                .children
+                .mapNotNull { it.key }
 
-        val personalQuery =
-            eventsRef.orderByChild("participants/$uid")
-                .equalTo(true)
-                .limitToLast(pageSize)
+            Log.d("RemoteDataSource", "Found ${userEventIds.size} user events")
 
-        globalQuery.get().addOnSuccessListener { globalSnap ->
-            val global = globalSnap.children.mapNotNull { it.getValue(Event::class.java) }
-
-            if (global.isNotEmpty())
-                lastGlobalTs = global.minOf { it.date }
-
-            personalQuery.get().addOnSuccessListener { personalSnap ->
-                val personal = personalSnap.children.mapNotNull { it.getValue(Event::class.java) }
-
-                if (personal.isNotEmpty())
-                    lastPersonalTs = personal.minOf { it.date }
-
-                cachedEvents += (global + personal)
-
-                val merged = cachedEvents
-                    .distinctBy { it.eventId }
-                    .sortedByDescending { it.date }
-
-                liveData.postValue(merged)
+            val events = userEventIds.mapNotNull { eventId ->
+                eventsRef.child(eventId)
+                    .get()
+                    .await()
+                    .getValue(Event::class.java)
             }
+
+            Log.d("RemoteDataSource", "Found ${events.size} upcoming events")
+
+            // 2. Fetch announcements (from now onwards)
+            val announcements = db.getReference("Announcements")
+                .orderByChild("date")
+                .startAt(now.toDouble())
+                .limitToFirst(5)
+                .get()
+                .await()
+                .children
+                //todo create announcement model
+                .mapNotNull { it.getValue(Announcement::class.java) }
+
+            Log.d("RemoteDataSource", "Found ${announcements.size} upcoming announcements")
+
+            // 3. Merge both lists
+            val allItems = mutableListOf<Event>()
+
+            events.forEach { event ->
+                allItems.add(Event(
+                    eventId = event.eventId,
+                    //todo pass this in on create event
+                    title = event.getTitleForUser(uid),
+                    date = event.date,
+                    startTime = event.startTime,
+                    eventType = "event"
+                ))
+            }
+
+            announcements.forEach { announcement ->
+                allItems.add(Event(
+                    eventId = announcement.id,
+                    title = announcement.title,
+                    date = announcement.date,
+                    eventType = "announcement"
+                ))
+            }
+
+            // 4. Sort by date (earliest first) and take next 3
+            return allItems
+                .filter { it.date >= now }  // Ensure all are future
+                .sortedBy { it.date }
+                .take(3)
+
+        } catch (e: Exception) {
+            Log.e("RemoteDataSource", "Error fetching next items", e)
+            return emptyList()
         }
     }
 
-    fun createEvent(event: Event, onComplete: (Boolean) -> Unit) {
+    fun createEvent(
+        event: Event,
+        mentorId: String,
+        menteeId: String,
+        onComplete: (Boolean) -> Unit
+    ) {
         val eventId = eventsRef.push().key ?: return onComplete(false)
         val finalEvent = event.copy(eventId = eventId)
+
+        // Atomic multi-path update
+        val updates = hashMapOf<String, Any>(
+            "/Events/$eventId" to finalEvent.toMap(),
+            "/UserEvents/$mentorId/$eventId" to finalEvent.date,
+            "/UserEvents/$menteeId/$eventId" to finalEvent.date
+        )
+
+        db.getReference().updateChildren(updates)
+            .addOnSuccessListener {
+                Log.d("FirebaseDataSource", "Event created successfully")
+                onComplete(true)
+            }
+            .addOnFailureListener { error ->
+                Log.e("FirebaseDataSource", "Event creation failed", error)
+                onComplete(false)
+            }
+    }
+
+    fun updateEvent(eventId: String, updates: Map<String, Any>, onComplete: (Boolean) -> Unit) {
+        // Only update in ONE place - Events node
         eventsRef.child(eventId)
-            .setValue(finalEvent)
+            .updateChildren(updates)
+            .addOnCompleteListener { onComplete(it.isSuccessful) }
+
+        // UserEvents index doesn't need updating
+        // (unless date changes)
+    }
+
+    // If date changes, update index too
+    fun rescheduleEvent(eventId: String, newDate: Long, mentorId: String, menteeId: String) {
+        val updates = hashMapOf<String, Any>(
+            "/Events/$eventId/date" to newDate,
+            "/UserEvents/$mentorId/$eventId" to newDate,
+            "/UserEvents/$menteeId/$eventId" to newDate
+        )
+
+        db.getReference().updateChildren(updates)
+    }
+
+    fun deleteEvent(event: Event, onComplete: (Boolean) -> Unit) {
+        val updates = hashMapOf<String, Any?>(
+            "/Events/${event.eventId}" to null,
+            "/UserEvents/${event.mentorId}/${event.eventId}" to null,
+            "/UserEvents/${event.menteeId}/${event.eventId}" to null
+        )
+
+        db.getReference().updateChildren(updates)
             .addOnCompleteListener { onComplete(it.isSuccessful) }
     }
 
-
-//    fun createEvent(event: Event, onComplete: (Boolean) -> Unit) {
-//        val eventId = eventsRef.push().key ?: return onComplete(false)
-//
-//        val finalEvent = event.copy(eventId = eventId)
-//
-//        eventsRef.child(eventId)
-//            .setValue(finalEvent)
-//            .addOnCompleteListener { onComplete(it.isSuccessful) }
-//    }
-
-    fun getUserEvets(): LiveData<List<Event>> {
-        val liveData = MutableLiveData<List<Event>>()
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            return object : LiveData<List<Event>>() {
-                private val listener = object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val events = snapshot.children.mapNotNull {
-                            it.getValue(Event::class.java)
-                        }.sortedBy { it.date }
-                        value = events
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        Log.e("EventRepo", "Error: ${error.message}")
-                    }
-                }
-
-                override fun onActive() {
-                    eventsRef.orderByChild("userId").equalTo(userId)
-                        .addValueEventListener(listener)
-                }
-
-                override fun onInactive() {
-                    eventsRef.removeEventListener(listener)
-                }
-            }
-
+    fun Event.toMap(): Map<String, Any?> {
+        return mapOf(
+            "eventId" to eventId,
+            "title" to title,
+            "date" to date,
+            "startTime" to startTime,
+            "endTime" to endTime,
+            "eventType" to eventType,
+            "mentorId" to mentorId,
+            "menteeId" to menteeId,
+            "mentorName" to mentorName,
+            "menteeName" to menteeName,
+            "status" to status,
+            "description" to description
+        )
     }
 
-/*
-    fun createEventa(event: Event, callback: (Boolean) -> Unit) {
-        val eventId = eventsRef.push().key ?: return
-        eventsRef.child(eventId).setValue(event.copy(eventId = eventId))
-            .addOnSuccessListener { callback(true) }
-            .addOnFailureListener { callback(false) }
-    }*/
+    fun Event.getTitleForUser(uid: String): String {
+        return when {
+            mentorId == uid -> "Session with $menteeName"
+            menteeId == uid -> "Session with $mentorName"
+            else -> title  // Fallback for announcements
+        }
+    }
 
     fun bookMentor(mentorId: String, date: Long, startTime: String, endTime: String) {
 //        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
