@@ -70,6 +70,7 @@ data class MentorItem(
 data class Chatroom(
     val chatroomId: String = "",
     val userIds: List<String> = emptyList(),
+//    val userNames: Map<String, String> = emptyMap(),
     val lastMessageTimestamp: Timestamp? = null,
     val lastMessageSenderId: String = "",
     val lastMessage: String? = null,

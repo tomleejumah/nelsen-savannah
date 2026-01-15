@@ -570,6 +570,66 @@ object FirebaseRemoteDataSource {
             )
     }
 
+    fun createOrGetDirectChatRoom(
+        otherUserId: String,
+        otherUserName: String,
+        currentUserName: String,
+        onComplete: (String?) -> Unit // Returns chatroomId
+    ) {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+            onComplete(null)
+            return
+        }
+
+        // Create deterministic chatroom ID (always same regardless of who initiates)
+        val chatroomId = if (currentUserId < otherUserId) {
+            "${currentUserId}_${otherUserId}"
+        } else {
+            "${otherUserId}_${currentUserId}"
+        }
+
+        val db = FirebaseFirestore.getInstance()
+
+        // Check if chatroom exists first
+        db.collection("chatRooms").document(chatroomId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // Chatroom already exists
+                    Log.d("ChatRoom", "Chatroom already exists: $chatroomId")
+                    onComplete(chatroomId)
+                } else {
+                    // Create new chatroom
+                    val chatroom = hashMapOf(
+                        "chatroomId" to chatroomId,
+                        "userIds" to listOf(currentUserId, otherUserId),
+                        "userNames" to mapOf(
+                            currentUserId to currentUserName,
+                            otherUserId to otherUserName
+                        ),
+                        "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                        "lastMessage" to "",
+                        "createdAt" to FieldValue.serverTimestamp()
+                    )
+
+                    db.collection("chatRooms").document(chatroomId)
+                        .set(chatroom)
+                        .addOnSuccessListener {
+                            Log.d("ChatRoom", "Chatroom created: $chatroomId")
+                            onComplete(chatroomId)
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("ChatRoom", "Error creating chatroom", e)
+                            onComplete(null)
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatRoom", "Error checking chatroom", e)
+                onComplete(null)
+            }
+    }
+
     fun getChatRoomsPagingSource(): PagingSource<QuerySnapshot, Chatroom> {
         val firestore = FirebaseFirestore.getInstance()
         val auth = FirebaseAuth.getInstance()
@@ -622,8 +682,6 @@ object FirebaseRemoteDataSource {
     suspend fun getNext3Items(uid: String): List<Event> {
         val now = System.currentTimeMillis()
 
-        Log.d("RemoteDataSource","Called ......uuuuuuuuu")
-
         try {
             // 1. Fetch user's events (from now onwards)
             val userEventIds = db.getReference("UserEvents/$uid")
@@ -635,16 +693,12 @@ object FirebaseRemoteDataSource {
                 .children
                 .mapNotNull { it.key }
 
-            Log.d("RemoteDataSource", "Found ${userEventIds.size} user events")
-
             val events = userEventIds.mapNotNull { eventId ->
                 eventsRef.child(eventId)
                     .get()
                     .await()
                     .getValue(Event::class.java)
             }
-
-            Log.d("RemoteDataSource", "Found ${events.size} upcoming events")
 
             // 2. Fetch announcements (from now onwards)
             val announcements = db.getReference("Announcements")
@@ -654,10 +708,7 @@ object FirebaseRemoteDataSource {
                 .get()
                 .await()
                 .children
-                //todo create announcement model
                 .mapNotNull { it.getValue(Announcement::class.java) }
-
-            Log.d("RemoteDataSource", "Found ${announcements.size} upcoming announcements")
 
             // 3. Merge both lists
             val allItems = mutableListOf<Event>()
