@@ -14,12 +14,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
+import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.Event;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,7 +33,7 @@ import java.util.Locale;
 
 import kotlin.Unit;
 
-public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener {
+public class BookMentor extends AppCompatActivity implements BookMentorStepAdapter.StepCompleteListener, SnackbarHandler {
     private static final String TAG = "BookMentor";
     private RecyclerView recyclerView;
     private ExtendedFloatingActionButton btnNext;
@@ -194,11 +196,26 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 null,                                         // description
                 participants                                  // participants map
         );
-
+//todo switch to view model/repository
         FirebaseRemoteDataSource.INSTANCE.createEvent(event,event.getMentorId(), event.getMenteeId(), success ->{
             if (success) {
                 Log.d(TAG, "Event created successfully");
                 // Navigate or show success message
+
+               FirebaseRemoteDataSource.INSTANCE.createOrGetDirectChatRoom(event.getMentorId(),
+                       event.getMentorName(), event.getMenteeName(),complete -> {
+                   if (complete != null){
+                       Log.d(TAG, "Chatroom created successfully");
+                       startActivity(new Intent(BookMentor.this, MainActivity.class));
+                       finish();
+                   } else {
+                       Log.e(TAG, "Failed to create chatroom");
+                       finish();
+                       showSnackbar("Failed to create chatroom", Snackbar.LENGTH_SHORT, 1);
+                   }
+                       return Unit.INSTANCE;
+               });
+
             } else {
                 Log.e(TAG, "Failed to create event");
             }
@@ -241,5 +258,10 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
     @Override
     public void stepCompleteListener(boolean isComplete) {
         setupNextButton();
+    }
+
+    @Override
+    public void showSnackbar(String message, int duration, int type) {
+
     }
 }
