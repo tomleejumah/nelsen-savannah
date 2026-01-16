@@ -33,7 +33,6 @@ class LauncherActivity : AppCompatActivity() {
             insets
         }
 
-
         lifecycleScope.launch {
 
             val isFirstTime = Util.getState("is-FirstTime", true)

@@ -9,8 +9,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.Chatroom
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import com.bumptech.glide.Glide
-import com.discord.panels.OverlappingPanelsLayout
 import com.google.firebase.auth.FirebaseAuth
 import de.hdodenhof.circleimageview.CircleImageView
 
@@ -37,7 +37,8 @@ class ChatAdapter (
         fun bind(chatroom: Chatroom) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-            tvName.text = getOtherUserName(chatroom, currentUserId)
+            tvName.text = chatroom.getOtherUserName(currentUserId)
+//            getOtherUserName(chatroom, currentUserId)
             tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
 
             if (chatroom.chatroomId == "announcements") {
@@ -47,36 +48,40 @@ class ChatAdapter (
                     .into(tvAvatar)
 
             } else {
-                tvName.text = getOtherUserName(chatroom, currentUserId)
-//              todo get user avatar from chatroom.lastMessageSenderId
-                Glide.with(tvAvatar.context)
-                    .load(R.drawable.ic_person)
-                    .placeholder(R.drawable.ic_person)
-                    .error(R.drawable.ic_person)
-                    .into(tvAvatar)
-            }
-            tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
-            val unreadCount = chatroom.unreadCount[currentUserId] ?: 0
-            if (unreadCount > 0) {
-                tvUnread.visibility = View.VISIBLE
-                tvUnread.text = unreadCount.toString()
-            } else {
-                tvUnread.visibility = View.GONE
-            }
+                tvName.text = chatroom.getOtherUserName(currentUserId)
+                val otherUserId: String? = chatroom.getOtherUserId(currentUserId)
+                otherUserId?.let {
+                    FirebaseRemoteDataSource.getMentorData(it, onSuccess = { mentorData ->
+                        Glide.with(tvAvatar.context)
+                            .load(mentorData?.mentorImageUrl)
+                            .placeholder(R.drawable.ic_person)
+                            .error(R.drawable.ic_person)
+                            .into(tvAvatar)
+                    }, onError = { exception ->
+                        {
+                            // Handle error
+                        }
+                    })
 
-            itemView.setOnClickListener {
-                onChatroomClick(chatroom)
-            }
+                    tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
+                    val unreadCount = chatroom.unreadCount[currentUserId] ?: 0
+                    if (unreadCount > 0) {
+                        tvUnread.visibility = View.VISIBLE
+                        tvUnread.text = unreadCount.toString()
+                    } else {
+                        tvUnread.visibility = View.GONE
+                    }
 
-            // Avatar placeholder
-//            tvAvatar.text = tvName.text.firstOrNull()?.toString() ?: "?"
+                    itemView.setOnClickListener {
+                        onChatroomClick(chatroom)
+                    }
+
+                    // Avatar placeholder
+                    //            tvAvatar.text = tvName.text.firstOrNull()?.toString() ?: "?"
+                }
+            }
         }
 
-        private fun getOtherUserName(chatroom: Chatroom, currentUserId: String): String {
-            // TODO: Fetch other user's name from Firestore users collection
-            // For now, return placeholder
-            return "User"
-        }
     }
 
     companion object {

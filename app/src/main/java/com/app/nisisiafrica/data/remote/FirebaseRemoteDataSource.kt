@@ -2,8 +2,6 @@ package com.app.nisisiafrica.data.remote
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.app.nisisiafrica.Constants
@@ -37,6 +35,7 @@ import kotlin.coroutines.suspendCoroutine
 
 object FirebaseRemoteDataSource {
     private const val TAG = "FirebaseUserHelper"
+    private val db = FirebaseDatabase.getInstance().getReference()
 
     //todo update to use paging and migrate to use suspending functions
     fun saveOrUpdateUser(
@@ -56,7 +55,8 @@ object FirebaseRemoteDataSource {
             "Bio" to ""
         )
 
-        usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString())
+//        usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString())
+        usersRef.child(Util.getState(Constants.CURRENT_USER_ID, ""))
             .updateChildren(user as Map<String, Any>)
             .addOnSuccessListener {
                 onSuccess?.invoke(true)
@@ -74,8 +74,7 @@ object FirebaseRemoteDataSource {
         onError: (Exception) -> Unit
     ) {
 
-        val rolesRef = FirebaseDatabase.getInstance()
-            .reference
+        val rolesRef =db
             .child("roles")
             .child(firebaseUserId)
 
@@ -103,7 +102,7 @@ object FirebaseRemoteDataSource {
 
     //todo switch to view paging and update the ui to a scrollable (each item should have its event)
     suspend fun getBookedDates(userId: String): List<Booking> = suspendCoroutine { cont ->
-        val datesRef = FirebaseDatabase.getInstance().reference.child("bookedDates").child(userId)
+        val datesRef = db.child("bookedDates").child(userId)
 
         datesRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -131,73 +130,67 @@ object FirebaseRemoteDataSource {
     }
 
 
-    fun getUserAndData(
-        firebaseCallback: FirebaseCallback
+    fun getRemoteUserData(
+        userId: String,
+        onSuccess: ((UserData?) -> Unit)? = null,
+        onError: ((Exception) -> Unit)? = null
     ) {
-        val user = FirebaseAuth.getInstance().currentUser
-        val dbRef = FirebaseDatabase.getInstance().reference
-
-        if (user == null) {
-            Log.d("Helper", "getCurrentUserAndData: No user found")
-            firebaseCallback.onUserDataReceived(null)
-            return
-        }
-
-        val userRef = dbRef.child("users").child(user.uid)
+        val userRef = db.child("users").child(userId)
 
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) {
-                    firebaseCallback.onUserDataReceived(null)
+                    Log.d("Firebase", "User not found: $userId")
+                    onSuccess?.invoke(null)
                     return
                 }
 
-                // User data found
+                // User data found - create UserData object
                 val userData = UserData(
-                    id = user.uid,
+                    id = userId,
                     email = snapshot.child("email").getValue(String::class.java) ?: "",
-//                    userRole = snapshot.child("userRole").getValue(String::class.java) ?: "Mentee",
                     displayName = snapshot.child("displayName").getValue(String::class.java) ?: "",
                     firstName = snapshot.child("firstName").getValue(String::class.java) ?: "",
                     lastName = snapshot.child("lastName").getValue(String::class.java) ?: "",
                     photoUrl = snapshot.child("photoUrl").getValue(String::class.java) ?: "",
                     bio = snapshot.child("Bio").getValue(String::class.java) ?: ""
-
-//                    idToken = snapshot.child("idToken").getValue(String::class.jaServerValue.TIMESTAMP.toString()va)
                 )
 
+                // Get user role
                 getOrAssignUserRole(
-                    firebaseUserId = user.uid,
+                    firebaseUserId = userId,
                     onSuccess = { role ->
-                        // User role fetched/assigned successfully
+                        // Role fetched successfully
                         userData.userRole = role
-                        firebaseCallback.onUserDataReceived(userData)
                         Log.d("ROLE", "User role is $role")
+                        onSuccess?.invoke(userData)
                     },
                     onError = { exception ->
+                        // Role fetch failed, but still return userData with default role
                         Log.e("ROLE", "Error getting role: ${exception.message}")
-                        firebaseCallback.onUserDataReceived(userData)
+                        userData.userRole = "Mentee"
+                        onSuccess?.invoke(userData)
                     }
                 )
             }
 
             override fun onCancelled(error: DatabaseError) {
-                firebaseCallback.onError(error.toException())
                 Log.e("Firebase", "Error getting user data", error.toException())
+                onError?.invoke(error.toException())
             }
         })
     }
 
     fun getMentorData(
         userID: String,
-        firebaseCallback: FirebaseCallback
+        onSuccess: ((MentorItem?) -> Unit)? = null,
+        onError: ((Exception) -> Unit)? = null
     ) {
-        val dbRef = FirebaseDatabase.getInstance().reference
         if (userID.isEmpty()) {
-            firebaseCallback.onMentorDataFetched(null)
+            onSuccess?.invoke(null)
             return
         }
-        val mentorRef = dbRef.child("mentors").child(userID)
+        val mentorRef = db.child("mentors").child(userID)
         mentorRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
@@ -216,13 +209,14 @@ object FirebaseRemoteDataSource {
                         bookedDates = snapshot.child("bookedDates")
                             .getValue(Set::class.java) as? Set<LocalDate> ?: setOf(),
                     )
-                    firebaseCallback.onMentorDataFetched(mentorData)
+                    onSuccess?.invoke(mentorData)
                 } else {
-                    firebaseCallback.onMentorDataFetched(null)
+                    onSuccess?.invoke(null)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                onError?.invoke(error.toException())
                 Log.e("Firebase", "Error getting user data", error.toException())
             }
         })
@@ -232,8 +226,8 @@ object FirebaseRemoteDataSource {
         mentorId: String,
         firebaseCallback: FirebaseCallback
     ) {
-        val dbRef = FirebaseDatabase.getInstance().reference
-        val coursesRef = dbRef.child("courses").orderByChild("tutorId").equalTo(mentorId)
+//        val dbRef = FirebaseDatabase.getInstance().reference
+        val coursesRef = db.child("courses").orderByChild("tutorId").equalTo(mentorId)
         coursesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val courses = mutableListOf<CourseItem>()
@@ -275,7 +269,7 @@ object FirebaseRemoteDataSource {
         onSuccess: ((Boolean) -> Unit)? = null,
         onError: ((Exception) -> Unit)? = null
     ) {
-        val coursesRef = FirebaseDatabase.getInstance().reference.child("courses")
+        val coursesRef = db.child("courses")
         var courseId = courseData.courseId
 //            ?: coursesRef.push().key
         if (courseId.isEmpty()){
@@ -319,7 +313,7 @@ object FirebaseRemoteDataSource {
         onSuccess: ((Boolean) -> Unit)?,
         onError: ((Exception) -> Unit)?
     ) {
-        val mentorsRef = FirebaseDatabase.getInstance().reference.child("mentors")
+        val mentorsRef = db.child("mentors")
         val mentor = hashMapOf(
             "mentorId" to mentorData.mentorId,
             "mentorImageUrl" to mentorData.mentorImageUrl,
@@ -346,8 +340,8 @@ object FirebaseRemoteDataSource {
     fun fetchCourses(
         firebaseCallback: FirebaseCallback
     ) {
-        val dbRef = FirebaseDatabase.getInstance().reference
-        val coursesRef = dbRef.child("courses")
+//        val dbRef = FirebaseDatabase.getInstance().reference
+        val coursesRef = db.child("courses")
 
         coursesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -390,8 +384,8 @@ object FirebaseRemoteDataSource {
     fun fetchMentors(
         firebaseCallback: FirebaseCallback
     ) {
-        val dbRef = FirebaseDatabase.getInstance().reference
-        val mentorsRef = dbRef.child("mentors")
+//        val dbRef = FirebaseDatabase.getInstance().reference
+        val mentorsRef = db.child("mentors")
         mentorsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val mentors = mutableListOf<MentorItem>()
@@ -671,20 +665,14 @@ object FirebaseRemoteDataSource {
         override fun getRefreshKey(state: PagingState<K, V>) = null
     }
 
-    private val db = FirebaseDatabase.getInstance()
-    private val eventsRef = db.getReference("Events")
-    private val liveData = MutableLiveData<List<Event>>()
-    private var cachedEvents = mutableListOf<Event>()
-    private val pageSize = 5
-    private var lastGlobalTs: Long? = null
-    private var lastPersonalTs: Long? = null
+    private val eventsRef = db.child("Events")
 
     suspend fun getNext3Items(uid: String): List<Event> {
         val now = System.currentTimeMillis()
 
         try {
             // 1. Fetch user's events (from now onwards)
-            val userEventIds = db.getReference("UserEvents/$uid")
+            val userEventIds = db.child("UserEvents/$uid")
                 .orderByValue()  // Order by timestamp
                 .startAt(now.toDouble())  // From now onwards
                 .limitToFirst(5)  // Get a few extra for filtering
@@ -701,7 +689,7 @@ object FirebaseRemoteDataSource {
             }
 
             // 2. Fetch announcements (from now onwards)
-            val announcements = db.getReference("Announcements")
+            val announcements = db.child("Announcements")
                 .orderByChild("date")
                 .startAt(now.toDouble())
                 .limitToFirst(5)
@@ -761,7 +749,7 @@ object FirebaseRemoteDataSource {
             "/UserEvents/$menteeId/$eventId" to finalEvent.date
         )
 
-        db.getReference().updateChildren(updates)
+        db.updateChildren(updates)
             .addOnSuccessListener {
                 Log.d("FirebaseDataSource", "Event created successfully")
                 onComplete(true)
@@ -790,7 +778,7 @@ object FirebaseRemoteDataSource {
             "/UserEvents/$menteeId/$eventId" to newDate
         )
 
-        db.getReference().updateChildren(updates)
+        db.updateChildren(updates)
     }
 
     fun deleteEvent(event: Event, onComplete: (Boolean) -> Unit) {
@@ -800,7 +788,7 @@ object FirebaseRemoteDataSource {
             "/UserEvents/${event.menteeId}/${event.eventId}" to null
         )
 
-        db.getReference().updateChildren(updates)
+        db.updateChildren(updates)
             .addOnCompleteListener { onComplete(it.isSuccessful) }
     }
 
@@ -855,8 +843,8 @@ object FirebaseRemoteDataSource {
     }
 
     fun updateUserBio(id: String, description: String) {
-        val dbRef = FirebaseDatabase.getInstance().reference
-        val userRef = dbRef.child("users").child(id)
+//        val dbRef = FirebaseDatabase.getInstance().reference
+        val userRef = db.child("users").child(id)
         userRef.child("Bio").setValue(description)
     }
 }

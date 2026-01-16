@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.TextView;
@@ -53,6 +54,7 @@ import java.util.Objects;
 import de.hdodenhof.circleimageview.CircleImageView;
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
+import kotlin.Unit;
 
 public class ProfileActivity extends AppCompatActivity implements FirebaseCallback {
     private static final String TAG = "ProfileActivity";
@@ -110,7 +112,30 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         tvRole = findViewById(R.id.tvRole);
 
         if (isFromMentor) {
-            FirebaseRemoteDataSource.INSTANCE.getMentorData(id, this);
+            FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
+                        if (mentors != null) {
+
+                            Glide.with(ProfileActivity.this)
+                                    .load(mentors.getMentorImageUrl())
+                                    .apply(RequestOptions.circleCropTransform())
+                                    .into(imgDp);
+                            tvProfileName.setText(mentors.getMentorName());
+                            tvRole.setText("Mentor");
+                            tvAbout.setText(mentors.getMentorDescription());
+//            tvDescription.setText(mentors.getMentorDescription());
+//            tv_username.setText(mentors.getMentorName());
+//            loadAndStyle(mentors.getMentorImageUrl());
+                        } else {
+                            // Handle null case
+                            blurViewDesc.setVisibility(View.GONE);
+                            tvDescription.setText("");
+                            tv_username.setText("");
+                        }
+                return Unit.INSTANCE;
+            } ,e->{
+                Log.d(TAG, "onCreate: Failed to fetch mentor" + e.getMessage());
+                return Unit.INSTANCE;    }
+            );
         } else {
             sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
             sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
