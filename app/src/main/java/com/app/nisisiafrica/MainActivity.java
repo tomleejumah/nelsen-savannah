@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -190,26 +191,27 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         fragmentTransaction.commit();
         currentlyDisplayedFragment = fragmentToShow;
     }
-
     private void initFCM() {
+        SharedPreferences prefs = getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE);
+
+        if (prefs.getBoolean("initial_token_written", false)) {
+            return;
+        }
+
         FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        Log.w("FCM", "Token fetch failed", task.getException());
-                        return;
-                    }
-
-                    String token = task.getResult();
+                .addOnSuccessListener(token -> {
                     String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+                    if (userId.isEmpty()) return;
 
-                    if (!userId.isEmpty()) {
-                        DatabaseReference ref = FirebaseDatabase.getInstance()
-                                .getReference("Tokens")
-                                .child(userId);
-                        ref.setValue(token)
-                                .addOnSuccessListener(aVoid -> Log.d("FCM", "Token saved"))
-                                .addOnFailureListener(e -> Log.e("FCM", "Token save failed", e));
-                    }
+                    FirebaseDatabase.getInstance()
+                            .getReference("Tokens")
+                            .child(userId)
+                            .setValue(token)
+                            .addOnSuccessListener(v ->
+                                    prefs.edit()
+                                            .putBoolean("initial_token_written", true)
+                                            .apply()
+                            );
                 });
     }
 
@@ -299,9 +301,36 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return;
         }
 
-        sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, userData -> {
-            cachedUserData = userData;
-            FirebaseRemoteDataSource.INSTANCE.getUserAndData(MainActivity.this);
+        sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, fetchedUserData -> {
+            cachedUserData = fetchedUserData;
+            FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser, userData1 -> {
+                if (userData1 != null) {
+                    if (fetchedUserData != null) {
+                        userData = !cachedUserData.equals(fetchedUserData)
+                                ? fetchedUserData : cachedUserData;
+
+                        if (!userData.equals(cachedUserData)) {
+                            sharedUserViewModel1.updateUserData(userData);
+                        }
+                        //will update last login todo
+                        Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+                    } else {
+                        Log.d(TAG, "No fetched data available...re using cached data");
+                        if (cachedUserData != null) {
+                            userData = cachedUserData;
+                            sharedUserViewModel1.setUserData(cachedUserData);
+                            Log.d(TAG, "Using cached data as fallback");
+                        } else {
+                            Log.d(TAG, "No cached or cloud data, redirecting to login");
+                            redirectToLogin();
+                        }
+                    }
+                }
+                return Unit.INSTANCE;
+            } , e -> {
+                e.printStackTrace();
+                return Unit.INSTANCE;
+            });
         });
 
     }
@@ -423,26 +452,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     @Override
     public void onUserDataReceived(@Nullable UserData fetchedUserData) {
-        if (fetchedUserData != null) {
-            userData = !cachedUserData.equals(fetchedUserData)
-                    ? fetchedUserData : cachedUserData;
 
-            if (!userData.equals(cachedUserData)) {
-                sharedUserViewModel1.updateUserData(userData);
-            }
-            //will update last login todo
-            Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
-        } else {
-            Log.d(TAG, "No fetched data available...re using cached data");
-            if (cachedUserData != null) {
-                userData = cachedUserData;
-                sharedUserViewModel1.setUserData(cachedUserData);
-                Log.d(TAG, "Using cached data as fallback");
-            } else {
-                Log.d(TAG, "No cached or cloud data, redirecting to login");
-                redirectToLogin();
-            }
-        }
 
     }
 

@@ -2,7 +2,9 @@ package com.app.nisisiafrica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,10 +18,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.Event;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -30,6 +35,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import kotlin.Unit;
 
@@ -57,6 +63,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         if (intent != null) {
             mentorId = intent.getStringExtra(Constants.MENTOR_ID);
             mentorName = intent.getStringExtra(Constants.MENTOR_NAME);
+            Log.d(TAG, "onCreate: "+mentorName);
         }
 
         UserViewModel viewModel = new ViewModelProvider((this)).get(UserViewModel.class);
@@ -181,6 +188,11 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         }
 
 
+        UserViewModel sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        sharedUserViewModel.fetchingCurrentUserDataFromDB(Constants.CURRENT_USER_ID).observe(
+                this, data -> {
+            if (data != null) userData = data; });
+
         Event event = new Event(
                 "",// eventId (will be set in createEvent)
                 "",
@@ -191,7 +203,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 mentorId2,
                 menteeId,
                 mentorName,
-                "", //todo get user name from cache
+                userData.getFirstName() + " "+userData.getLastName(), //todo get user name from cache
                 0,                                            // status
                 null,                                         // description
                 participants                                  // participants map

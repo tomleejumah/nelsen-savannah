@@ -20,9 +20,12 @@ import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.ChatViewModel;
 import com.app.nisisiafrica.ViewModel.ChatViewModelFactory;
 import com.app.nisisiafrica.data.Repository.ChatRepository;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.databinding.FragmentChatBinding;
 import com.bumptech.glide.Glide;
 import com.discord.panels.PanelState;
+
+import java.util.Objects;
 
 import kotlin.Unit;
 
@@ -58,30 +61,25 @@ public class ChatFragment extends Fragment {
                         .circleCrop()
                         .into(binding.tvHeaderAvatar);
 
+            }else {
+                binding.tvChatName.setText(chatroom.getOtherUserName(currentUserId));
+                FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(Objects.requireNonNull(chatroom.
+                        getOtherUserId(currentUserId)), userData -> {
+                    Glide.with(requireContext())
+                            .load(userData.getPhotoUrl())
+                            .circleCrop()
+                            .into(binding.tvHeaderAvatar);
+                    return Unit.INSTANCE;
+                }, e -> {
+                    e.printStackTrace();
+                    return Unit.INSTANCE;
+                });
             }
-          /*  if (chatroom.getChatroomId().equals("announcements")) {
-                if (role.equals("Mentee")) {
-                    binding.llInput.setVisibility(View.GONE);
-                }else binding.llInput.setVisibility(View.VISIBLE);
-               binding.tvChatName.setText("Announcements");
-
-
-            } else {
-                binding.tvChatName(getOtherUserName(chatroom, currentUserId));
-
-            }
-
-            Glide.with(getContext())
-                    .load(chatroomId.equals("announcements") ?
-                            R.drawable.nisisi_logo : getOtherDp(chatroom, currentUserId))
-                    .into(binding.tvHeaderAvatar);
-
-            chatsVieModel.loadMessages(chatroom.chatroomId);
-
-           */
 
             return Unit.INSTANCE;
         });
+
+
         binding.rvChats.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvChats.setAdapter(adapter);
         viewModel.getChatRooms().observe(getViewLifecycleOwner(), pagingData -> {
@@ -138,4 +136,7 @@ public class ChatFragment extends Fragment {
             }
         }
     }
+
+
+
 }

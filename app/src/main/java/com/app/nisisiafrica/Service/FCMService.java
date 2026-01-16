@@ -52,9 +52,7 @@ public class FCMService extends FirebaseMessagingService {
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
-        Log.d(TAG, "New FCM Token: " + token);
 
-        // Save token to Firebase Realtime Database
         String userId = Util.getState(Constants.CURRENT_USER_ID, "");
         if (userId != null && !userId.isEmpty()) {
             FirebaseDatabase.getInstance()

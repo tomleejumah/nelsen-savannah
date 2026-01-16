@@ -66,16 +66,55 @@ data class MentorItem(
 
 //    val isOnline: Boolean = false
 )
-
 data class Chatroom(
     val chatroomId: String = "",
     val userIds: List<String> = emptyList(),
-//    val userNames: Map<String, String> = emptyMap(),
+    val userNames: Map<String, String> = emptyMap(),
+    val lastMessage: String = "",
     val lastMessageTimestamp: Timestamp? = null,
     val lastMessageSenderId: String = "",
-    val lastMessage: String? = null,
     val unreadCount: Map<String, Int> = emptyMap()
-)
+) {
+    /**
+     * Get the other user's name (not the current user)
+     */
+    fun getOtherUserName(currentUserId: String): String {
+        // Find the other user's ID (the one that's not current user)
+        val otherUserId = userIds.firstOrNull { it != currentUserId }
+
+        // Get their name from the map
+        return if (otherUserId != null) {
+            userNames[otherUserId] ?: "Unknown User"
+        } else {
+            "Unknown User"
+        }
+    }
+
+    /**
+     * Get the other user's ID
+     */
+    fun getOtherUserId(currentUserId: String): String? {
+        return userIds.firstOrNull { it != currentUserId }
+    }
+
+    /**
+     * Check if this is the announcements room
+     */
+    fun isAnnouncementRoom(): Boolean {
+        return chatroomId == "announcements"
+    }
+
+    /**
+     * Get display name for the chatroom
+     */
+    fun getDisplayName(currentUserId: String): String {
+        return if (isAnnouncementRoom()) {
+            "Announcements"
+        } else {
+            getOtherUserName(currentUserId)
+        }
+    }
+}
 
 data class Message(
     val messageId: String,

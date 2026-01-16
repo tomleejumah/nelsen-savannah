@@ -363,9 +363,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                         showToolsSheet();
                         break;
                     case "Logout":
+                        prefs = requireContext().getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE);
+                        prefs.edit().remove("initial_token_written").apply();
                         FirebaseRemoteDataSource.INSTANCE.signOutAll(getContext(), () -> {
                             startActivity(new Intent(getActivity(), LoginSignUpActivity.class));
-                            return null;
+                            return Unit.INSTANCE;
                         });
                         break;
                 }

@@ -26,14 +26,11 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Constants;
-import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.BuildConfig;
-import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.MainActivity;
-import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
@@ -42,8 +39,6 @@ import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.databinding.FragmentLoginBinding;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -252,7 +247,22 @@ public class LoginFragment extends Fragment {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                FirebaseRemoteDataSource.INSTANCE.getUserAndData(new FirebaseCallback() {
+                FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(mAuth.getCurrentUser().getUid(), userData -> {
+                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    Util.saveState(Constants.CURRENT_USER_ID, userId);
+                    userData.setId(userId);
+                    sharedUserViewModel.saveUserData(userData);
+                    sharedUserViewModel.setUserData(userData);
+
+                    Util.navigateToMainScreen(getContext(), MainActivity.class, true);
+                    Log.d(TAG, "login: Success");
+                    return Unit.INSTANCE;
+                }, e -> {
+                    e.printStackTrace();
+                    return Unit.INSTANCE;
+                });
+
+              /*  FirebaseRemoteDataSource.INSTANCE.getUserAndData(FirebaseAuth.getInstance().getCurrentUser().getUid(),new FirebaseCallback() {
                     @Override
                     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
                         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -285,7 +295,7 @@ public class LoginFragment extends Fragment {
                     public void onError(@org.jetbrains.annotations.Nullable Exception e) {
                     }
                 });
-
+               */
             } else {
                 String failureMessage = Util.getErrorString(task);
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
