@@ -26,10 +26,13 @@
 
     <!-- Timeline colors -->
     <color name="timeline_completed">#373636</color>   <!-- Green for completed -->
-    <color name="timeline_active">#000</color>      <!-- Orange for active -->
+    <color name="timeline_active">#000</color>
+    <!-- Orange for active -->
     <!-- <color name="timeline_inactive">#E0E0E0</color>    Gray for inactive -->
     <color name="timeline_inactive">#000</color>    <!-- Gray for inactive -->
     <color name="radio_btn_deselected">#CCCCCC</color>
+
+    <color name="timeline_today">#2196F3</color>
 
     <color name="yellow">#FCD267</color>
 

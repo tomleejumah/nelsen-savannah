@@ -2,6 +2,7 @@ package com.app.nisisiafrica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -35,6 +36,9 @@ public class ViewAllActivity extends AppCompatActivity {
             return insets;
         });
 
+        ImageView headerImage = findViewById(R.id.headerImage);
+//        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+
         Intent intent = getIntent();
         boolean isCourses = intent.getBooleanExtra("isCourses", false);
 
@@ -57,6 +61,7 @@ public class ViewAllActivity extends AppCompatActivity {
         } else {
             toolbar.setTitle("Mentors");
 //            tvTitle.setText("Mentors");
+            headerImage.setImageResource(R.drawable.mentor_img);
             LinearLayoutManager layoutManager1 = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
             recyclerView.setLayoutManager(layoutManager1);
             mentorsAdapter = new MentorsAdapter(true, this);

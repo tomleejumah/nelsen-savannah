@@ -9,6 +9,7 @@ import com.app.nisisiafrica.Interfaces.FirebaseCallback
 import com.app.nisisiafrica.Utils.Util
 import com.app.nisisiafrica.data.Model.Announcement
 import com.app.nisisiafrica.data.Model.Booking
+import com.app.nisisiafrica.data.Model.ChatMessage
 import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.Event
@@ -153,7 +154,8 @@ object FirebaseRemoteDataSource {
                     firstName = snapshot.child("firstName").getValue(String::class.java) ?: "",
                     lastName = snapshot.child("lastName").getValue(String::class.java) ?: "",
                     photoUrl = snapshot.child("photoUrl").getValue(String::class.java) ?: "",
-                    bio = snapshot.child("Bio").getValue(String::class.java) ?: ""
+                    bio = snapshot.child("Bio").getValue(String::class.java) ?: "",
+                    lastLogin = snapshot.child("lastLogin").getValue(Long::class.java) ?: 0
                 )
 
                 // Get user role
@@ -226,7 +228,6 @@ object FirebaseRemoteDataSource {
         mentorId: String,
         firebaseCallback: FirebaseCallback
     ) {
-//        val dbRef = FirebaseDatabase.getInstance().reference
         val coursesRef = db.child("courses").orderByChild("tutorId").equalTo(mentorId)
         coursesRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -275,13 +276,6 @@ object FirebaseRemoteDataSource {
         if (courseId.isEmpty()){
             courseId = coursesRef.push().key.toString()
         }
-
-
-//        if (courseId == null) {
-//
-//            onError?.invoke(Exception("Failed to generate course ID"))
-//            return
-//        }
 
         val course = hashMapOf(
             "courseId" to courseId,
@@ -548,6 +542,7 @@ object FirebaseRemoteDataSource {
         }
     }
 
+    //chats
     fun initAnnouncementChatRoom(){
         val db = FirebaseFirestore.getInstance()
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -563,7 +558,6 @@ object FirebaseRemoteDataSource {
                 SetOptions.merge()
             )
     }
-
     fun createOrGetDirectChatRoom(
         otherUserId: String,
         otherUserName: String,
@@ -602,7 +596,7 @@ object FirebaseRemoteDataSource {
                             otherUserId to otherUserName
                         ),
                         "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                        "lastMessage" to "",
+                        "lastMessage" to "No Messages Yet",
                         "createdAt" to FieldValue.serverTimestamp()
                     )
 
@@ -624,11 +618,11 @@ object FirebaseRemoteDataSource {
             }
     }
 
+    // In ChatRepository
     fun getChatRoomsPagingSource(): PagingSource<QuerySnapshot, Chatroom> {
         val firestore = FirebaseFirestore.getInstance()
         val auth = FirebaseAuth.getInstance()
-        val currentUserId = auth.currentUser?.uid
-            ?: return InvalidPagingSource()
+        val currentUserId = auth.currentUser?.uid ?: return InvalidPagingSource()
 
         val query = firestore.collection("chatRooms")
             .whereArrayContains("userIds", currentUserId)
@@ -638,15 +632,18 @@ object FirebaseRemoteDataSource {
             override suspend fun load(params: LoadParams<QuerySnapshot>): LoadResult<QuerySnapshot, Chatroom> {
                 return try {
                     val pageSize = params.loadSize.coerceAtLeast(20)
-
                     val currentQuery = params.key?.let {
                         query.startAfter(it.documents.last()).limit(pageSize.toLong())
                     } ?: query.limit(pageSize.toLong())
 
                     val snapshot = currentQuery.get().await()
 
+                    // Filter out announcements
+                    val chatrooms = snapshot.toObjects(Chatroom::class.java)
+                        .filter { it.chatroomId != "announcements" }
+
                     LoadResult.Page(
-                        data = snapshot.toObjects(Chatroom::class.java),
+                        data = chatrooms,
                         prevKey = null,
                         nextKey = if (snapshot.size() == pageSize) snapshot else null
                     )
@@ -663,6 +660,60 @@ object FirebaseRemoteDataSource {
         override suspend fun load(params: LoadParams<K>) =
             LoadResult.Error<K, V>(IllegalStateException("User not authenticated"))
         override fun getRefreshKey(state: PagingState<K, V>) = null
+    }
+
+    fun getMessagesRealtime(chatroomId: String, onMessagesChanged: (List<ChatMessage>) -> Unit) {
+        FirebaseFirestore.getInstance()
+            .collection("chatRooms").document(chatroomId)
+            .collection("messages")
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .limit(50)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                snapshot?.toObjects(ChatMessage::class.java)?.let { onMessagesChanged(it) }
+            }
+    }
+
+    fun sendMessage(chatroomId: String, message: String, onComplete: (Boolean) -> Unit) {
+        val db = FirebaseFirestore.getInstance()
+        val user = FirebaseAuth.getInstance().currentUser ?: return onComplete(false)
+
+        val messageId = db.collection("chatRooms").document(chatroomId)
+            .collection("messages").document().id
+
+        val chatMessage = hashMapOf(
+            "messageId" to messageId,
+            "senderId" to user.uid,
+            "senderName" to (user.displayName ?: "User"),
+            "message" to message,
+            "timestamp" to FieldValue.serverTimestamp(),
+            "type" to "text"
+        )
+
+        db.collection("chatRooms").document(chatroomId)
+            .collection("messages").document(messageId)
+            .set(chatMessage)
+            .addOnSuccessListener {
+                db.collection("chatRooms").document(chatroomId).update(
+                    "lastMessage", message,
+                    "lastMessageTimestamp", FieldValue.serverTimestamp()
+                )
+                onComplete(true)
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+    // Add this to FirebaseRemoteDataSource
+    fun getAnnouncementChatroom(onComplete: (Chatroom?) -> Unit) {
+        FirebaseFirestore.getInstance()
+            .collection("chatRooms")
+            .document("announcements")
+            .addSnapshotListener { doc, e ->
+                if (e != null) {
+                    onComplete(null)
+                    return@addSnapshotListener
+                }
+                onComplete(doc?.toObject(Chatroom::class.java))
+            }
     }
 
     private val eventsRef = db.child("Events")

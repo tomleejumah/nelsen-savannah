@@ -66,6 +66,16 @@ data class MentorItem(
 
 //    val isOnline: Boolean = false
 )
+
+data class ChatMessage(
+    val messageId: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val message: String = "",
+    val timestamp: Timestamp? = null,
+    val type: String = "text"
+)
+
 data class Chatroom(
     val chatroomId: String = "",
     val userIds: List<String> = emptyList(),
