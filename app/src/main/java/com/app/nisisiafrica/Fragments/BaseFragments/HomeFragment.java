@@ -571,7 +571,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         // 1. Set up the observer (only do this once)
         eventViewModel.getEvents().observe(getViewLifecycleOwner(), events -> {
 
-            Log.d(TAG, "getEvents: Received " + events.size() + " events");
+//            Log.d(TAG, "getEvents: Received " + events.size() + " events");
 
             if (events.isEmpty()) {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);

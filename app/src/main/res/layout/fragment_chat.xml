@@ -69,15 +69,23 @@
                         android:padding="32dp"
                         app:layout_constraintTop_toBottomOf="@id/lHeader">
 
-                        <TextView
+<!--                        <TextView-->
+<!--                            android:id="@+id/tvProfileAvatar"-->
+<!--                            android:layout_width="128dp"-->
+<!--                            android:layout_height="128dp"-->
+<!--                            android:background="@drawable/avatar_bg"-->
+<!--                            android:gravity="center"-->
+<!--                            android:textColor="#FFFFFF"-->
+<!--                            android:textSize="48sp"-->
+<!--                            android:textStyle="bold" />-->
+
+                        <de.hdodenhof.circleimageview.CircleImageView
                             android:id="@+id/tvProfileAvatar"
-                            android:layout_width="128dp"
+                           android:layout_width="128dp"
                             android:layout_height="128dp"
-                            android:background="@drawable/avatar_bg"
-                            android:gravity="center"
-                            android:textColor="#FFFFFF"
-                            android:textSize="48sp"
-                            android:textStyle="bold" />
+                            android:src="@drawable/avatar_bg"
+                            app:civ_border_width="2dp"
+                            app:civ_border_color="#F0F0F0" />
 
                         <TextView
                             android:id="@+id/tvProfileName"
@@ -149,14 +157,14 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="ROLE"
+                                android:text="EMAIL"
                                 android:textColor="#999999"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:letterSpacing="0.1" />
 
                             <TextView
-                                android:id="@+id/tvRole"
+                                android:id="@+id/email"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
@@ -178,14 +186,13 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="MENTOR"
+                                android:text="EMAIL"
                                 android:textColor="#999999"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:letterSpacing="0.1" />
 
                             <TextView
-                                android:id="@+id/tvMentor"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
@@ -204,6 +211,7 @@
                             android:layout_marginTop="12dp">
 
                             <TextView
+                                android:id="@+id/joinedTittle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="JOINED"
@@ -288,6 +296,7 @@
                     android:layout_width="0dp"
                     android:layout_height="0dp"
                     android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="10dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -340,6 +349,7 @@
                         android:textStyle="bold" />
 
                     <LinearLayout
+                        android:id="@+id/allChatInfo"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"

@@ -5,9 +5,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.Event
+import com.github.vipulasri.timelineview.TimelineView
 import com.google.android.material.card.MaterialCardView
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -42,6 +44,8 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
         private val timelineDot: View = itemView.findViewById(R.id.timelineDot)
         private val dottedLine: View = itemView.findViewById(R.id.dottedLine)
         private val eventCard: MaterialCardView = itemView.findViewById(R.id.eventCard)
+        private val timelineView: TimelineView = itemView.findViewById(R.id.itemDottedLine)
+
 
         @SuppressLint("SetTextI18n")
         fun bind(event: Event, isLast: Boolean) {
@@ -54,12 +58,21 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
             tvEventTime.text = "${event.startTime} - ${event.endTime}"
 
             // Hide line for last item
-            dottedLine.visibility = if (isLast) View.INVISIBLE else View.VISIBLE
+//            timelineView.visibility = if (isLast) View.INVISIBLE else View.VISIBLE
+//            dottedLine.visibility = if (isLast) View.INVISIBLE else View.VISIBLE
 
             // Set colors based on status
             when (event.status) {
                 0 -> { //todo
 //                    timelineDot.setBackgroundResource(R.drawable.timeline_dot_upcoming)
+                    timelineView.setMarker(
+                        ContextCompat.getDrawable(itemView.context, R.drawable.marker_completed)
+                    )
+                    timelineView.setStartLineColor(
+                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
+                        position
+                    )
+                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
                     eventCard.strokeColor = 0xFFFF9800.toInt()
                     tvEventBadge.text = "Upcoming"
                     tvEventBadge.setBackgroundColor(0xFFFFF3E0.toInt())
@@ -67,6 +80,15 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                 }
                 1 -> { //todo
 //                    timelineDot.setBackgroundResource(R.drawable.timeline_dot_completed)
+
+                    timelineView.setMarker(
+                        ContextCompat.getDrawable(itemView.context, R.drawable.marker_completed)
+                    )
+                    timelineView.setStartLineColor(
+                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
+                               position
+                    )
+                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
                     eventCard.strokeColor = 0xFF4CAF50.toInt()
                     eventCard.alpha = 0.7f
                     tvEventBadge.text = "Completed"
@@ -74,7 +96,15 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                     tvEventBadge.setTextColor(0xFF2E7D32.toInt())
                 }
                 2 -> { // Today
-                    timelineDot.setBackgroundResource(R.drawable.timeline_dot)
+//                    timelineDot.setBackgroundResource(R.drawable.timeline_dot)
+                    timelineView.setMarker(
+                        ContextCompat.getDrawable(itemView.context, R.drawable.marker_completed)
+                    )
+                    timelineView.setStartLineColor(
+                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
+                        position
+                    )
+                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
                     eventCard.strokeColor = 0xFF2196F3.toInt()
                     tvEventBadge.text = "Today"
                     tvEventBadge.setBackgroundColor(0xFFE3F2FD.toInt())
