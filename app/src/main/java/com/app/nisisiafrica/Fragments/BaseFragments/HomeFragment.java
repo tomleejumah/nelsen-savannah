@@ -57,6 +57,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.github.vipulasri.timelineview.TimelineView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.card.MaterialCardView;
 import com.google.common.reflect.TypeToken;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -433,6 +434,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         View view = getLayoutInflater().inflate(R.layout.home_options_sheet, null);
         sheet.setContentView(view);
         sheet.show();
+
+        MaterialCardView recogMe = view.findViewById(R.id.recogMe);
+        recogMe.setOnClickListener(v->{
+            Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
+            startActivity(intent);
+        });
     }
 
 
