@@ -759,7 +759,8 @@ object FirebaseRemoteDataSource {
                     title = event.getTitleForUser(uid),
                     date = event.date,
                     startTime = event.startTime,
-                    eventType = "event"
+                    eventType = "event",
+                    endTime = event.endTime,
                 ))
             }
 
