@@ -147,6 +147,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             }
         });
 
+
+       fabView .setShapeAppearanceModel(
+                fabView.getShapeAppearanceModel()
+                        .toBuilder()
+                        .setAllCornerSizes(100f)
+                        .build()
+        );
+
         fabToBottomNavigationAnim = new FabToBottomNavigationAnim(fabView, cardChipNavigation);
 
         fabView.setOnClickListener(v -> {
@@ -441,13 +449,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     @Override
     public void onParentScroll(int oldY, int newY) {
-//        if (oldY>newY)
         if ((oldY > newY)) {
-//            showBottomBar();
+            showBottomBar();
         } else {
-//            hideBottomBar();
+            hideBottomBar();
         }
-
     }
 
     @Override

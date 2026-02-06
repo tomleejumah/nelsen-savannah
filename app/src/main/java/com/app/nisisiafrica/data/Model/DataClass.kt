@@ -13,7 +13,7 @@ data class DataClass(
     var userData: UserData
 )
 
-enum class QuestionType { RADIO, CHECKBOX, TEXT }
+enum class QuestionType { RADIO, CHECKBOX, TEXT ,DOCUMENT_UPLOAD, VIDEO_UPLOAD}
 
 data class Question(
     val id: String,

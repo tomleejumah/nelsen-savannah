@@ -33,6 +33,7 @@ import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.CreateEventActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
+import com.app.nisisiafrica.MentorApplicationActivity;
 import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.QuestionnaireActivity;
@@ -330,7 +331,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         */
 
-        view.findViewById(R.id.main).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+        view.findViewById(R.id.scrollView).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
             scrollChangeListener.onParentScroll(oldScrollY, scrollY);
         });
 
@@ -344,7 +345,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             PopupMenu popup = new PopupMenu(getContext(), v);
             popup.getMenu().add("Profile");
             popup.getMenu().add("Search");
-            popup.getMenu().add("More");
+            popup.getMenu().add("Our Programmes");
             popup.getMenu().add("Logout");
 
             popup.setOnMenuItemClickListener(item -> {
@@ -395,8 +396,24 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         notifCounter = view.findViewById(R.id.notifCounter);
         imgNotification = view.findViewById(R.id.imgNotification);
 
-//        fetchMentors();
-//        fetchCourses();
+        view.findViewById(R.id.btnRecMe).setOnClickListener(v->{
+            Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
+            startActivity(intent);
+        });
+
+        view.findViewById(R.id.btnDonate).setOnClickListener(v->{
+
+        });
+
+        view.findViewById(R.id.btnOurShop).setOnClickListener(v -> {
+
+        });
+
+        view.findViewById(R.id.btnBeMentor).setOnClickListener(v->{
+            Intent intent = new Intent(getActivity(), MentorApplicationActivity.class);
+            startActivity(intent);
+        });
+
 
         return view;
     }
@@ -435,11 +452,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         sheet.setContentView(view);
         sheet.show();
 
-        MaterialCardView recogMe = view.findViewById(R.id.recogMe);
-        recogMe.setOnClickListener(v->{
-            Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
-            startActivity(intent);
-        });
+        MaterialCardView selaProgram = view.findViewById(R.id.selaProgram);
+        MaterialCardView boysRoom = view.findViewById(R.id.boysRoom);
+        MaterialCardView ScriptureSafari = view.findViewById(R.id.ScriptureSafari);
+        MaterialCardView CodeLab = view.findViewById(R.id.CodeLab);
+        //todo handle these clicks
+
     }
 
 
@@ -475,7 +493,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                         onError(error.toException());
                     }
                 });
-
     }
 
     private void goToViewAll(View v) {
