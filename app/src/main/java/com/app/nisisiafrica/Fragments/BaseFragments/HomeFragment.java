@@ -361,7 +361,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     case "Search":
                         //open search activity
                         break;
-                    case "More":
+                    case "Our Programmes":
                         showToolsSheet();
                         break;
                     case "Logout":

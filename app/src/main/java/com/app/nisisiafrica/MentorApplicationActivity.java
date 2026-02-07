@@ -99,7 +99,7 @@ public class MentorApplicationActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         tvProgress = findViewById(R.id.tvProgress);
 
-        tvCategory.setText("🌟 Mentor Application");
+        tvCategory.setText("Mentor Application");
 
         storage = FirebaseStorage.getInstance();
         database = FirebaseDatabase.getInstance().getReference();
