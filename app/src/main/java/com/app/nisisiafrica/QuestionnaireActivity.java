@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+
+//todo save status in firebase
 public class QuestionnaireActivity extends AppCompatActivity {
 
     private static final String PREFS = "QuestionnairePrefs";
@@ -38,7 +40,6 @@ public class QuestionnaireActivity extends AppCompatActivity {
     private TextView tvCategory;
     private LinearLayout questionsContainer;
     private Button btnPrev, btnNext;
-
     private SharedPreferences prefs;
     private List<Section> sections;
     private int currentIndex = 0;
@@ -84,7 +85,7 @@ public class QuestionnaireActivity extends AppCompatActivity {
         });
 
         btnNext.setOnClickListener(v -> {
-            if (submitted && currentIndex == sections.size() - 1){
+            if (submitted && currentIndex == sections.size() - 1) {
                 Toast.makeText(this, "This form is already submitted", Toast.LENGTH_LONG).show();
                 return;
             }
@@ -414,7 +415,6 @@ public class QuestionnaireActivity extends AppCompatActivity {
         return sections;
     }
 
-    // Helper method to check if employment info is collected
     private boolean hasJobInfoCollected() {
         return prefs.contains("ans_employment_status_has_job");
     }
@@ -435,6 +435,7 @@ public class QuestionnaireActivity extends AppCompatActivity {
     private boolean parseEmploymentStatus(String status) {
         return status.contains("Employed") || status.contains("Self-employed");
     }
+
     private void loadSection(int index) {
         Section section = sections.get(index);
         tvCategory.setText(section.getTitle());
@@ -555,9 +556,16 @@ public class QuestionnaireActivity extends AppCompatActivity {
                     et.setMinLines(3);
                     et.setText(prefs.getString(key, ""));
                     et.addTextChangedListener(new TextWatcher() {
-                        @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                        @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-                        @Override public void afterTextChanged(Editable s) {
+                        @Override
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                        }
+
+                        @Override
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        }
+
+                        @Override
+                        public void afterTextChanged(Editable s) {
                             prefs.edit().putString(key, s.toString().trim()).apply();
                             checkFormComplete();
                         }
@@ -593,9 +601,8 @@ public class QuestionnaireActivity extends AppCompatActivity {
         for (Question q : sections.get(currentIndex).getQuestions()) {
             String key = answerKey(sections.get(currentIndex).getId(), q.getId());
 
-
-                String val = prefs.getString(key, "");
-                if (val.trim().isEmpty()) complete = false;
+            String val = prefs.getString(key, "");
+            if (val.trim().isEmpty()) complete = false;
 
         }
 

@@ -34,6 +34,9 @@
 
     <color name="timeline_today">#2196F3</color>
 
+    <color name="colorProgressBg">#dcdcdc</color>
+    <color name="colorSolidText">#ff000000</color>
+    <color name="colorEtTint">#aab9cb</color>
     <color name="yellow">#FCD267</color>
 
     <color name="crop_radio_btn_default_color">#555555</color>
