@@ -12,8 +12,10 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewOutlineProvider;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -22,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.motion.widget.MotionLayout;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -70,6 +73,10 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private UserData userData;
     private TextView tv_username, tvDescription,tvProfileName,tvAbout,tvRole;
     private Uri videoUri, photoUri;
+    private View progressView;  // The inflated progress layout
+    private ProgressBar progressBar;
+    private TextView progressTextView;
+    private TextView percentTextView;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -283,26 +290,34 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         if (resultCode != RESULT_OK) return;
 
         Uri uri = null;
+//todo preview ui
+        switch (requestCode) {
+            case 1001: // PDF
+                if (data != null) uri = data.getData();
+                if (uri != null) uploadPdfToFirebase(uri);
+                break;
 
-        if (requestCode == 1001 || requestCode == 1002) {
-            if (data != null) uri = data.getData();
-        } else if (requestCode == 1003) {
-            uri = (photoUri != null) ? photoUri : videoUri;
+            case 1002: // Media (image/video)
+                if (data != null) uri = data.getData();
+                if (uri != null) uploadMediaToFirebase(uri);
+                break;
+
+            case 1003: // Captured media
+                if (videoUri != null) uri = videoUri;
+                else if (photoUri != null) uri = photoUri;
+
+                if (uri != null) uploadMediaToFirebase(uri);
+                break;
         }
-
-        if (uri == null) return;
-
-        if (requestCode == 1001) uploadPdfToFirebase(uri);
-        else uploadMediaToFirebase(uri);
     }
-
     private void uploadPdfToFirebase(Uri uri) {
-        StorageReference ref = FirebaseStorage.getInstance()
-                .getReference("docs/" + System.currentTimeMillis() + ".pdf");
+        MotionLayout motionLayout1 = findViewById(R.id.motionLayout1);
+        progressView = LayoutInflater.from(this).inflate(R.layout.progress_layout, motionLayout1, false);
+        motionLayout1.addView(progressView);
+        progressBar = progressView.findViewById(R.id.progressbar);
+        progressTextView = progressView.findViewById(R.id.operateProgressTv);
+        percentTextView = progressView.findViewById(R.id.operatePercent);
 
-       /* ref.putFile(uri)
-                .addOnSuccessListener(task -> {})
-                .addOnFailureListener(e -> {}); */
     }
 
     private void uploadMediaToFirebase(Uri uri) {
