@@ -34,6 +34,8 @@ android {
         resValue "string", "facebook_client_token", "\"${facebookClientToken}\""
         resValue "string", "fb_login_protocol_scheme", "\"${fbLoginScheme}\""
 
+        resValue "string", "app_name", "\"Nisisi Africa\"Nisisi Connect Hub"
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 

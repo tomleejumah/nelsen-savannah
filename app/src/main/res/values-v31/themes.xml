@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Nisisi.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/nisisi_logo</item>
+        <item name="postSplashScreenTheme">@style/Base.Theme.NisisiAfrica</item>
+<!--        todo fix the branding-->
+        <item name="android:windowSplashScreenBrandingImage">@drawable/connect_hub_logo_cropped</item>
+        <!--        <item name="android:windowIsTranslucent">false</item>-->
+        <!--        <item name="android:windowDisablePreview">true</item>-->
+    </style>
+</resources>
