@@ -1,6 +1,7 @@
 package com.app.nisisiafrica.Fragments.BaseFragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.app.nisisiafrica.Adapters.ChatAdapter;
 import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
 import com.app.nisisiafrica.Constants;
+import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.ChatViewModel;
@@ -129,6 +131,12 @@ public class ChatFragment extends Fragment {
                             e.printStackTrace();
                             return Unit.INSTANCE;
                         });
+
+                binding.btnViewProfile.setOnClickListener(v->{
+                    Intent intent = new Intent(getActivity(), ProfileActivity.class);
+                    intent.putExtra(Constants.USER_ID, chatroom.getOtherUserId(Util.getState(Constants.CURRENT_USER_ID, "")));
+                    startActivity(intent);
+                });
             }
             return Unit.INSTANCE;
         });
