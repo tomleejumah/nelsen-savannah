@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/play_button_bg.xml -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#50FFFFFF">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#B0000000" />
+        </shape>
+    </item>
+</ripple>
