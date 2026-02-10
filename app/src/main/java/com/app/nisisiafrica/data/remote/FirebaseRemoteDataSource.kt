@@ -53,7 +53,7 @@ object FirebaseRemoteDataSource {
             "lastName" to userData.lastName,
             "photoUrl" to userData.photoUrl,
             "lastLogin" to System.currentTimeMillis(),
-            "Bio" to ""
+            "Bio" to userData.bio
         )
 
 //        usersRef.child(FirebaseAuth.getInstance().currentUser?.uid.toString())

@@ -160,17 +160,18 @@
             <EditText
                 android:id="@+id/txtDescription"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="12dp"
                 android:background="@drawable/edit_text_bg"
-                android:gravity="start"
+                android:gravity="start|top"
                 android:hint="Enter Description about self"
-                android:maxWidth="200dp"
-                android:maxLines="5"
+                android:maxLines="10"
+                android:minLines="2"
                 android:padding="12dp"
                 android:textColorHint="#808080"
                 android:textSize="14sp" />
+
 
             <!-- Date Section -->
 
