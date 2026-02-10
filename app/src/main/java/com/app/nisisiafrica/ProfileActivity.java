@@ -188,16 +188,16 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                                     .into(imgDp);
                             tvProfileName.setText(mentors.getMentorName());
                             tvRole.setText("Mentor");
-                            tvJoined.setText(mentors.getMentorId());
 
                             FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(
                                     Objects.requireNonNull(id),
                                     user -> {
-                                        long lastLoginMillis = userData.getLastLogin();
+                                        long lastLoginMillis = user.getLastLogin();
                                         Date lastLoginDate = new Date(lastLoginMillis);
                                         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
                                         String formattedDate = sdf.format(lastLoginDate);
-                                        tvJoined.setText("Last Login");
+                                        joinedTittle.setText("Last Login");
+                                        tvJoined.setText(formattedDate);
                                         tvAbout.setText(formattedDate);
                                         return Unit.INSTANCE;
                                     }, e -> {
