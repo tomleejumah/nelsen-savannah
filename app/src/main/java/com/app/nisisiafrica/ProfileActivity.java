@@ -5,11 +5,9 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
@@ -39,7 +37,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.motion.widget.MotionLayout;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -69,6 +66,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -83,10 +82,13 @@ import com.shockwave.pdfium.PdfiumCore;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -96,6 +98,7 @@ import kotlin.Unit;
 
 public class ProfileActivity extends AppCompatActivity implements FirebaseCallback {
     private static final String TAG = "ProfileActivity";
+    private static final int PAGE_SIZE = 18;
     boolean isFromMentor;
     BlurView blurViewName, blurViewDesc, blurViewDescHead, blurViewRc;
     private ConstraintLayout gradientOverlay;
@@ -106,7 +109,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private String id, role;
     private UserViewModel sharedUserViewModel;
     private UserData userData;
-    private TextView tv_username, tvDescription, tvProfileName, tvAbout, tvRole;
+    private TextView tv_username, tvDescription, tvProfileName, tvAbout, tvRole,tvJoined,joinedTittle;
     private Uri videoUri, photoUri;
     private View progressView;
     private ProgressBar progressBar;
@@ -132,7 +135,6 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private List<UserMedia> mediaList = new ArrayList<>();
     private boolean isLoadingMedia = false;
     private String lastMediaKey = null;
-    private static final int PAGE_SIZE = 18;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -173,6 +175,8 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         tvProfileName = findViewById(R.id.tvProfileName);
         tvAbout = findViewById(R.id.tvAbout);
         tvRole = findViewById(R.id.tvRole);
+        tvJoined = findViewById(R.id.tvJoined);
+        joinedTittle = findViewById(R.id.joinedTittle);
 
         if (isFromMentor) {
             FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
@@ -184,7 +188,23 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                                     .into(imgDp);
                             tvProfileName.setText(mentors.getMentorName());
                             tvRole.setText("Mentor");
-                            tvAbout.setText(mentors.getMentorDescription());
+                            tvJoined.setText(mentors.getMentorId());
+
+                            FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(
+                                    Objects.requireNonNull(id),
+                                    user -> {
+                                        long lastLoginMillis = userData.getLastLogin();
+                                        Date lastLoginDate = new Date(lastLoginMillis);
+                                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+                                        String formattedDate = sdf.format(lastLoginDate);
+                                        tvJoined.setText("Last Login");
+                                        tvAbout.setText(formattedDate);
+                                        return Unit.INSTANCE;
+                                    }, e -> {
+                                        e.printStackTrace();
+                                        return Unit.INSTANCE;
+                                    });
+
 //            tvDescription.setText(mentors.getMentorDescription());
 //            tv_username.setText(mentors.getMentorName());
 //            loadAndStyle(mentors.getMentorImageUrl());
@@ -221,6 +241,14 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                     tvProfileName.setText(userData.getFirstName() + " " + userData.getLastName());
                     tvRole.setText(userData.getUserRole());
                     tvAbout.setText(userData.getBio());
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user != null) {
+                        long createdAtMillis = user.getMetadata().getCreationTimestamp();
+                        Date createdAtDate = new Date(createdAtMillis);
+                        Util.saveState(Constants.USER_CREATED_AT, createdAtDate.toString());
+                        joinedTittle.setText("Joined AT");
+                        tvJoined.setText(createdAtDate.toString());
+                    }
                     if (Objects.equals(userData.getUserRole(), "Mentee")) {
 
                         tv_username.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
@@ -790,6 +818,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             return null;
         }
     }
+
     private String getFileNameFromUri(Uri uri) {
         String name = "file";
         Cursor cursor = getContentResolver().query(uri, null, null, null, null);
