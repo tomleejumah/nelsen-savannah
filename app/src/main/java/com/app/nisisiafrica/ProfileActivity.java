@@ -10,13 +10,22 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewOutlineProvider;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.VideoView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -44,8 +53,11 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.github.barteksc.pdfviewer.PDFView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -77,6 +89,21 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private ProgressBar progressBar;
     private TextView progressTextView;
     private TextView percentTextView;
+    private View uploadOptionsView;  // The inflated bottom sheet view
+    private LinearLayout fileSelectionView;
+    private ScrollView previewView;
+    private PDFView pdfView;
+    private LinearLayout pdfPlaceholder;
+    private TextView pdfFileName, pdfFileSize;
+    private ImageView imageView;
+    private FrameLayout videoContainer;
+    private VideoView videoView;
+    private ImageButton playButton;
+    private TextView typeBadge;
+    private TextInputEditText descriptionInput;
+    private MaterialButton uploadButton;
+    private Uri currentPreviewUri;
+    private String currentFileType;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -207,23 +234,54 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     }
 
     private void showToolsSheet() {
-        BottomSheetDialog sheet = new BottomSheetDialog((this));
-        View view = getLayoutInflater().inflate(R.layout.upload_options, null);
+        BottomSheetDialog sheet = new BottomSheetDialog(this);
+        uploadOptionsView = getLayoutInflater().inflate(R.layout.upload_options, null);
 
-        CardView uploadDocuments = view.findViewById(R.id.uploadDocuments);
-        CardView uploadMedia = view.findViewById(R.id.uploadMedia);
-        CardView captureMedia = view.findViewById(R.id.captureMedia);
+        // Initialize views
+        fileSelectionView = uploadOptionsView.findViewById(R.id.fileSelectionView);
+        previewView = uploadOptionsView.findViewById(R.id.previewView);
+        pdfView = uploadOptionsView.findViewById(R.id.pdfView);
+        pdfPlaceholder = uploadOptionsView.findViewById(R.id.pdfPlaceholder);
+        pdfFileName = uploadOptionsView.findViewById(R.id.pdfFileName);
+        pdfFileSize = uploadOptionsView.findViewById(R.id.pdfFileSize);
+        imageView = uploadOptionsView.findViewById(R.id.imageView);
+        videoContainer = uploadOptionsView.findViewById(R.id.videoContainer);
+        videoView = uploadOptionsView.findViewById(R.id.videoView);
+        playButton = uploadOptionsView.findViewById(R.id.playButton);
+        typeBadge = uploadOptionsView.findViewById(R.id.typeBadge);
+        descriptionInput = uploadOptionsView.findViewById(R.id.descriptionInput);
+        uploadButton = uploadOptionsView.findViewById(R.id.uploadButton);
+
+        TextView sheetTitle = uploadOptionsView.findViewById(R.id.sheetTitle);
+        sheetTitle.setOnClickListener(v -> {
+            // Show the 3 option cards again
+            uploadOptionsView.findViewById(R.id.uploadDocuments).setVisibility(View.VISIBLE);
+            uploadOptionsView.findViewById(R.id.uploadMedia).setVisibility(View.VISIBLE);
+            uploadOptionsView.findViewById(R.id.captureMedia).setVisibility(View.VISIBLE);
+
+            // Hide preview
+            previewView.setVisibility(View.GONE);
+
+            // Reset title
+            sheetTitle.setText("Add Material");
+        });
+
+        CardView uploadDocuments = uploadOptionsView.findViewById(R.id.uploadDocuments);
+        CardView uploadMedia = uploadOptionsView.findViewById(R.id.uploadMedia);
+        CardView captureMedia = uploadOptionsView.findViewById(R.id.captureMedia);
 
         if (isFromMentor) {
             uploadDocuments.setVisibility(View.GONE);
-        } else uploadDocuments.setVisibility(View.VISIBLE);
+        }
 
+        // File selection click listeners
         uploadMedia.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("*/*");
             intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*"});
             startActivityForResult(intent, 1002);
+            sheet.dismiss();
         });
 
         uploadDocuments.setOnClickListener(v -> {
@@ -231,6 +289,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("application/pdf");
             startActivityForResult(intent, 1001);
+            sheet.dismiss();
         });
 
         captureMedia.setOnClickListener(v -> {
@@ -239,11 +298,51 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                     .setItems(options, (d, which) -> {
                         if (which == 0) captureImage();
                         else captureVideo();
+                        sheet.dismiss();
                     }).show();
-
         });
 
-        sheet.setContentView(view);
+        // Description input listener
+        descriptionInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                boolean isEnabled = !s.toString().trim().isEmpty();
+                uploadButton.setEnabled(isEnabled);
+                uploadButton.setAlpha(isEnabled ? 1f : 0.5f);
+//                uploadButton.setEnabled(s.toString().trim().length() > 0);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Upload button listener
+        uploadButton.setOnClickListener(v -> {
+            if (descriptionInput.getText().toString().trim().isEmpty()) {
+                Toast.makeText(this, "Please add a description", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            uploadCurrentFile();
+            sheet.dismiss();
+        });
+
+        // Video play button
+        playButton.setOnClickListener(v -> {
+            if (videoView.isPlaying()) {
+                videoView.pause();
+                playButton.setVisibility(View.VISIBLE);
+            } else {
+                videoView.start();
+                playButton.setVisibility(View.GONE);
+            }
+        });
+
+        videoView.setOnCompletionListener(mp -> playButton.setVisibility(View.VISIBLE));
+
+        sheet.setContentView(uploadOptionsView);
         sheet.show();
     }
 
@@ -275,13 +374,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         startActivityForResult(intent, 1003);
     }
 
-    private void setupBlur(BlurTarget target, float radius, BlurView... blurViews) {
-        for (BlurView blurView : blurViews) {
-            blurView.setupWith(target).setBlurRadius(radius);
-            blurView.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
-            blurView.setClipToOutline(true);
-        }
-    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -290,27 +383,97 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         if (resultCode != RESULT_OK) return;
 
         Uri uri = null;
-//todo preview ui
+
         switch (requestCode) {
             case 1001: // PDF
                 if (data != null) uri = data.getData();
-                if (uri != null) uploadPdfToFirebase(uri);
+                if (uri != null) {
+                    showToolsSheet();
+                    showPreviewInSheet(uri, "application/pdf");
+                }
                 break;
 
             case 1002: // Media (image/video)
                 if (data != null) uri = data.getData();
-                if (uri != null) uploadMediaToFirebase(uri);
+                if (uri != null) {
+                    String type = getContentResolver().getType(uri);
+                    showToolsSheet();
+                    showPreviewInSheet(uri, type);
+                }
                 break;
 
             case 1003: // Captured media
                 if (videoUri != null) uri = videoUri;
                 else if (photoUri != null) uri = photoUri;
 
-                if (uri != null) uploadMediaToFirebase(uri);
+                if (uri != null) {
+                    String type = getContentResolver().getType(uri);
+                    showToolsSheet(); // Re-open sheet
+                    showPreviewInSheet(uri, type);
+                }
                 break;
         }
     }
-    private void uploadPdfToFirebase(Uri uri) {
+
+    private void showPreviewInSheet(Uri uri, String mimeType) {
+        currentPreviewUri = uri;
+        currentFileType = mimeType;
+
+        // Hide the 3 option cards
+        uploadOptionsView.findViewById(R.id.uploadDocuments).setVisibility(View.GONE);
+        uploadOptionsView.findViewById(R.id.uploadMedia).setVisibility(View.GONE);
+        uploadOptionsView.findViewById(R.id.captureMedia).setVisibility(View.GONE);
+
+        // Show preview ScrollView
+        previewView.setVisibility(View.VISIBLE);
+
+        // Update title
+        TextView sheetTitle = uploadOptionsView.findViewById(R.id.sheetTitle);
+        sheetTitle.setText("← Preview & Upload");
+
+        // Hide all preview types first
+        pdfView.setVisibility(View.GONE);
+        pdfPlaceholder.setVisibility(View.GONE);
+        imageView.setVisibility(View.GONE);
+        videoContainer.setVisibility(View.GONE);
+
+        // Show appropriate preview based on type
+        if (mimeType != null) {
+            if (mimeType.equals("application/pdf")) {
+                pdfPlaceholder.setVisibility(View.VISIBLE);  // Use placeholder for now
+                pdfFileName.setText(getFileName(uri));
+                pdfFileSize.setText(getFileSize(uri));
+                typeBadge.setText("PDF DOCUMENT");
+
+            } else if (mimeType.startsWith("image/")) {
+                imageView.setVisibility(View.VISIBLE);
+                imageView.setImageURI(uri);
+                typeBadge.setText("IMAGE FILE");
+
+            } else if (mimeType.startsWith("video/")) {
+                videoContainer.setVisibility(View.VISIBLE);
+                videoView.setVideoURI(uri);
+                playButton.setVisibility(View.VISIBLE);
+                typeBadge.setText("VIDEO FILE");
+            }
+        }
+
+        // Reset description
+        descriptionInput.setText("");
+        descriptionInput.requestFocus();
+
+        // Scroll to top after layout
+        previewView.postDelayed(() -> previewView.scrollTo(0, 0), 100);
+    }
+
+    private void uploadCurrentFile() {
+        String description = descriptionInput.getText().toString().trim();
+        if (description.isEmpty()) {
+            Toast.makeText(this, "Please add a description", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show progress overlay
         MotionLayout motionLayout1 = findViewById(R.id.motionLayout1);
         progressView = LayoutInflater.from(this).inflate(R.layout.progress_layout, motionLayout1, false);
         motionLayout1.addView(progressView);
@@ -318,21 +481,111 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         progressTextView = progressView.findViewById(R.id.operateProgressTv);
         percentTextView = progressView.findViewById(R.id.operatePercent);
 
+        // Determine folder and extension
+        String folder = "files";
+        String ext = ".file";
+        if (currentFileType != null) {
+            if (currentFileType.equals("application/pdf")) {
+                folder = "documents";
+                ext = ".pdf";
+            } else if (currentFileType.startsWith("image/")) {
+                folder = "images";
+                ext = ".jpg";
+            } else if (currentFileType.startsWith("video/")) {
+                folder = "videos";
+                ext = ".mp4";
+            }
+        }
+
+        String fileName = System.currentTimeMillis() + ext;
+        StorageReference ref = FirebaseStorage.getInstance()
+                .getReference(folder + "/" + fileName);
+
+        ref.putFile(currentPreviewUri)
+                .addOnProgressListener(taskSnapshot -> {
+                    double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                    int percent = (int) progress;
+
+                    if (progressBar != null && percentTextView != null) {
+                        progressBar.setProgress(percent);
+                        percentTextView.setText(percent + "%");
+
+                        if (percent < 30) {
+                            progressTextView.setText("Uploading...");
+                        } else if (percent < 70) {
+                            progressTextView.setText("Processing...");
+                        } else if (percent < 100) {
+                            progressTextView.setText("Almost done...");
+                        } else {
+                            progressTextView.setText("Complete!");
+                        }
+                    }
+                })
+                .addOnSuccessListener(taskSnapshot -> {
+                    ref.getDownloadUrl().addOnSuccessListener(uri -> {
+                        // TODO: Save to database with description
+                        // saveToDatabase(uri.toString(), description, fileName, currentFileType);
+
+                        // Hide progress
+                        if (progressView != null) {
+                            motionLayout1.removeView(progressView);
+                            progressView = null;
+                        }
+
+                        Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show();
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    if (progressView != null) {
+                        motionLayout1.removeView(progressView);
+                        progressView = null;
+                    }
+                    Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
-    private void uploadMediaToFirebase(Uri uri) {
-        String type = getContentResolver().getType(uri);
+    private String getFileName(Uri uri) {
+        String result = null;
+        if (uri.getScheme().equals("content")) {
+            try (android.database.Cursor cursor = getContentResolver()
+                    .query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (index >= 0) {
+                        result = cursor.getString(index);
+                    }
+                }
+            }
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result.lastIndexOf('/');
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+        return result;
+    }
 
-        String ext;
-        if (type != null && type.startsWith("image")) ext = ".jpg";
-        else ext = ".mp4";
+    private String getFileSize(Uri uri) {
+        try (android.database.Cursor cursor = getContentResolver()
+                .query(uri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE);
+                if (sizeIndex >= 0) {
+                    long size = cursor.getLong(sizeIndex);
+                    return formatFileSize(size);
+                }
+            }
+        }
+        return "Unknown";
+    }
 
-        /*
-        StorageReference ref = FirebaseStorage.getInstance()
-                .getReference("media/" + System.currentTimeMillis() + ext);
-
-        ref.putFile(uri);
-         */
+    private String formatFileSize(long bytes) {
+        if (bytes <= 0) return "0 B";
+        final String[] units = new String[]{"B", "KB", "MB", "GB"};
+        int digitGroups = (int) (Math.log10(bytes) / Math.log10(1024));
+        return new java.text.DecimalFormat("#,##0.#").format(bytes / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
     }
 
 
@@ -450,6 +703,13 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         return Color.argb(a, Color.red(color), Color.green(color), Color.blue(color));
     }
 
+    private void setupBlur(BlurTarget target, float radius, BlurView... blurViews) {
+        for (BlurView blurView : blurViews) {
+            blurView.setupWith(target).setBlurRadius(radius);
+            blurView.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+            blurView.setClipToOutline(true);
+        }
+    }
     private int darken(int color, float factor) {
         float[] hsv = new float[3];
         Color.colorToHSV(color, hsv);

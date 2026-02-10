@@ -152,4 +152,6 @@ dependencies {
     implementation(libs.rxandroid)
     implementation(libs.room.rxjava3)
     implementation("androidx.room:room-paging:$room_version")
+
+    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 }
