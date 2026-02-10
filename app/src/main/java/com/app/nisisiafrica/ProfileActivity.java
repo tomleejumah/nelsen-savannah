@@ -3,13 +3,18 @@ package com.app.nisisiafrica;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -65,9 +70,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.shockwave.pdfium.PdfiumCore;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -321,7 +328,6 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                 boolean isEnabled = !s.toString().trim().isEmpty();
                 uploadButton.setEnabled(isEnabled);
                 uploadButton.setAlpha(isEnabled ? 1f : 0.5f);
-//                uploadButton.setEnabled(s.toString().trim().length() > 0);
             }
 
             @Override
@@ -417,7 +423,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
                 if (uri != null) {
                     String type = getContentResolver().getType(uri);
-                    showToolsSheet(); // Re-open sheet
+                    showToolsSheet();
                     showPreviewInSheet(uri, type);
                 }
                 break;
@@ -432,6 +438,13 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         uploadOptionsView.findViewById(R.id.uploadDocuments).setVisibility(View.GONE);
         uploadOptionsView.findViewById(R.id.uploadMedia).setVisibility(View.GONE);
         uploadOptionsView.findViewById(R.id.captureMedia).setVisibility(View.GONE);
+
+        BlurTarget target = uploadOptionsView.findViewById(R.id.target);
+        BlurView blurViewName = uploadOptionsView.findViewById(R.id.blurViewName);
+
+        blurViewName.setupWith(target).setBlurRadius(10f);
+        blurViewName.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        blurViewName.setClipToOutline(true);
 
         // Show preview ScrollView
         previewView.setVisibility(View.VISIBLE);
@@ -449,10 +462,16 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         // Show appropriate preview based on type
         if (mimeType != null) {
             if (mimeType.equals("application/pdf")) {
+                pdfView.setVisibility(View.VISIBLE);
                 pdfPlaceholder.setVisibility(View.VISIBLE);
                 pdfFileName.setText(getFileName(uri));
                 pdfFileSize.setText(getFileSize(uri));
                 typeBadge.setText("PDF DOCUMENT");
+
+                pdfView.fromUri(uri)
+                        .enableSwipe(true)
+                        .swipeHorizontal(false)
+                        .load();
 
             } else if (mimeType.startsWith("image/")) {
                 imageView.setVisibility(View.VISIBLE);
@@ -482,110 +501,148 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             return;
         }
 
+        // --- UI Setup ---
         ViewGroup rootContainer = findViewById(android.R.id.content);
         progressView = LayoutInflater.from(this).inflate(R.layout.progress_layout, rootContainer, false);
         rootContainer.addView(progressView);
-        MotionLayout motionLayout1 = (MotionLayout) progressView;
+
         progressBar = progressView.findViewById(R.id.progressbar);
         progressTextView = progressView.findViewById(R.id.operateDescTv);
         percentTextView = progressView.findViewById(R.id.operateProgressTv);
 
-        // Determine folder and extension
-        String ext;
-        if (currentFileType != null) {
-            if (currentFileType.equals("application/pdf")) {
-                ext = ".pdf";
-            } else if (currentFileType.startsWith("image/")) {
-                ext = ".jpg";
-            } else if (currentFileType.startsWith("video/")) {
-                ext = ".mp4";
-            } else {
-                ext = ".file";
-            }
-        } else {
-            ext = ".file";
-        }
-
-        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
-        String originalName = getFileName(currentPreviewUri);
-        if (originalName.contains(".")) {
-            originalName = originalName.substring(0, originalName.lastIndexOf("."));
-        }
+        // --- File Setup ---
+        String ext = getExtension(currentFileType);
+        String originalName = getFileNameFromUri(currentPreviewUri);
         String fileName = originalName + "_" + System.currentTimeMillis() + ext;
-        StorageReference mediaRef = storageReference
-                .child("USER_MEDIA")
-                .child(Util.getState(Constants.CURRENT_USER_ID, ""))
-                .child(fileName);
+        String userId = Util.getState(Constants.CURRENT_USER_ID, "");
 
-        if (currentPreviewUri == null) {
-            Toast.makeText(this, "No file selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        StorageReference mediaRef = FirebaseStorage.getInstance().getReference()
+                .child("USER_MEDIA").child(userId).child(fileName);
 
+        // --- Start Upload ---
         UploadTask uploadTask = mediaRef.putFile(currentPreviewUri);
-        uploadTask.addOnProgressListener(taskSnapshot -> {
-            double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-            int percent = (int) progress;
 
-            if (progressBar != null && percentTextView != null) {
-                progressBar.setProgress(percent);
-                percentTextView.setText(String.valueOf(percent));
-
-                if (percent < 30) {
-                    progressTextView.setText("Uploading...");
-                } else if (percent < 70) {
-                    progressTextView.setText("Processing...");
-                } else if (percent < 100) {
-                    progressTextView.setText("Almost done...");
-                } else {
-                    progressTextView.setText("Complete!");
-                }
-            }
+        uploadTask.addOnProgressListener(snapshot -> {
+            int percent = (int) ((100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount());
+            progressBar.setProgress(percent);
+            percentTextView.setText(String.valueOf(percent)); // Fixed integer crash
+            updateStatusText(percent);
         }).addOnSuccessListener(taskSnapshot -> {
             mediaRef.getDownloadUrl().addOnSuccessListener(uri -> {
                 String mediaUrl = uri.toString();
 
-                // Save to database
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("User_Media");
-                String postID = ref.push().getKey();
-
-                HashMap<String, Object> map = new HashMap<>();
-                map.put("PublisherID", Util.getState(Constants.CURRENT_USER_ID, ""));
-                map.put("postID", postID);
-                map.put("mediaUrl", mediaUrl);
-                map.put("description", description);
-                map.put("FileType", ext);
-                map.put("FileName", fileName);
-
-                ref.child(Util.getState(Constants.CURRENT_USER_ID, ""))
-                        .child(postID)
-                        .setValue(map)
-                        .addOnSuccessListener(aVoid -> {
-                            // Hide progress
-                            dismissProgressOverlay();
-                            Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show();
-                        })
-                        .addOnFailureListener(e -> {
-                            dismissProgressOverlay();
-                            Toast.makeText(this, "Database save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
+                // Handle PDF Thumbnail before saving to DB
+                if (ext.equals(".pdf")) {
+                    uploadPdfThumbnail(mediaUrl, description, ext, fileName);
+                } else {
+                    saveToDatabase(mediaUrl, null, description, ext, fileName);
+                }
             });
         }).addOnFailureListener(e -> {
-            if (progressView != null) {
-                motionLayout1.removeView(progressView);
-                progressView = null;
-            }
+            dismissProgressOverlay();
             Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void uploadPdfThumbnail(String pdfUrl, String desc, String ext, String name) {
+        Bitmap thumb = getPdfThumbnail(currentPreviewUri);
+        if (thumb == null) {
+            saveToDatabase(pdfUrl, null, desc, ext, name);
+            return;
+        }
+
+        StorageReference thumbRef = FirebaseStorage.getInstance().getReference()
+                .child("THUMBNAILS").child(Util.getState(Constants.CURRENT_USER_ID, ""))
+                .child(name.replace(".pdf", ".jpg"));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        thumb.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+
+        thumbRef.putBytes(baos.toByteArray()).addOnSuccessListener(task -> {
+            thumbRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                saveToDatabase(pdfUrl, uri.toString(), desc, ext, name);
+            });
+        }).addOnFailureListener(e -> saveToDatabase(pdfUrl, null, desc, ext, name));
+    }
+
+    private void saveToDatabase(String url, String thumbUrl, String desc, String ext, String name) {
+        String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("User_Media").child(userId);
+        String postID = ref.push().getKey();
+
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("PublisherID", userId);
+        map.put("postID", postID);
+        map.put("mediaUrl", url);
+        map.put("thumbnailUrl", thumbUrl);
+        map.put("description", desc);
+        map.put("FileType", ext);
+        map.put("FileName", name);
+
+        ref.child(postID).setValue(map).addOnCompleteListener(task -> {
+            dismissProgressOverlay();
+            if (task.isSuccessful()) {
+                Toast.makeText(this, "Uploaded!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        });
+    }
+
+    private Bitmap getPdfThumbnail(Uri uri) {
+        PdfiumCore pdfiumCore = new PdfiumCore(this);
+        try {
+            ParcelFileDescriptor fd = getContentResolver().openFileDescriptor(uri, "r");
+            com.shockwave.pdfium.PdfDocument pdfDocument = pdfiumCore.newDocument(fd);
+            pdfiumCore.openPage(pdfDocument, 0);
+
+            int width = pdfiumCore.getPageWidthPoint(pdfDocument, 0);
+            int height = pdfiumCore.getPageHeightPoint(pdfDocument, 0);
+
+            // Use RGB_565 to force a solid background (no transparency)
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+
+            // Use 'true' in the last parameter to render annotations and correct background
+            pdfiumCore.renderPageBitmap(pdfDocument, bitmap, 0, 0, 0, width, height, true);
+
+            pdfiumCore.closeDocument(pdfDocument);
+            fd.close();
+            return bitmap;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    private String getFileNameFromUri(Uri uri) {
+        String name = "file";
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            name = cursor.getString(index);
+            if (name.contains(".")) name = name.substring(0, name.lastIndexOf("."));
+            cursor.close();
+        }
+        return name;
+    }
+
+    private String getExtension(String mime) {
+        if (mime == null) return ".file";
+        if (mime.equals("application/pdf")) return ".pdf";
+        if (mime.startsWith("image/")) return ".jpg";
+        if (mime.startsWith("video/")) return ".mp4";
+        return ".file";
+    }
+
+    private void updateStatusText(int percent) {
+        if (percent < 30) progressTextView.setText("Uploading...");
+        else if (percent < 70) progressTextView.setText("Processing...");
+        else if (percent < 100) progressTextView.setText("Almost done...");
+        else progressTextView.setText("Complete!");
     }
 
     private void dismissProgressOverlay() {
         if (progressView != null) {
             ViewGroup parent = (ViewGroup) progressView.getParent();
-            if (parent != null) {
-                parent.removeView(progressView);
-            }
-            progressView = null; // Clear reference to prevent memory leaks
+            if (parent != null) parent.removeView(progressView);
+            progressView = null;
         }
     }
 
