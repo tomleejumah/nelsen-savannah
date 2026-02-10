@@ -125,7 +125,9 @@ object FirebaseRemoteDataSource {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                cont.resumeWithException(error.toException())
+//                cont.resumeWithException(error.toException())
+                Log.e("FirebaseRemoteDS", "Database Error: ${error.message}")
+                cont.resume(emptyList())
             }
         })
     }
