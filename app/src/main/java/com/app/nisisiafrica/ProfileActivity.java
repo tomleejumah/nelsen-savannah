@@ -95,11 +95,12 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
 import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 
 public class ProfileActivity extends AppCompatActivity implements FirebaseCallback {
     private static final String TAG = "ProfileActivity";
     private static final int PAGE_SIZE = 18;
-    boolean isFromMentor;
+    boolean isFromMentor,isGeneric;
     BlurView blurViewName, blurViewDesc, blurViewDescHead, blurViewRc;
     private ConstraintLayout gradientOverlay;
     private CircleImageView imgDp;
@@ -151,9 +152,43 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         });
 
         Intent intent = getIntent();
+//        if (intent != null) {
+//            isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
+//            id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.CURRENT_USER_ID);
+//        }
+
+
         if (intent != null) {
-            isFromMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
-            id = isFromMentor ? intent.getStringExtra(Constants.MENTOR_ID) : intent.getStringExtra(Constants.CURRENT_USER_ID);
+            String mentorId = intent.getStringExtra(Constants.MENTOR_ID);
+            String currentUserId = intent.getStringExtra(Constants.CURRENT_USER_ID);
+            String genericId = intent.getStringExtra(Constants.USER_ID);
+
+            if (mentorId != null && !mentorId.isEmpty()) {
+                id = mentorId;
+               isFromMentor = true;
+               isGeneric = false;
+            } else if (currentUserId != null && !currentUserId.isEmpty()) {
+               isFromMentor = false;
+               isGeneric = false;
+               id = currentUserId;
+            } else if (genericId != null && !genericId.isEmpty()) {
+                id = genericId;
+                isFromMentor = true;
+                FirebaseRemoteDataSource.INSTANCE.getOrAssignUserRole(genericId, s -> {
+                    if (s.equals("Mentor")) {
+                        //getMentorDATA
+                        isFromMentor = true;
+                        isGeneric = true;
+                        id = genericId;
+                    }
+
+                    return Unit.INSTANCE;
+                }, e -> Unit.INSTANCE);
+
+            } else {
+                // fallback: no ID found
+                Log.e(TAG, "No user ID provided");
+            }
         }
 
         TextView title = findViewById(R.id.txtDescTittle);
@@ -198,7 +233,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                                         String formattedDate = sdf.format(lastLoginDate);
                                         joinedTittle.setText("Last Login");
                                         tvJoined.setText(formattedDate);
-                                        tvAbout.setText(formattedDate);
+                                        tvAbout.setText(mentors.getMentorDescription());
                                         return Unit.INSTANCE;
                                     }, e -> {
                                         e.printStackTrace();
@@ -221,40 +256,77 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                     }
             );
         } else {
-            sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
-            sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
-                if (data != null) {
-                    userData = data;
+            if (!isGeneric) {
+                sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+                sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
+                    if (data != null) {
+                        userData = data;
 //                    loadAndStyle(userData.getPhotoUrl());
-                    Glide.with(ProfileActivity.this)
-                            .load(userData.getPhotoUrl())
-                            .apply(RequestOptions.circleCropTransform())
-                            .placeholder(R.drawable.ic_person)
-                            .into(imgDp);
-                    blurViewDesc.setVisibility(
-                            TextUtils.isEmpty(data.getBio())
-                                    ? View.GONE
-                                    : View.VISIBLE
-                    );
-                    tvDescription.setText(userData.getBio());
+                        Glide.with(ProfileActivity.this)
+                                .load(userData.getPhotoUrl())
+                                .apply(RequestOptions.circleCropTransform())
+                                .placeholder(R.drawable.ic_person)
+                                .into(imgDp);
+                        blurViewDesc.setVisibility(
+                                TextUtils.isEmpty(data.getBio())
+                                        ? View.GONE
+                                        : View.VISIBLE
+                        );
+                        tvDescription.setText(userData.getBio());
 //                    tv_username.setText(userData.getFirstName() + " " + userData.getLastName());
-                    tvProfileName.setText(userData.getFirstName() + " " + userData.getLastName());
-                    tvRole.setText(userData.getUserRole());
-                    tvAbout.setText(userData.getBio());
-                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                    if (user != null) {
-                        long createdAtMillis = user.getMetadata().getCreationTimestamp();
-                        Date createdAtDate = new Date(createdAtMillis);
-                        Util.saveState(Constants.USER_CREATED_AT, createdAtDate.toString());
-                        joinedTittle.setText("Joined AT");
-                        tvJoined.setText(createdAtDate.toString());
-                    }
-                    if (Objects.equals(userData.getUserRole(), "Mentee")) {
+                        tvProfileName.setText(userData.getFirstName() + " " + userData.getLastName());
+                        tvRole.setText(userData.getUserRole());
+                        tvAbout.setText(userData.getBio());
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null) {
+                            long createdAtMillis = user.getMetadata().getCreationTimestamp();
+                            Date createdAtDate = new Date(createdAtMillis);
+                            Util.saveState(Constants.USER_CREATED_AT, createdAtDate.toString());
+                            joinedTittle.setText("Joined AT");
+                            tvJoined.setText(createdAtDate.toString());
+                        }
+                        if (Objects.equals(userData.getUserRole(), "Mentee")) {
 
-                        tv_username.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+                            tv_username.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+                        }
                     }
-                }
-            });
+                });
+            }else {
+                //getUserData
+
+                FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(id, data -> {
+                    if (data != null) {
+                        userData = data;
+//                    loadAndStyle(userData.getPhotoUrl());
+                        Glide.with(ProfileActivity.this)
+                                .load(userData.getPhotoUrl())
+                                .apply(RequestOptions.circleCropTransform())
+                                .placeholder(R.drawable.ic_person)
+                                .into(imgDp);
+                        blurViewDesc.setVisibility(
+                                TextUtils.isEmpty(data.getBio())
+                                        ? View.GONE
+                                        : View.VISIBLE
+                        );
+                        tvDescription.setText(userData.getBio());
+//                    tv_username.setText(userData.getFirstName() + " " + userData.getLastName());
+                        tvProfileName.setText(userData.getFirstName() + " " + userData.getLastName());
+                        tvRole.setText(userData.getUserRole());
+                        tvAbout.setText(userData.getBio());
+                        long lastLoginMillis = data.getLastLogin();
+                        Date lastLoginDate = new Date(lastLoginMillis);
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+                        String formattedDate = sdf.format(lastLoginDate);
+                        joinedTittle.setText("Last Login");
+                        tvJoined.setText(formattedDate);
+                        if (Objects.equals(userData.getUserRole(), "Mentee")) {
+
+                            tv_username.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+                        }
+                    }
+                    return Unit.INSTANCE;
+                }, e -> Unit.INSTANCE);
+            }
 
         }
 

@@ -231,12 +231,12 @@
 
                         <!-- Action Button -->
                         <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/btnMessage"
+                            android:id="@+id/btnViewProfile"
                             android:layout_width="match_parent"
                             android:layout_height="56dp"
                             android:layout_marginTop="24dp"
                             android:background="@drawable/send_btn_bg"
-                            android:text="Message"
+                            android:text="View Full Profile"
                             android:textColor="#FFFFFF"
                             android:textSize="16sp"
                             android:textStyle="bold"
