@@ -5,6 +5,7 @@ import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.Timestamp
+import com.google.firebase.database.IgnoreExtraProperties
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -41,6 +42,29 @@ data class Section(
     val title: String,
     val questions: List<Question>
 )
+
+@IgnoreExtraProperties
+data class UserMedia(
+    var postID: String,
+    var publisherID: String,
+    var mediaUrl: String,
+    var description: String,
+    var fileType: String,
+    var fileName: String,
+    var timestamp: Long,
+    var thumbnailUrl: String
+) {
+    constructor() : this(
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        0L,
+        ""
+    )
+}
 
 data class CourseItem(
     val courseId: String = "",

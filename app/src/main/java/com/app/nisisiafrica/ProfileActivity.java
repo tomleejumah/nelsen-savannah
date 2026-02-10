@@ -47,7 +47,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.palette.graphics.Palette;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.Adapters.MediaGridAdapter;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Utils.EdgeBlurImageView;
 import com.app.nisisiafrica.Utils.Util;
@@ -55,6 +58,7 @@ import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.Model.UserMedia;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -65,8 +69,12 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -75,6 +83,8 @@ import com.shockwave.pdfium.PdfiumCore;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -98,7 +108,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private UserData userData;
     private TextView tv_username, tvDescription, tvProfileName, tvAbout, tvRole;
     private Uri videoUri, photoUri;
-    private View progressView;  // The inflated progress layout
+    private View progressView;
     private ProgressBar progressBar;
     private TextView progressTextView;
     private TextView percentTextView;
@@ -117,7 +127,12 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private MaterialButton uploadButton;
     private Uri currentPreviewUri;
     private String currentFileType;
-
+    private RecyclerView rvMediaGrid;
+    private MediaGridAdapter mediaAdapter;
+    private List<UserMedia> mediaList = new ArrayList<>();
+    private boolean isLoadingMedia = false;
+    private String lastMediaKey = null;
+    private static final int PAGE_SIZE = 18;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -246,6 +261,169 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             intent1.putExtra(Constants.MENTOR_NAME, tvProfileName.getText().toString());
             startActivity(intent1);
         });
+        initMediaGrid();
+    }
+
+    private void initMediaGrid() {
+        rvMediaGrid = findViewById(R.id.rvMediaGrid);
+
+        // Setup grid with 3 columns
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
+        rvMediaGrid.setLayoutManager(gridLayoutManager);
+
+        // Open full preview
+        mediaAdapter = new MediaGridAdapter(this, this::showMediaPreview);
+        rvMediaGrid.setAdapter(mediaAdapter);
+
+        // Load initial media
+        loadUserMedia(false);
+
+        // Setup pagination - load more when scrolling
+        rvMediaGrid.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                if (!isLoadingMedia && dy > 0) { // Scrolling down
+                    int visibleItemCount = gridLayoutManager.getChildCount();
+                    int totalItemCount = gridLayoutManager.getItemCount();
+                    int firstVisibleItem = gridLayoutManager.findFirstVisibleItemPosition();
+
+                    if ((visibleItemCount + firstVisibleItem) >= totalItemCount - 6) {
+                        // Load more when 6 items from bottom
+                        loadUserMedia(true);
+                    }
+                }
+            }
+        });
+    }
+
+    private void loadUserMedia(boolean loadMore) {
+        if (isLoadingMedia) return;
+        isLoadingMedia = true;
+
+        String userId = isFromMentor ? id : Util.getState(Constants.CURRENT_USER_ID, "");
+
+        DatabaseReference mediaRef = FirebaseDatabase.getInstance()
+                .getReference("User_Media")
+                .child(userId);
+
+        Query query;
+        if (loadMore && lastMediaKey != null) {
+            // Load next page
+            query = mediaRef.orderByKey()
+                    .endBefore(lastMediaKey)
+                    .limitToLast(PAGE_SIZE);
+        } else {
+            // Load first page (most recent)
+            query = mediaRef.orderByKey()
+                    .limitToLast(PAGE_SIZE);
+        }
+
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<UserMedia> newMedia = new ArrayList<>();
+
+                for (DataSnapshot mediaSnapshot : snapshot.getChildren()) {
+                    UserMedia media = mediaSnapshot.getValue(UserMedia.class);
+                    if (media != null) {
+                        Log.d(TAG, "onDataChange: true");
+                        newMedia.add(media);
+                    }
+                }
+                if (newMedia.isEmpty()) {
+                    Log.d(TAG, "No media found");
+
+                    findViewById(R.id.emptyMediaState).setVisibility(View.VISIBLE);
+                    findViewById(R.id.rvMediaGrid).setVisibility(View.GONE);
+
+                } else {
+                    Log.d(TAG, "Media exists");
+
+                    findViewById(R.id.emptyMediaState).setVisibility(View.GONE);
+                    findViewById(R.id.rvMediaGrid).setVisibility(View.VISIBLE);
+                }
+
+                if (!newMedia.isEmpty()) {
+                    // Reverse to show newest first (orderByKey gives oldest first)
+                    Collections.reverse(newMedia);
+
+                    if (loadMore) {
+                        mediaAdapter.addMedia(newMedia);
+                        mediaList.addAll(newMedia);
+                    } else {
+                        mediaAdapter.setMediaList(newMedia);
+                        mediaList = newMedia;
+                    }
+
+                    // Update lastKey for pagination
+                    lastMediaKey = newMedia.get(newMedia.size() - 1).getPostID();
+                }
+
+                isLoadingMedia = false;
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                isLoadingMedia = false;
+                Toast.makeText(ProfileActivity.this,
+                        "Failed to load media: " + error.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // Show full preview when media item clicked
+    private void showMediaPreview(UserMedia media, int position) {
+        BottomSheetDialog previewDialog = new BottomSheetDialog(this);
+        View view = getLayoutInflater().inflate(R.layout.layout_media_preview, null);
+
+        ImageView imagePreview = view.findViewById(R.id.previewImage);
+        VideoView videoPreview = view.findViewById(R.id.previewVideo);
+        LinearLayout pdfPreview = view.findViewById(R.id.previewPdf);
+        TextView pdfName = view.findViewById(R.id.previewPdfName);
+        TextView description = view.findViewById(R.id.previewDescription);
+        ImageButton closeBtn = view.findViewById(R.id.closePreview);
+        ImageButton playBtn = view.findViewById(R.id.playPreview);
+
+        // Hide all first
+        imagePreview.setVisibility(View.GONE);
+        videoPreview.setVisibility(View.GONE);
+        pdfPreview.setVisibility(View.GONE);
+        playBtn.setVisibility(View.GONE);
+
+        String fileType = media.getFileType().toLowerCase();
+
+        if (fileType.contains("pdf")) {
+            pdfPreview.setVisibility(View.VISIBLE);
+            pdfName.setText(media.getFileName());
+        } else if (fileType.contains("mp4") || fileType.contains("video")) {
+            videoPreview.setVisibility(View.VISIBLE);
+            playBtn.setVisibility(View.VISIBLE);
+            videoPreview.setVideoURI(Uri.parse(media.getMediaUrl()));
+
+            playBtn.setOnClickListener(v -> {
+                if (videoPreview.isPlaying()) {
+                    videoPreview.pause();
+                    playBtn.setImageResource(R.drawable.ic_play);
+                } else {
+                    videoPreview.start();
+                    playBtn.setImageResource(R.drawable.ic_pause);
+                }
+            });
+        } else {
+            imagePreview.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                    .load(media.getMediaUrl())
+                    .into(imagePreview);
+        }
+
+        description.setText(media.getDescription());
+        closeBtn.setOnClickListener(v -> previewDialog.dismiss());
+
+        previewDialog.setContentView(view);
+        previewDialog.show();
     }
 
     private void showToolsSheet() {
@@ -571,13 +749,14 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         String postID = ref.push().getKey();
 
         HashMap<String, Object> map = new HashMap<>();
-        map.put("PublisherID", userId);
+        map.put("publisherID", userId);
         map.put("postID", postID);
         map.put("mediaUrl", url);
         map.put("thumbnailUrl", thumbUrl);
         map.put("description", desc);
-        map.put("FileType", ext);
-        map.put("FileName", name);
+        map.put("fileType", ext);
+        map.put("fileName", name);
+        map.put("timestamp", System.currentTimeMillis());
 
         ref.child(postID).setValue(map).addOnCompleteListener(task -> {
             dismissProgressOverlay();

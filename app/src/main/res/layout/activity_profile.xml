@@ -433,6 +433,55 @@
                         android:textColor="#000000"
                         android:textSize="14sp" />
                 </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/llMediaSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="MEDIA"
+                        android:textColor="#999999"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="12dp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvMediaGrid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false" />
+
+                    <!-- Empty State -->
+                    <LinearLayout
+                        android:id="@+id/emptyMediaState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@drawable/ic_image_placeholder"
+                            android:contentDescription="No media"
+                            app:tint="#CCCCCC" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="No media yet"
+                            android:textSize="14sp"
+                            android:textColor="#999999" />
+                    </LinearLayout>
+                </LinearLayout>
 
             </LinearLayout>
 
