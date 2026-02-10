@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -84,6 +85,13 @@ public class UserViewModel extends AndroidViewModel {
                                 throwable -> Log.e(TAG, "Error updating user", throwable)
                         )
         );
+    }
+
+
+    public Completable updateUserDataa(UserData userData) {
+        return userDao.updateUserRx(userData)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     public LiveData<List<Booking>>getBookedDates(String userId){

@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,11 +23,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
-import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -111,7 +112,7 @@ public class EditProfileActivity extends AppCompatActivity {
         if (isMentor) {
             LinearLayoutManager layoutManager = new LinearLayoutManager((this), LinearLayoutManager.VERTICAL, false);
             rcCourses.setLayoutManager(layoutManager);
-            coursesAdapter = new CoursesAdapter( this);
+            coursesAdapter = new CoursesAdapter(this);
             rcCourses.setAdapter(coursesAdapter);
             setUpDialog();
             fetchCoursesById(id);
@@ -166,15 +167,32 @@ public class EditProfileActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("CheckResult")
     private void updateMenteeProfile(String firstName, String lastName, String description) {
         userData.setFirstName(firstName);
         userData.setLastName(lastName);
         userData.setBio(description);
         FirebaseRemoteDataSource.INSTANCE.saveOrUpdateUser(userData,
                 FirebaseDatabase.getInstance().getReference().child("users"), aBoolean -> {
-                    Log.d(TAG, "updateMenteeProfile: " + aBoolean);
-                    CustomSnackbar.show(this, "Profile Update", Snackbar.LENGTH_SHORT, 1);
-                    finish();
+
+                    UserViewModel viewModel = new ViewModelProvider(this).get(UserViewModel.class);
+                    viewModel.updateUserDataa(userData)
+                            .subscribe(
+                                    () -> {
+                                        Log.d(TAG, "User updated successfully");
+
+                                        CustomSnackbar.show(this, "Profile Update", Snackbar.LENGTH_SHORT, 1);
+                                        Intent intent = new Intent((this), ProfileActivity.class);
+                                        intent.putExtra(Constants.IS_MENTOR, false);
+                                        intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
+                                        startActivity(intent);
+                                        finish();
+                                    },
+                                    throwable -> {
+                                        Log.e(TAG, "Error updating user", throwable);
+                                        CustomSnackbar.show(this, "Database update failed", Snackbar.LENGTH_SHORT, 3);
+                                    }
+                            );
                     return Unit.INSTANCE;
                 }, e -> {
                     CustomSnackbar.show(this, "Failed check on your internet and retry", Snackbar.LENGTH_SHORT, 3);
@@ -272,7 +290,7 @@ public class EditProfileActivity extends AppCompatActivity {
             String link = courseLink.getText().toString().trim();
             String imageUrl = courseImageUrl.getText().toString().trim();
 
-            courseItem = new CourseItem("",id, imageUrl, dpImageUrl, name, title, duration, lessons, link, false);
+            courseItem = new CourseItem("", id, imageUrl, dpImageUrl, name, title, duration, lessons, link, false);
             courseList.add(courseItem);
             coursesAdapter.notifyItemInserted(courseList.size() - 1);
             dialog.dismiss();
