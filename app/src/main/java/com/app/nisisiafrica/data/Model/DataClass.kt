@@ -107,7 +107,8 @@ data class Chatroom(
     val lastMessage: String = "",
     val lastMessageTimestamp: Timestamp? = null,
     val lastMessageSenderId: String = "",
-    val unreadCount: Map<String, Int> = emptyMap()
+    val unreadCount: Map<String, Int> = emptyMap(),
+    val type: String = "direct"
 ) {
     /**
      * Get the other user's name (not the current user)
