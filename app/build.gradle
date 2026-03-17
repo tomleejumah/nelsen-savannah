@@ -79,6 +79,7 @@ dependencies {
     implementation libs.navigation.ui.ktx
     implementation libs.firebase.firestore
     implementation libs.paging.common
+    implementation libs.firebase.ai
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

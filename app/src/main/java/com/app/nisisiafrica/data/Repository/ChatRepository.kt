@@ -17,6 +17,10 @@ class ChatRepository() {
     }
 
     fun initAnnouncementChatRoom(){
-        FirebaseRemoteDataSource.initAnnouncementChatRoom()
+        FirebaseRemoteDataSource.initSpecialChatRooms()
+//        FirebaseRemoteDataSource.initAnnouncementChatRoom()
     }
+
+    fun getPinnedChatRooms(): Flow<List<Chatroom>> =
+        FirebaseRemoteDataSource.getPinnedChatRooms()
 }

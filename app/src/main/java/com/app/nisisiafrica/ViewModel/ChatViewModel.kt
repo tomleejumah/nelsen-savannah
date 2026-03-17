@@ -15,7 +15,10 @@ class ChatViewModel(private val chatRepository: ChatRepository): ViewModel() {
         .cachedIn(viewModelScope)
         .asLiveData()
 
-    fun createAnnounceChatRoom() {
+    fun initPinnedChats() {
         chatRepository.initAnnouncementChatRoom()
     }
+
+    val pinnedChatRooms: LiveData<List<Chatroom>> =
+        chatRepository.getPinnedChatRooms().asLiveData()
 }

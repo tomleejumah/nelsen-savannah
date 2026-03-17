@@ -9,14 +9,18 @@ import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
+import com.app.nisisiafrica.data.Model.ChatMessage
 import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import de.hdodenhof.circleimageview.CircleImageView
-class ChatRoomAdapter(
+import java.text.SimpleDateFormat
+import androidx.recyclerview.widget.ListAdapter
+
+class PinnedChatAdapter(
     private val onChatroomClick: (Chatroom) -> Unit
-): PagingDataAdapter<Chatroom, ChatRoomAdapter.ViewHolder>(DIFF_CALLBACK) {
+) : ListAdapter<Chatroom, PinnedChatAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_chat_room, parent, false)
@@ -24,7 +28,7 @@ class ChatRoomAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        getItem(position)?.let { holder.bind(it) }
+        holder.bind(getItem(position))
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -36,26 +40,17 @@ class ChatRoomAdapter(
         fun bind(chatroom: Chatroom) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-            tvName.text = chatroom.getOtherUserName(currentUserId)
+            // Logic for Pinned Items (Announcements / AI)
+            if (chatroom.chatroomId == "announcements") {
+                tvName.text = "Announcements"
+                Glide.with(tvAvatar.context).load(R.drawable.nisisi_logo).into(tvAvatar)
+            } else {
+                tvName.text="Nisisi AI Assistant"
+                Glide.with(tvAvatar.context).load(R.drawable.cyborg).circleCrop().into(tvAvatar)
+            }
+
             tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
-
-            // Unread Count logic
-            val unreadCount = chatroom.unreadCount?.get(currentUserId) ?: 0
-            tvUnread.apply {
-                visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
-                text = unreadCount.toString()
-            }
-
-            // Load User Avatar
-            val otherUserId = chatroom.getOtherUserId(currentUserId)
-            otherUserId?.let { id ->
-                FirebaseRemoteDataSource.getMentorData(id, onSuccess = { mentor ->
-                    Glide.with(tvAvatar.context)
-                        .load(mentor?.mentorImageUrl)
-                        .placeholder(R.drawable.ic_person)
-                        .into(tvAvatar)
-                }, onError = { /* handle error */ })
-            }
+            tvUnread.visibility = View.GONE
 
             itemView.setOnClickListener { onChatroomClick(chatroom) }
         }
@@ -64,7 +59,7 @@ class ChatRoomAdapter(
     companion object {
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Chatroom>() {
             override fun areItemsTheSame(old: Chatroom, new: Chatroom) = old.chatroomId == new.chatroomId
-            override fun areContentsTheSame(old: Chatroom, new: Chatroom) = old == new
+            override fun areContentsTheSame(old: Chatroom, new: Chatroom) = old.lastMessage == new.lastMessage
         }
     }
 }

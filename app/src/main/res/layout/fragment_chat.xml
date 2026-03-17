@@ -379,13 +379,13 @@
                     android:layout_height="0dp"
                     android:padding="16dp"
                     android:clipToPadding="false"
-                    app:layout_constraintBottom_toTopOf="@id/llInput"
+                    app:layout_constraintBottom_toTopOf="@id/bottomChatBar"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/llHeader" />
 
                 <LinearLayout
-                    android:id="@+id/llInput"
+                    android:id="@+id/bottomChatBar"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"

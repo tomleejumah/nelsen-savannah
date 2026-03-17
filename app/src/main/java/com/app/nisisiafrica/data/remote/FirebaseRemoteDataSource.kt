@@ -28,6 +28,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import kotlin.coroutines.resume
@@ -545,26 +548,75 @@ object FirebaseRemoteDataSource {
     }
 
     //chats
-    fun initAnnouncementChatRoom(){
+
+    fun getPinnedChatRooms(): Flow<List<Chatroom>> = callbackFlow {
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@callbackFlow
+
+        // The two specific document IDs we want to pin
+        val pinnedIds = listOf("announcements", "ai_assistant_$userId")
+
+        val listener = db.collection("chatRooms")
+            .whereIn("chatroomId", pinnedIds)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+
+                val rooms = snapshot?.toObjects(Chatroom::class.java) ?: emptyList()
+
+                // Sort: Ensure Announcements (system) is always above AI
+                val sorted = rooms.sortedByDescending { it.type == "system" }
+                trySend(sorted)
+            }
+        awaitClose { listener.remove() }
+    }
+    fun initSpecialChatRooms() {
         val db = FirebaseFirestore.getInstance()
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        db.collection("chatRooms").document("announcements")
+        val announcementsRef = db.collection("chatRooms").document("announcements")
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(announcementsRef)
+
+            if (!snapshot.exists()) {
+                transaction.set(
+                    announcementsRef,
+                    hashMapOf(
+                        "chatroomId" to "announcements",
+                        "userIds" to listOf(userId),
+                        "lastMessage" to "Welcome to announcements",
+                        "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                        "type" to "system"
+                    )
+                )
+            } else {
+                transaction.update(
+                    announcementsRef,
+                    "userIds",
+                    FieldValue.arrayUnion(userId)
+                )
+            }
+        }
+
+        val aiChatId = "ai_assistant_$userId"
+        db.collection("chatRooms").document(aiChatId)
             .set(
                 hashMapOf(
-                    "chatroomId" to "announcements",
-                    "userIds" to FieldValue.arrayUnion(userId),
+                    "chatroomId" to aiChatId,
+                    "userIds" to listOf(userId),
+                    "lastMessage" to "How can I help you today?",
                     "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                    "lastMessage" to "Welcome to announcements"
+                    "type" to "ai"
                 ),
                 SetOptions.merge()
             )
     }
+
     fun createOrGetDirectChatRoom(
         otherUserId: String,
         otherUserName: String,
         currentUserName: String,
-        onComplete: (String?) -> Unit // Returns chatroomId
+        onComplete: (String?) -> Unit
     ) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
             onComplete(null)
@@ -599,7 +651,8 @@ object FirebaseRemoteDataSource {
                         ),
                         "lastMessageTimestamp" to FieldValue.serverTimestamp(),
                         "lastMessage" to "No Messages Yet",
-                        "createdAt" to FieldValue.serverTimestamp()
+                        "createdAt" to FieldValue.serverTimestamp(),
+                        "type" to "direct"
                     )
 
                     db.collection("chatRooms").document(chatroomId)
@@ -627,6 +680,7 @@ object FirebaseRemoteDataSource {
         val currentUserId = auth.currentUser?.uid ?: return InvalidPagingSource()
 
         val query = firestore.collection("chatRooms")
+            .whereEqualTo("type", "direct")
             .whereArrayContains("userIds", currentUserId)
             .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
 
@@ -642,7 +696,9 @@ object FirebaseRemoteDataSource {
 
                     // Filter out announcements
                     val chatrooms = snapshot.toObjects(Chatroom::class.java)
-                        .filter { it.chatroomId != "announcements" }
+//                        .filter { it.chatroomId != "announcements" }
+
+                    Log.d("ChatRooms", "Loaded ${chatrooms.size} chatrooms")
 
                     LoadResult.Page(
                         data = chatrooms,
