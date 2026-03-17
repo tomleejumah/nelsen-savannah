@@ -2,7 +2,6 @@ package com.app.nisisiafrica.ViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.app.nisisiafrica.data.Repository.ChatRepository
 import com.app.nisisiafrica.data.Repository.EventRepository
 
 class EventViewModelFactory(

@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -22,14 +23,17 @@ import com.app.nisisiafrica.Adapters.ChatAdapter;
 import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
 import com.app.nisisiafrica.Adapters.PinnedChatAdapter;
 import com.app.nisisiafrica.Constants;
+import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.ViewModel.ChatRoomViewModel;
+import com.app.nisisiafrica.ViewModel.ChatRoomViewModelFactory;
 import com.app.nisisiafrica.ViewModel.ChatViewModel;
-import com.app.nisisiafrica.ViewModel.ChatViewModelFactory;
 import com.app.nisisiafrica.data.Model.Chatroom;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.Repository.ChatRepository;
+import com.app.nisisiafrica.data.Repository.ChatRoomRepository;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.databinding.FragmentChatBinding;
 import com.bumptech.glide.Glide;
@@ -44,9 +48,12 @@ import java.util.Locale;
 import kotlin.Unit;
 
 public class ChatFragment extends Fragment {
+    private ChatViewModel viewModel;
+    private ChatAdapter adapter;
+    private String chatroomId;
 
     private FragmentChatBinding binding;
-    private ChatViewModel viewModel;
+    private ChatRoomViewModel chatRoomViewModel;
     private UserData userData;
     private String joinedAT, role;
     private boolean isPanelOpen, isMentor;
@@ -64,7 +71,7 @@ public class ChatFragment extends Fragment {
 
         // Initialize user metadata and global rooms
         handleUserMetadata();
-        viewModel.initPinnedChats();
+        chatRoomViewModel.initPinnedChats();
 
         return binding.getRoot();
     }
@@ -73,9 +80,9 @@ public class ChatFragment extends Fragment {
         joinedAT = Util.getState(Constants.USER_CREATED_AT, "");
         role = Util.getState(Constants.USER_ROLE, "Mentee");
 
-        ChatRepository repository = new ChatRepository();
-        ChatViewModelFactory factory = new ChatViewModelFactory(repository);
-        viewModel = new ViewModelProvider(this, factory).get(ChatViewModel.class);
+        ChatRoomRepository repository = new ChatRoomRepository();
+        ChatRoomViewModelFactory factory = new ChatRoomViewModelFactory(repository);
+        chatRoomViewModel = new ViewModelProvider(this, factory).get(ChatRoomViewModel.class);
     }
 
     private void setupRecyclerView() {
@@ -95,9 +102,9 @@ public class ChatFragment extends Fragment {
         binding.rvChats.setAdapter(concatAdapter);
 
         // 3. Observers
-        viewModel.getPinnedChatRooms().observe(getViewLifecycleOwner(), pinnedAdapter::submitList);
+        chatRoomViewModel.getPinnedChatRooms().observe(getViewLifecycleOwner(), pinnedAdapter::submitList);
 
-        viewModel.getChatRooms().observe(getViewLifecycleOwner(), pagingData -> {
+        chatRoomViewModel.getChatRooms().observe(getViewLifecycleOwner(), pagingData -> {
             pagedAdapter.submitData(getViewLifecycleOwner().getLifecycle(), pagingData);
         });
     }
@@ -165,16 +172,32 @@ public class ChatFragment extends Fragment {
     }
 
     private void startRealtimeMessages(String chatId) {
-        ChatAdapter messageAdapter = new ChatAdapter();
-        binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.rvMessages.setAdapter(messageAdapter);
+//        ChatAdapter messageAdapter = new ChatAdapter();
+//        binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
+//        binding.rvMessages.setAdapter(messageAdapter);
+//
+//        FirebaseRemoteDataSource.INSTANCE.getMessagesRealtime(chatId, messages -> {
+//            messageAdapter.submitList(messages);
+//            if (!messages.isEmpty()) {
+//                binding.rvMessages.scrollToPosition(messages.size() - 1);
+//            }
+//            return Unit.INSTANCE;
+//        });
 
-        FirebaseRemoteDataSource.INSTANCE.getMessagesRealtime(chatId, messages -> {
-            messageAdapter.submitList(messages);
-            if (!messages.isEmpty()) {
-                binding.rvMessages.scrollToPosition(messages.size() - 1);
-            }
-            return Unit.INSTANCE;
+        AppDatabase db = AppDatabase.getInstance(requireContext());
+        ChatRepository repo = new ChatRepository(db);
+        viewModel = new ViewModelProvider(this, new ChatViewModel.Factory(repo))
+                .get(ChatViewModel.class);
+        adapter = new ChatAdapter();
+         binding.rvMessages.setAdapter(adapter);
+         binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        viewModel.loadMessages(chatId);
+
+        viewModel.getMessages().observe(getViewLifecycleOwner(), messages -> {
+            adapter.submitList(messages);
+            if (!messages.isEmpty())
+                  binding.rvMessages.smoothScrollToPosition(messages.size() - 1);
         });
     }
 
@@ -182,18 +205,26 @@ public class ChatFragment extends Fragment {
         binding.btnSend.setOnClickListener(v -> {
             String msg = binding.etMessage.getText().toString().trim();
             if (!msg.isEmpty()) {
-                FirebaseRemoteDataSource.INSTANCE.sendMessage(chatId, msg, success -> {
-                    if (success) {
-                        binding.etMessage.setText("");
-                        binding.rvMessages.postDelayed(() -> {
-                            RecyclerView.Adapter<?> adapter = binding.rvMessages.getAdapter();
-                            if (adapter != null && adapter.getItemCount() > 0) {
-                                binding.rvMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
-                            }
-                        }, 100);
+                binding.etMessage.setText("");
+                viewModel.sendMessage(chatId, msg, success -> {
+                    if (!success) {
+                        Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
                     }
                     return Unit.INSTANCE;
                 });
+
+//                FirebaseRemoteDataSource.INSTANCE.sendMessage(chatId, msg, success -> {
+//                    if (success) {
+//                        binding.etMessage.setText("");
+//                        binding.rvMessages.postDelayed(() -> {
+//                            RecyclerView.Adapter<?> adapter = binding.rvMessages.getAdapter();
+//                            if (adapter != null && adapter.getItemCount() > 0) {
+//                                binding.rvMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
+//                            }
+//                        }, 100);
+//                    }
+//                    return Unit.INSTANCE;
+//                });
             }
         });
     }

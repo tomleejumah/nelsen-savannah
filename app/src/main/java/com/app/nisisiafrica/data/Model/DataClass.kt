@@ -100,6 +100,18 @@ data class ChatMessage(
     val type: String = "text"
 )
 
+@Entity(tableName = "messages")
+data class ChatMessageEntity(
+    @PrimaryKey val messageId: String,
+    val chatroomId: String,
+    val senderId: String,
+    val senderName: String,
+    val message: String,
+    val timestamp: Long,
+    val type: String = "text",
+    val status: String = "sent"
+)
+
 data class Chatroom(
     val chatroomId: String = "",
     val userIds: List<String> = emptyList(),

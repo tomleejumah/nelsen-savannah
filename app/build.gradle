@@ -28,13 +28,14 @@ android {
         versionCode 1
         versionName "1.0"
 
+        buildConfigField "String", "GEMINI_API_KEY", "\"${localProperties.getProperty('GEMINI_API_KEY', '')}\""
 //        buildConfigField "String", "WEB_CLIENT_ID", "\"${WEB_CLIENT_ID}\""
         buildConfigField "String", "WEB_CLIENT_ID", webClientId
         resValue "string", "facebook_app_id", "\"${facebookAppId}\""
         resValue "string", "facebook_client_token", "\"${facebookClientToken}\""
         resValue "string", "fb_login_protocol_scheme", "\"${fbLoginScheme}\""
 
-        resValue "string", "app_name", "\"Nisisi Africa\"Nisisi Connect Hub"
+        resValue "string", "app_name", "Nisisi Connect Hub"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

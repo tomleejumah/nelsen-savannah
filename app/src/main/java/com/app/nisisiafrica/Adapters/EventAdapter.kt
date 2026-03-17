@@ -21,7 +21,7 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_event_timeline, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(view,viewType)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -30,13 +30,17 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
 
     override fun getItemCount() = events.size
 
+    override fun getItemViewType(position: Int): Int {
+        return TimelineView.getTimeLineViewType(position, itemCount)
+    }
+
     fun submitList(newEvents: List<Event>) {
         events.clear()
         events.addAll(newEvents)
         notifyDataSetChanged()
     }
 
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View,viewType: Int) : RecyclerView.ViewHolder(itemView) {
         private val tvEventDate: TextView = itemView.findViewById(R.id.tvEventDate)
         private val tvEventTitle: TextView = itemView.findViewById(R.id.tvEventTitle)
         private val tvEventTime: TextView = itemView.findViewById(R.id.tvEventTime)
@@ -45,6 +49,10 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
         private val dottedLine: View = itemView.findViewById(R.id.dottedLine)
         private val eventCard: MaterialCardView = itemView.findViewById(R.id.eventCard)
         private val timelineView: TimelineView = itemView.findViewById(R.id.itemDottedLine)
+
+        init {
+            timelineView.initLine(viewType)
+        }
 
 
         @SuppressLint("SetTextI18n")
@@ -68,11 +76,11 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                     timelineView.setMarker(
                         ContextCompat.getDrawable(itemView.context, R.drawable.marker_completed)
                     )
-                    timelineView.setStartLineColor(
-                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
-                        position
-                    )
-                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
+//                    timelineView.setStartLineColor(
+//                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
+//                        position
+//                    )
+//                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
                     eventCard.strokeColor = 0xFFFF9800.toInt()
                     tvEventBadge.text = "Upcoming"
                     tvEventBadge.setBackgroundColor(0xFFFFF3E0.toInt())
@@ -84,11 +92,11 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                     timelineView.setMarker(
                         ContextCompat.getDrawable(itemView.context, R.drawable.marker_completed)
                     )
-                    timelineView.setStartLineColor(
-                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
-                               position
-                    )
-                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
+//                    timelineView.setStartLineColor(
+//                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
+//                               position
+//                    )
+//                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
                     eventCard.strokeColor = 0xFF4CAF50.toInt()
                     eventCard.alpha = 0.7f
                     tvEventBadge.text = "Completed"
@@ -100,11 +108,11 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                     timelineView.setMarker(
                         ContextCompat.getDrawable(itemView.context, R.drawable.marker_completed)
                     )
-                    timelineView.setStartLineColor(
-                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
-                        position
-                    )
-                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
+//                    timelineView.setStartLineColor(
+//                        ContextCompat.getColor(itemView.context, R.color.timeline_today),
+//                        position
+//                    )
+//                    timelineView.setLineStyle(TimelineView.LineStyle.NORMAL)
                     eventCard.strokeColor = 0xFF2196F3.toInt()
                     tvEventBadge.text = "Today"
                     tvEventBadge.setBackgroundColor(0xFFE3F2FD.toInt())

@@ -4,13 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.app.nisisiafrica.data.Model.ChatMessageEntity
 import com.app.nisisiafrica.data.local.Dao.UserDao
 import com.app.nisisiafrica.data.Model.UserData
+import com.app.nisisiafrica.data.local.Dao.ChatMessageDao
 
-@Database(entities = [UserData::class], version = 1, exportSchema = true)
+@Database(entities = [UserData::class, ChatMessageEntity::class],
+    version = 2, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
+    abstract fun chatMessageDao(): ChatMessageDao
 
     companion object {
         @Volatile
@@ -23,8 +27,10 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "main_database"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
         }
+
     }
+
 }
