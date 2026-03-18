@@ -7,13 +7,15 @@
     android:layout_height="match_parent">
 
     <ImageView
+        android:paddingHorizontal="20dp"
         android:layout_width="wrap_content"
         android:layout_height="450dp"
-        android:src="@drawable/image_three"
+        android:src="@drawable/yt_emp"
         />
 
     <TextView
         android:id="@+id/titleText"
+        android:fontFamily="@font/poppins_bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Youth Empowerment"
@@ -24,6 +26,7 @@
 
     <TextView
         android:id="@+id/descriptionText"
+        android:fontFamily="@font/poppins_regular"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="We believe in nurturing the potential within every young person — helping them grow, find direction, and build the confidence to shape their own future."
