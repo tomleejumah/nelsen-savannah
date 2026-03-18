@@ -65,6 +65,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    packagingOptions {
+        resources {
+            // ignore the duplicates
+            excludes += [
+                    "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+            ]
+        }
+    }
 }
 
 dependencies {
@@ -162,4 +170,10 @@ dependencies {
     implementation("androidx.room:room-paging:$room_version")
 
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
+
+    // Gson
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    //kyc sdk
+    implementation 'me.didit:didit-sdk:3.2.0'
 }

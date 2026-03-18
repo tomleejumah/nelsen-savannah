@@ -14,6 +14,8 @@ import com.app.nisisiafrica.Utils.Util;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import me.didit.sdk.DiditSdk;
+
 public class App extends Application {
 
     /**
@@ -38,7 +40,7 @@ public class App extends Application {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         Util.init(this);
         appDatabase = AppDatabase.getInstance(this);
-
+        DiditSdk.INSTANCE.initialize(this);
         ProcessLifecycleOwner.get().getLifecycle()
                 .addObserver(new AppLifecycleObserver(this));
 
@@ -62,7 +64,7 @@ public class App extends Application {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     public void onAppBackground() {
-        LockScreenActivity.AppLockState.lock(); // re-lock when backgrounded
+        LockScreenActivity.AppLockState.lock();
     }
     public static AppDatabase getAppDatabase() {
         return appDatabase;

@@ -18,6 +18,10 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+
+        maven {
+            url "https://raw.githubusercontent.com/didit-protocol/sdk-android/main/repository"
+        }
     }
 }
 
