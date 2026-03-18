@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.Interfaces;
 
+import com.app.nisisiafrica.data.Model.ChatNotificationRequest;
 import com.app.nisisiafrica.data.Model.LikeNotificationRequest;
 import com.app.nisisiafrica.data.Model.NotificationListResponse;
 import com.app.nisisiafrica.data.Model.NotificationResponse;
@@ -44,5 +45,11 @@ public interface NotificationApiService {
             @Header("Authorization") String token,
             @Path("userId") String userId,
             @Path("notificationId") String notificationId
+    );
+
+    @POST("chat/notify")
+    Call<NotificationResponse> sendChatNotification(
+            @Header("Authorization") String token,
+            @Body ChatNotificationRequest request
     );
 }

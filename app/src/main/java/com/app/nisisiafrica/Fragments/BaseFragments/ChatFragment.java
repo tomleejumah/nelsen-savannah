@@ -3,6 +3,7 @@ package com.app.nisisiafrica.Fragments.BaseFragments;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,16 +24,20 @@ import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
 import com.app.nisisiafrica.Adapters.PinnedChatAdapter;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.DataBase.AppDatabase;
+import com.app.nisisiafrica.Interfaces.NotificationApiService;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModel;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModelFactory;
 import com.app.nisisiafrica.ViewModel.ChatViewModel;
+import com.app.nisisiafrica.data.Model.ChatNotificationRequest;
 import com.app.nisisiafrica.data.Model.Chatroom;
+import com.app.nisisiafrica.data.Model.NotificationResponse;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.Repository.ChatRepository;
 import com.app.nisisiafrica.data.Repository.ChatRoomRepository;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.databinding.FragmentChatBinding;
 import com.bumptech.glide.Glide;
@@ -46,6 +51,9 @@ import java.util.Date;
 import java.util.Locale;
 
 import kotlin.Unit;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ChatFragment extends Fragment {
     private ChatViewModel viewModel;
@@ -130,7 +138,7 @@ public class ChatFragment extends Fragment {
         }
 
         startRealtimeMessages(chatId);
-        setupSendAction(chatId);
+        setupSendAction(chatId, chatroom);
     }
 
     private void updateChatHeader(Chatroom chatroom, String type, String currentUserId) {
@@ -189,8 +197,7 @@ public class ChatFragment extends Fragment {
                 binding.rvMessages.smoothScrollToPosition(messages.size() - 1);
         });
     }
-
-    private void setupSendAction(String chatId) {
+    private void setupSendAction(String chatId, Chatroom chatroom) {
         binding.btnSend.setOnClickListener(v -> {
             String msg = binding.etMessage.getText().toString().trim();
             if (!msg.isEmpty()) {
@@ -199,12 +206,76 @@ public class ChatFragment extends Fragment {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
                     }
+                    String currentUserId = FirebaseAuth.getInstance().getUid();
+                    String receiverId = chatroom.getOtherUserId(currentUserId); // correct
+                    if (receiverId != null) {
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        user.getIdToken(false).addOnSuccessListener(result -> {
+                            String token = "Bearer " + result.getToken();
+                            ChatNotificationRequest request = new ChatNotificationRequest(
+                                    receiverId,
+                                    msg,
+                                    chatId
+                            );
+                            NotificationApiService apiService = ApiClient.getClient().create(NotificationApiService.class);
+                            apiService.sendChatNotification(token, request)
+                                    .enqueue(new Callback<NotificationResponse>() {
+                                        @Override
+                                        public void onResponse(Call<NotificationResponse> call, Response<NotificationResponse> response) {}
+                                        @Override
+                                        public void onFailure(Call<NotificationResponse> call, Throwable t) {
+                                            Log.e("ChatNotif", "Failed", t);
+                                        }
+                                    });
+                        });
+                    }
                     return Unit.INSTANCE;
                 });
-
             }
         });
     }
+
+//    private void setupSendAction(String chatId) {
+//        binding.btnSend.setOnClickListener(v -> {
+//            String msg = binding.etMessage.getText().toString().trim();
+//            if (!msg.isEmpty()) {
+//                binding.etMessage.setText("");
+//                viewModel.sendMessage(chatId, msg, success -> {
+//                    if (!success) {
+//                        Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
+//                    }
+//                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+//                    user.getIdToken(false).addOnSuccessListener(result -> {
+//                        String token = "Bearer " + result.getToken();
+//                        Chatroom chatroom = new Chatroom();
+//                        ChatNotificationRequest request = new ChatNotificationRequest(
+//                                chatroom.getOtherUserId(chatId),
+//                                msg,      // the message content
+//                                chatId    // your conversation/chat room ID
+//                        );
+//
+//                        NotificationApiService apiService = ApiClient.getClient().create(NotificationApiService.class);
+//
+//                        apiService.sendChatNotification(token, request)
+//                                .enqueue(new Callback<>() {
+//                                    @Override
+//                                    public void onResponse(Call<NotificationResponse> call,
+//                                                           Response<NotificationResponse> response) {
+//                                        // silent, no need to handle
+//                                    }
+//
+//                                    @Override
+//                                    public void onFailure(Call<NotificationResponse> call, Throwable t) {
+//                                        Log.e("ChatNotif", "Failed to send notification", t);
+//                                    }
+//                                });
+//                    });
+//                    return Unit.INSTANCE;
+//                });
+//
+//            }
+//        });
+//    }
 
     private void setupGlobalClickListeners() {
         binding.allChatInfo.setOnClickListener(v -> {
