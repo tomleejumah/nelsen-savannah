@@ -17,7 +17,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.ChatAdapter;
 import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
@@ -42,6 +41,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -88,12 +88,12 @@ public class ChatFragment extends Fragment {
     private void setupRecyclerView() {
         // 1. Adapters (Method references for cleaner lambda)
         PinnedChatAdapter pinnedAdapter = new PinnedChatAdapter(chatroom -> {
-           openChat(chatroom);
-           return Unit.INSTANCE;
+            openChat(chatroom);
+            return Unit.INSTANCE;
         });
         ChatRoomAdapter pagedAdapter = new ChatRoomAdapter(chatroom -> {
-           openChat(chatroom);
-           return Unit.INSTANCE;
+            openChat(chatroom);
+            return Unit.INSTANCE;
         });
 
         // 2. ConcatAdapter to pin items to top
@@ -172,17 +172,6 @@ public class ChatFragment extends Fragment {
     }
 
     private void startRealtimeMessages(String chatId) {
-//        ChatAdapter messageAdapter = new ChatAdapter();
-//        binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
-//        binding.rvMessages.setAdapter(messageAdapter);
-//
-//        FirebaseRemoteDataSource.INSTANCE.getMessagesRealtime(chatId, messages -> {
-//            messageAdapter.submitList(messages);
-//            if (!messages.isEmpty()) {
-//                binding.rvMessages.scrollToPosition(messages.size() - 1);
-//            }
-//            return Unit.INSTANCE;
-//        });
 
         AppDatabase db = AppDatabase.getInstance(requireContext());
         ChatRepository repo = new ChatRepository(db);
@@ -192,12 +181,12 @@ public class ChatFragment extends Fragment {
          binding.rvMessages.setAdapter(adapter);
          binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
 
+        repo.syncMessages(chatId);
         viewModel.loadMessages(chatId);
-
         viewModel.getMessages().observe(getViewLifecycleOwner(), messages -> {
             adapter.submitList(messages);
             if (!messages.isEmpty())
-                  binding.rvMessages.smoothScrollToPosition(messages.size() - 1);
+                binding.rvMessages.smoothScrollToPosition(messages.size() - 1);
         });
     }
 
@@ -213,18 +202,6 @@ public class ChatFragment extends Fragment {
                     return Unit.INSTANCE;
                 });
 
-//                FirebaseRemoteDataSource.INSTANCE.sendMessage(chatId, msg, success -> {
-//                    if (success) {
-//                        binding.etMessage.setText("");
-//                        binding.rvMessages.postDelayed(() -> {
-//                            RecyclerView.Adapter<?> adapter = binding.rvMessages.getAdapter();
-//                            if (adapter != null && adapter.getItemCount() > 0) {
-//                                binding.rvMessages.smoothScrollToPosition(adapter.getItemCount() - 1);
-//                            }
-//                        }, 100);
-//                    }
-//                    return Unit.INSTANCE;
-//                });
             }
         });
     }

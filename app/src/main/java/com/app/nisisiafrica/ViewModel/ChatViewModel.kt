@@ -7,20 +7,32 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.nisisiafrica.data.Model.ChatMessageEntity
 import com.app.nisisiafrica.data.Repository.ChatRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class ChatViewModel(private val repo: ChatRepository) : ViewModel() {
-
+    private var messagesJob: Job? = null
     private val _messages = MutableLiveData<List<ChatMessageEntity>>()
     val messages: LiveData<List<ChatMessageEntity>> = _messages
 
+//    fun loadMessages(chatroomId: String) {
+//        // 1. Observe Room immediately
+//        viewModelScope.launch {
+//            repo.getMessages(chatroomId).collect { _messages.postValue(it) }
+//        }
+//        // 2. Sync from Firestore in background
+//        repo.syncMessages(chatroomId)
+//    }
+
     fun loadMessages(chatroomId: String) {
-        // 1. Observe Room immediately
-        viewModelScope.launch {
-            repo.getMessages(chatroomId).collect { _messages.postValue(it) }
+
+        messagesJob?.cancel()
+
+        messagesJob = viewModelScope.launch {
+            repo.getMessages(chatroomId).collect {
+                _messages.postValue(it)
+            }
         }
-        // 2. Sync from Firestore in background
-        repo.syncMessages(chatroomId)
     }
 
     fun sendMessage(chatroomId: String, message: String, onComplete: (Boolean) -> Unit) {

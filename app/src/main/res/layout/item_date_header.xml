@@ -9,10 +9,10 @@
         android:id="@+id/tvDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_date_chip"
         android:paddingHorizontal="12dp"
         android:paddingVertical="4dp"
         android:textSize="12sp"
         android:textColor="#666666" />
 
+<!--    android:background="@drawable/bg_date_chip"-->
 </LinearLayout>
