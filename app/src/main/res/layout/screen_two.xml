@@ -8,6 +8,7 @@
 
 
         <TextView
+            android:fontFamily="@font/poppins_bold"
             android:id="@+id/titleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -25,11 +26,13 @@
             android:gravity="center"
             android:lineSpacingExtra="4dp"
             android:padding="16dp"
+            android:fontFamily="@font/poppins_regular"
             android:text="From art and music to coding and design — we help children unlock their gifts, blend creativity with technology, and reimagine possibilities"
             android:textSize="16sp" />
         <ImageView
             android:layout_gravity="center"
-            android:layout_width="300dp"
+            android:layout_marginHorizontal="10dp"
+            android:layout_width="match_parent"
             android:layout_height="450dp"
-            android:src="@drawable/nisis_kids" />
+            android:src="@drawable/img3" />
 </LinearLayout>

@@ -7,6 +7,8 @@ import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,7 +26,9 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.paging.LoadState;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
+import com.app.nisisiafrica.Adapters.BannerAdapter;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
@@ -111,7 +115,14 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private RecyclerView rvUpcomingEvents;
     private EventAdapter eventAdapter;
     private ImageView plusIcon;
-//todo make a init views method!!!!!!!
+
+    private ViewPager2 bannerViewPager;
+    private BannerAdapter bannerAdapter;
+    private List<String> bannerList = new ArrayList<>();
+    private DatabaseReference bannersRef;
+    private Handler autoScrollHandler;
+    private Runnable autoScrollRunnable;
+    private static final long SCROLL_DELAY = 4000;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -163,6 +174,17 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             getEvents(data, view);
 
         });
+
+        bannerViewPager = view.findViewById(R.id.bannerViewPager);
+        bannerAdapter = new BannerAdapter(getContext(), bannerList);
+        bannerViewPager.setAdapter(bannerAdapter);
+
+        // Initialize Realtime Database reference
+        bannersRef = FirebaseDatabase.getInstance().getReference("banners");
+
+        fetchBannersRealtime();
+        setupAutoScroll();
+
 
         btnBookMentor.setOnClickListener(v -> {
             if (userData.getUserRole().equals("Mentor")) {
@@ -392,6 +414,60 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         return view;
     }
 
+    private void setupAutoScroll() {
+        autoScrollHandler = new Handler(Looper.getMainLooper());
+        autoScrollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (bannerAdapter.getItemCount() > 1) {
+                    int nextItem = (bannerViewPager.getCurrentItem() + 1) % bannerAdapter.getItemCount();
+                    bannerViewPager.setCurrentItem(nextItem, true);
+                }
+                autoScrollHandler.postDelayed(this, SCROLL_DELAY);
+            }
+        };
+        autoScrollHandler.postDelayed(autoScrollRunnable, SCROLL_DELAY);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (autoScrollHandler != null && autoScrollRunnable != null) {
+            autoScrollHandler.removeCallbacks(autoScrollRunnable);
+        }
+    }
+
+    private void fetchBannersRealtime() {
+        bannersRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<String> finalUrls = new ArrayList<>();
+
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    String url = child.child("url").getValue(String.class);
+                    if (url != null && !url.isEmpty()) {
+                        finalUrls.add(url);
+                    }
+                }
+
+                if (finalUrls.isEmpty()) {
+                    String packageName = requireContext().getPackageName();
+                    finalUrls.add("android.resource://" + packageName + "/" + R.drawable.static_banner1);
+                    finalUrls.add("android.resource://" + packageName + "/" + R.drawable.static_banner2);
+                }
+
+                if (bannerAdapter != null) {
+                    bannerAdapter.updateBanners(finalUrls);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Banner fetch failed: " + error.getMessage());
+            }
+        });
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -566,11 +642,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     private void getEvents(UserData userData, View view) {
-
-        // 1. Set up the observer (only do this once)
         eventViewModel.getEvents().observe(getViewLifecycleOwner(), events -> {
-
-//            Log.d(TAG, "getEvents: Received " + events.size() + " events");
 
             if (events.isEmpty()) {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
@@ -594,33 +666,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         // 2. Trigger the actual data fetch
         eventViewModel.fetchEvents(Util.getState(Constants.CURRENT_USER_ID, ""));
     }
-//    private void getEvents(UserData userData, View view) {
-//        eventViewModel.getUserEvents().observe(getViewLifecycleOwner(), events -> {
-//
-//            if (events.isEmpty()) {
-//                view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
-//                rvUpcomingEvents.setVisibility(View.GONE);
-//                btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Add Notification" : "Book a mentor");
-//
-//            } else {
-//                view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
-//                rvUpcomingEvents.setVisibility(View.VISIBLE);
 
-    /// /                adapter.submitList(events);
-//                List<Event> upcoming = events.stream()
-//                        .filter(e -> e.getDate() >= System.currentTimeMillis())
-//                        .limit(3)
-//                        .collect(Collectors.toList());
-//                eventAdapter.submitList(upcoming);
-//            }
-//            view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
-//        });
-//    }
     @Override
     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
-//    Collections.shuffle(courses);
-//        courseItemsList.addAll(courses);
-//        coursesAdapter.notifyDataSetChanged();
     }
 
     private void overlapImage(View view) {
