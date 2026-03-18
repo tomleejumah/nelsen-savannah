@@ -1,18 +1,29 @@
 package com.app.nisisiafrica.Fragments.BaseFragments;
 
+import static android.app.Activity.RESULT_OK;
+
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.Toast;
 
+import com.app.nisisiafrica.LockScreenActivity;
+import com.app.nisisiafrica.PinManager;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.SetpinActivity;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class SettingsFragment extends Fragment {
     private static final String URL_LINKEDIN = "https://www.linkedin.com/company/nisisi-africa-org/";
@@ -20,22 +31,70 @@ public class SettingsFragment extends Fragment {
     private static final String URL_FACEBOOK = "https://www.facebook.com/nisisiafrica";
     private static final String URL_YOUTUBE = "https://youtube.com/@nisisiafrica_org?si=oV0mIGg3uSOGEMi7";
 
+    private Switch lockSwitch;
+    private String uid;
+    private CompoundButton.OnCheckedChangeListener lockListener;
+    private ActivityResultLauncher<Intent> setPinLauncher;
+
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view =  inflater.inflate(R.layout.fragment_settings, container, false);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setPinLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() != RESULT_OK) {
+                        lockSwitch.setOnCheckedChangeListener(null);
+                        lockSwitch.setChecked(false);
+                        lockSwitch.setOnCheckedChangeListener(lockListener);
+                    }
+                }
+        );
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        View view = inflater.inflate(R.layout.fragment_settings, container, false);
+
+        lockSwitch = view.findViewById(R.id.lockApp);
 
         view.findViewById(R.id.tv_share_app).setOnClickListener(v -> shareApp());
-
         view.findViewById(R.id.tv_rate_app).setOnClickListener(v -> rateApp(getContext()));
-
         view.findViewById(R.id.btn_linkedin).setOnClickListener(v -> openUrlInBrowser(URL_LINKEDIN));
         view.findViewById(R.id.btn_instagram).setOnClickListener(v -> openUrlInBrowser(URL_INSTAGRAM));
         view.findViewById(R.id.btn_youtube).setOnClickListener(v -> openUrlInBrowser(URL_YOUTUBE));
         view.findViewById(R.id.btn_facebook).setOnClickListener(v -> openUrlInBrowser(URL_FACEBOOK));
 
+        lockListener = (buttonView, isChecked) -> {
+            if (isChecked) {
+                try {
+                    if (PinManager.hasPin(getContext(), uid)) {
+                        Toast.makeText(getContext(), "Lock enabled", Toast.LENGTH_SHORT).show();
+                    } else {
+                        setPinLauncher.launch(new Intent(getContext(), SetpinActivity.class));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    PinManager.clearPin(getContext(), uid);
+                    LockScreenActivity.AppLockState.lock();
+                    Toast.makeText(getContext(), "Lock disabled", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        lockSwitch.setOnCheckedChangeListener(null);
+        try {
+            lockSwitch.setChecked(PinManager.hasPin(getContext(), uid));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        lockSwitch.setOnCheckedChangeListener(lockListener);
 
-        return  view;
+        return view;
     }
 
     private void shareApp() {
@@ -43,12 +102,10 @@ public class SettingsFragment extends Fragment {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Check out this awesome app!");
-
-            String shareMessage = "Hey, I found this great app and wanted to share it with you!\n\n";
-            shareMessage = shareMessage + "https://play.google.com/store/apps/details?id=" + getActivity().getPackageName();
-
+            String shareMessage = "Hey, I found this great app and wanted to share it with you!\n\n"
+                    + "https://play.google.com/store/apps/details?id=" + getActivity().getPackageName();
             shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage);
-            startActivity(Intent.createChooser(shareIntent, "Share app via")); // Title for the share chooser dialog
+            startActivity(Intent.createChooser(shareIntent, "Share app via"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -81,8 +138,8 @@ public class SettingsFragment extends Fragment {
     }
 
     private void openUrlInBrowser(String url) {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(url));
-            startActivity(intent);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(url));
+        startActivity(intent);
     }
 }
