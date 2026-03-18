@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import "./config/firebase.js";
 import notificationRoutes from "./routes/notifications.js";
