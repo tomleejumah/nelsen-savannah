@@ -35,15 +35,23 @@ public class FCMService extends FirebaseMessagingService {
         super.onMessageReceived(remoteMessage);
 
         if (remoteMessage.getNotification() != null) {
-            String title = remoteMessage.getNotification().getTitle();
-            String body = remoteMessage.getNotification().getBody();
-
             Map<String, String> data = remoteMessage.getData();
-            String courseId = data.get("courseId");
-            String senderId = data.get("senderId");
             String type = data.get("type");
 
-            Log.d(TAG, "Notification received: " + title + " | " + body);
+            String title, body;
+
+            if (remoteMessage.getNotification() != null) {
+                title = remoteMessage.getNotification().getTitle();
+                body = remoteMessage.getNotification().getBody();
+            } else {
+                // data-only message (chat)
+                title = data.get("senderName") != null ? data.get("senderName") : "New Message";
+                body = data.get("messagePreview") != null ? data.get("messagePreview") : "sent you a message";
+            }
+
+            String courseId = data.get("courseId");
+            String senderId = data.get("senderId");
+            String conversationId = data.get("conversationId");
 
             showNotification(title, body, courseId, senderId, type);
         }

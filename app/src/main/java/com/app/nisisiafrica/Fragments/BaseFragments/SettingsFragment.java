@@ -91,8 +91,8 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.btn_facebook).setOnClickListener(v -> openUrlInBrowser(URL_FACEBOOK));
 
         RelativeLayout cardVerifyProfile = view.findViewById(R.id.cardVerifyProfile);
-//        cardVerifyProfile.setVisibility(Util.getState(Constants.USER_ROLE,"Mentee")
-//                .equals("Mentee") ? View.GONE : View.VISIBLE);
+        cardVerifyProfile.setVisibility(Util.getState(Constants.USER_ROLE,"Mentee")
+                .equals("Mentee") ? View.GONE : View.VISIBLE);
 
         handler = new DiditVerificationHandler(
                 requireActivity(),

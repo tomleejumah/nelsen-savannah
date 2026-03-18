@@ -169,28 +169,4 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                 }
             }
     }
-//    fun syncMessages(chatroomId: String) {
-//        FirebaseFirestore.getInstance()
-//            .collection("chatRooms").document(chatroomId)
-//            .collection("messages")
-//            .orderBy("timestamp", Query.Direction.ASCENDING)
-//            .limit(50)
-//            .addSnapshotListener { snapshot, e ->
-//                if (e != null) return@addSnapshotListener
-//                val messages = snapshot?.toObjects(ChatMessage::class.java) ?: return@addSnapshotListener
-//                scope.launch {
-//                    messages.forEach { msg ->
-//                        dao.insert(ChatMessageEntity(
-//                            messageId = msg.messageId,
-//                            chatroomId = chatroomId,
-//                            senderId = msg.senderId,
-//                            senderName = msg.senderName,
-//                            message = msg.message,
-//                            timestamp = msg.timestamp?.toDate()?.time ?: System.currentTimeMillis(),
-//                            status = "sent"
-//                        ))
-//                    }
-//                }
-//            }
-//    }
 }
