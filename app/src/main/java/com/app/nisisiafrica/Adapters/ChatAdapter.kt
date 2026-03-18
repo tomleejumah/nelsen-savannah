@@ -34,21 +34,6 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
         notifyDataSetChanged()
     }
-
-//    fun submitList(newMessages: List<ChatMessageEntity>) {
-//        items.clear()
-//        newMessages.groupBy { msg ->
-//            msg.timestamp?.toDate()?.let {
-//                SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(it)
-//            } ?: "unknown"
-//        }.forEach { (_, msgs) ->
-//            val date = msgs.first().timestamp?.toDate()
-//            items.add(getDateLabel(date))
-//            items.addAll(msgs)
-//        }
-//        notifyDataSetChanged()
-//    }
-
     private fun getDateLabel(date: Date?): String {
         date ?: return "Unknown"
         val cal = Calendar.getInstance()
@@ -77,33 +62,37 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
     }
 
-//    override fun getItemViewType(position: Int) = when {
-//        items[position] is String -> VIEW_TYPE_DATE
-//        (items[position] as ChatMessage).senderId == currentUserId -> VIEW_TYPE_SENDER
-//        else -> VIEW_TYPE_RECEIVER
-//    }
-
     override fun getItemCount() = items.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            VIEW_TYPE_DATE -> DateViewHolder(inflater.inflate(R.layout.item_date_header, parent, false))
-            VIEW_TYPE_SENDER -> MessageViewHolder(inflater.inflate(R.layout.message_sender, parent, false))
+            VIEW_TYPE_DATE -> DateViewHolder(
+                inflater.inflate(
+                    R.layout.item_date_header,
+                    parent,
+                    false
+                )
+            )
+
+            VIEW_TYPE_SENDER -> MessageViewHolder(
+                inflater.inflate(
+                    R.layout.message_sender,
+                    parent,
+                    false
+                )
+            )
+
             else -> MessageViewHolder(inflater.inflate(R.layout.message_receiver, parent, false))
         }
     }
 
-//    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-//        when (holder) {
-//            is DateViewHolder -> holder.bind(items[position] as String)
-//            is MessageViewHolder -> holder.bind(items[position] as ChatMessage)
-//        }
-//    }
 
     class DateViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val tvDate: TextView = view.findViewById(R.id.tvDate)
-        fun bind(label: String) { tvDate.text = label }
+        fun bind(label: String) {
+            tvDate.text = label
+        }
     }
 
     class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -114,10 +103,8 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         fun bind(message: ChatMessageEntity) {
             tvMessage.text = message.message
             tvSender?.text = message.senderName
-            tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
-//            message.timestamp?.let {
-//                tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(it.toDate())
-//            }
+            tvTime.text =
+                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
         }
     }
 }

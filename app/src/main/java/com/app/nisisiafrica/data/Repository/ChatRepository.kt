@@ -11,6 +11,7 @@ import com.google.firebase.ai.ai
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -137,15 +138,22 @@ class ChatRepository(private val appDatabase: AppDatabase) {
     }
 
     // Sync Firestore messages → Room on open
+    private var listenerRegistration: ListenerRegistration? = null
+
     fun syncMessages(chatroomId: String) {
-        FirebaseFirestore.getInstance()
+
+        listenerRegistration?.remove()
+
+        listenerRegistration = FirebaseFirestore.getInstance()
             .collection("chatRooms").document(chatroomId)
             .collection("messages")
             .orderBy("timestamp", Query.Direction.ASCENDING)
             .limit(50)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) return@addSnapshotListener
+
                 val messages = snapshot?.toObjects(ChatMessage::class.java) ?: return@addSnapshotListener
+
                 scope.launch {
                     messages.forEach { msg ->
                         dao.insert(ChatMessageEntity(
@@ -161,4 +169,28 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                 }
             }
     }
+//    fun syncMessages(chatroomId: String) {
+//        FirebaseFirestore.getInstance()
+//            .collection("chatRooms").document(chatroomId)
+//            .collection("messages")
+//            .orderBy("timestamp", Query.Direction.ASCENDING)
+//            .limit(50)
+//            .addSnapshotListener { snapshot, e ->
+//                if (e != null) return@addSnapshotListener
+//                val messages = snapshot?.toObjects(ChatMessage::class.java) ?: return@addSnapshotListener
+//                scope.launch {
+//                    messages.forEach { msg ->
+//                        dao.insert(ChatMessageEntity(
+//                            messageId = msg.messageId,
+//                            chatroomId = chatroomId,
+//                            senderId = msg.senderId,
+//                            senderName = msg.senderName,
+//                            message = msg.message,
+//                            timestamp = msg.timestamp?.toDate()?.time ?: System.currentTimeMillis(),
+//                            status = "sent"
+//                        ))
+//                    }
+//                }
+//            }
+//    }
 }

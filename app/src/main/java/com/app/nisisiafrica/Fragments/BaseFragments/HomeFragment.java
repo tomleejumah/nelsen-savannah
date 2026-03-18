@@ -76,7 +76,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -306,31 +305,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
 
 
-       /* mentorsAdapter.addLoadStateListener(loadState -> {
-            if (loadState.getRefresh() instanceof LoadState.NotLoading) {
-                rcMentors.post(() -> {
-                    ViewGroup.LayoutParams params = rcMentors.getLayoutParams();
-                    params.height = calculateRecyclerViewHeight();
-                    rcMentors.setLayoutParams(params);
-                });
-            }
-            return Unit.INSTANCE;
-        });
-
-
-
-
-        mentorsAdapter.addLoadStateListener(loadState -> {
-            if (loadState.getRefresh() instanceof LoadState.NotLoading) {
-                rcMentors.post(() -> {
-                    rcMentors.requestLayout();
-                });
-            }
-            return Unit.INSTANCE;
-        });
-
-        */
-
         view.findViewById(R.id.scrollView).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
             scrollChangeListener.onParentScroll(oldScrollY, scrollY);
         });
@@ -396,12 +370,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         notifCounter = view.findViewById(R.id.notifCounter);
         imgNotification = view.findViewById(R.id.imgNotification);
 
-        view.findViewById(R.id.btnRecMe).setOnClickListener(v->{
+        view.findViewById(R.id.btnRecMe).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
             startActivity(intent);
         });
 
-        view.findViewById(R.id.btnDonate).setOnClickListener(v->{
+        view.findViewById(R.id.btnDonate).setOnClickListener(v -> {
 
         });
 
@@ -409,7 +383,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         });
 
-        view.findViewById(R.id.btnBeMentor).setOnClickListener(v->{
+        view.findViewById(R.id.btnBeMentor).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), MentorApplicationActivity.class);
             startActivity(intent);
         });
@@ -590,6 +564,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //        }
 
     }
+
     private void getEvents(UserData userData, View view) {
 
         // 1. Set up the observer (only do this once)
@@ -630,7 +605,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //            } else {
 //                view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
 //                rvUpcomingEvents.setVisibility(View.VISIBLE);
-////                adapter.submitList(events);
+
+    /// /                adapter.submitList(events);
 //                List<Event> upcoming = events.stream()
 //                        .filter(e -> e.getDate() >= System.currentTimeMillis())
 //                        .limit(3)
@@ -640,7 +616,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //            view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
 //        });
 //    }
-
     @Override
     public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
 //    Collections.shuffle(courses);
