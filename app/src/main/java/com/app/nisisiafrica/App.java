@@ -1,13 +1,18 @@
 package com.app.nisisiafrica;
 
 import android.app.Application;
+import android.content.Intent;
 
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Utils.Util;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class App extends Application {
 
@@ -37,6 +42,27 @@ public class App extends Application {
         ProcessLifecycleOwner.get().getLifecycle()
                 .addObserver(new AppLifecycleObserver(this));
 
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    public void onAppForeground() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        try {
+            if (PinManager.hasPin(this, user.getUid()) && !LockScreenActivity.AppLockState.isUnlocked()) {
+                Intent intent = new Intent(this, LockScreenActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    public void onAppBackground() {
+        LockScreenActivity.AppLockState.lock(); // re-lock when backgrounded
     }
     public static AppDatabase getAppDatabase() {
         return appDatabase;

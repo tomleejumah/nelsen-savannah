@@ -49,19 +49,29 @@ class LauncherActivity : AppCompatActivity() {
                 }
 
                 else -> {
-                    // Force fresh truth from Firebase
                     user.reload().addOnSuccessListener {
 
                         if (user.isEmailVerified) {
-                            startActivity(
+                            val destination = if (PinManager.hasPin(this@LauncherActivity, user.uid)) {
+                                Intent(this@LauncherActivity, LockScreenActivity::class.java)
+                            } else {
                                 Intent(this@LauncherActivity, MainActivity::class.java)
-                            )
+                            }
+                            startActivity(destination)
                         } else {
-                            startActivity(
-                                Intent(this@LauncherActivity, VerifyEmailActivity::class.java)
-                            )
+                            startActivity(Intent(this@LauncherActivity, VerifyEmailActivity::class.java))
                         }
 
+//                        if (user.isEmailVerified) {
+//                            startActivity(
+//                                Intent(this@LauncherActivity, MainActivity::class.java)
+//                            )
+//                        } else {
+//                            startActivity(
+//                                Intent(this@LauncherActivity, VerifyEmailActivity::class.java)
+//                            )
+//                        }
+//
                         finish()
                     }
                     return@launch

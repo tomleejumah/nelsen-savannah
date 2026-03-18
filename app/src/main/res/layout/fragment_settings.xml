@@ -23,6 +23,7 @@
         app:layout_constraintTop_toBottomOf="@+id/toolbar_settings">
 
         <LinearLayout
+            android:layout_marginHorizontal="12dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -126,6 +127,20 @@
                 android:textSize="16sp"
                 android:drawableLeft="@drawable/ic_dark_mode"
                 android:text="Dark Mode" />
+
+            <Switch
+                android:layout_marginVertical="10dp"
+                android:layout_marginHorizontal="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="center_vertical"
+                android:layout_marginStart="16dp"
+                android:drawablePadding="19dp"
+                android:id="@+id/lockApp"
+                android:textSize="16sp"
+                android:drawableLeft="@drawable/ic_lock_nisisi"
+                android:text="Lock App" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/cl_language_options"
@@ -264,18 +279,7 @@
                     app:layout_constraintTop_toTopOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <androidx.cardview.widget.CardView
-                android:layout_marginTop="10dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginEnd="24dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -369,7 +373,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
 
             <LinearLayout
                 android:id="@+id/cl_version"
