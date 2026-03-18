@@ -1,33 +1,35 @@
-import express from 'express';
-import './config/firebase.js';
-import notificationRoutes from './routes/notifications.js';
-import chatRoutes from './routes/chat.js';
+import express from "express";
+import "./config/firebase.js";
+import notificationRoutes from "./routes/notifications.js";
+import chatRoutes from "./routes/chat.js";
+import diditRoute from "./routes/diditRoute.js";
 
 const app = express();
 app.use(express.json());
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    service: 'nisisi-africa',
-    timestamp: new Date().toISOString() 
+app.get("/health", (req, res) => {
+  res.json({
+    status: "OK",
+    service: "nisisi-africa",
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Routes
-app.use('/notifications', notificationRoutes);
-app.use('/chat', chatRoutes);
+app.use("/notifications", notificationRoutes);
+app.use("/chat", chatRoutes);
+app.use("/didit", diditRoute);
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: "Route not found" });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error("Error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5002;
