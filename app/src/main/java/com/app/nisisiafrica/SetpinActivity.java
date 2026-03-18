@@ -1,11 +1,7 @@
 package com.app.nisisiafrica;
 
 import android.os.Bundle;
-import android.text.InputType;
-import android.view.Gravity;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,8 +14,15 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class SetpinActivity extends AppCompatActivity {
-    private EditText pinInput, confirmInput;
+
+    private View[] dots;
+    private final StringBuilder pin = new StringBuilder();
+    private static final int PIN_LENGTH = 6;
+
+    private String firstPin = null;
+    private boolean confirming = false;
     private String uid;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,70 +33,98 @@ public class SetpinActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        // Build UI programmatically
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setGravity(Gravity.CENTER);
-        layout.setPadding(64, 64, 64, 64);
+        dots = new View[]{
+                findViewById(R.id.dot1),
+                findViewById(R.id.dot2),
+                findViewById(R.id.dot3),
+                findViewById(R.id.dot4),
+                findViewById(R.id.dot5),
+                findViewById(R.id.dot6)
+        };
 
-        TextView title = new TextView(this);
-        title.setText("Set App PIN");
-        title.setTextSize(20);
-        title.setGravity(Gravity.CENTER);
+        int[] keys = {
+                R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3,
+                R.id.btn4, R.id.btn5, R.id.btn6, R.id.btn7,
+                R.id.btn8, R.id.btn9
+        };
 
-        pinInput = new EditText(this);
-        pinInput.setHint("Enter PIN");
-        pinInput.setInputType(InputType.TYPE_CLASS_NUMBER
-                | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-        pinInput.setGravity(Gravity.CENTER);
+        for (int id : keys) {
+            findViewById(id).setOnClickListener(v ->
+                    addDigit(((TextView) v).getText().toString()));
+        }
 
-        confirmInput = new EditText(this);
-        confirmInput.setHint("Confirm PIN");
-        confirmInput.setInputType(InputType.TYPE_CLASS_NUMBER
-                | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-        confirmInput.setGravity(Gravity.CENTER);
-
-        Button saveBtn = new Button(this);
-        saveBtn.setText("Save PIN");
-        saveBtn.setOnClickListener(v -> savePin());
-
-        layout.addView(title);
-        layout.addView(pinInput);
-        layout.addView(confirmInput);
-        layout.addView(saveBtn);
-
-        setContentView(layout);
+        findViewById(R.id.btnDelete).setOnClickListener(v -> removeDigit());
+        findViewById(R.id.ivBack).setOnClickListener(v -> {
+            setResult(RESULT_CANCELED);
+            finish();
+        });
     }
 
-    private void savePin() {
-        String pin = pinInput.getText().toString().trim();
-        String confirm = confirmInput.getText().toString().trim();
+    private void addDigit(String digit) {
+        if (pin.length() >= PIN_LENGTH) return;
+        pin.append(digit);
+        updateDots();
+        if (pin.length() == PIN_LENGTH) handleSetMode();
+    }
 
-        if (pin.isEmpty() || pin.length() < 4) {
-            Toast.makeText(this, "PIN must be at least 4 digits", Toast.LENGTH_SHORT).show();
-            return;
+    private void handleSetMode() {
+        String entered = pin.toString();
+        if (!confirming) {
+            firstPin = entered;
+            confirming = true;
+            reset();
+            toast("Re-enter PIN");
+        } else {
+            if (entered.equals(firstPin)) {
+                try {
+                    PinManager.savePin(this, uid, entered);
+                    toast("PIN set");
+                    setResult(RESULT_OK);
+                    finish();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    toast("Failed to save PIN");
+                }
+            } else {
+                toast("PINs do not match");
+                confirming = false;
+                firstPin = null;
+                reset();
+            }
         }
+    }
 
-        if (!pin.equals(confirm)) {
-            Toast.makeText(this, "PINs do not match", Toast.LENGTH_SHORT).show();
-            return;
+    private void removeDigit() {
+        if (pin.length() > 0) {
+            pin.deleteCharAt(pin.length() - 1);
+            updateDots();
         }
+    }
 
-        try {
-            PinManager.savePin(this, uid, pin);
-            Toast.makeText(this, "PIN set successfully", Toast.LENGTH_SHORT).show();
-            setResult(RESULT_OK); // signal success back to settings
-            finish();
-        } catch (Exception e) {
-            e.printStackTrace();
+    private void reset() {
+        pin.setLength(0);
+        updateDots();
+    }
+
+    private void updateDots() {
+        for (int i = 0; i < dots.length; i++) {
+            dots[i].setBackgroundResource(
+                    i < pin.length()
+                            ? R.drawable.pin_dot_filled
+                            : R.drawable.pin_dot_empty
+            );
         }
+    }
+
+    private void toast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onBackPressed() {
-        // If user backs out without setting PIN, signal cancel
         setResult(RESULT_CANCELED);
         super.onBackPressed();
     }

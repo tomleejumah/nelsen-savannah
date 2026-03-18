@@ -2,11 +2,7 @@ package com.app.nisisiafrica;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.InputType;
-import android.view.Gravity;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,9 +18,11 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class LockScreenActivity extends AppCompatActivity {
+
     private String uid;
-    private boolean biometricAvailable;
-    private EditText pinInput;
+    private View[] dots;
+    private final StringBuilder pin = new StringBuilder();
+    private static final int PIN_LENGTH = 6;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,13 +34,33 @@ public class LockScreenActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        biometricAvailable = isBiometricAvailable();
 
-        if (biometricAvailable) {
+        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        dots = new View[]{
+                findViewById(R.id.dot1),
+                findViewById(R.id.dot2),
+                findViewById(R.id.dot3),
+                findViewById(R.id.dot4),
+                findViewById(R.id.dot5),
+                findViewById(R.id.dot6)
+        };
+
+        int[] keys = {
+                R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3,
+                R.id.btn4, R.id.btn5, R.id.btn6, R.id.btn7,
+                R.id.btn8, R.id.btn9
+        };
+
+        for (int id : keys) {
+            findViewById(id).setOnClickListener(v ->
+                    addDigit(((TextView) v).getText().toString()));
+        }
+
+        findViewById(R.id.btnDelete).setOnClickListener(v -> removeDigit());
+
+        if (isBiometricAvailable()) {
             showBiometricPrompt();
-        } else {
-            showPinUI();
         }
     }
 
@@ -68,50 +86,46 @@ public class LockScreenActivity extends AppCompatActivity {
 
                     @Override
                     public void onAuthenticationError(int code, CharSequence msg) {
-                        if (code == BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
-                            showPinUI(); // fallback to PIN
-                        }
+                        // user dismissed, falls back to PIN UI already visible
                     }
                 });
 
         prompt.authenticate(info);
     }
 
-    private void showPinUI() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setGravity(Gravity.CENTER);
-        layout.setPadding(64, 64, 64, 64);
+    private void addDigit(String digit) {
+        if (pin.length() >= PIN_LENGTH) return;
+        pin.append(digit);
+        updateDots();
+        if (pin.length() == PIN_LENGTH) verifyPin();
+    }
 
-        TextView title = new TextView(this);
-        title.setText("Enter PIN to unlock");
-        title.setTextSize(18);
-        title.setGravity(Gravity.CENTER);
+    private void removeDigit() {
+        if (pin.length() > 0) {
+            pin.deleteCharAt(pin.length() - 1);
+            updateDots();
+        }
+    }
 
-        pinInput = new EditText(this);
-        pinInput.setHint("PIN");
-        pinInput.setInputType(InputType.TYPE_CLASS_NUMBER
-                | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-        pinInput.setGravity(Gravity.CENTER);
-
-        Button unlockBtn = new Button(this);
-        unlockBtn.setText("Unlock");
-        unlockBtn.setOnClickListener(v -> verifyPin());
-
-        layout.addView(title);
-        layout.addView(pinInput);
-        layout.addView(unlockBtn);
-
-        setContentView(layout);
+    private void updateDots() {
+        for (int i = 0; i < dots.length; i++) {
+            dots[i].setBackgroundResource(
+                    i < pin.length()
+                            ? R.drawable.pin_dot_filled
+                            : R.drawable.pin_dot_empty
+            );
+        }
     }
 
     private void verifyPin() {
         try {
             String stored = PinManager.getPin(this, uid);
-            if (pinInput.getText().toString().equals(stored)) {
+            if (pin.toString().equals(stored)) {
                 unlockSuccess();
             } else {
                 Toast.makeText(this, "Wrong PIN", Toast.LENGTH_SHORT).show();
+                pin.setLength(0);
+                updateDots();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,23 +140,14 @@ public class LockScreenActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // Block back — force auth
+        // block back
     }
 
-    // AppLockState.java
     public static class AppLockState {
         private static boolean unlocked = false;
 
-        public static boolean isUnlocked() {
-            return unlocked;
-        }
-
-        public static void setUnlocked(boolean val) {
-            unlocked = val;
-        }
-
-        public static void lock() {
-            unlocked = false;
-        }
+        public static boolean isUnlocked() { return unlocked; }
+        public static void setUnlocked(boolean val) { unlocked = val; }
+        public static void lock() { unlocked = false; }
     }
 }
