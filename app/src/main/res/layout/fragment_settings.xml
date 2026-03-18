@@ -37,6 +37,59 @@
                 android:text="General"
                 android:textSize="12sp" />
 
+
+            <RelativeLayout
+                android:id="@+id/cardVerifyProfile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/card_background"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:background="@drawable/pin_button"
+                    android:id="@+id/icon_verification"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_user"
+                    android:layout_centerVertical="true" />
+
+                <TextView
+                    android:id="@+id/text_verification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Verification progress"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:layout_toEndOf="@id/icon_verification"
+                    android:layout_marginStart="16dp"
+                    android:layout_centerVertical="true" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Not verified"
+                    android:id="@+id/txtVerificationStatus"
+                    android:textSize="12sp"
+                    android:textColor="#FF4444"
+                    android:background="@drawable/badge_background"
+                    android:padding="6dp"
+                    android:layout_toStartOf="@id/arrow_verification"
+                    android:layout_marginEnd="8dp"
+                    android:layout_centerVertical="true" />
+
+                <ImageView
+                    android:rotation="180"
+                    android:id="@+id/arrow_verification"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/cl_share_app"
                 android:layout_width="match_parent"

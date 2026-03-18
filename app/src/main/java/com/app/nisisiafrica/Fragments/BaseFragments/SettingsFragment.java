@@ -2,39 +2,64 @@ package com.app.nisisiafrica.Fragments.BaseFragments;
 
 import static android.app.Activity.RESULT_OK;
 
+import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CompoundButton;
+import android.widget.RelativeLayout;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.CompoundButton;
-import android.widget.Switch;
-import android.widget.Toast;
-
+import com.app.nisisiafrica.Constants;
+import com.app.nisisiafrica.DiditVerificationHandler;
+import com.app.nisisiafrica.Interfaces.KYCCallBack;
 import com.app.nisisiafrica.LockScreenActivity;
 import com.app.nisisiafrica.PinManager;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SetpinActivity;
+import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
+
+import kotlin.Unit;
 
 public class SettingsFragment extends Fragment {
     private static final String URL_LINKEDIN = "https://www.linkedin.com/company/nisisi-africa-org/";
     private static final String URL_INSTAGRAM = "https://www.instagram.com/nisisiafrica_org?igsh=MWo0a3NlbGVlaWptNw==";
     private static final String URL_FACEBOOK = "https://www.facebook.com/nisisiafrica";
     private static final String URL_YOUTUBE = "https://youtube.com/@nisisiafrica_org?si=oV0mIGg3uSOGEMi7";
-
+     private DiditVerificationHandler handler;
+    private ProgressDialog loadingDialog;
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
     private Switch lockSwitch;
     private String uid;
     private CompoundButton.OnCheckedChangeListener lockListener;
     private ActivityResultLauncher<Intent> setPinLauncher;
+    private KYCCallBack backendApi =
+            ApiClient.getClient().create(KYCCallBack.class);
+    public static void rateApp(Context context) {
+        try {
+            Intent rateIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + context.getPackageName()));
+            context.startActivity(rateIntent);
+        } catch (ActivityNotFoundException e) {
+            Intent rateIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + context.getPackageName()));
+            context.startActivity(rateIntent);
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -64,6 +89,36 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.btn_instagram).setOnClickListener(v -> openUrlInBrowser(URL_INSTAGRAM));
         view.findViewById(R.id.btn_youtube).setOnClickListener(v -> openUrlInBrowser(URL_YOUTUBE));
         view.findViewById(R.id.btn_facebook).setOnClickListener(v -> openUrlInBrowser(URL_FACEBOOK));
+
+        RelativeLayout cardVerifyProfile = view.findViewById(R.id.cardVerifyProfile);
+//        cardVerifyProfile.setVisibility(Util.getState(Constants.USER_ROLE,"Mentee")
+//                .equals("Mentee") ? View.GONE : View.VISIBLE);
+
+        handler = new DiditVerificationHandler(
+                requireActivity(),
+                backendApi,
+                s -> {
+                    updateVerificationUI(s);
+                    return Unit.INSTANCE;
+                }
+        );
+        // Setup loading dialog
+        loadingDialog = new ProgressDialog(requireContext());
+        loadingDialog.setMessage("Preparing verification...");
+        loadingDialog.setCancelable(false);
+
+            handler.checkStatus(s -> {
+                updateVerificationUI(s);
+                return Unit.INSTANCE;
+            });
+
+        view.findViewById(R.id.cardVerifyProfile).setOnClickListener(v -> {
+            loadingDialog.show();
+            handler.startVerification(() -> {
+                loadingDialog.dismiss();
+                return Unit.INSTANCE;
+            });
+        });
 
         lockListener = (buttonView, isChecked) -> {
             if (isChecked) {
@@ -111,16 +166,6 @@ public class SettingsFragment extends Fragment {
         }
     }
 
-    public static void rateApp(Context context) {
-        try {
-            Intent rateIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + context.getPackageName()));
-            context.startActivity(rateIntent);
-        } catch (ActivityNotFoundException e) {
-            Intent rateIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + context.getPackageName()));
-            context.startActivity(rateIntent);
-        }
-    }
-
     public void openLinkedIn(View view) {
         openUrlInBrowser(URL_LINKEDIN);
     }
@@ -141,5 +186,67 @@ public class SettingsFragment extends Fragment {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(url));
         startActivity(intent);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (handler == null) {
+            handler = new DiditVerificationHandler(
+                    requireActivity(),
+                    backendApi,
+                    s -> {
+                        updateVerificationUI(s);
+                        return Unit.INSTANCE;
+                    });
+        }
+        handler.listenToStatus();
+        handler.checkStatus(s -> {
+            updateVerificationUI(s);
+            return Unit.INSTANCE;
+        });
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (handler != null) {
+            handler.stopListening();
+        }
+    }
+
+    private void updateVerificationUI(String status) {
+        requireActivity().runOnUiThread(() -> {
+            TextView statusText = getView().findViewById(R.id.txtVerificationStatus);
+            View verifyCard = getView().findViewById(R.id.cardVerifyProfile);
+
+            switch (status) {
+                case "approved":
+                    statusText.setText(" Verified");
+                    statusText.setBackgroundResource(R.drawable.badge_background_green);
+                    statusText.setTextColor(Color.parseColor("#00AA00"));
+                    verifyCard.setEnabled(false);
+                    break;
+                case "pending":
+                    statusText.setText("Pending review");
+                    verifyCard.setEnabled(false);
+                    break;
+                case "rejected":
+                    statusText.setText("Rejected - Retry");
+                    verifyCard.setEnabled(true);
+                    break;
+                default:
+                    statusText.setText("Not verified");
+                    verifyCard.setEnabled(true);
+            }
+        });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (handler != null) {
+            handler.cleanup();
+        }
     }
 }
