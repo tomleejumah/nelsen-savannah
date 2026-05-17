@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -17,7 +18,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.ConcatAdapter;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.ChatAdapter;
 import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
@@ -25,12 +28,14 @@ import com.app.nisisiafrica.Adapters.PinnedChatAdapter;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
+import com.app.nisisiafrica.Interfaces.SwipeToReplyCallback;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModel;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModelFactory;
 import com.app.nisisiafrica.ViewModel.ChatViewModel;
+import com.app.nisisiafrica.data.Model.ChatMessageEntity;
 import com.app.nisisiafrica.data.Model.ChatNotificationRequest;
 import com.app.nisisiafrica.data.Model.Chatroom;
 import com.app.nisisiafrica.data.Model.NotificationResponse;
@@ -186,6 +191,53 @@ public class ChatFragment extends Fragment {
         viewModel = new ViewModelProvider(this, new ChatViewModel.Factory(repo))
                 .get(ChatViewModel.class);
         adapter = new ChatAdapter();
+
+
+        // swipe to reply
+        // in startRealtimeMessages, after setting adapter
+        binding.rvMessages.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+            private float startX, startY;
+
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+                switch (e.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        startX = e.getX();
+                        startY = e.getY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = Math.abs(e.getX() - startX);
+                        float dy = Math.abs(e.getY() - startY);
+                        if (dx > dy && dx > 10) {
+                            // horizontal swipe — block panels from stealing it
+                            rv.getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        rv.getParent().requestDisallowInterceptTouchEvent(false);
+                        break;
+                }
+                return false;
+            }
+
+            @Override
+            public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {}
+
+            @Override
+            public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {}
+        });
+//        SwipeToReplyCallback swipeCallback = new SwipeToReplyCallback(
+//                requireContext(),
+//                position -> {
+//                    Object item = adapter.getItemAt(position);
+//                    if (item instanceof ChatMessageEntity) {
+//                        triggerReply((ChatMessageEntity) item);
+//                    }
+//                    return Unit.INSTANCE;
+//                }
+//        );
+//        new ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvMessages);
          binding.rvMessages.setAdapter(adapter);
          binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -197,6 +249,20 @@ public class ChatFragment extends Fragment {
                 binding.rvMessages.smoothScrollToPosition(messages.size() - 1);
         });
     }
+
+    private ChatMessageEntity replyingTo = null;
+
+    private void triggerReply(ChatMessageEntity message) {
+        replyingTo = message;
+        binding.replyPreview.setVisibility(View.VISIBLE);
+        binding.tvReplyText.setText(message.getMessage());
+        binding.tvReplySender.setText(message.getSenderName());
+        binding.btnCancelReply.setOnClickListener(v -> {
+            replyingTo = null;
+            binding.replyPreview.setVisibility(View.GONE);
+        });
+    }
+
     private void setupSendAction(String chatId, Chatroom chatroom) {
         binding.btnSend.setOnClickListener(v -> {
             String msg = binding.etMessage.getText().toString().trim();
