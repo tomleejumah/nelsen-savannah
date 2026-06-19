@@ -28,7 +28,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
+import com.app.nisisiafrica.Auth.GoogleSignInMode;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
+import com.app.nisisiafrica.Auth.GoogleSignInMode;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.MainActivity;
@@ -98,8 +100,12 @@ public class SignUpFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
 
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
-//            Util.saveState(Constants.USER_ID, userData.getId());
             sharedUserViewModel.saveUserData(userData);
+            sharedUserViewModel.setUserData(userData);
+            Util.saveState(Constants.CURRENT_USER_ID, userData.getId());
+            String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
+                    ? userData.getFirstName() : "there";
+            snackbarHandler.showSnackbar("Welcome, " + name + "!", Snackbar.LENGTH_LONG, 4);
             Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
@@ -142,7 +148,7 @@ public class SignUpFragment extends Fragment {
 
         binding.facebookBtn.setOnClickListener(v -> {
             List<String> permissions = Arrays.asList("email", "public_profile");
-            Util.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
+            Util.setClickAnimation(v, () -> facebookAuthHelper.signIn(GoogleSignInMode.REGISTER, permissions));
         });
 
         EditText firstName = view.findViewById(R.id.FirstNameEditText);
@@ -233,7 +239,7 @@ public class SignUpFragment extends Fragment {
                     emailCheckIcon.setImageResource(R.drawable.ic_error);
                     Util.shakeView(view.findViewById(R.id.emailLayout));
                     emailCheckIcon.setVisibility(View.VISIBLE);
-                } else if (Util.isValidPassword(password)) {
+                } else if (Util.isPasswordTooShort(password)) {
                     Util.shakeView(view.findViewById(R.id.passwordLayout));
                     snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
                 } else {
@@ -374,37 +380,48 @@ public class SignUpFragment extends Fragment {
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,
+                GoogleSignInMode.REGISTER,
                 userData -> {
-             // Save to Firebase Realtime Database
-                    goToNextActivity(userData);
-
+                    FirebaseDatabase.getInstance().getReference("users").child(userData.getId()).get()
+                            .addOnCompleteListener(task -> {
+                                boolean exists = task.isSuccessful() && task.getResult().exists();
+                                goToNextActivity(userData, exists);
+                            });
                     return Unit.INSTANCE;
                 },
                 exception -> {
-                    // Handle error
                     Log.e("Auth", "Sign in failed", exception);
-                    snackbarHandler.showSnackbar("Sign in failed", Snackbar.LENGTH_SHORT, 3);
+                    snackbarHandler.showSnackbar(exception.getMessage() != null
+                            ? exception.getMessage() : "Sign in failed", Snackbar.LENGTH_SHORT, 3);
                     return Unit.INSTANCE;
                 }
         );
     }
-    private void goToNextActivity(UserData userData) {
+
+    private void goToNextActivity(UserData userData, boolean isExistingUser) {
         googleAuthHelper.saveUserToFirebase(
                 userData,
                 isSuccess -> {
                     if (isSuccess) {
-                        // Navigate to the next activity
-                        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                        userData.setId(userId);
+                        FirebaseUser authUser = FirebaseAuth.getInstance().getCurrentUser();
+                        if (authUser != null) {
+                            userData.setId(authUser.getUid());
+                            Util.saveState(Constants.CURRENT_USER_ID, authUser.getUid());
+                        }
                         sharedUserViewModel.setUserData(userData);
                         sharedUserViewModel.saveUserData(userData);
-                        Util.saveState(Constants.CURRENT_USER_ID,FirebaseAuth.getInstance().getCurrentUser().getUid());
+                        String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
+                                ? userData.getFirstName() : "there";
+                        String message = isExistingUser
+                                ? "Welcome back, " + name + "!"
+                                : "Welcome, " + name + "!";
+                        snackbarHandler.showSnackbar(message, Snackbar.LENGTH_LONG, 4);
                         Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
                     }
                     return Unit.INSTANCE;
                 },
                 exception -> {
-                    Log.e("Firebase", "Error saving user", exception);
+                    snackbarHandler.showSnackbar("Could not save account. Please try again.", Snackbar.LENGTH_SHORT, 3);
                     return Unit.INSTANCE;
                 }
         );

@@ -38,12 +38,18 @@ public class Util {
                 "*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$").matcher(email).matches();
     }
 
-    public static boolean isValidPassword(String password) {
+    public static boolean isPasswordTooShort(String password) {
         return password.length() < 6;
     }
 
+    /** @deprecated Use {@link #isPasswordTooShort(String)} — returns true when password is invalid. */
+    @Deprecated
+    public static boolean isValidPassword(String password) {
+        return isPasswordTooShort(password);
+    }
+
     public static <T> T getState( String key, T defValue) {
-//        if (appContext == null) throw new IllegalStateException("Utils not initialized");
+        if (appContext == null) throw new IllegalStateException("Utils not initialized");
         SharedPreferences preferences = appContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
 //        SharedPreferences preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         Object result;

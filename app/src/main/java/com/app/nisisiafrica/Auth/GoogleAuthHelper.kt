@@ -18,11 +18,14 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 
+enum class GoogleSignInMode {
+    LOGIN, REGISTER
+}
+
 class GoogleAuthHelper(
     private val activity: Activity,
     private val launcher: ActivityResultLauncher<Intent>,
     private val webClientId: String
-
 ) {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
@@ -36,12 +39,12 @@ class GoogleAuthHelper(
     }
 
     fun signIn() {
-        val signInIntent = googleSignInClient.signInIntent
-        launcher.launch(signInIntent)
+        launcher.launch(googleSignInClient.signInIntent)
     }
 
     fun handleSignInResult(
         data: Intent?,
+        mode: GoogleSignInMode,
         onSuccess: (UserData) -> Unit,
         onError: (Exception) -> Unit
     ) {
@@ -49,7 +52,6 @@ class GoogleAuthHelper(
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)
 
-            // Get Google Sign In data
             val userData = UserData(
                 id = account.id ?: "",
                 email = account.email ?: "",
@@ -58,39 +60,116 @@ class GoogleAuthHelper(
                 lastName = account.familyName ?: "",
                 photoUrl = account.photoUrl?.toString() ?: "",
                 bio = ""
-//                idToken = account.idToken ?: ""
             )
 
-            // Sign in to Firebase
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             auth.signInWithCredential(credential)
                 .addOnSuccessListener { authResult ->
-                    val userId = authResult.user?.uid ?: return@addOnSuccessListener
+                    val userId = authResult.user?.uid
+                    if (userId == null) {
+                        onError(IllegalStateException("Sign-in failed. Please try again."))
+                        return@addOnSuccessListener
+                    }
                     Util.saveState(Constants.CURRENT_USER_ID, userId)
                     userData.id = userId
-
-                    FirebaseRemoteDataSource.getOrAssignUserRole(
-                        firebaseUserId = userId,
-                        onSuccess = { role ->
-                            // User role fetched/assigned successfully
-                            userData.userRole = role
-                            onSuccess(userData)
-                        },
-                        onError = { exception ->
-                            Log.e("ROLE", "Error getting role: ${exception.message}")
-                        }
-                    )
-
+                    handlePostAuth(userId, userData, mode, onSuccess, onError)
                 }
-                .addOnFailureListener { exception ->
-                    onError(exception)
-                }
-
-
+                .addOnFailureListener { exception -> onError(exception) }
         } catch (e: ApiException) {
             onError(e)
             Log.e(TAG, "signInResult:failed code=${e.statusCode}")
         }
+    }
+
+    private fun handlePostAuth(
+        userId: String,
+        userData: UserData,
+        mode: GoogleSignInMode,
+        onSuccess: (UserData) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+        usersRef.get().addOnCompleteListener { task ->
+            val exists = task.isSuccessful && task.result.exists()
+
+            when (mode) {
+                GoogleSignInMode.LOGIN -> {
+                    if (!exists) {
+                        signOutFirebaseAndGoogle {
+                            onError(Exception("No account found. Please register first."))
+                        }
+                        return@addOnCompleteListener
+                    }
+                    loadExistingUser(userId, userData, onSuccess, onError)
+                }
+                GoogleSignInMode.REGISTER -> {
+                    if (exists) {
+                        loadExistingUser(userId, userData, onSuccess, onError)
+                    } else {
+                        assignRoleAndComplete(userId, userData, onSuccess, onError)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadExistingUser(
+        userId: String,
+        fallback: UserData,
+        onSuccess: (UserData) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        FirebaseRemoteDataSource.getRemoteUserData(
+            userId,
+            onSuccess = { remote ->
+                val resolved = remote ?: fallback
+                FirebaseRemoteDataSource.getOrAssignUserRole(
+                    firebaseUserId = userId,
+                    onSuccess = { role ->
+                        resolved.userRole = role
+                        resolved.id = userId
+                        FirebaseDatabase.getInstance()
+                            .getReference("users")
+                            .child(userId)
+                            .child("lastLogin")
+                            .setValue(ServerValue.TIMESTAMP)
+                        onSuccess(resolved)
+                    },
+                    onError = { e ->
+                        Log.e(TAG, "Role fetch failed", e)
+                        onError(e)
+                    }
+                )
+            },
+            onError = { e ->
+                Log.e(TAG, "Remote user fetch failed", e)
+                onError(e)
+            }
+        )
+    }
+
+    private fun assignRoleAndComplete(
+        userId: String,
+        userData: UserData,
+        onSuccess: (UserData) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        FirebaseRemoteDataSource.getOrAssignUserRole(
+            firebaseUserId = userId,
+            onSuccess = { role ->
+                userData.userRole = role
+                onSuccess(userData)
+            },
+            onError = { e ->
+                Log.e(TAG, "Role assignment failed", e)
+                onError(e)
+            }
+        )
+    }
+
+    private fun signOutFirebaseAndGoogle(onComplete: () -> Unit) {
+        auth.signOut()
+        googleSignInClient.signOut().addOnCompleteListener { onComplete() }
     }
 
     fun getCurrentUser(): FirebaseUser? = auth.currentUser
@@ -98,17 +177,8 @@ class GoogleAuthHelper(
     fun isUserSignedIn(): Boolean = auth.currentUser != null
 
     fun signOut(onComplete: () -> Unit) {
-        googleSignInClient.signOut().addOnCompleteListener {
-            onComplete()
-        }
-    }
-
-    private fun isMailSignedIn(): Boolean {
-        return GoogleSignIn.getLastSignedInAccount(activity) != null
-    }
-
-    companion object {
-        private const val TAG = "GoogleAuthHelper"
+        auth.signOut()
+        googleSignInClient.signOut().addOnCompleteListener { onComplete() }
     }
 
     fun saveUserToFirebase(
@@ -117,19 +187,25 @@ class GoogleAuthHelper(
         onError: (Exception) -> Unit
     ) {
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
-        val loggedInUser = FirebaseAuth.getInstance().currentUser?.uid
-        usersRef.child(loggedInUser.toString()).get().addOnCompleteListener { task ->
+        val loggedInUser = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+            onError(IllegalStateException("Not signed in"))
+            return
+        }
+        usersRef.child(loggedInUser).get().addOnCompleteListener { task ->
             if (task.isSuccessful && task.result.exists()) {
-                Log.d("FirebaseDB", "User already exists, updating last login (Google)")
-                usersRef.child(loggedInUser.toString()).child("lastLogin").setValue(ServerValue.TIMESTAMP)
-                //todo only update this if profile dp flag is not updated
-                usersRef.child(loggedInUser.toString()).child("photoUrl").setValue(userData.photoUrl)
+                Log.d(TAG, "User already exists, updating last login (Google)")
+                usersRef.child(loggedInUser).child("lastLogin").setValue(ServerValue.TIMESTAMP)
+                usersRef.child(loggedInUser).child("photoUrl").setValue(userData.photoUrl)
                 onSuccess(true)
             } else {
-                Log.d("FirebaseDB", "User does not exist, saving new user (Google)")
-                userData.id = loggedInUser.toString()
+                Log.d(TAG, "Saving new user (Google)")
+                userData.id = loggedInUser
                 FirebaseRemoteDataSource.saveOrUpdateUser(userData, usersRef, onSuccess, onError)
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "GoogleAuthHelper"
     }
 }

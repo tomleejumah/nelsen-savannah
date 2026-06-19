@@ -4,8 +4,10 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import com.app.nisisiafrica.Constants
 import com.app.nisisiafrica.data.Model.UserData
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
+import com.app.nisisiafrica.Utils.Util
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -23,19 +25,17 @@ import com.google.firebase.database.ServerValue
 class FacebookAuthHelper(private val activity: Activity) {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val callbackManager: CallbackManager = CallbackManager.Factory.create()
+    private var signInMode: GoogleSignInMode = GoogleSignInMode.LOGIN
+
+    private val onLoginSuccessListeners = mutableListOf<(UserData) -> Unit>()
+    private val onLoginErrorListeners = mutableListOf<(Exception) -> Unit>()
 
     init {
-        // Initialize Facebook SDK if not already initialized
         if (!FacebookSdk.isInitialized()) {
             FacebookSdk.sdkInitialize(activity.applicationContext)
         }
-    }
-
-    fun signIn(permissions: List<String> = listOf("email", "public_profile")) {
-        LoginManager.getInstance().logInWithReadPermissions(activity, permissions)
         LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
             override fun onSuccess(result: LoginResult) {
-                Log.d(TAG, "facebook:onSuccess:$result")
                 handleFacebookAccessToken(result.accessToken)
             }
 
@@ -45,90 +45,22 @@ class FacebookAuthHelper(private val activity: Activity) {
 
             override fun onError(error: FacebookException) {
                 Log.e(TAG, "facebook:onError", error)
+                notifyError(error)
             }
         })
     }
 
+    fun signIn(
+        mode: GoogleSignInMode = GoogleSignInMode.LOGIN,
+        permissions: List<String> = listOf("email", "public_profile")
+    ) {
+        signInMode = mode
+        LoginManager.getInstance().logInWithReadPermissions(activity, permissions)
+    }
+
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        // Pass the activity result back to the Facebook SDK
         callbackManager.onActivityResult(requestCode, resultCode, data)
     }
-
-    private fun handleFacebookAccessToken(token: AccessToken) {
-        Log.d(TAG, "handleFacebookAccessToken:$token")
-
-        val credential = FacebookAuthProvider.getCredential(token.token)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(activity) { task ->
-                if (task.isSuccessful) {
-                    // Sign in success
-                    Log.d(TAG, "signInWithCredential:success")
-                    val firebaseUser = auth.currentUser
-                    firebaseUser?.let {
-                        // Call Graph API to fetch additional user info then save user data
-                        fetchGraphDataAndSaveUser(it, token)
-                    }
-                } else {
-                    // If sign in fails, display a message to the user.
-                    Log.w(TAG, "signInWithCredential:failure", task.exception)
-                    onLoginErrorListeners.forEach { listener -> listener.invoke(task.exception ?: Exception("Unknown error")) }
-                }
-            }
-    }
-    private fun fetchGraphDataAndSaveUser(firebaseUser: FirebaseUser, token: AccessToken) {
-        val request = GraphRequest.newMeRequest(token) { jsonObject, response ->
-            // Extract additional user info from the Graph API response
-            val firstName = jsonObject?.optString("first_name") ?: ""
-            val lastName = jsonObject?.optString("last_name") ?: ""
-            val displayName = jsonObject?.optString("name") ?: (firebaseUser.displayName ?: "")
-            val email = jsonObject?.optString("email") ?: (firebaseUser.email ?: "")
-
-            // Extract picture URL (using large image type)
-            val pictureUrl = jsonObject?.optJSONObject("picture")
-                ?.optJSONObject("data")
-                ?.optString("url") ?: (firebaseUser.photoUrl?.toString() ?: "")
-
-
-            val userData = UserData(
-                id = firebaseUser.uid,
-                email = email,
-//                userTYpe = "",
-                displayName = displayName,
-                firstName = firstName,
-                lastName = lastName,
-                photoUrl = pictureUrl,
-                bio = ""
-//                idToken = token.token
-            )
-
-//            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            val userId = firebaseUser.uid
-
-                FirebaseRemoteDataSource.getOrAssignUserRole(
-                    firebaseUserId = userId,
-                    onSuccess = { role ->
-                        userData.userRole = role
-                        // Save the updated user data to Firebase
-                        saveUserToFirebase(userData)
-                        onLoginSuccessListeners.forEach { listener ->
-                            listener.invoke(userData)
-                        }
-                    },
-                    onError = { exception ->
-                        Log.e("ROLE", "Error getting role: ${exception.message}")
-                    }
-                )
-        }
-
-        // Request additional fields from the Graph API
-        val parameters = Bundle()
-        parameters.putString("fields", "id,name,first_name,last_name,email,picture.type(large)")
-        request.parameters = parameters
-        request.executeAsync()
-    }
-
-    private val onLoginSuccessListeners = mutableListOf<(UserData) -> Unit>()
-    private val onLoginErrorListeners = mutableListOf<(Exception) -> Unit>()
 
     fun addOnLoginSuccessListener(listener: (UserData) -> Unit) {
         onLoginSuccessListeners.add(listener)
@@ -138,17 +70,115 @@ class FacebookAuthHelper(private val activity: Activity) {
         onLoginErrorListeners.add(listener)
     }
 
-    private fun extractUserData(firebaseUser: FirebaseUser, token: AccessToken): UserData {
-        return UserData(
-            id = firebaseUser.uid,
-            email = firebaseUser.email ?: "",
-            displayName = firebaseUser.displayName ?: "",
-            firstName = "",  // We can get this from Graph API if needed
-            lastName = "",   // We can get this from Graph API if needed
-            photoUrl = firebaseUser.photoUrl?.toString() ?: "",
-//            idToken = token.token
-            bio = ""
+    private fun handleFacebookAccessToken(token: AccessToken) {
+        val credential = FacebookAuthProvider.getCredential(token.token)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(activity) { task ->
+                if (task.isSuccessful) {
+                    val firebaseUser = auth.currentUser
+                    if (firebaseUser != null) {
+                        fetchGraphDataAndComplete(firebaseUser, token)
+                    } else {
+                        notifyError(IllegalStateException("Sign-in failed"))
+                    }
+                } else {
+                    notifyError(task.exception ?: Exception("Facebook sign-in failed"))
+                }
+            }
+    }
+
+    private fun fetchGraphDataAndComplete(firebaseUser: FirebaseUser, token: AccessToken) {
+        val request = GraphRequest.newMeRequest(token) { jsonObject, _ ->
+            val firstName = jsonObject?.optString("first_name") ?: ""
+            val lastName = jsonObject?.optString("last_name") ?: ""
+            val displayName = jsonObject?.optString("name") ?: (firebaseUser.displayName ?: "")
+            val email = jsonObject?.optString("email") ?: (firebaseUser.email ?: "")
+            val pictureUrl = jsonObject?.optJSONObject("picture")
+                ?.optJSONObject("data")
+                ?.optString("url") ?: (firebaseUser.photoUrl?.toString() ?: "")
+
+            val userData = UserData(
+                id = firebaseUser.uid,
+                email = email,
+                displayName = displayName,
+                firstName = firstName,
+                lastName = lastName,
+                photoUrl = pictureUrl,
+                bio = ""
+            )
+
+            Util.saveState(Constants.CURRENT_USER_ID, firebaseUser.uid)
+            handlePostAuth(firebaseUser.uid, userData)
+        }
+
+        val parameters = Bundle()
+        parameters.putString("fields", "id,name,first_name,last_name,email,picture.type(large)")
+        request.parameters = parameters
+        request.executeAsync()
+    }
+
+    private fun handlePostAuth(userId: String, userData: UserData) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+        usersRef.get().addOnCompleteListener { task ->
+            val exists = task.isSuccessful && task.result.exists()
+
+            when (signInMode) {
+                GoogleSignInMode.LOGIN -> {
+                    if (!exists) {
+                        auth.signOut()
+                        LoginManager.getInstance().logOut()
+                        notifyError(Exception("No account found. Please register first."))
+                        return@addOnCompleteListener
+                    }
+                    completeWithRole(userId, userData, updateOnly = true)
+                }
+                GoogleSignInMode.REGISTER -> {
+                    if (exists) {
+                        completeWithRole(userId, userData, updateOnly = true)
+                    } else {
+                        completeWithRole(userId, userData, updateOnly = false)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun completeWithRole(userId: String, userData: UserData, updateOnly: Boolean) {
+        FirebaseRemoteDataSource.getOrAssignUserRole(
+            firebaseUserId = userId,
+            onSuccess = { role ->
+                userData.userRole = role
+                if (updateOnly) {
+                    FirebaseDatabase.getInstance().getReference("users")
+                        .child(userId).child("lastLogin").setValue(ServerValue.TIMESTAMP)
+                    notifySuccess(userData)
+                } else {
+                    saveUserToFirebase(userData) { notifySuccess(userData) }
+                }
+            },
+            onError = { e ->
+                Log.e(TAG, "Role error", e)
+                notifyError(e)
+            }
         )
+    }
+
+    private fun saveUserToFirebase(userData: UserData, onComplete: () -> Unit) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+        FirebaseRemoteDataSource.saveOrUpdateUser(
+            userData,
+            usersRef,
+            onSuccess = { onComplete() },
+            onError = { e -> notifyError(e) }
+        )
+    }
+
+    private fun notifySuccess(userData: UserData) {
+        onLoginSuccessListeners.forEach { it.invoke(userData) }
+    }
+
+    private fun notifyError(exception: Exception) {
+        onLoginErrorListeners.forEach { it.invoke(exception) }
     }
 
     fun getCurrentUser(): FirebaseUser? = auth.currentUser
@@ -159,24 +189,6 @@ class FacebookAuthHelper(private val activity: Activity) {
         LoginManager.getInstance().logOut()
         auth.signOut()
         onComplete()
-    }
-    private fun saveUserToFirebase(
-        userData: UserData,
-        onSuccess: ((Boolean) -> Unit)?=null,
-        onError: ((Exception) -> Unit)?=null
-    ) {
-        val usersRef = FirebaseDatabase.getInstance().getReference("users")
-
-        usersRef.child(userData.id).get().addOnCompleteListener { task ->
-            if (task.isSuccessful && task.result.exists()) {
-                Log.d("FirebaseDB", "User already exists, updating last login (Facebook)")
-                usersRef.child(userData.id).child("lastLogin").setValue(ServerValue.TIMESTAMP)
-                onSuccess?.invoke(true)
-            } else {
-                Log.d("FirebaseDB", "User does not exist, saving new user (Facebook)")
-                FirebaseRemoteDataSource.saveOrUpdateUser(userData, usersRef, null, null)
-            }
-        }
     }
 
     companion object {

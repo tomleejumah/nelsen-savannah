@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.app.nisisiafrica.BuildConfig
 import com.app.nisisiafrica.Constants
 import com.app.nisisiafrica.Interfaces.FirebaseCallback
 import com.app.nisisiafrica.Utils.Util
@@ -15,6 +16,7 @@ import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.Event
 import com.app.nisisiafrica.data.Model.MentorItem
 import com.app.nisisiafrica.data.Model.UserData
+import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
@@ -944,8 +946,20 @@ object FirebaseRemoteDataSource {
     }
 
     fun signOutAll(context: Context, onComplete: () -> Unit) {
-        GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
+        val appContext = context.applicationContext
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestProfile()
+            .requestIdToken(BuildConfig.WEB_CLIENT_ID)
+            .build()
+
+        GoogleSignIn.getClient(appContext, gso).signOut()
             .addOnCompleteListener {
+                try {
+                    LoginManager.getInstance().logOut()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Facebook logout failed", e)
+                }
                 FirebaseAuth.getInstance().signOut()
                 onComplete()
             }

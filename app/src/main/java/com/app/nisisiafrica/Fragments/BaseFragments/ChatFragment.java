@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -30,6 +29,7 @@ import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
 import com.app.nisisiafrica.Interfaces.SwipeToReplyCallback;
 import com.app.nisisiafrica.ProfileActivity;
+import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModel;
@@ -64,6 +64,7 @@ public class ChatFragment extends Fragment {
     private ChatViewModel viewModel;
     private ChatAdapter adapter;
     private String chatroomId;
+    private ChatRepository chatRepository;
 
     private FragmentChatBinding binding;
     private ChatRoomViewModel chatRoomViewModel;
@@ -168,6 +169,7 @@ public class ChatFragment extends Fragment {
 
                 if (otherUserId != null) {
                     FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(otherUserId, user -> {
+                        if (user == null) return Unit.INSTANCE;
                         userData = user;
                         Glide.with(this).load(user.getPhotoUrl()).circleCrop().into(binding.tvHeaderAvatar);
                         binding.tvChatRole.setText(user.getUserRole());
@@ -186,9 +188,13 @@ public class ChatFragment extends Fragment {
 
     private void startRealtimeMessages(String chatId) {
 
+        if (chatRepository != null) {
+            chatRepository.clearSyncListener();
+        }
+
         AppDatabase db = AppDatabase.getInstance(requireContext());
-        ChatRepository repo = new ChatRepository(db);
-        viewModel = new ViewModelProvider(this, new ChatViewModel.Factory(repo))
+        chatRepository = new ChatRepository(db);
+        viewModel = new ViewModelProvider(this, new ChatViewModel.Factory(chatRepository))
                 .get(ChatViewModel.class);
         adapter = new ChatAdapter();
 
@@ -241,7 +247,7 @@ public class ChatFragment extends Fragment {
          binding.rvMessages.setAdapter(adapter);
          binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        repo.syncMessages(chatId);
+        chatRepository.syncMessages(chatId);
         viewModel.loadMessages(chatId);
         viewModel.getMessages().observe(getViewLifecycleOwner(), messages -> {
             adapter.submitList(messages);
@@ -383,8 +389,8 @@ public class ChatFragment extends Fragment {
                 if (isPanelOpen) {
                     binding.overlappingPanels.closePanels();
                     Util.saveState(Constants.IS_MENTOR, false);
-                } else {
-                    NavHostFragment.findNavController(ChatFragment.this).navigate(R.id.homeFragment);
+                } else if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).navigateToHomeTab();
                 }
             }
         });
@@ -415,5 +421,13 @@ public class ChatFragment extends Fragment {
             InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (chatRepository != null) {
+            chatRepository.clearSyncListener();
+        }
+        super.onDestroyView();
     }
 }

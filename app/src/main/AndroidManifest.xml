@@ -8,7 +8,6 @@
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -102,7 +101,7 @@
             android:exported="false" />
         <activity
             android:name=".BookMentor"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".LauncherActivity"
             android:exported="true"
@@ -144,14 +143,14 @@
         </activity>
         <activity
             android:name=".Auth.LoginSignUpActivity"
-            android:exported="true"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".IntroActivity"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>
 
