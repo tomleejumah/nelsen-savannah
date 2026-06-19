@@ -169,9 +169,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     private void preloadAllFragments() {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.navHostFragment, homeFragment, "HOME_FRAGMENT");
-        fragmentTransaction.add(R.id.navHostFragment, chatFragment, "CHAT_FRAGMENT");
-        fragmentTransaction.add(R.id.navHostFragment, settingsFragment, "SETTINGS_FRAGMENT");
+        fragmentTransaction.add(R.id.fragmentContainer, homeFragment, "HOME_FRAGMENT");
+        fragmentTransaction.add(R.id.fragmentContainer, chatFragment, "CHAT_FRAGMENT");
+        fragmentTransaction.add(R.id.fragmentContainer, settingsFragment, "SETTINGS_FRAGMENT");
         fragmentTransaction.hide(chatFragment);
         fragmentTransaction.hide(settingsFragment);
         fragmentTransaction.commitNow();
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (fragmentToShow.isAdded()) {
             fragmentTransaction.show(fragmentToShow);
         } else {
-            fragmentTransaction.add(R.id.navHostFragment, fragmentToShow);
+            fragmentTransaction.add(R.id.fragmentContainer, fragmentToShow);
         }
 
         fragmentTransaction.commit();
@@ -284,63 +284,86 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         snackbarHandler.showSnackbar("Welcome, " + userData.getFirstName() + "!", Snackbar.LENGTH_LONG, 4);
     }
 
+    public void navigateToHomeTab() {
+        ChipNavigationBar chipNavigationBar = findViewById(R.id.chipNavigationBar);
+        if (chipNavigationBar != null) {
+            chipNavigationBar.setItemSelected(R.id.homeFragment, true);
+        }
+        replaceFragment(homeFragment);
+    }
+
     private void handleCachedUser() {
         boolean keepMeIn = Util.getState("keepMeIn", false);
         long cacheDurationDays = keepMeIn ? 7L : 3L;
         long cacheValidDuration = cacheDurationDays * 24 * 60 * 60 * 1000;
         long lastAppBackground = Util.getState("lastAppBackground", System.currentTimeMillis());
         long currentTime = System.currentTimeMillis();
+        boolean cacheExpired = currentTime - lastAppBackground > cacheValidDuration;
 
-        if (currentTime - lastAppBackground > cacheValidDuration) {
-            Log.d(TAG, "Cache expired, logging out user");
-            String userId = Util.getState(Constants.CURRENT_USER_ID, "");
-//            disposables.add(userDao.deleteUserByIdRx(userData.getId())
-            disposables.add(userDao.deleteUserByIdRx(userId)
-                    .subscribeOn(Schedulers.io())
-                    .subscribe(
-                            () -> Log.d(TAG, "User cache deleted"),
-                            error -> Log.e(TAG, "Failed to delete user cache", error)
-                    ));
-
-            FirebaseRemoteDataSource.INSTANCE.signOutAll(this, () -> {
-                redirectToLogin();
-                return Unit.INSTANCE;
-            });
-            return;
+        if (cacheExpired) {
+            try {
+                boolean hasPin = PinManager.hasPin(this, currentUser);
+                if (!hasPin || !keepMeIn) {
+                    Log.d(TAG, "Cache expired — logging out (hasPin=" + hasPin + ", keepMeIn=" + keepMeIn + ")");
+                    logoutAndRedirect();
+                    return;
+                }
+                Log.d(TAG, "Cache expired but PIN + keepMeIn active — refreshing data");
+            } catch (Exception e) {
+                Log.e(TAG, "PIN check failed during cache expiry", e);
+                logoutAndRedirect();
+                return;
+            }
         }
 
-        sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, fetchedUserData -> {
-            cachedUserData = fetchedUserData;
-            FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser, userData1 -> {
-                if (userData1 != null) {
-                    if (fetchedUserData != null) {
-                        userData = !cachedUserData.equals(fetchedUserData)
-                                ? fetchedUserData : cachedUserData;
+        syncUserDataFromRemote();
+    }
 
-                        if (!userData.equals(cachedUserData)) {
-                            sharedUserViewModel1.updateUserData(userData);
-                        }
-                        //will update last login todo
-                        Log.d(TAG, "handleCachedUser: updating cache with " + (cachedUserData == null ? "fetched" : "cached") + " data");
+    private void syncUserDataFromRemote() {
+        sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, localUserData -> {
+            FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser, remoteUserData -> {
+                if (remoteUserData != null) {
+                    userData = remoteUserData;
+                    if (localUserData == null || !localUserData.equals(remoteUserData)) {
+                        sharedUserViewModel1.updateUserData(remoteUserData);
                     } else {
-                        Log.d(TAG, "No fetched data available...re using cached data");
-                        if (cachedUserData != null) {
-                            userData = cachedUserData;
-                            sharedUserViewModel1.setUserData(cachedUserData);
-                            Log.d(TAG, "Using cached data as fallback");
-                        } else {
-                            Log.d(TAG, "No cached or cloud data, redirecting to login");
-                            redirectToLogin();
-                        }
+                        sharedUserViewModel1.setUserData(localUserData);
                     }
+                    Util.saveState(Constants.USER_ROLE, remoteUserData.getUserRole() != null
+                            ? remoteUserData.getUserRole() : "Mentee");
+                } else if (localUserData != null) {
+                    userData = localUserData;
+                    sharedUserViewModel1.setUserData(localUserData);
+                } else {
+                    Log.d(TAG, "No local or remote user data — redirecting to login");
+                    redirectToLogin();
                 }
                 return Unit.INSTANCE;
-            } , e -> {
-                e.printStackTrace();
+            }, e -> {
+                Log.e(TAG, "Remote user fetch failed", e);
+                if (localUserData != null) {
+                    userData = localUserData;
+                    sharedUserViewModel1.setUserData(localUserData);
+                } else {
+                    redirectToLogin();
+                }
                 return Unit.INSTANCE;
             });
         });
+    }
 
+    private void logoutAndRedirect() {
+        String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+        disposables.add(userDao.deleteUserByIdRx(userId)
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                        () -> Log.d(TAG, "User cache deleted"),
+                        error -> Log.e(TAG, "Failed to delete user cache", error)
+                ));
+        FirebaseRemoteDataSource.INSTANCE.signOutAll(this, () -> {
+            redirectToLogin();
+            return Unit.INSTANCE;
+        });
     }
 
     //todo create multiple channels based with action also migrate them to enum class
@@ -434,11 +457,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void redirectToLogin() {
         startActivity(new Intent(this, LoginSignUpActivity.class));
         finish();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
     }
 
     @Override

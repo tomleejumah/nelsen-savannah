@@ -2,6 +2,7 @@ package com.app.nisisiafrica
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -18,7 +19,6 @@ class LauncherActivity : AppCompatActivity() {
     private var isReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Start splash screen
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { !isReady }
 
@@ -26,7 +26,6 @@ class LauncherActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_launcher)
 
-        // Handle system insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -34,75 +33,48 @@ class LauncherActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-
             val isFirstTime = Util.getState("is-FirstTime", true)
             val auth = FirebaseAuth.getInstance()
             val user = auth.currentUser
 
-            val intent = when {
-                isFirstTime -> {
-                    Intent(this@LauncherActivity, IntroActivity::class.java)
-                }
+            when {
+                isFirstTime -> navigateAndFinish(Intent(this@LauncherActivity, IntroActivity::class.java))
 
-                user == null -> {
-                    Intent(this@LauncherActivity, LoginSignUpActivity::class.java)
-                }
+                user == null -> navigateAndFinish(Intent(this@LauncherActivity, LoginSignUpActivity::class.java))
 
                 else -> {
-                    user.reload().addOnSuccessListener {
-
-                        if (user.isEmailVerified) {
-                            val destination = if (PinManager.hasPin(this@LauncherActivity, user.uid)) {
-                                Intent(this@LauncherActivity, LockScreenActivity::class.java)
-                            } else {
-                                Intent(this@LauncherActivity, MainActivity::class.java)
-                            }
-                            startActivity(destination)
-                        } else {
-                            startActivity(Intent(this@LauncherActivity, VerifyEmailActivity::class.java))
+                    user.reload()
+                        .addOnSuccessListener { navigateAuthenticatedUser(user) }
+                        .addOnFailureListener { e ->
+                            Log.w("LauncherActivity", "reload failed, using cached session", e)
+                            navigateAuthenticatedUser(user)
                         }
-
-//                        if (user.isEmailVerified) {
-//                            startActivity(
-//                                Intent(this@LauncherActivity, MainActivity::class.java)
-//                            )
-//                        } else {
-//                            startActivity(
-//                                Intent(this@LauncherActivity, VerifyEmailActivity::class.java)
-//                            )
-//                        }
-//
-                        finish()
-                    }
-                    return@launch
                 }
             }
-
-            isReady = true
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            finish()
         }
-/*
-        lifecycleScope.launch {
-            val isFirstTime = Util.getState("is-FirstTime", true)
-            val intent: Intent = when {
-                isFirstTime -> {
-                    Intent(this@LauncherActivity, IntroActivity::class.java)
+    }
+
+    private fun navigateAuthenticatedUser(user: com.google.firebase.auth.FirebaseUser) {
+        try {
+            val destination = if (user.isEmailVerified) {
+                if (PinManager.hasPin(this, user.uid)) {
+                    Intent(this, LockScreenActivity::class.java)
+                } else {
+                    Intent(this, MainActivity::class.java)
                 }
-                FirebaseAuth.getInstance().currentUser != null -> {
-                    Intent(this@LauncherActivity, MainActivity::class.java)
-                }
-                else -> {
-                    Intent(this@LauncherActivity, LoginSignUpActivity::class.java)
-                }
+            } else {
+                Intent(this, VerifyEmailActivity::class.java)
             }
-            isReady = true
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            finish()
+            navigateAndFinish(destination)
+        } catch (e: Exception) {
+            Log.e("LauncherActivity", "PIN check failed, opening main", e)
+            navigateAndFinish(Intent(this, MainActivity::class.java))
         }
+    }
 
- */
+    private fun navigateAndFinish(intent: Intent) {
+        isReady = true
+        startActivity(intent)
+        finish()
     }
 }

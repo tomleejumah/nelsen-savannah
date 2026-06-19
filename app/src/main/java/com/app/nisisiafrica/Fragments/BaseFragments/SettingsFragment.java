@@ -78,6 +78,10 @@ public class SettingsFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            requireActivity().finish();
+            return new View(requireContext());
+        }
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 

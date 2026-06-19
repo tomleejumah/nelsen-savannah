@@ -1,7 +1,6 @@
 package com.app.nisisiafrica.data.Repository
 
 import android.util.Log
-import com.app.nisisiafrica.BuildConfig
 import com.app.nisisiafrica.DataBase.AppDatabase
 import com.app.nisisiafrica.data.Model.ChatMessage
 import com.app.nisisiafrica.data.Model.ChatMessageEntity
@@ -139,6 +138,11 @@ class ChatRepository(private val appDatabase: AppDatabase) {
 
     // Sync Firestore messages → Room on open
     private var listenerRegistration: ListenerRegistration? = null
+
+    fun clearSyncListener() {
+        listenerRegistration?.remove()
+        listenerRegistration = null
+    }
 
     fun syncMessages(chatroomId: String) {
 

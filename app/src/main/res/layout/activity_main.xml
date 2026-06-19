@@ -8,44 +8,40 @@
     tools:context=".MainActivity">
 
     <FrameLayout
-        android:id="@+id/navHostFragment"
-        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
-        app:navGraph="@navigation/main"
-        app:defaultNavHost="true"
         android:layout_height="match_parent" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
-        app:fabSize="normal"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
         android:layout_marginBottom="16dp"
         android:layout_marginEnd="16dp"
-        android:contentDescription="TODO"
-        android:layout_alignParentBottom="true"
-        android:visibility="invisible"
         android:backgroundTint="@color/white"
-        android:layout_alignParentEnd="true"
+        android:contentDescription="TODO"
+        android:visibility="invisible"
+        app:fabSize="normal"
         app:srcCompat="@drawable/ic_back" />
 
-
     <androidx.cardview.widget.CardView
-        android:layout_marginBottom="16dp"
-        android:layout_centerHorizontal="true"
-        app:cardCornerRadius="36dp"
         android:id="@+id/cardChipNavigation"
         android:layout_width="wrap_content"
         android:layout_height="46dp"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="36dp">
 
         <com.ismaeldivita.chipnavigation.ChipNavigationBar
-            android:layout_centerInParent="true"
-            android:layout_marginHorizontal="4dp"
-            android:layout_alignParentBottom="true"
             android:id="@+id/chipNavigationBar"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
+            android:layout_centerInParent="true"
+            android:layout_marginHorizontal="4dp"
             android:padding="0dp"
             app:cnb_menuResource="@menu/main_bottom_menu"
             app:cnb_orientationMode="horizontal" />

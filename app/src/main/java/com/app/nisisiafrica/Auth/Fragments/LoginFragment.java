@@ -25,10 +25,12 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Auth.FacebookAuthHelper;
+import com.app.nisisiafrica.Auth.GoogleSignInMode;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
+import com.app.nisisiafrica.Auth.GoogleSignInMode;
 import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.data.Model.UserData;
@@ -88,10 +90,11 @@ public class LoginFragment extends Fragment {
         // Initialize the Facebook Auth Helper
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
-            // Handle successful login
             sharedUserViewModel.saveUserData(userData);
             sharedUserViewModel.setUserData(userData);
-//            Util.saveState(Constants.USER_ID, userData.getId());
+            String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
+                    ? userData.getFirstName() : "back";
+            snackbarHandler.showSnackbar("Welcome back, " + name + "!", Snackbar.LENGTH_LONG, 4);
             Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
@@ -199,7 +202,7 @@ public class LoginFragment extends Fragment {
 
         view.findViewById(R.id.facebookBtn).setOnClickListener(v -> {
             List<String> permissions = Arrays.asList("email", "public_profile");
-            Util.setClickAnimation(v, () -> facebookAuthHelper.signIn(permissions));
+            Util.setClickAnimation(v, () -> facebookAuthHelper.signIn(GoogleSignInMode.LOGIN, permissions));
         });
 
         view.findViewById(R.id.txtForgotPwsd).setOnClickListener(v -> {
@@ -231,7 +234,7 @@ public class LoginFragment extends Fragment {
                     emailCheckIcon.setVisibility(View.VISIBLE);
                     Util.shakeView(view.findViewById(R.id.mailParent));
 
-                } else if (Util.isValidPassword(password)) {
+                } else if (Util.isPasswordTooShort(password)) {
                     snackbarHandler.showSnackbar("Password must be at least 6 characters", Snackbar.LENGTH_SHORT, 3);
                     Util.shakeView(view.findViewById(R.id.passParent));
 
@@ -243,59 +246,31 @@ public class LoginFragment extends Fragment {
     }
 
     private void login(String email, String password) {
-        //todo add loading screen
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(mAuth.getCurrentUser().getUid(), userData -> {
-                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                com.google.firebase.auth.FirebaseUser currentUser = mAuth.getCurrentUser();
+                if (currentUser == null) {
+                    snackbarHandler.showSnackbar("Sign-in failed. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    return;
+                }
+                FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser.getUid(), userData -> {
+                    if (userData == null) {
+                        snackbarHandler.showSnackbar("Account data not found. Please contact support.", Snackbar.LENGTH_LONG, 3);
+                        return Unit.INSTANCE;
+                    }
+                    String userId = currentUser.getUid();
                     Util.saveState(Constants.CURRENT_USER_ID, userId);
                     userData.setId(userId);
                     sharedUserViewModel.saveUserData(userData);
                     sharedUserViewModel.setUserData(userData);
-
                     Util.navigateToMainScreen(getContext(), MainActivity.class, true);
                     Log.d(TAG, "login: Success");
                     return Unit.INSTANCE;
                 }, e -> {
-                    e.printStackTrace();
+                    snackbarHandler.showSnackbar("Could not load profile. Please try again.", Snackbar.LENGTH_SHORT, 3);
                     return Unit.INSTANCE;
                 });
-
-              /*  FirebaseRemoteDataSource.INSTANCE.getUserAndData(FirebaseAuth.getInstance().getCurrentUser().getUid(),new FirebaseCallback() {
-                    @Override
-                    public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
-                        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                        Util.saveState(Constants.CURRENT_USER_ID, userId);
-                        userData.setId(userId);
-                        sharedUserViewModel.saveUserData(userData);
-                        sharedUserViewModel.setUserData(userData);
-
-                        Util.navigateToMainScreen(getContext(), MainActivity.class, true);
-                        Log.d(TAG, "login: Success");
-                    }
-
-                    @Override
-                    public void onMentorDataFetched(@org.jetbrains.annotations.Nullable MentorItem mentors) {
-                    }
-
-                    @Override
-                    public void onMentorsIDFetched(@org.jetbrains.annotations.Nullable List<@org.jetbrains.annotations.Nullable String> mentorIds) {
-                    }
-
-                    @Override
-                    public void onCoursesFetched(@NotNull List<@NotNull CourseItem> courses) {
-                    }
-
-                    @Override
-                    public void onMentorsFetched(@NotNull List<@NotNull MentorItem> mentors) {
-                    }
-
-                    @Override
-                    public void onError(@org.jetbrains.annotations.Nullable Exception e) {
-                    }
-                });
-               */
             } else {
                 String failureMessage = Util.getErrorString(task);
                 snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
@@ -306,34 +281,26 @@ public class LoginFragment extends Fragment {
     private void handleGoogleSignIn(Intent data) {
         googleAuthHelper.handleSignInResult(
                 data,
+                GoogleSignInMode.LOGIN,
                 userData -> {
                     goToNextActivity(userData);
                     return Unit.INSTANCE;
                 },
                 exception -> {
-                    // Handle error
                     Log.e("Auth", "Sign in failed", exception);
-                    snackbarHandler.showSnackbar("Sign in failed", Snackbar.LENGTH_SHORT, 3);
+                    snackbarHandler.showSnackbar(exception.getMessage() != null
+                            ? exception.getMessage() : "Sign in failed", Snackbar.LENGTH_SHORT, 3);
                     return Unit.INSTANCE;
                 }
         );
     }
 
     private void goToNextActivity(UserData userData) {
-        googleAuthHelper.saveUserToFirebase(
-                userData,
-                isSuccess -> {
-                    if (isSuccess) {
-                        sharedUserViewModel.saveUserData(userData);
-                        sharedUserViewModel.setUserData(userData);
-                        Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
-                    }
-                    return Unit.INSTANCE;
-                },
-                exception -> {
-                    Log.e("Firebase", "Error saving user", exception);
-                    return Unit.INSTANCE;
-                }
-        );
+        sharedUserViewModel.saveUserData(userData);
+        sharedUserViewModel.setUserData(userData);
+        String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
+                ? userData.getFirstName() : "back";
+        snackbarHandler.showSnackbar("Welcome back, " + name + "!", Snackbar.LENGTH_LONG, 4);
+        Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
     }
 }

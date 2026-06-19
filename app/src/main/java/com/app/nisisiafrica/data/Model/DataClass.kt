@@ -257,8 +257,8 @@ data class UserData(
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
-        parcel.writeString(userRole)
         parcel.writeString(email)
+        parcel.writeString(userRole)
         parcel.writeString(displayName)
         parcel.writeString(firstName)
         parcel.writeString(lastName)

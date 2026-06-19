@@ -12,6 +12,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class SetpinActivity extends AppCompatActivity {
 
@@ -34,7 +35,12 @@ public class SetpinActivity extends AppCompatActivity {
             return insets;
         });
 
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            finish();
+            return;
+        }
+        uid = user.getUid();
 
         dots = new View[]{
                 findViewById(R.id.dot1),

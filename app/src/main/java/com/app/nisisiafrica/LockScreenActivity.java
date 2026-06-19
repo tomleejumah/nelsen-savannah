@@ -7,6 +7,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
@@ -16,6 +17,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LockScreenActivity extends AppCompatActivity {
 
@@ -35,7 +37,19 @@ public class LockScreenActivity extends AppCompatActivity {
             return insets;
         });
 
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            finish();
+            return;
+        }
+        uid = user.getUid();
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Block back — user must unlock
+            }
+        });
 
         dots = new View[]{
                 findViewById(R.id.dot1),
@@ -119,8 +133,7 @@ public class LockScreenActivity extends AppCompatActivity {
 
     private void verifyPin() {
         try {
-            String stored = PinManager.getPin(this, uid);
-            if (pin.toString().equals(stored)) {
+            if (PinManager.verifyPin(this, uid, pin.toString())) {
                 unlockSuccess();
             } else {
                 Toast.makeText(this, "Wrong PIN", Toast.LENGTH_SHORT).show();
@@ -128,7 +141,9 @@ public class LockScreenActivity extends AppCompatActivity {
                 updateDots();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Toast.makeText(this, "Unable to verify PIN", Toast.LENGTH_SHORT).show();
+            pin.setLength(0);
+            updateDots();
         }
     }
 
@@ -136,12 +151,6 @@ public class LockScreenActivity extends AppCompatActivity {
         AppLockState.setUnlocked(true);
         startActivity(new Intent(this, MainActivity.class));
         finish();
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        // block back
     }
 
     public static class AppLockState {

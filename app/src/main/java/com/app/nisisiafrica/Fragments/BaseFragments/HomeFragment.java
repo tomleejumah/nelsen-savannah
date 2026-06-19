@@ -120,6 +120,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private BannerAdapter bannerAdapter;
     private List<String> bannerList = new ArrayList<>();
     private DatabaseReference bannersRef;
+    private ValueEventListener bannerListener;
     private Handler autoScrollHandler;
     private Runnable autoScrollRunnable;
     private static final long SCROLL_DELAY = 4000;
@@ -435,10 +436,17 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         if (autoScrollHandler != null && autoScrollRunnable != null) {
             autoScrollHandler.removeCallbacks(autoScrollRunnable);
         }
+        if (bannersRef != null && bannerListener != null) {
+            bannersRef.removeEventListener(bannerListener);
+            bannerListener = null;
+        }
     }
 
     private void fetchBannersRealtime() {
-        bannersRef.addValueEventListener(new ValueEventListener() {
+        if (bannerListener != null) {
+            bannersRef.removeEventListener(bannerListener);
+        }
+        bannerListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<String> finalUrls = new ArrayList<>();
@@ -465,7 +473,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             public void onCancelled(@NonNull DatabaseError error) {
                 Log.e(TAG, "Banner fetch failed: " + error.getMessage());
             }
-        });
+        };
+        bannersRef.addValueEventListener(bannerListener);
     }
 
     @Override
@@ -488,11 +497,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             } else {
                 notifCounter.setVisibility(View.GONE);
             }
-        });
-
-        imgNotification.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), NotificationsActivity.class);
-            startActivity(intent);
         });
     }
 
