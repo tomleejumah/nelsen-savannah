@@ -18,6 +18,13 @@ router.post(
   notificationController.sendCommentNotification,
 );
 
+// Send new-event notification
+router.post(
+  "/event",
+  authenticateUser,
+  notificationController.sendEventNotification,
+);
+
 // Get user notifications
 router.get(
   "/:userId",

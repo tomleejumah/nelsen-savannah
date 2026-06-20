@@ -30,6 +30,11 @@ export async function sendFCMNotification(receiverId, notification) {
     } else if (notification.type === "chat") {
       title = `${senderName}`;
       body = notification.messagePreview || "Sent you a message";
+    } else if (notification.type === "event") {
+      title = "New Event";
+      body = notification.text
+        ? `${senderName} ${notification.text}`
+        : notification.eventTitle || "A new event was scheduled";
     }
 
     // NEW FCM V1 API
@@ -44,6 +49,7 @@ export async function sendFCMNotification(receiverId, notification) {
         type: notification.type || "",
         notificationId: notification.notificationId || "",
         ...(notification.courseID && { courseId: notification.courseID }),
+        ...(notification.eventId && { eventId: notification.eventId }),
         ...(notification.conversationId && {
           conversationId: notification.conversationId,
         }),

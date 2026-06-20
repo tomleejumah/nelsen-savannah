@@ -93,6 +93,54 @@ export const sendCommentNotification = async (req, res) => {
   }
 };
 
+export const sendEventNotification = async (req, res) => {
+  const uid = req.user.uid;
+  const { recipientId, eventId, eventTitle, text } = req.body;
+
+  if (!recipientId || !text) {
+    return res.status(400).json({
+      error: "Missing required fields: recipientId, text",
+    });
+  }
+
+  if (recipientId === uid) {
+    return res.json({ success: false, message: "Cannot notify yourself" });
+  }
+
+  try {
+    const notificationData = {
+      senderId: uid,
+      text: text,
+      eventId: eventId || "",
+      eventTitle: eventTitle || "",
+      type: "event",
+      timestamp: admin.database.ServerValue.TIMESTAMP,
+      read: false,
+    };
+
+    const notificationRef = await admin
+      .database()
+      .ref(`Notifications/${recipientId}`)
+      .push();
+
+    await notificationRef.set(notificationData);
+
+    const fcmResult = await sendFCMNotification(recipientId, {
+      ...notificationData,
+      notificationId: notificationRef.key,
+    });
+
+    res.json({
+      success: true,
+      notificationId: notificationRef.key,
+      fcmSent: fcmResult?.success || false,
+    });
+  } catch (error) {
+    console.error("Error creating event notification:", error);
+    res.status(500).json({ error: "Failed to send notification" });
+  }
+};
+
 export const getUserNotifications = async (req, res) => {
   const { userId } = req.params;
   const requestingUser = req.user.uid;
