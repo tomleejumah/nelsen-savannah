@@ -6,20 +6,20 @@
         android:id="@+id/homeFragment"
         android:icon="@drawable/ic_home"
         android:title="Home"
-        app:cnb_iconColor="#1F2937" />
+        app:cnb_iconColor="#4F46E5" />
     <item
         android:id="@+id/communitiesFragment"
         android:icon="@drawable/ic_people"
         android:title="Communities"
-        app:cnb_iconColor="#1F2937" />
+        app:cnb_iconColor="#0EA5E9" />
     <item
         android:id="@+id/chatFragment"
         android:icon="@drawable/ic_chat"
         android:title="Chats"
-        app:cnb_iconColor="#1F2937" />
+        app:cnb_iconColor="#059669" />
     <item
         android:id="@+id/profileFragment"
         android:icon="@drawable/ic_person"
         android:title="Profile"
-        app:cnb_iconColor="#1F2937" />
+        app:cnb_iconColor="#DB2777" />
 </menu>

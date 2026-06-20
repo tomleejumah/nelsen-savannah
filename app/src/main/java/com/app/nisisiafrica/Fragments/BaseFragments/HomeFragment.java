@@ -121,6 +121,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private RecyclerView rvUpcomingEvents;
     private EventAdapter eventAdapter;
     private ImageView plusIcon;
+    private View fabCreateMain;
+    private View speedDial;
+    private boolean speedDialOpen = false;
 
     private ViewPager2 bannerViewPager;
     private BannerAdapter bannerAdapter;
@@ -164,6 +167,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         btnBookMentor = view.findViewById(R.id.btnBookMentor);
         plusIcon = view.findViewById(R.id.plusIcon);
+        setupCreateFab(view);
 
         CircleImageView imgDp = view.findViewById(R.id.imgDp);
         userViewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
@@ -177,10 +181,13 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //                        .error(R.drawable.ic_error)
                     .into(imgDp);
 
-            if (userData.getUserRole().equals("Mentor")) {
+            if ("Mentor".equals(userData.getUserRole())) {
                 plusIcon.setVisibility(View.VISIBLE);
+                if (fabCreateMain != null) fabCreateMain.setVisibility(View.VISIBLE);
             } else {
                 plusIcon.setVisibility(View.GONE);
+                if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
+                collapseSpeedDial();
             }
 
             getEvents(data, view);
@@ -547,6 +554,45 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 notifCounter.setVisibility(View.GONE);
             }
         });
+    }
+
+    private void setupCreateFab(View view) {
+        fabCreateMain = view.findViewById(R.id.fabCreateMain);
+        speedDial = view.findViewById(R.id.speedDial);
+
+        fabCreateMain.setOnClickListener(v -> toggleSpeedDial());
+
+        view.findViewById(R.id.fabEvent).setOnClickListener(v -> {
+            collapseSpeedDial();
+            startActivity(new Intent(getActivity(), CreateEventActivity.class));
+        });
+        view.findViewById(R.id.fabStory).setOnClickListener(v -> {
+            collapseSpeedDial();
+            startActivity(new Intent(getActivity(), CreateStoryActivity.class));
+        });
+        view.findViewById(R.id.fabCommunity).setOnClickListener(v -> {
+            collapseSpeedDial();
+            startActivity(new Intent(getActivity(), CreateCommunityActivity.class));
+        });
+    }
+
+    private void toggleSpeedDial() {
+        if (speedDialOpen) collapseSpeedDial();
+        else expandSpeedDial();
+    }
+
+    private void expandSpeedDial() {
+        if (speedDial == null || fabCreateMain == null) return;
+        speedDialOpen = true;
+        speedDial.setVisibility(View.VISIBLE);
+        fabCreateMain.animate().rotation(45f).setDuration(200).start();
+    }
+
+    private void collapseSpeedDial() {
+        if (speedDial == null || fabCreateMain == null) return;
+        speedDialOpen = false;
+        speedDial.setVisibility(View.GONE);
+        fabCreateMain.animate().rotation(0f).setDuration(200).start();
     }
 
     private void showCreateSheet() {

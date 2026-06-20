@@ -74,6 +74,8 @@ public class ChatFragment extends Fragment {
     private boolean isPanelOpen, isMentor;
     private View chipNavigationBar;
     private UserData myUserData;
+    private String selectedOtherUserId;
+    private OnBackPressedCallback backCallback;
     private ConcatAdapter concatAdapter;
     private ChatSearchAdapter searchAdapter;
     private final java.util.List<Chatroom> loadedRooms = new ArrayList<>();
@@ -219,6 +221,7 @@ public class ChatFragment extends Fragment {
                 Glide.with(this).load(R.drawable.nisisi_logo).circleCrop().into(binding.tvHeaderAvatar);
                 // No partner profile for system rooms — keep the start panel showing "me".
                 userData = null;
+                selectedOtherUserId = null;
                 bindProfilePanel(myUserData);
                 break;
             case "ai":
@@ -227,16 +230,26 @@ public class ChatFragment extends Fragment {
                 //todo update
                 Glide.with(this).load(R.drawable.cyborg).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
+                selectedOtherUserId = null;
                 bindProfilePanel(myUserData);
                 break;
             default: // Direct Chat
                 binding.btnViewProfile.setVisibility(View.VISIBLE);
                 String otherUserId = chatroom.getOtherUserId(currentUserId);
-                binding.tvChatName.setText(chatroom.getOtherUserName(currentUserId));
+                String otherName = chatroom.getOtherUserName(currentUserId);
+                binding.tvChatName.setText(otherName);
+
+                // Reset immediately so the profile panel never shows the previously
+                // opened person while the new one is still loading.
+                userData = null;
+                selectedOtherUserId = otherUserId;
+                bindProfilePanelMinimal(otherName);
 
                 if (otherUserId != null) {
                     FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(otherUserId, user -> {
                         if (user == null) return Unit.INSTANCE;
+                        // Ignore late callbacks from a previously opened chat.
+                        if (!otherUserId.equals(selectedOtherUserId)) return Unit.INSTANCE;
                         userData = user;
                         Glide.with(this).load(user.getPhotoUrl()).circleCrop().into(binding.tvHeaderAvatar);
                         binding.tvChatRole.setText(user.getUserRole());
@@ -425,9 +438,11 @@ public class ChatFragment extends Fragment {
 
     private void setupGlobalClickListeners() {
         binding.allChatInfo.setOnClickListener(v -> {
-            UserData display = userData != null ? userData : myUserData;
-            if (display == null) return;
-            bindProfilePanel(display);
+            // Panel content is already kept in sync by updateChatHeader (selected
+            // chat = their profile; otherwise mine). Just reveal it.
+            if (selectedOtherUserId == null && myUserData != null) {
+                bindProfilePanel(myUserData);
+            }
             binding.overlappingPanels.openStartPanel();
         });
 
@@ -449,6 +464,17 @@ public class ChatFragment extends Fragment {
             if (userData == null) bindProfilePanel(myUserData);
             return Unit.INSTANCE;
         }, e -> Unit.INSTANCE);
+    }
+
+    /** Shows the selected person's name instantly while their full data loads. */
+    private void bindProfilePanelMinimal(String name) {
+        if (binding == null) return;
+        binding.tvProfileName.setText(name != null ? name : "");
+        binding.tvProfileRole.setText("");
+        binding.tvAbout.setText("");
+        binding.email.setText("");
+        binding.tvJoined.setText("-");
+        Glide.with(requireContext()).load(R.drawable.ic_person).circleCrop().into(binding.tvProfileAvatar);
     }
 
     private void bindProfilePanel(UserData u) {
@@ -483,7 +509,9 @@ public class ChatFragment extends Fragment {
     }
 
     private void setupBackNavigation() {
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+        // Disabled by default; only intercepts back while the chat tab is the
+        // visible fragment. Otherwise Home's back press would never exit the app.
+        backCallback = new OnBackPressedCallback(false) {
             @Override
             public void handleOnBackPressed() {
                 if (isPanelOpen) {
@@ -493,7 +521,14 @@ public class ChatFragment extends Fragment {
                     ((MainActivity) getActivity()).navigateToHomeTab();
                 }
             }
-        });
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), backCallback);
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (backCallback != null) backCallback.setEnabled(!hidden);
     }
 
     @Override
@@ -501,6 +536,11 @@ public class ChatFragment extends Fragment {
         if (getActivity() != null) {
             chipNavigationBar = getActivity().findViewById(R.id.chipNavigationBar);
         }
+
+        // Sync back-handling to actual visibility once the preload show/hide settles.
+        view.post(() -> {
+            if (backCallback != null) backCallback.setEnabled(!isHidden());
+        });
 
         binding.overlappingPanels.registerEndPanelStateListeners(newState -> {
             if (newState instanceof PanelState.Opening || newState instanceof PanelState.Opened) {
@@ -512,6 +552,7 @@ public class ChatFragment extends Fragment {
                 Util.saveState(Constants.IS_MENTOR, false);
                 // No conversation selected anymore -> start panel defaults back to me.
                 userData = null;
+                selectedOtherUserId = null;
                 bindProfilePanel(myUserData);
             }
             hideKeyboard();
