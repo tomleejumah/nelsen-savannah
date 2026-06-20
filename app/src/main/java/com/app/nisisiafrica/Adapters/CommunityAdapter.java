@@ -5,6 +5,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -46,6 +48,12 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
         holder.name.setText(c.getName());
         holder.desc.setText(c.getDescription());
         holder.meta.setText(c.getMemberCount() + " members  \u00b7  " + c.getPostCount() + " posts");
+
+        long members = c.getMemberCount();
+        holder.avatar1.setVisibility(members >= 1 ? View.VISIBLE : View.INVISIBLE);
+        holder.avatar2.setVisibility(members >= 2 ? View.VISIBLE : View.GONE);
+        holder.avatar3.setVisibility(members >= 3 ? View.VISIBLE : View.GONE);
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onClick(c);
         });
@@ -58,12 +66,16 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView name, desc, meta;
+        CircleImageView avatar1, avatar2, avatar3;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.tvCommunityName);
             desc = itemView.findViewById(R.id.tvCommunityDesc);
             meta = itemView.findViewById(R.id.tvCommunityMeta);
+            avatar1 = itemView.findViewById(R.id.avatar1);
+            avatar2 = itemView.findViewById(R.id.avatar2);
+            avatar3 = itemView.findViewById(R.id.avatar3);
         }
     }
 }
