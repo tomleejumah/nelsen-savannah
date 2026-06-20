@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_nisisi_back"
-        app:title="Create Event"
+        app:title="Create Story"
         app:titleTextColor="#1F2937" />
 
     <ScrollView
@@ -26,95 +26,96 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:alpha="0.6"
+                android:text="Stories appear at the top of Home for 24h. Paste image URLs for now."
+                android:textColor="#1F2937"
+                android:textSize="13sp" />
+
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Event title">
+                android:hint="Company / brand name">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etEventTitle"
+                    android:id="@+id/etCompany"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapSentences" />
+                    android:inputType="textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
-                android:id="@+id/tvDate"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/timepicker_bg"
-                android:drawableEnd="@drawable/ic_dropdown"
-                android:gravity="center_vertical"
-                android:padding="14dp"
-                android:text="Select date"
-                android:textColor="#1F2937"
-                android:textSize="16sp" />
+                android:hint="Story image URL">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tvStartTime"
-                    android:layout_width="0dp"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etMediaUrl"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/timepicker_bg"
-                    android:gravity="center"
-                    android:padding="14dp"
-                    android:text="Start time"
-                    android:textColor="#1F2937"
-                    android:textSize="16sp" />
-
-                <View
-                    android:layout_width="12dp"
-                    android:layout_height="1dp" />
-
-                <TextView
-                    android:id="@+id/tvEndTime"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/timepicker_bg"
-                    android:gravity="center"
-                    android:padding="14dp"
-                    android:text="End time"
-                    android:textColor="#1F2937"
-                    android:textSize="16sp" />
-            </LinearLayout>
+                    android:inputType="textUri" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="Description (optional)">
+                android:hint="Logo URL (optional)">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etEventDescription"
+                    android:id="@+id/etLogoUrl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="top"
+                    android:inputType="textUri" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Caption (optional)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCaption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:inputType="textCapSentences|textMultiLine"
-                    android:minLines="3" />
+                    android:minLines="2" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Call-to-action link (optional)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCtaUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textUri" />
             </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
     </ScrollView>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSaveEvent"
+        android:id="@+id/btnPublishStory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:backgroundTint="#1F2937"
         android:paddingVertical="12dp"
-        android:text="Create Event"
+        android:text="Publish Story"
         android:textColor="#FFFFFF"
         app:cornerRadius="14dp" />
 

@@ -32,13 +32,15 @@ import androidx.work.WorkManager;
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
+import com.app.nisisiafrica.Fragments.BaseFragments.CommunitiesFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
-import com.app.nisisiafrica.Fragments.BaseFragments.SettingsFragment;
+import com.app.nisisiafrica.Fragments.BaseFragments.ProfileFragment;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.Worker.BookingWorker;
+import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
@@ -78,7 +80,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private final CompositeDisposable disposables = new CompositeDisposable();
     private final HomeFragment homeFragment = new HomeFragment();
     private final ChatFragment chatFragment = new ChatFragment();
-    private final SettingsFragment settingsFragment = new SettingsFragment();
+    private final CommunitiesFragment communitiesFragment = new CommunitiesFragment();
+    private final ProfileFragment profileFragment = new ProfileFragment();
     private String userRole, currentUser;
     private UserData userData, cachedUserData;
     private UserDao userDao;
@@ -140,10 +143,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         chipNavigationBar.setOnItemSelectedListener(i -> {
             if (i == R.id.homeFragment) {
                 replaceFragment(homeFragment);
+            } else if (i == R.id.communitiesFragment) {
+                replaceFragment(communitiesFragment);
             } else if (i == R.id.chatFragment) {
                 replaceFragment(chatFragment);
-            } else if (i == R.id.settingsFragment) {
-                replaceFragment(settingsFragment);
+            } else if (i == R.id.profileFragment) {
+                replaceFragment(profileFragment);
             }
         });
 
@@ -170,10 +175,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void preloadAllFragments() {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.fragmentContainer, homeFragment, "HOME_FRAGMENT");
+        fragmentTransaction.add(R.id.fragmentContainer, communitiesFragment, "COMMUNITIES_FRAGMENT");
         fragmentTransaction.add(R.id.fragmentContainer, chatFragment, "CHAT_FRAGMENT");
-        fragmentTransaction.add(R.id.fragmentContainer, settingsFragment, "SETTINGS_FRAGMENT");
+        fragmentTransaction.add(R.id.fragmentContainer, profileFragment, "PROFILE_FRAGMENT");
+        fragmentTransaction.hide(communitiesFragment);
         fragmentTransaction.hide(chatFragment);
-        fragmentTransaction.hide(settingsFragment);
+        fragmentTransaction.hide(profileFragment);
         fragmentTransaction.commitNow();
     }
 
@@ -196,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             fragmentTransaction.add(R.id.fragmentContainer, fragmentToShow);
         }
 
-        fragmentTransaction.commit();
+        fragmentTransaction.commitNowAllowingStateLoss();
         currentlyDisplayedFragment = fragmentToShow;
     }
     private void initFCM() {
@@ -414,24 +421,22 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         boolean isMentor = "Mentor".equals(userRole) || Util.getState(Constants.USER_ROLE, "Mentee").equals("Mentor");
 
-        PeriodicWorkRequest periodicWorkRequest;
-        if (isMentor) {
+        PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(
+                EventReminderWorker.class,
+                isMentor ? 1 : 6,
+                TimeUnit.HOURS
+        ).setConstraints(constraints).build();
 
-            periodicWorkRequest = new PeriodicWorkRequest.Builder(
-                    BookingWorker.class,
-                    1,
-                    TimeUnit.HOURS
-            ).setConstraints(constraints).build();
-        } else {
-            periodicWorkRequest = new PeriodicWorkRequest.Builder(
-                    BookingWorker.class,
-                    1,
-                    TimeUnit.DAYS).setConstraints(constraints).build();
-        }
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "periodic_backup",
+                "event_reminders",
                 ExistingPeriodicWorkPolicy.KEEP,
                 periodicWorkRequest);
+
+        // Run once now so reminders are scheduled without waiting for the period.
+        WorkManager.getInstance(context).enqueue(
+                new androidx.work.OneTimeWorkRequest.Builder(EventReminderWorker.class)
+                        .setConstraints(constraints)
+                        .build());
     }
 
     private void saveToDb(UserData userData) {

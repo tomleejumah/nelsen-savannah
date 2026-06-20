@@ -71,8 +71,20 @@ public class EditProfileActivity extends AppCompatActivity {
         if (intent != null) {
             isMentor = intent.getBooleanExtra(Constants.IS_MENTOR, false);
             id = intent.getStringExtra(Constants.CURRENT_USER_ID);
-            Log.d(TAG, "onCreate: " + id);
+        }
 
+        // Fall back to the cached/authenticated uid so we never query Room with null.
+        if (id == null || id.isEmpty()) {
+            id = com.app.nisisiafrica.Utils.Util.getState(Constants.CURRENT_USER_ID, "");
+        }
+        if (id == null || id.isEmpty()) {
+            com.google.firebase.auth.FirebaseUser fu =
+                    com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            if (fu != null) id = fu.getUid();
+        }
+        Log.d(TAG, "onCreate: " + id);
+
+        if (id != null && !id.isEmpty()) {
             UserViewModel sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
             sharedUserViewModel.fetchingCurrentUserDataFromDB(id).observe(this, data -> {
                 if (data != null) {
