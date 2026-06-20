@@ -95,6 +95,17 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                 val messageId = db.collection("chatRooms").document(chatroomId)
                     .collection("messages").document().id
 
+                // Show the reply locally first so it's never lost if the network/write fails.
+                dao.insert(ChatMessageEntity(
+                    messageId = messageId,
+                    chatroomId = chatroomId,
+                    senderId = "ai_assistant",
+                    senderName = "AI Assistant",
+                    message = reply,
+                    timestamp = System.currentTimeMillis(),
+                    status = "sending"
+                ))
+
                 val aiMessage = hashMapOf(
                     "messageId" to messageId,
                     "senderId" to "ai_assistant",
@@ -108,17 +119,15 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                     .collection("messages").document(messageId)
                     .set(aiMessage)
                     .addOnSuccessListener {
-                        scope.launch {
-                            dao.insert(ChatMessageEntity(
-                                messageId = messageId,
-                                chatroomId = chatroomId,
-                                senderId = "ai_assistant",
-                                senderName = "AI Assistant",
-                                message = reply,
-                                timestamp = System.currentTimeMillis(),
-                                status = "sent"
-                            ))
-                        }
+                        scope.launch { dao.updateStatus(messageId, "sent") }
+                        db.collection("chatRooms").document(chatroomId).update(
+                            "lastMessage", reply,
+                            "lastMessageTimestamp", FieldValue.serverTimestamp()
+                        )
+                    }
+                    .addOnFailureListener { e ->
+                        scope.launch { dao.updateStatus(messageId, "failed") }
+                        Log.e("Gemini", "Failed to save AI reply to Firestore", e)
                     }
             } catch (e: Exception) {
                 dao.deleteById("typing_indicator")  // remove typing bubble

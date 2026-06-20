@@ -3,35 +3,37 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-
     android:orientation="vertical"
-    android:padding="4dp">
+    android:paddingHorizontal="6dp"
+    android:paddingVertical="3dp">
 
     <LinearLayout
-        android:background="@drawable/message_sender_bg"
         android:id="@+id/llMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
+        android:background="@drawable/message_sender_bg"
+        android:maxWidth="290dp"
         android:orientation="vertical"
-        android:maxWidth="280dp"
-        android:padding="12dp">
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="9dp">
 
         <TextView
             android:id="@+id/tvMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF" />
+            android:lineSpacingExtra="2dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:textSize="11sp"
-            android:textColor="#AAAAAA" />
+            android:layout_marginTop="3dp"
+            android:textColor="#AEB6C2"
+            android:textSize="10sp" />
     </LinearLayout>
 
 </LinearLayout>

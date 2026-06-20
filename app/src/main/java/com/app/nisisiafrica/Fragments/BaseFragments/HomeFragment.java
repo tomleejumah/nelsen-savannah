@@ -35,7 +35,9 @@ import com.app.nisisiafrica.Adapters.MentorsAdapter;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Constants;
+import com.app.nisisiafrica.CreateCommunityActivity;
 import com.app.nisisiafrica.CreateEventActivity;
+import com.app.nisisiafrica.CreateStoryActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.MentorApplicationActivity;
 import com.app.nisisiafrica.NotificationsActivity;
@@ -45,6 +47,10 @@ import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.AllMentorsActivity;
+import com.app.nisisiafrica.StoryViewerActivity;
+import com.app.nisisiafrica.Adapters.StoryAdapter;
+import com.app.nisisiafrica.data.Model.Story;
 import com.app.nisisiafrica.ViewAllActivity;
 import com.app.nisisiafrica.ViewModel.EventViewModel;
 import com.app.nisisiafrica.ViewModel.EventViewModelFactory;
@@ -121,6 +127,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private List<String> bannerList = new ArrayList<>();
     private DatabaseReference bannersRef;
     private ValueEventListener bannerListener;
+    private DatabaseReference storiesRef;
+    private ValueEventListener storiesListener;
+    private StoryAdapter storyAdapter;
+    private final ArrayList<Story> storyList = new ArrayList<>();
+    private View storiesContainer;
     private Handler autoScrollHandler;
     private Runnable autoScrollRunnable;
     private static final long SCROLL_DELAY = 4000;
@@ -186,15 +197,25 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         fetchBannersRealtime();
         setupAutoScroll();
 
+        storiesContainer = view.findViewById(R.id.storiesContainer);
+        RecyclerView rvStories = view.findViewById(R.id.rvStories);
+        rvStories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        storyAdapter = new StoryAdapter(getContext(), position -> {
+            Intent storyIntent = new Intent(getActivity(), StoryViewerActivity.class);
+            storyIntent.putParcelableArrayListExtra(StoryViewerActivity.EXTRA_STORIES, storyList);
+            storyIntent.putExtra(StoryViewerActivity.EXTRA_START_INDEX, position);
+            startActivity(storyIntent);
+        });
+        rvStories.setAdapter(storyAdapter);
+        storiesRef = FirebaseDatabase.getInstance().getReference("stories");
+        fetchStoriesRealtime();
+
 
         btnBookMentor.setOnClickListener(v -> {
-            if (userData.getUserRole().equals("Mentor")) {
-                Intent intent = new Intent(getActivity(), CreateEventActivity.class);
-                startActivity(intent);
+            if (userData != null && "Mentor".equals(userData.getUserRole())) {
+                showCreateSheet();
             } else {
-                Intent intent = new Intent(getActivity(), ViewAllActivity.class);
-                intent.putExtra("isCourses", false);
-                startActivity(intent);
+                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
             }
         });
 
@@ -203,10 +224,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             startActivity(intent);
         });
 
-        view.findViewById(R.id.plusIcon).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), CreateEventActivity.class);
-            startActivity(intent);
-        });
+        view.findViewById(R.id.plusIcon).setOnClickListener(v -> showCreateSheet());
 
         View calendarLayout = view.findViewById(R.id.layoutCalendar);
         View monthHeader = calendarLayout.findViewById(R.id.layoutMonthHeader);
@@ -272,19 +290,16 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
-        //todo update
         view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), ViewAllActivity.class);
-            intent.putExtra("isCourses", false);
-            startActivity(intent);
+            if (userData != null && "Mentor".equals(userData.getUserRole())) {
+                showCreateSheet();
+            } else {
+                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+            }
         });
 
-        view.findViewById(R.id.tvSeeMore).setOnClickListener(v -> {
-                    Intent intent = new Intent(getActivity(), ViewAllActivity.class);
-                    intent.putExtra("isCourses", false);
-                    startActivity(intent);
-                }
-        );
+        view.findViewById(R.id.tvSeeMore).setOnClickListener(v ->
+                startActivity(new Intent(getActivity(), AllMentorsActivity.class)));
 
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
@@ -440,6 +455,40 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             bannersRef.removeEventListener(bannerListener);
             bannerListener = null;
         }
+        if (storiesRef != null && storiesListener != null) {
+            storiesRef.removeEventListener(storiesListener);
+            storiesListener = null;
+        }
+    }
+
+    private void fetchStoriesRealtime() {
+        if (storiesListener != null) {
+            storiesRef.removeEventListener(storiesListener);
+        }
+        storiesListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                storyList.clear();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Story story = child.getValue(Story.class);
+                    if (story != null && story.active && story.mediaUrl != null
+                            && !story.mediaUrl.isEmpty()) {
+                        story.storyId = child.getKey();
+                        storyList.add(story);
+                    }
+                }
+                if (storyAdapter != null) storyAdapter.submit(storyList);
+                if (storiesContainer != null) {
+                    storiesContainer.setVisibility(storyList.isEmpty() ? View.GONE : View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Stories fetch failed: " + error.getMessage());
+            }
+        };
+        storiesRef.addValueEventListener(storiesListener);
     }
 
     private void fetchBannersRealtime() {
@@ -500,6 +549,28 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
     }
 
+    private void showCreateSheet() {
+        if (getContext() == null) return;
+        BottomSheetDialog sheet = new BottomSheetDialog(getContext());
+        View sheetView = getLayoutInflater().inflate(R.layout.sheet_create, null);
+        sheet.setContentView(sheetView);
+
+        sheetView.findViewById(R.id.optCreateEvent).setOnClickListener(v -> {
+            sheet.dismiss();
+            startActivity(new Intent(getActivity(), CreateEventActivity.class));
+        });
+        sheetView.findViewById(R.id.optCreateStory).setOnClickListener(v -> {
+            sheet.dismiss();
+            startActivity(new Intent(getActivity(), CreateStoryActivity.class));
+        });
+        sheetView.findViewById(R.id.optCreateCommunity).setOnClickListener(v -> {
+            sheet.dismiss();
+            startActivity(new Intent(getActivity(), CreateCommunityActivity.class));
+        });
+
+        sheet.show();
+    }
+
     private void showToolsSheet() {
         BottomSheetDialog sheet = new BottomSheetDialog(getContext());
         View view = getLayoutInflater().inflate(R.layout.home_options_sheet, null);
@@ -550,16 +621,15 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     private void goToViewAll(View v) {
-        Intent intent = new Intent(getActivity(), ViewAllActivity.class);
         if (v.getId() == R.id.seeAll) {
             // going to view Courses
+            Intent intent = new Intent(getActivity(), ViewAllActivity.class);
             intent.putExtra("isCourses", true);
-
+            startActivity(intent);
         } else if (v.getId() == R.id.ShowALl) {
-            // going to view Mentors
-            intent.putExtra("isCourses", false);
+            // going to view Mentors (dedicated screen)
+            startActivity(new Intent(getActivity(), AllMentorsActivity.class));
         }
-        startActivity(intent);
     }
 
     private int calculateRecyclerViewHeight() {
@@ -651,7 +721,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (events.isEmpty()) {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
                 rvUpcomingEvents.setVisibility(View.GONE);
-                btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Add Notification" : "Book a mentor");
+                btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Create" : "Book a mentor");
             } else {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
                 rvUpcomingEvents.setVisibility(View.VISIBLE);

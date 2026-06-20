@@ -90,11 +90,24 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private val tvMessage: TextView = view.findViewById(R.id.tvMessage)
         private val tvTime: TextView = view.findViewById(R.id.tvTime)
         private val tvSender: TextView? = view.findViewById(R.id.tvSender)
+        private val llMessage: View? = view.findViewById(R.id.llMessage)
 
         fun bind(message: ChatMessageEntity) {
             tvMessage.text = message.message
-            tvSender?.text = message.senderName
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
+
+            // tvSender only exists on the received-message layout.
+            if (tvSender != null) {
+                val isAi = message.senderId == "ai_assistant"
+                if (isAi) {
+                    tvSender.visibility = View.VISIBLE
+                    tvSender.text = "AI Assistant"
+                    llMessage?.setBackgroundResource(R.drawable.message_ai_bg)
+                } else {
+                    tvSender.visibility = View.GONE
+                    llMessage?.setBackgroundResource(R.drawable.message_bg)
+                }
+            }
         }
     }
 }

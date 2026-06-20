@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.ChatAdapter;
 import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
+import com.app.nisisiafrica.Adapters.ChatSearchAdapter;
 import com.app.nisisiafrica.Adapters.PinnedChatAdapter;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.DataBase.AppDatabase;
@@ -72,6 +73,12 @@ public class ChatFragment extends Fragment {
     private String joinedAT, role;
     private boolean isPanelOpen, isMentor;
     private View chipNavigationBar;
+    private UserData myUserData;
+    private ConcatAdapter concatAdapter;
+    private ChatSearchAdapter searchAdapter;
+    private final java.util.List<Chatroom> loadedRooms = new ArrayList<>();
+    private java.util.List<Chatroom> pinnedRooms = new ArrayList<>();
+    private ChatRoomAdapter pagedAdapter;
 
     @Nullable
     @Override
@@ -86,6 +93,7 @@ public class ChatFragment extends Fragment {
         // Initialize user metadata and global rooms
         handleUserMetadata();
         chatRoomViewModel.initPinnedChats();
+        loadMyProfile();
 
         return binding.getRoot();
     }
@@ -105,21 +113,75 @@ public class ChatFragment extends Fragment {
             openChat(chatroom);
             return Unit.INSTANCE;
         });
-        ChatRoomAdapter pagedAdapter = new ChatRoomAdapter(chatroom -> {
+        pagedAdapter = new ChatRoomAdapter(chatroom -> {
             openChat(chatroom);
             return Unit.INSTANCE;
         });
 
         // 2. ConcatAdapter to pin items to top
-        ConcatAdapter concatAdapter = new ConcatAdapter(pinnedAdapter, pagedAdapter);
+        concatAdapter = new ConcatAdapter(pinnedAdapter, pagedAdapter);
         binding.rvChats.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvChats.setAdapter(concatAdapter);
 
+        searchAdapter = new ChatSearchAdapter(this::openChat);
+
         // 3. Observers
-        chatRoomViewModel.getPinnedChatRooms().observe(getViewLifecycleOwner(), pinnedAdapter::submitList);
+        chatRoomViewModel.getPinnedChatRooms().observe(getViewLifecycleOwner(), rooms -> {
+            pinnedAdapter.submitList(rooms);
+            pinnedRooms = rooms != null ? rooms : new ArrayList<>();
+            rebuildLoadedRooms();
+        });
 
         chatRoomViewModel.getChatRooms().observe(getViewLifecycleOwner(), pagingData -> {
             pagedAdapter.submitData(getViewLifecycleOwner().getLifecycle(), pagingData);
+        });
+
+        pagedAdapter.addOnPagesUpdatedListener(() -> {
+            rebuildLoadedRooms();
+            return Unit.INSTANCE;
+        });
+
+        setupChatSearch();
+    }
+
+    private void rebuildLoadedRooms() {
+        loadedRooms.clear();
+        loadedRooms.addAll(pinnedRooms);
+        if (pagedAdapter != null) {
+            for (Chatroom room : pagedAdapter.snapshot().getItems()) {
+                if (room != null) loadedRooms.add(room);
+            }
+        }
+    }
+
+    private void setupChatSearch() {
+        binding.etSearch.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String query = s.toString().trim().toLowerCase(Locale.getDefault());
+                if (query.isEmpty()) {
+                    binding.rvChats.setAdapter(concatAdapter);
+                    return;
+                }
+                String currentUserId = FirebaseAuth.getInstance().getUid();
+                ArrayList<Chatroom> filtered = new ArrayList<>();
+                for (Chatroom room : loadedRooms) {
+                    String name = room.getOtherUserName(currentUserId);
+                    if (name != null && name.toLowerCase(Locale.getDefault()).contains(query)) {
+                        filtered.add(room);
+                    }
+                }
+                if (binding.rvChats.getAdapter() != searchAdapter) {
+                    binding.rvChats.setAdapter(searchAdapter);
+                }
+                searchAdapter.submit(filtered);
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
         });
     }
 
@@ -136,9 +198,9 @@ public class ChatFragment extends Fragment {
 
         updateChatHeader(chatroom, type, currentUserId);
 
-        // Access Control: Mentees can't talk in system channel
-        if ("system".equals(type) && "Mentee".equals(role)) {
-            binding.bottomChatBar.setVisibility(View.GONE);
+        // Access Control: only admins may post announcements; everyone else reads.
+        if ("system".equals(type)) {
+            binding.bottomChatBar.setVisibility("Admin".equals(role) ? View.VISIBLE : View.GONE);
         } else {
             binding.bottomChatBar.setVisibility(View.VISIBLE);
         }
@@ -155,12 +217,17 @@ public class ChatFragment extends Fragment {
                 binding.tvChatName.setText("Announcements");
                 binding.tvChatRole.setText("Official Updates");
                 Glide.with(this).load(R.drawable.nisisi_logo).circleCrop().into(binding.tvHeaderAvatar);
+                // No partner profile for system rooms — keep the start panel showing "me".
+                userData = null;
+                bindProfilePanel(myUserData);
                 break;
             case "ai":
                 binding.tvChatName.setText("Nisisi AI Assistant");
                 binding.tvChatRole.setText("Virtual Help");
                 //todo update
                 Glide.with(this).load(R.drawable.cyborg).circleCrop().into(binding.tvHeaderAvatar);
+                userData = null;
+                bindProfilePanel(myUserData);
                 break;
             default: // Direct Chat
                 binding.btnViewProfile.setVisibility(View.VISIBLE);
@@ -173,6 +240,7 @@ public class ChatFragment extends Fragment {
                         userData = user;
                         Glide.with(this).load(user.getPhotoUrl()).circleCrop().into(binding.tvHeaderAvatar);
                         binding.tvChatRole.setText(user.getUserRole());
+                        bindProfilePanel(user);
                         return Unit.INSTANCE;
                     }, e -> Unit.INSTANCE);
 
@@ -233,17 +301,19 @@ public class ChatFragment extends Fragment {
             @Override
             public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {}
         });
-//        SwipeToReplyCallback swipeCallback = new SwipeToReplyCallback(
-//                requireContext(),
-//                position -> {
-//                    Object item = adapter.getItemAt(position);
-//                    if (item instanceof ChatMessageEntity) {
-//                        triggerReply((ChatMessageEntity) item);
-//                    }
-//                    return Unit.INSTANCE;
-//                }
-//        );
-//        new ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvMessages);
+        SwipeToReplyCallback swipeCallback = new SwipeToReplyCallback(
+                requireContext(),
+                position -> {
+                    if (position >= 0) {
+                        Object item = adapter.getItemAt(position);
+                        if (item instanceof ChatMessageEntity) {
+                            triggerReply((ChatMessageEntity) item);
+                        }
+                    }
+                    return Unit.INSTANCE;
+                }
+        );
+        new ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvMessages);
          binding.rvMessages.setAdapter(adapter);
          binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -274,6 +344,10 @@ public class ChatFragment extends Fragment {
             String msg = binding.etMessage.getText().toString().trim();
             if (!msg.isEmpty()) {
                 binding.etMessage.setText("");
+                if (replyingTo != null) {
+                    replyingTo = null;
+                    binding.replyPreview.setVisibility(View.GONE);
+                }
                 viewModel.sendMessage(chatId, msg, success -> {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
@@ -351,20 +425,9 @@ public class ChatFragment extends Fragment {
 
     private void setupGlobalClickListeners() {
         binding.allChatInfo.setOnClickListener(v -> {
-            if (userData == null) return;
-            Util.saveState(Constants.IS_MENTOR, true);
-            isMentor = true;
-
-            binding.tvProfileName.setText(userData.getFirstName() + " " + userData.getLastName());
-            binding.tvProfileRole.setText(userData.getUserRole());
-            binding.tvAbout.setText(userData.getBio());
-            binding.email.setText(userData.getEmail());
-            Glide.with(requireContext()).load(userData.getPhotoUrl()).circleCrop().into(binding.tvProfileAvatar);
-
-            binding.joinedTittle.setText("LAST LOGIN");
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-            binding.tvJoined.setText(sdf.format(new Date(userData.getLastLogin())));
-
+            UserData display = userData != null ? userData : myUserData;
+            if (display == null) return;
+            bindProfilePanel(display);
             binding.overlappingPanels.openStartPanel();
         });
 
@@ -372,6 +435,43 @@ public class ChatFragment extends Fragment {
             binding.overlappingPanels.closePanels();
             Util.saveState(Constants.IS_MENTOR, false);
         });
+    }
+
+    /**
+     * Loads the signed-in user's profile so the start panel always defaults to
+     * "me" until another profile is explicitly selected.
+     */
+    private void loadMyProfile() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(uid, u -> {
+            myUserData = u;
+            if (userData == null) bindProfilePanel(myUserData);
+            return Unit.INSTANCE;
+        }, e -> Unit.INSTANCE);
+    }
+
+    private void bindProfilePanel(UserData u) {
+        if (u == null || binding == null) return;
+        String first = u.getFirstName() != null ? u.getFirstName() : "";
+        String last = u.getLastName() != null ? u.getLastName() : "";
+        binding.tvProfileName.setText((first + " " + last).trim());
+        binding.tvProfileRole.setText(u.getUserRole() != null ? u.getUserRole() : "");
+        binding.tvAbout.setText(u.getBio() != null ? u.getBio() : "");
+        binding.email.setText(u.getEmail() != null ? u.getEmail() : "");
+        Glide.with(requireContext())
+                .load(u.getPhotoUrl())
+                .placeholder(R.drawable.ic_person)
+                .circleCrop()
+                .into(binding.tvProfileAvatar);
+
+        binding.joinedTittle.setText("LAST LOGIN");
+        if (u.getLastLogin() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            binding.tvJoined.setText(sdf.format(new Date(u.getLastLogin())));
+        } else {
+            binding.tvJoined.setText("-");
+        }
     }
 
     private void handleUserMetadata() {
@@ -410,6 +510,9 @@ public class ChatFragment extends Fragment {
                 chipNavigationBar.setVisibility(View.VISIBLE);
                 isPanelOpen = false;
                 Util.saveState(Constants.IS_MENTOR, false);
+                // No conversation selected anymore -> start panel defaults back to me.
+                userData = null;
+                bindProfilePanel(myUserData);
             }
             hideKeyboard();
         });

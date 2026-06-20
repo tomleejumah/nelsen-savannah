@@ -78,6 +78,10 @@
             android:name=".Receivers.BookingsAlarmReceiver"
             android:enabled="true"
             android:exported="false" />
+        <receiver
+            android:name=".Receivers.EventReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
 
         <service
             android:name=".Service.BookingsAlarmService"
@@ -93,6 +97,32 @@
         <activity
             android:name=".ViewAllActivity"
             android:exported="false" />
+        <activity
+            android:name=".AllMentorsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StoryViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.NisisiAfrica" />
+        <activity
+            android:name=".CommunityDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CreateCommunityActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".CreateStoryActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".CreatePostActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".PostDetailActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".QuestionnaireActivity"
             android:exported="false" />

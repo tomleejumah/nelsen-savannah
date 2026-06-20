@@ -463,11 +463,14 @@
                         android:focusable="true"
                         android:foreground="?attr/selectableItemBackgroundBorderless"
                         android:id="@+id/btnSend"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_marginStart="12dp"
-                        android:background="@drawable/input_bg"
-                        android:src="@drawable/ic_send" />
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:layout_marginStart="10dp"
+                        android:background="@drawable/send_btn_circle_bg"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_send"
+                        android:tint="#FFFFFF" />
                 </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>

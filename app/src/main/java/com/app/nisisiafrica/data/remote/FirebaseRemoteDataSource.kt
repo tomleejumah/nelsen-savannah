@@ -844,6 +844,27 @@ object FirebaseRemoteDataSource {
         }
     }
 
+    /** Returns every upcoming event indexed under the given user (for reminders). */
+    suspend fun getUpcomingEvents(uid: String): List<Event> {
+        val now = System.currentTimeMillis()
+        return try {
+            val eventIds = db.child("UserEvents/$uid")
+                .orderByValue()
+                .startAt(now.toDouble())
+                .get()
+                .await()
+                .children
+                .mapNotNull { it.key }
+
+            eventIds.mapNotNull { id ->
+                eventsRef.child(id).get().await().getValue(Event::class.java)
+            }.filter { it.date >= now }
+        } catch (e: Exception) {
+            Log.e("RemoteDataSource", "getUpcomingEvents failed", e)
+            emptyList()
+        }
+    }
+
     fun createEvent(
         event: Event,
         mentorId: String,
