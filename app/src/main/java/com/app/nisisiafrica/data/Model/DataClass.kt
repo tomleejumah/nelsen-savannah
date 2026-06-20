@@ -183,6 +183,20 @@ data class NotificationResponse(
     var fcmSent: Boolean
 )
 
+data class CommentNotificationRequest(
+    var coursePublisher: String,
+    var postID: String,
+    var text: String,
+    var commentText: String
+)
+
+data class EventNotificationRequest(
+    var recipientId: String,
+    var eventId: String,
+    var eventTitle: String,
+    var text: String
+)
+
 data class NotificationListResponse(
     val notifications: List<NotificationData> = emptyList()
 )

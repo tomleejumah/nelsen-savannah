@@ -1,6 +1,8 @@
 package com.app.nisisiafrica.Interfaces;
 
 import com.app.nisisiafrica.data.Model.ChatNotificationRequest;
+import com.app.nisisiafrica.data.Model.CommentNotificationRequest;
+import com.app.nisisiafrica.data.Model.EventNotificationRequest;
 import com.app.nisisiafrica.data.Model.LikeNotificationRequest;
 import com.app.nisisiafrica.data.Model.NotificationListResponse;
 import com.app.nisisiafrica.data.Model.NotificationResponse;
@@ -21,11 +23,17 @@ public interface NotificationApiService {
             @Body LikeNotificationRequest request
     );
 
-//    @POST("notifications/comment")
-//    Call<NotificationResponse> sendCommentNotification(
-//            @Header("Authorization") String token,
-//            @Body CommentNotificationRequest request
-//    );
+    @POST("notifications/comment")
+    Call<NotificationResponse> sendCommentNotification(
+            @Header("Authorization") String token,
+            @Body CommentNotificationRequest request
+    );
+
+    @POST("notifications/event")
+    Call<NotificationResponse> sendEventNotification(
+            @Header("Authorization") String token,
+            @Body EventNotificationRequest request
+    );
 
     @GET("notifications/{userId}")
     Call<NotificationListResponse> getUserNotifications(
@@ -47,7 +55,7 @@ public interface NotificationApiService {
             @Path("notificationId") String notificationId
     );
 
-    @POST("chat/notify")
+    @POST("chat/message")
     Call<NotificationResponse> sendChatNotification(
             @Header("Authorization") String token,
             @Body ChatNotificationRequest request
