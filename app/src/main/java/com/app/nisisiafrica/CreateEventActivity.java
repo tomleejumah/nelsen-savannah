@@ -18,6 +18,7 @@ import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.Event;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.data.remote.NotificationSender;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -121,6 +122,10 @@ public class CreateEventActivity extends AppCompatActivity {
 
         long eventMillis = dateCal.getTimeInMillis();
 
+        // For personal/test events the mentee is the creator; a real booking flow
+        // would set a distinct menteeId, in which case that person gets notified.
+        final String menteeId = uid;
+
         Event event = new Event(
                 "",                 // eventId (assigned by createEvent)
                 title,
@@ -129,7 +134,7 @@ public class CreateEventActivity extends AppCompatActivity {
                 endTime,
                 "event",
                 uid,                // mentorId
-                uid,                // menteeId (self for personal/test events)
+                menteeId,           // menteeId (self for personal/test events)
                 creatorName,
                 creatorName,
                 0,                  // status
@@ -138,8 +143,10 @@ public class CreateEventActivity extends AppCompatActivity {
         );
 
         btnSave.setEnabled(false);
-        FirebaseRemoteDataSource.INSTANCE.createEvent(event, uid, uid, success -> {
+        FirebaseRemoteDataSource.INSTANCE.createEvent(event, uid, menteeId, success -> {
             if (success) {
+                // Notify the participant (no-op when scheduling for yourself).
+                NotificationSender.event(menteeId, "", title, "scheduled a session with you");
                 // Schedule reminders immediately so the new event is picked up.
                 WorkManager.getInstance(getApplicationContext())
                         .enqueue(new OneTimeWorkRequest.Builder(EventReminderWorker.class).build());

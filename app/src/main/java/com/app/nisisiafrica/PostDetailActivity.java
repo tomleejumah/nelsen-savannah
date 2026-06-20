@@ -17,6 +17,7 @@ import com.app.nisisiafrica.Adapters.CommentAdapter;
 import com.app.nisisiafrica.data.Model.CommunityPost;
 import com.app.nisisiafrica.data.Model.PostComment;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
+import com.app.nisisiafrica.data.remote.NotificationSender;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -33,6 +34,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private final CommunityRepository repository = new CommunityRepository();
     private String communityId, postId;
+    private String postAuthorId;
     private boolean hasUpvoted = false;
 
     private TextView tvMeta, tvTitle, tvBody, tvNoComments;
@@ -73,6 +75,9 @@ public class PostDetailActivity extends AppCompatActivity {
                 if (success) {
                     hasUpvoted = nowUpvoted;
                     applyUpvoteStyle();
+                    if (nowUpvoted) {
+                        NotificationSender.like(postAuthorId, postId, "liked your post");
+                    }
                 }
             });
         });
@@ -90,7 +95,10 @@ public class PostDetailActivity extends AppCompatActivity {
             btnSend.setEnabled(false);
             repository.addComment(communityId, postId, body, authorName, (success, idOrError) -> {
                 btnSend.setEnabled(true);
-                if (success) etComment.setText("");
+                if (success) {
+                    etComment.setText("");
+                    NotificationSender.comment(postAuthorId, postId, "commented on your post", body);
+                }
             });
         });
 
@@ -113,6 +121,7 @@ public class PostDetailActivity extends AppCompatActivity {
             if (e != null || snapshot == null || !snapshot.exists()) return;
             CommunityPost p = snapshot.toObject(CommunityPost.class);
             if (p == null) return;
+            postAuthorId = p.getAuthorId();
             String time = p.getCreatedAt() != null
                     ? DateUtils.getRelativeTimeSpanString(p.getCreatedAt().getTime()).toString() : "";
             tvMeta.setText(p.getAuthorName() + (time.isEmpty() ? "" : "  \u00b7  " + time));
