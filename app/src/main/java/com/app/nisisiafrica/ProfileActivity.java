@@ -26,6 +26,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RatingBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -214,6 +215,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         joinedTittle = findViewById(R.id.joinedTittle);
 
         if (isFromMentor) {
+            setupMentorRating(id);
             FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
                         if (mentors != null) {
 
@@ -524,6 +526,61 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         previewDialog.setContentView(view);
         previewDialog.show();
+    }
+
+    /**
+     * Lets a mentee rate the mentor they're viewing. Ratings live at
+     * {@code mentors/{id}/ratings/{uid}}; the average is recomputed and shown.
+     */
+    private void setupMentorRating(String mentorId) {
+        RatingBar ratingBar = findViewById(R.id.ratingBar);
+        TextView tvRatingAvg = findViewById(R.id.tvRatingAvg);
+        View card = findViewById(R.id.llRatingCard);
+        if (ratingBar == null || card == null) return;
+
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null || uid.equals(mentorId)) {
+            card.setVisibility(View.GONE);
+            return;
+        }
+        card.setVisibility(View.VISIBLE);
+
+        DatabaseReference ratingsRef = FirebaseDatabase.getInstance()
+                .getReference("mentors").child(mentorId).child("ratings");
+
+        ratingsRef.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                long count = 0;
+                double sum = 0;
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Double val = child.getValue(Double.class);
+                    if (val != null) {
+                        sum += val;
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    double avg = sum / count;
+                    tvRatingAvg.setText(String.format(Locale.getDefault(),
+                            "%.1f average from %d rating%s", avg, count, count == 1 ? "" : "s"));
+                } else {
+                    tvRatingAvg.setText("No ratings yet. Be the first.");
+                }
+                Double mine = snapshot.child(uid).getValue(Double.class);
+                if (mine != null) ratingBar.setRating(mine.floatValue());
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+
+        ratingBar.setOnRatingBarChangeListener((bar, rating, fromUser) -> {
+            if (!fromUser || rating <= 0) return;
+            ratingsRef.child(uid).setValue((double) rating)
+                    .addOnSuccessListener(u -> Toast.makeText(this, "Thanks for rating!", Toast.LENGTH_SHORT).show());
+        });
     }
 
     private void showToolsSheet() {
