@@ -1,9 +1,11 @@
 package com.app.nisisiafrica.Adapters;
 
 import android.text.format.DateUtils;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -11,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.data.Model.CommunityPost;
+import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +57,15 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
         holder.body.setText(p.getBody());
         holder.votes.setText(String.valueOf(p.getUpvoteCount()));
         holder.comments.setText(String.valueOf(p.getCommentCount()));
+        if (!TextUtils.isEmpty(p.getImageUrl())) {
+            holder.image.setVisibility(View.VISIBLE);
+            Glide.with(holder.image.getContext())
+                    .load(p.getImageUrl())
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .into(holder.image);
+        } else {
+            holder.image.setVisibility(View.GONE);
+        }
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onClick(p);
         });
@@ -66,6 +78,7 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView meta, title, body, votes, comments;
+        ImageView image;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -74,6 +87,7 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
             body = itemView.findViewById(R.id.tvPostBody);
             votes = itemView.findViewById(R.id.tvPostVotes);
             comments = itemView.findViewById(R.id.tvPostComments);
+            image = itemView.findViewById(R.id.ivPostImage);
         }
     }
 }

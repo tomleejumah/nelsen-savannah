@@ -66,43 +66,15 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <FrameLayout
-                    android:id="@+id/memberAvatars"
-                    android:layout_width="wrap_content"
-                    android:layout_height="26dp">
-
-                    <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/avatar1"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:background="#EEF0FF"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_person"
-                        app:civ_border_color="#FFFFFF"
-                        app:civ_border_width="1.5dp" />
-
-                    <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/avatar2"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginStart="17dp"
-                        android:background="#E0E7FF"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_person"
-                        app:civ_border_color="#FFFFFF"
-                        app:civ_border_width="1.5dp" />
-
-                    <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/avatar3"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginStart="34dp"
-                        android:background="#C7D2FE"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_person"
-                        app:civ_border_color="#FFFFFF"
-                        app:civ_border_width="1.5dp" />
-                </FrameLayout>
+                <com.zen.overlapimagelistview.OverlapImageListView
+                    android:id="@+id/overlapImage"
+                    android:layout_width="48dp"
+                    android:layout_height="26dp"
+                    android:visibility="gone"
+                    app:circleCount="3"
+                    app:fillColor="#EEF0FF"
+                    app:strokeColor="#FFFFFF"
+                    app:strokeWidth="3dp" />
 
                 <TextView
                     android:id="@+id/tvCommunityMeta"
