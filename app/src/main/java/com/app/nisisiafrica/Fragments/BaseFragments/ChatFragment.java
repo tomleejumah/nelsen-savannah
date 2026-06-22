@@ -116,6 +116,11 @@ public class ChatFragment extends Fragment {
                     .build());
         });
 
+        // Mentors get a "start chat" entry point to DM their mentees.
+        boolean canStartChat = "Mentor".equals(role) || "Admin".equals(role);
+        binding.fabNewChat.setVisibility(canStartChat ? View.VISIBLE : View.GONE);
+        binding.fabNewChat.setOnClickListener(v -> showNewChatPicker());
+
         // Initialize user metadata and global rooms
         handleUserMetadata();
         chatRoomViewModel.initPinnedChats();
@@ -240,6 +245,35 @@ public class ChatFragment extends Fragment {
         startRealtimeMessages(chatId);
         setupSendAction(chatId, chatroom);
         viewModel.markRead(chatId);
+    }
+
+    /** Bottom-sheet picker letting a mentor jump into a DM with one of their mentees. */
+    private void showNewChatPicker() {
+        java.util.List<Chatroom> mentees = new ArrayList<>();
+        for (Chatroom r : loadedRooms) {
+            String type = r.getType() != null ? r.getType() : "direct";
+            if ("direct".equals(type)) mentees.add(r);
+        }
+        if (mentees.isEmpty()) {
+            Toast.makeText(requireContext(),
+                    "No mentees yet — they'll appear here once they book you.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        RecyclerView rv = new RecyclerView(requireContext());
+        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
+        int pad = Math.round(8 * getResources().getDisplayMetrics().density);
+        rv.setPadding(0, pad, 0, pad);
+        ChatSearchAdapter adapter = new ChatSearchAdapter(room -> {
+            dialog.dismiss();
+            openChat(room);
+        });
+        rv.setAdapter(adapter);
+        adapter.submit(mentees);
+        dialog.setContentView(rv);
+        dialog.show();
     }
 
     private void sendPickedImage(Uri uri) {
