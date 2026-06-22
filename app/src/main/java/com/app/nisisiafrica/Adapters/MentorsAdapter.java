@@ -20,7 +20,9 @@ import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.OverlapImages;
 import com.bumptech.glide.Glide;
+import com.zen.overlapimagelistview.OverlapImageListView;
 
 import java.util.List;
 
@@ -74,6 +76,7 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
         private TextView tvTutorDescription;
         private TextView tvStudentsCount;
         private AppCompatButton btnBookNow;
+        private OverlapImageListView overlapImage;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -82,12 +85,24 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
             tvTutorDescription = itemView.findViewById(R.id.tv_tutor_description);
             tvStudentsCount = itemView.findViewById(R.id.tv_students_count);
             btnBookNow = itemView.findViewById(R.id.btn_book_now);
+            overlapImage = itemView.findViewById(R.id.overlapImage);
         }
 
         void bind(MentorItem mentorItem) {
             Glide.with(mContext).load(mentorItem.getMentorImageUrl()).into(ivTutorProfile);
             tvTutorName.setText(mentorItem.getMentorName());
             tvTutorDescription.setText(mentorItem.getMentorDescription());
+
+            // Dynamic mentee count + recent mentee avatars (replaces the static "124+").
+            List<String> studentImages = mentorItem.getStudentImages();
+            OverlapImages.load(overlapImage, studentImages);
+            String count = mentorItem.getStudentsCount();
+            long n = 0;
+            if (count != null && !count.isEmpty()) {
+                try { n = Long.parseLong(count.replaceAll("[^0-9]", "")); } catch (NumberFormatException ignored) {}
+            }
+            if (n <= 0 && studentImages != null) n = studentImages.size();
+            tvStudentsCount.setText(n > 0 ? n + " mentees" : "New mentor");
 
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(mContext, ProfileActivity.class);
