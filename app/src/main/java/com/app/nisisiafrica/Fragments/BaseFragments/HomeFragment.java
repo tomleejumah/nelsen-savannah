@@ -476,9 +476,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 storyList.clear();
+                long now = System.currentTimeMillis();
                 for (DataSnapshot child : snapshot.getChildren()) {
                     Story story = child.getValue(Story.class);
-                    if (story != null && story.active && story.mediaUrl != null
+                    boolean expired = story != null && story.expiresAt > 0 && now > story.expiresAt;
+                    if (story != null && story.active && !expired && story.mediaUrl != null
                             && !story.mediaUrl.isEmpty()) {
                         story.storyId = child.getKey();
                         storyList.add(story);

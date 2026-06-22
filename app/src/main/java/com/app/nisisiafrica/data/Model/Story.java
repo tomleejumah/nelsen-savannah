@@ -16,6 +16,9 @@ public class Story implements Parcelable {
     public String ctaUrl;
     public long timestamp;
     public boolean active = true;
+    public String ownerId;
+    public long expiresAt;
+    public long views;
 
     public Story() {
         // Required for Firebase deserialization
@@ -30,6 +33,9 @@ public class Story implements Parcelable {
         ctaUrl = in.readString();
         timestamp = in.readLong();
         active = in.readByte() != 0;
+        ownerId = in.readString();
+        expiresAt = in.readLong();
+        views = in.readLong();
     }
 
     @Override
@@ -42,6 +48,9 @@ public class Story implements Parcelable {
         dest.writeString(ctaUrl);
         dest.writeLong(timestamp);
         dest.writeByte((byte) (active ? 1 : 0));
+        dest.writeString(ownerId);
+        dest.writeLong(expiresAt);
+        dest.writeLong(views);
     }
 
     @Override
