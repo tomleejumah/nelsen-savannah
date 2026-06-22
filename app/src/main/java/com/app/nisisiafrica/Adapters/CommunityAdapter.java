@@ -1,17 +1,23 @@
 package com.app.nisisiafrica.Adapters;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import de.hdodenhof.circleimageview.CircleImageView;
-
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.data.Model.Community;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
+import com.zen.overlapimagelistview.OverlapImageListView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,14 +55,49 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
         holder.desc.setText(c.getDescription());
         holder.meta.setText(c.getMemberCount() + " members  \u00b7  " + c.getPostCount() + " posts");
 
-        long members = c.getMemberCount();
-        holder.avatar1.setVisibility(members >= 1 ? View.VISIBLE : View.INVISIBLE);
-        holder.avatar2.setVisibility(members >= 2 ? View.VISIBLE : View.GONE);
-        holder.avatar3.setVisibility(members >= 3 ? View.VISIBLE : View.GONE);
+        bindMemberAvatars(holder.overlap, c.getRecentMemberAvatars());
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onClick(c);
         });
+    }
+
+    /** Loads the most recent joiners' avatars into the overlapping circles view. */
+    private void bindMemberAvatars(OverlapImageListView overlap, List<String> avatars) {
+        overlap.setTag(avatars);
+        List<String> urls = new ArrayList<>();
+        if (avatars != null) {
+            for (String url : avatars) {
+                if (url != null && !url.isEmpty()) urls.add(url);
+            }
+        }
+        if (urls.isEmpty()) {
+            overlap.setVisibility(View.GONE);
+            return;
+        }
+        overlap.setVisibility(View.VISIBLE);
+        final ArrayList<Bitmap> bitmaps = new ArrayList<>();
+        final int total = Math.min(urls.size(), 3);
+        for (int i = 0; i < total; i++) {
+            Glide.with(overlap.getContext())
+                    .asBitmap()
+                    .load(urls.get(i))
+                    .apply(RequestOptions.circleCropTransform())
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource,
+                                                    @Nullable Transition<? super Bitmap> transition) {
+                            bitmaps.add(resource);
+                            if (bitmaps.size() == total && overlap.getTag() == avatars) {
+                                overlap.setImageList(bitmaps);
+                            }
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                        }
+                    });
+        }
     }
 
     @Override
@@ -66,16 +107,14 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView name, desc, meta;
-        CircleImageView avatar1, avatar2, avatar3;
+        OverlapImageListView overlap;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.tvCommunityName);
             desc = itemView.findViewById(R.id.tvCommunityDesc);
             meta = itemView.findViewById(R.id.tvCommunityMeta);
-            avatar1 = itemView.findViewById(R.id.avatar1);
-            avatar2 = itemView.findViewById(R.id.avatar2);
-            avatar3 = itemView.findViewById(R.id.avatar3);
+            overlap = itemView.findViewById(R.id.overlapImage);
         }
     }
 }

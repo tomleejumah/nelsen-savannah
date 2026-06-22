@@ -55,6 +55,15 @@
                     android:textColor="#374151"
                     android:textSize="15sp" />
 
+                <ImageView
+                    android:id="@+id/ivPostImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitCenter"
+                    android:visibility="gone" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnUpvote"
                     style="@style/Widget.Material3.Button.OutlinedButton"
@@ -105,32 +114,66 @@
         android:layout_height="wrap_content"
         android:background="#FFFFFF"
         android:elevation="6dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="10dp">
 
-        <EditText
-            android:id="@+id/etComment"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:id="@+id/replyBar"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/input_bg"
-            android:hint="Add a comment..."
-            android:inputType="textCapSentences|textMultiLine"
-            android:maxLines="4"
-            android:padding="12dp"
-            android:textSize="14sp" />
+            android:layout_marginBottom="6dp"
+            android:background="#F0F0F0"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:visibility="gone">
 
-        <ImageButton
-            android:id="@+id/btnSendComment"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
-            android:layout_marginStart="10dp"
-            android:background="@drawable/send_btn_circle_bg"
-            android:padding="11dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_send"
-            android:tint="#FFFFFF" />
+            <TextView
+                android:id="@+id/tvReplyingTo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#4F46E5"
+                android:textSize="12sp" />
+
+            <ImageView
+                android:id="@+id/btnCancelReply"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_close" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etComment"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/input_bg"
+                android:hint="Add a comment..."
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:padding="12dp"
+                android:textSize="14sp" />
+
+            <ImageButton
+                android:id="@+id/btnSendComment"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/send_btn_circle_bg"
+                android:padding="11dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_send"
+                android:tint="#FFFFFF" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

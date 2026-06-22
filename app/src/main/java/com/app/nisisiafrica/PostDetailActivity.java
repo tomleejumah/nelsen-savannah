@@ -6,7 +6,11 @@ import android.text.format.DateUtils;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,10 +41,13 @@ public class PostDetailActivity extends AppCompatActivity {
     private String postAuthorId;
     private boolean hasUpvoted = false;
 
-    private TextView tvMeta, tvTitle, tvBody, tvNoComments;
+    private TextView tvMeta, tvTitle, tvBody, tvNoComments, tvReplyingTo;
     private MaterialButton btnUpvote;
+    private ImageView ivPostImage;
+    private LinearLayout replyBar;
     private CommentAdapter commentAdapter;
     private ListenerRegistration postReg, commentsReg;
+    private String replyingToCommentId = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -62,11 +69,20 @@ public class PostDetailActivity extends AppCompatActivity {
         tvBody = findViewById(R.id.tvBody);
         tvNoComments = findViewById(R.id.tvNoComments);
         btnUpvote = findViewById(R.id.btnUpvote);
+        ivPostImage = findViewById(R.id.ivPostImage);
+        replyBar = findViewById(R.id.replyBar);
+        tvReplyingTo = findViewById(R.id.tvReplyingTo);
 
         RecyclerView rvComments = findViewById(R.id.rvComments);
         rvComments.setLayoutManager(new LinearLayoutManager(this));
-        commentAdapter = new CommentAdapter();
+        commentAdapter = new CommentAdapter(repository, communityId, postId, comment -> {
+            replyingToCommentId = comment.getId();
+            tvReplyingTo.setText("Replying to " + comment.getAuthorName());
+            replyBar.setVisibility(View.VISIBLE);
+        });
         rvComments.setAdapter(commentAdapter);
+
+        findViewById(R.id.btnCancelReply).setOnClickListener(v -> clearReply());
 
         btnUpvote.setOnClickListener(v -> {
             btnUpvote.setEnabled(false);
@@ -93,10 +109,12 @@ public class PostDetailActivity extends AppCompatActivity {
             String body = etComment.getText().toString().trim();
             if (TextUtils.isEmpty(body)) return;
             btnSend.setEnabled(false);
-            repository.addComment(communityId, postId, body, authorName, (success, idOrError) -> {
+            String parentId = replyingToCommentId;
+            repository.addComment(communityId, postId, body, authorName, parentId, (success, idOrError) -> {
                 btnSend.setEnabled(true);
                 if (success) {
                     etComment.setText("");
+                    clearReply();
                     NotificationSender.comment(postAuthorId, postId, "commented on your post", body);
                 }
             });
@@ -106,6 +124,11 @@ public class PostDetailActivity extends AppCompatActivity {
             hasUpvoted = upvoted;
             applyUpvoteStyle();
         });
+    }
+
+    private void clearReply() {
+        replyingToCommentId = "";
+        replyBar.setVisibility(View.GONE);
     }
 
     private void applyUpvoteStyle() {
@@ -129,6 +152,13 @@ public class PostDetailActivity extends AppCompatActivity {
             tvTitle.setVisibility(TextUtils.isEmpty(p.getTitle()) ? View.GONE : View.VISIBLE);
             tvBody.setText(p.getBody());
             btnUpvote.setText(String.valueOf(p.getUpvoteCount()));
+            if (!TextUtils.isEmpty(p.getImageUrl())) {
+                ivPostImage.setVisibility(View.VISIBLE);
+                Glide.with(this).load(p.getImageUrl())
+                        .placeholder(R.drawable.ic_image_placeholder).into(ivPostImage);
+            } else {
+                ivPostImage.setVisibility(View.GONE);
+            }
         });
 
         commentsReg = repository.commentsQuery(communityId, postId).addSnapshotListener((snapshot, e) -> {

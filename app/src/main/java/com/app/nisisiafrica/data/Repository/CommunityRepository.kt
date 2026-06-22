@@ -53,15 +53,21 @@ class CommunityRepository {
     fun postRef(communityId: String, postId: String): DocumentReference =
         communities().document(communityId).collection("posts").document(postId)
 
-    fun createCommunity(name: String, description: String, callback: ResultCallback) {
+    fun createCommunity(
+        name: String,
+        description: String,
+        iconUrl: String,
+        callback: ResultCallback
+    ) {
         val uid = auth.currentUser?.uid ?: return callback.onResult(false, "Not signed in")
         val data = hashMapOf(
             "name" to name,
             "description" to description,
             "createdBy" to uid,
-            "iconUrl" to "",
+            "iconUrl" to iconUrl,
             "memberCount" to 0L,
             "postCount" to 0L,
+            "recentMemberAvatars" to emptyList<String>(),
             "createdAt" to FieldValue.serverTimestamp()
         )
         communities().add(data)
@@ -74,12 +80,14 @@ class CommunityRepository {
         title: String,
         body: String,
         authorName: String,
+        imageUrl: String,
         callback: ResultCallback
     ) {
         val uid = auth.currentUser?.uid ?: return callback.onResult(false, "Not signed in")
         val postData = hashMapOf(
             "title" to title,
             "body" to body,
+            "imageUrl" to imageUrl,
             "authorId" to uid,
             "authorName" to authorName,
             "upvoteCount" to 0L,
@@ -99,6 +107,7 @@ class CommunityRepository {
         postId: String,
         body: String,
         authorName: String,
+        parentId: String,
         callback: ResultCallback
     ) {
         val uid = auth.currentUser?.uid ?: return callback.onResult(false, "Not signed in")
@@ -106,6 +115,8 @@ class CommunityRepository {
             "body" to body,
             "authorId" to uid,
             "authorName" to authorName,
+            "parentId" to parentId,
+            "likeCount" to 0L,
             "createdAt" to FieldValue.serverTimestamp()
         )
         val commentDoc = postRef(communityId, postId).collection("comments").document()
@@ -114,6 +125,46 @@ class CommunityRepository {
             batch.update(postRef(communityId, postId), "commentCount", FieldValue.increment(1))
         }.addOnSuccessListener { callback.onResult(true, commentDoc.id) }
             .addOnFailureListener { callback.onResult(false, it.message) }
+    }
+
+    private fun commentRef(communityId: String, postId: String, commentId: String) =
+        postRef(communityId, postId).collection("comments").document(commentId)
+
+    /** Toggle the current user's like on a comment. */
+    fun toggleCommentLike(
+        communityId: String,
+        postId: String,
+        commentId: String,
+        callback: ToggleCallback
+    ) {
+        val uid = auth.currentUser?.uid ?: return callback.onResult(false, false)
+        val comment = commentRef(communityId, postId, commentId)
+        val likeDoc = comment.collection("likes").document(uid)
+        db.runTransaction { txn ->
+            val exists = txn.get(likeDoc).exists()
+            if (exists) {
+                txn.delete(likeDoc)
+                txn.update(comment, "likeCount", FieldValue.increment(-1))
+                false
+            } else {
+                txn.set(likeDoc, hashMapOf("createdAt" to FieldValue.serverTimestamp()))
+                txn.update(comment, "likeCount", FieldValue.increment(1))
+                true
+            }
+        }.addOnSuccessListener { nowLiked -> callback.onResult(true, nowLiked) }
+            .addOnFailureListener { callback.onResult(false, false) }
+    }
+
+    fun hasLikedComment(
+        communityId: String,
+        postId: String,
+        commentId: String,
+        callback: BoolCallback
+    ) {
+        val uid = auth.currentUser?.uid ?: return callback.onResult(false)
+        commentRef(communityId, postId, commentId).collection("likes").document(uid).get()
+            .addOnSuccessListener { callback.onResult(it.exists()) }
+            .addOnFailureListener { callback.onResult(false) }
     }
 
     /** Toggle an upvote for the current user. */
@@ -143,13 +194,26 @@ class CommunityRepository {
     }
 
     fun joinCommunity(communityId: String, callback: BoolCallback) {
-        val uid = auth.currentUser?.uid ?: return callback.onResult(false)
+        val user = auth.currentUser ?: return callback.onResult(false)
+        val uid = user.uid
+        val avatar = user.photoUrl?.toString() ?: ""
         val memberDoc = communityRef(communityId).collection("members").document(uid)
         db.runBatch { batch ->
-            batch.set(memberDoc, hashMapOf("joinedAt" to FieldValue.serverTimestamp()))
+            batch.set(memberDoc, hashMapOf(
+                "joinedAt" to FieldValue.serverTimestamp(),
+                "photoUrl" to avatar
+            ))
             batch.update(communityRef(communityId), "memberCount", FieldValue.increment(1))
-        }.addOnSuccessListener { callback.onResult(true) }
-            .addOnFailureListener { callback.onResult(false) }
+        }.addOnSuccessListener {
+            // Keep a short list of the most recent joiners' avatars for the overlap view.
+            communityRef(communityId).get().addOnSuccessListener { snap ->
+                @Suppress("UNCHECKED_CAST")
+                val current = (snap.get("recentMemberAvatars") as? List<String>) ?: emptyList()
+                val updated = (listOf(avatar) + current.filter { it != avatar }).take(3)
+                communityRef(communityId).update("recentMemberAvatars", updated)
+            }
+            callback.onResult(true)
+        }.addOnFailureListener { callback.onResult(false) }
     }
 
     fun leaveCommunity(communityId: String, callback: BoolCallback) {

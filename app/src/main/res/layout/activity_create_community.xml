@@ -19,6 +19,37 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <FrameLayout
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imgCommunity"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:src="@drawable/ic_people"
+                android:background="#EEF0FF"
+                app:civ_border_color="#E2E8F0"
+                app:civ_border_width="1dp" />
+
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="bottom|end"
+                android:background="@drawable/send_btn_circle_bg"
+                android:padding="6dp"
+                android:src="@drawable/ic_image_placeholder"
+                app:tint="#FFFFFF" />
+
+            <View
+                android:id="@+id/pickCommunityImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+        </FrameLayout>
+
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
