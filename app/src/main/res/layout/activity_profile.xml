@@ -434,6 +434,46 @@
                         android:textColor="#000000"
                         android:textSize="14sp" />
                 </LinearLayout>
+
+                <!-- Rate Mentor Card (mentees only, when viewing a mentor) -->
+                <LinearLayout
+                    android:id="@+id/llRatingCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/info_card_bg"
+                    android:padding="16dp"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvRatingTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="RATE THIS MENTOR"
+                        android:textColor="#999999"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1" />
+
+                    <RatingBar
+                        android:id="@+id/ratingBar"
+                        style="?android:attr/ratingBarStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:numStars="5"
+                        android:stepSize="1" />
+
+                    <TextView
+                        android:id="@+id/tvRatingAvg"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textColor="#666666"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
                 <LinearLayout
                     android:id="@+id/llMediaSection"
                     android:layout_width="match_parent"
