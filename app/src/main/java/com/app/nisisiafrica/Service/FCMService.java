@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.google.firebase.database.FirebaseDatabase;
@@ -73,17 +74,20 @@ public class FCMService extends FirebaseMessagingService {
     private void showNotification(String title, String body, String courseId,
                                   String senderId, String type) {
 
-        // Create intent to open app when notification is clicked
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("courseId", courseId);
-        intent.putExtra("senderId", senderId);
-        intent.putExtra("type", type);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Tapping a notification opens the in-app Notifications screen, with
+        // MainActivity as its parent so Back returns to the app.
+        Intent notifIntent = new Intent(this, NotificationsActivity.class);
+        notifIntent.putExtra("courseId", courseId);
+        notifIntent.putExtra("senderId", senderId);
+        notifIntent.putExtra("type", type);
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                this,
+        androidx.core.app.TaskStackBuilder stackBuilder =
+                androidx.core.app.TaskStackBuilder.create(this);
+        stackBuilder.addNextIntent(new Intent(this, MainActivity.class));
+        stackBuilder.addNextIntent(notifIntent);
+
+        PendingIntent pendingIntent = stackBuilder.getPendingIntent(
                 0,
-                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 

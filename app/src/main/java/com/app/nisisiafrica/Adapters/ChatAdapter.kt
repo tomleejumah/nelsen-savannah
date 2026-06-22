@@ -3,10 +3,12 @@ package com.app.nisisiafrica.Adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.ChatMessageEntity
+import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -91,9 +93,21 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private val tvTime: TextView = view.findViewById(R.id.tvTime)
         private val tvSender: TextView? = view.findViewById(R.id.tvSender)
         private val llMessage: View? = view.findViewById(R.id.llMessage)
+        private val ivImage: ImageView? = view.findViewById(R.id.ivImage)
 
         fun bind(message: ChatMessageEntity) {
-            tvMessage.text = message.message
+            if (message.type == "image" && ivImage != null) {
+                tvMessage.visibility = View.GONE
+                ivImage.visibility = View.VISIBLE
+                Glide.with(ivImage.context)
+                    .load(message.message)
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .into(ivImage)
+            } else {
+                ivImage?.visibility = View.GONE
+                tvMessage.visibility = View.VISIBLE
+                tvMessage.text = message.message
+            }
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
 
             // tvSender only exists on the received-message layout.
