@@ -2,6 +2,7 @@ package com.app.nisisiafrica.Fragments.BaseFragments;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +13,9 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -41,10 +45,12 @@ import com.app.nisisiafrica.data.Model.ChatNotificationRequest;
 import com.app.nisisiafrica.data.Model.Chatroom;
 import com.app.nisisiafrica.data.Model.NotificationResponse;
 import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Repository.ChatRepository;
 import com.app.nisisiafrica.data.Repository.ChatRoomRepository;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.data.remote.StorageUploader;
 import com.app.nisisiafrica.databinding.FragmentChatBinding;
 import com.bumptech.glide.Glide;
 import com.discord.panels.PanelState;
@@ -81,16 +87,34 @@ public class ChatFragment extends Fragment {
     private final java.util.List<Chatroom> loadedRooms = new ArrayList<>();
     private java.util.List<Chatroom> pinnedRooms = new ArrayList<>();
     private ChatRoomAdapter pagedAdapter;
+    private String currentChatId;
+    private String currentReceiverId;
+    private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentChatBinding.inflate(inflater, container, false);
 
+        imagePicker = registerForActivityResult(
+                new ActivityResultContracts.PickVisualMedia(), uri -> {
+                    if (uri != null) sendPickedImage(uri);
+                });
+
         initConfiguration();
         setupRecyclerView();
         setupGlobalClickListeners();
         setupBackNavigation();
+
+        binding.btnAttach.setOnClickListener(v -> {
+            if (currentChatId == null) {
+                Toast.makeText(requireContext(), "Open a chat first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            imagePicker.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                    .build());
+        });
 
         // Initialize user metadata and global rooms
         handleUserMetadata();
@@ -194,21 +218,46 @@ public class ChatFragment extends Fragment {
         String chatId = chatroom.getChatroomId();
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
 
+        currentChatId = chatId;
+        currentReceiverId = chatroom.getOtherUserId(currentUserId);
+
         binding.overlappingPanels.openEndPanel();
         isPanelOpen = true;
         binding.etMessage.setText("");
+        replyingTo = null;
+        binding.replyPreview.setVisibility(View.GONE);
 
         updateChatHeader(chatroom, type, currentUserId);
 
-        // Access Control: only admins may post announcements; everyone else reads.
+        // Access Control: mentors & admins may post announcements; mentees read only.
         if ("system".equals(type)) {
-            binding.bottomChatBar.setVisibility("Admin".equals(role) ? View.VISIBLE : View.GONE);
+            boolean canPost = "Admin".equals(role) || "Mentor".equals(role);
+            binding.bottomChatBar.setVisibility(canPost ? View.VISIBLE : View.GONE);
         } else {
             binding.bottomChatBar.setVisibility(View.VISIBLE);
         }
 
         startRealtimeMessages(chatId);
         setupSendAction(chatId, chatroom);
+        viewModel.markRead(chatId);
+    }
+
+    private void sendPickedImage(Uri uri) {
+        if (currentChatId == null) return;
+        Toast.makeText(requireContext(), "Uploading image...", Toast.LENGTH_SHORT).show();
+        final String chatId = currentChatId;
+        final String receiverId = currentReceiverId;
+        StorageUploader.upload(uri, "chat_images", (success, url) -> {
+            if (binding == null || viewModel == null) return;
+            if (success && url != null) {
+                viewModel.sendImageMessage(chatId, url, receiverId, ok -> {
+                    if (!ok) Toast.makeText(requireContext(), "Image not sent", Toast.LENGTH_SHORT).show();
+                    return Unit.INSTANCE;
+                });
+            } else {
+                Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void updateChatHeader(Chatroom chatroom, String type, String currentUserId) {
@@ -247,15 +296,23 @@ public class ChatFragment extends Fragment {
 
                 if (otherUserId != null) {
                     FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(otherUserId, user -> {
-                        if (user == null) return Unit.INSTANCE;
                         // Ignore late callbacks from a previously opened chat.
                         if (!otherUserId.equals(selectedOtherUserId)) return Unit.INSTANCE;
-                        userData = user;
-                        Glide.with(this).load(user.getPhotoUrl()).circleCrop().into(binding.tvHeaderAvatar);
-                        binding.tvChatRole.setText(user.getUserRole());
-                        bindProfilePanel(user);
+                        if (user != null) {
+                            userData = user;
+                            Glide.with(this).load(user.getPhotoUrl()).circleCrop()
+                                    .placeholder(R.drawable.ic_person).into(binding.tvHeaderAvatar);
+                            binding.tvChatRole.setText(user.getUserRole());
+                            bindProfilePanel(user);
+                        } else {
+                            // The partner is likely a mentor (stored under /mentors, not /users).
+                            loadMentorProfileFallback(otherUserId, otherName);
+                        }
                         return Unit.INSTANCE;
-                    }, e -> Unit.INSTANCE);
+                    }, e -> {
+                        loadMentorProfileFallback(otherUserId, otherName);
+                        return Unit.INSTANCE;
+                    });
 
                     binding.btnViewProfile.setOnClickListener(v -> {
                         Intent intent = new Intent(getActivity(), ProfileActivity.class);
@@ -265,6 +322,31 @@ public class ChatFragment extends Fragment {
                 }
                 break;
         }
+    }
+
+    /** Builds the profile panel from the /mentors node when the partner has no /users record. */
+    private void loadMentorProfileFallback(String mentorId, String fallbackName) {
+        FirebaseRemoteDataSource.INSTANCE.getMentorData(mentorId, mentor -> {
+            if (binding == null || !mentorId.equals(selectedOtherUserId)) return Unit.INSTANCE;
+            if (mentor == null) {
+                bindProfilePanelMinimal(fallbackName);
+                return Unit.INSTANCE;
+            }
+            String name = mentor.getMentorName() != null && !mentor.getMentorName().isEmpty()
+                    ? mentor.getMentorName() : fallbackName;
+            binding.tvProfileName.setText(name != null ? name : "");
+            binding.tvProfileRole.setText("Mentor");
+            binding.tvAbout.setText(mentor.getMentorDescription() != null ? mentor.getMentorDescription() : "");
+            binding.email.setText("");
+            binding.joinedTittle.setText("MENTEES");
+            binding.tvJoined.setText(mentor.getStudentsCount() != null ? mentor.getStudentsCount() : "-");
+            binding.tvChatRole.setText("Mentor");
+            Glide.with(this).load(mentor.getMentorImageUrl())
+                    .placeholder(R.drawable.ic_person).circleCrop().into(binding.tvProfileAvatar);
+            Glide.with(this).load(mentor.getMentorImageUrl())
+                    .placeholder(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
+            return Unit.INSTANCE;
+        }, e -> Unit.INSTANCE);
     }
 
     private void startRealtimeMessages(String chatId) {
@@ -361,12 +443,12 @@ public class ChatFragment extends Fragment {
                     replyingTo = null;
                     binding.replyPreview.setVisibility(View.GONE);
                 }
-                viewModel.sendMessage(chatId, msg, success -> {
+                String currentUserId = FirebaseAuth.getInstance().getUid();
+                String receiverId = chatroom.getOtherUserId(currentUserId);
+                viewModel.sendMessage(chatId, msg, receiverId, success -> {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
                     }
-                    String currentUserId = FirebaseAuth.getInstance().getUid();
-                    String receiverId = chatroom.getOtherUserId(currentUserId); // correct
                     if (receiverId != null) {
                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         user.getIdToken(false).addOnSuccessListener(result -> {

@@ -11,7 +11,7 @@ import com.app.nisisiafrica.R
 class SwipeToReplyCallback(
     context: Context,
     private val onSwiped: (Int) -> Unit
-) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
 
     private val replyIcon: Drawable? = ContextCompat.getDrawable(context, R.drawable.ic_reply)
     private val iconMargin = 48
@@ -52,8 +52,9 @@ class SwipeToReplyCallback(
 
         val itemView = viewHolder.itemView
         val maxSwipe = itemView.width * swipeLimit
-        val limitedDx = dX.coerceIn(0f, maxSwipe)
-        val fraction = limitedDx / maxSwipe
+        // Swipe LEFT: dX is negative, clamp to [-maxSwipe, 0].
+        val limitedDx = dX.coerceIn(-maxSwipe, 0f)
+        val fraction = -limitedDx / maxSwipe
 
         // trigger callback once when threshold hit
         if (fraction >= 1f && !triggered) {
@@ -62,12 +63,12 @@ class SwipeToReplyCallback(
             itemView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
         }
 
-        // draw reply icon
+        // draw reply icon on the right edge (revealed as the row slides left)
         replyIcon?.let {
             val iconSize = it.intrinsicHeight
             val iconTop = itemView.top + (itemView.height - iconSize) / 2
-            val iconLeft = itemView.left + iconMargin
-            it.setBounds(iconLeft, iconTop, iconLeft + iconSize, iconTop + iconSize)
+            val iconRight = itemView.right - iconMargin
+            it.setBounds(iconRight - iconSize, iconTop, iconRight, iconTop + iconSize)
             it.alpha = (fraction * 255).toInt().coerceIn(0, 255)
             it.draw(c)
         }

@@ -35,8 +35,26 @@ class ChatViewModel(private val repo: ChatRepository) : ViewModel() {
         }
     }
 
-    fun sendMessage(chatroomId: String, message: String, onComplete: (Boolean) -> Unit) {
-        repo.sendMessage(chatroomId, message, onComplete)
+    fun sendMessage(
+        chatroomId: String,
+        message: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.sendMessage(chatroomId, message, receiverId, onComplete)
+    }
+
+    fun sendImageMessage(
+        chatroomId: String,
+        imageUrl: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.sendImageMessage(chatroomId, imageUrl, receiverId, onComplete)
+    }
+
+    fun markRead(chatroomId: String) {
+        repo.markRoomRead(chatroomId)
     }
 
     class Factory(private val repo: ChatRepository) : ViewModelProvider.Factory {

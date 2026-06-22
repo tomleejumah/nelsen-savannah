@@ -25,21 +25,54 @@ class ChatRepository(private val appDatabase: AppDatabase) {
     fun getMessages(chatroomId: String): Flow<List<ChatMessageEntity>> =
         dao.getMessages(chatroomId)
 
-    fun sendMessage(chatroomId: String, message: String, onComplete: (Boolean) -> Unit) {
+    fun sendMessage(
+        chatroomId: String,
+        message: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
+        writeMessage(chatroomId, message, "text", message, receiverId, onComplete)
+    }
+
+    fun sendImageMessage(
+        chatroomId: String,
+        imageUrl: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
+        writeMessage(chatroomId, imageUrl, "image", "\uD83D\uDCF7 Photo", receiverId, onComplete)
+    }
+
+    /** Resets the current user's unread badge for a room (called when it's opened). */
+    fun markRoomRead(chatroomId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance()
+            .collection("chatRooms").document(chatroomId)
+            .update("unreadCount.$uid", 0)
+    }
+
+    private fun writeMessage(
+        chatroomId: String,
+        content: String,
+        type: String,
+        lastPreview: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
         val db = FirebaseFirestore.getInstance()
         val user = FirebaseAuth.getInstance().currentUser ?: return onComplete(false)
 
         val messageId = db.collection("chatRooms").document(chatroomId)
             .collection("messages").document().id
-        val time : Long = System.currentTimeMillis()
 
         val entity = ChatMessageEntity(
             messageId = messageId,
             chatroomId = chatroomId,
             senderId = user.uid,
             senderName = user.displayName ?: "User",
-            message = message,
+            message = content,
             timestamp = System.currentTimeMillis(),
+            type = type,
             status = "sending"
         )
 
@@ -49,9 +82,9 @@ class ChatRepository(private val appDatabase: AppDatabase) {
             "messageId" to messageId,
             "senderId" to user.uid,
             "senderName" to (user.displayName ?: "User"),
-            "message" to message,
+            "message" to content,
             "timestamp" to FieldValue.serverTimestamp(),
-            "type" to "text"
+            "type" to type
         )
 
         db.collection("chatRooms").document(chatroomId)
@@ -59,11 +92,18 @@ class ChatRepository(private val appDatabase: AppDatabase) {
             .set(chatMessage)
             .addOnSuccessListener {
                 scope.launch { dao.updateStatus(messageId, "sent") }
-                db.collection("chatRooms").document(chatroomId).update(
-                    "lastMessage", message,
-                    "lastMessageTimestamp", FieldValue.serverTimestamp()
+                val roomUpdates = hashMapOf<String, Any>(
+                    "lastMessage" to lastPreview,
+                    "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                    "lastMessageSenderId" to user.uid
                 )
-                if (chatroomId.startsWith("ai_assistant_")) sendToGemini(chatroomId, message)
+                if (!receiverId.isNullOrEmpty()) {
+                    roomUpdates["unreadCount.$receiverId"] = FieldValue.increment(1)
+                }
+                db.collection("chatRooms").document(chatroomId).update(roomUpdates)
+                if (chatroomId.startsWith("ai_assistant_") && type == "text") {
+                    sendToGemini(chatroomId, content)
+                }
                 onComplete(true)
             }
             .addOnFailureListener {
@@ -174,10 +214,11 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                             chatroomId = chatroomId,
                             senderId = msg.senderId,
                             senderName = msg.senderName,
-                            message = msg.message,
-                            timestamp = msg.timestamp?.toDate()?.time ?: System.currentTimeMillis(),
-                            status = "sent"
-                        ))
+                        message = msg.message,
+                        timestamp = msg.timestamp?.toDate()?.time ?: System.currentTimeMillis(),
+                        type = msg.type,
+                        status = "sent"
+                    ))
                     }
                 }
             }
