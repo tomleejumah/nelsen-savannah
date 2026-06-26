@@ -15,7 +15,8 @@ import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import de.hdodenhof.circleimageview.CircleImageView
 class ChatRoomAdapter(
-    private val onChatroomClick: (Chatroom) -> Unit
+    private val onChatroomClick: (Chatroom) -> Unit,
+    private val onChatroomLongClick: ((Chatroom) -> Unit)? = null
 ): PagingDataAdapter<Chatroom, ChatRoomAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -58,6 +59,10 @@ class ChatRoomAdapter(
             }
 
             itemView.setOnClickListener { onChatroomClick(chatroom) }
+            itemView.setOnLongClickListener {
+                onChatroomLongClick?.invoke(chatroom)
+                onChatroomLongClick != null
+            }
         }
     }
 

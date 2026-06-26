@@ -96,17 +96,32 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private val ivImage: ImageView? = view.findViewById(R.id.ivImage)
 
         fun bind(message: ChatMessageEntity) {
-            if (message.type == "image" && ivImage != null) {
-                tvMessage.visibility = View.GONE
-                ivImage.visibility = View.VISIBLE
-                Glide.with(ivImage.context)
-                    .load(message.message)
-                    .placeholder(R.drawable.ic_image_placeholder)
-                    .into(ivImage)
-            } else {
-                ivImage?.visibility = View.GONE
-                tvMessage.visibility = View.VISIBLE
-                tvMessage.text = message.message
+            // Reset reused state.
+            tvMessage.paintFlags = tvMessage.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+            tvMessage.setOnClickListener(null)
+            when {
+                message.type == "image" && ivImage != null -> {
+                    tvMessage.visibility = View.GONE
+                    ivImage.visibility = View.VISIBLE
+                    Glide.with(ivImage.context)
+                        .load(message.message)
+                        .placeholder(R.drawable.ic_image_placeholder)
+                        .into(ivImage)
+                    ivImage.setOnClickListener { openUrl(it, message.message) }
+                }
+                message.type == "file" || message.type == "audio" -> {
+                    ivImage?.visibility = View.GONE
+                    tvMessage.visibility = View.VISIBLE
+                    tvMessage.text = if (message.type == "audio") "\uD83C\uDFB5 Audio message"
+                        else "\uD83D\uDCC4 Document — tap to open"
+                    tvMessage.paintFlags = tvMessage.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+                    tvMessage.setOnClickListener { openUrl(it, message.message) }
+                }
+                else -> {
+                    ivImage?.visibility = View.GONE
+                    tvMessage.visibility = View.VISIBLE
+                    tvMessage.text = message.message
+                }
             }
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
 
@@ -121,6 +136,17 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     tvSender.visibility = View.GONE
                     llMessage?.setBackgroundResource(R.drawable.message_bg)
                 }
+            }
+        }
+
+        private fun openUrl(v: View, url: String?) {
+            if (url.isNullOrBlank()) return
+            try {
+                v.context.startActivity(
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                )
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(v.context, "Can't open attachment", android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }

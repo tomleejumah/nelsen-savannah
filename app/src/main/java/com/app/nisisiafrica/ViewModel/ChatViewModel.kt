@@ -53,6 +53,16 @@ class ChatViewModel(private val repo: ChatRepository) : ViewModel() {
         repo.sendImageMessage(chatroomId, imageUrl, receiverId, onComplete)
     }
 
+    fun sendMediaMessage(
+        chatroomId: String,
+        url: String,
+        type: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.sendMediaMessage(chatroomId, url, type, receiverId, onComplete)
+    }
+
     fun markRead(chatroomId: String) {
         repo.markRoomRead(chatroomId)
     }
