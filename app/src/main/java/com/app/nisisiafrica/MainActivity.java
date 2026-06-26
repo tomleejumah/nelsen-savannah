@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -31,6 +33,8 @@ import androidx.work.WorkManager;
 
 import com.app.customsnackbarlib.CustomSnackbar;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
+import com.app.nisisiafrica.CreateCommunityActivity;
+import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.CommunitiesFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
@@ -90,8 +94,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private FragmentManager fragmentManager;
     private Fragment currentlyDisplayedFragment = null;
     //todo init viewmodel in application class
-    private FabToBottomNavigationAnim fabToBottomNavigationAnim;
-    private FloatingActionButton fabView;
+    private int currentTabId = R.id.homeFragment;
+    private ImageView fabIcon;
+    private View bottomBarRow;
+    private View fabCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,10 +141,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         }
 //TODO: show dialog fragment once everyday  new FullscreenDialogFragment(this).show();
 
-        CardView cardChipNavigation = findViewById(R.id.cardChipNavigation);
-        fabView = findViewById(R.id.fab);
+        setupBlurBars();
+
         ChipNavigationBar chipNavigationBar = findViewById(R.id.chipNavigationBar);
         chipNavigationBar.setItemSelected(R.id.homeFragment, true);
+        updateContextualFab(R.id.homeFragment);
 
         chipNavigationBar.setOnItemSelectedListener(i -> {
             if (i == R.id.homeFragment) {
@@ -150,21 +157,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             } else if (i == R.id.profileFragment) {
                 replaceFragment(profileFragment);
             }
+            currentTabId = i;
+            updateContextualFab(i);
         });
 
-
-       fabView .setShapeAppearanceModel(
-                fabView.getShapeAppearanceModel()
-                        .toBuilder()
-                        .setAllCornerSizes(100f)
-                        .build()
-        );
-
-        fabToBottomNavigationAnim = new FabToBottomNavigationAnim(fabView, cardChipNavigation);
-
-        fabView.setOnClickListener(v -> {
-            fabToBottomNavigationAnim.showNavigationView();
-        });
+        findViewById(R.id.fabCard).setOnClickListener(v -> onContextualFabClicked());
 
         //fcm init
         initFCM();
@@ -230,12 +227,76 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 });
     }
 
+    /** Translucent (blurred) pill + side FAB using the BlurView library. */
+    private void setupBlurBars() {
+        bottomBarRow = findViewById(R.id.bottomBarRow);
+        fabCard = findViewById(R.id.fabCard);
+        fabIcon = findViewById(R.id.fabIcon);
+
+        eightbitlab.com.blurview.BlurTarget target = findViewById(R.id.blurTarget);
+        eightbitlab.com.blurview.BlurView navBlur = findViewById(R.id.navBlur);
+        eightbitlab.com.blurview.BlurView fabBlur = findViewById(R.id.fabBlur);
+        try {
+            navBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(0xCCFFFFFF);
+            fabBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(0xCCFFFFFF);
+        } catch (Exception e) {
+            Log.w(TAG, "Blur setup failed; falling back to solid bars", e);
+            navBlur.setBackgroundColor(0xF2FFFFFF);
+            fabBlur.setBackgroundColor(0xF2FFFFFF);
+        }
+    }
+
+    /** Sets the side FAB icon/visibility for the active tab. */
+    private void updateContextualFab(int tabId) {
+        if (fabCard == null || fabIcon == null) return;
+        boolean canCreate = isMentorOrAdmin();
+        boolean show;
+        int icon = R.drawable.ic_add;
+        if (tabId == R.id.homeFragment) {
+            show = canCreate;
+        } else if (tabId == R.id.communitiesFragment) {
+            show = canCreate;
+        } else if (tabId == R.id.chatFragment) {
+            show = canCreate;
+            icon = R.drawable.ic_chat;
+        } else if (tabId == R.id.profileFragment) {
+            show = true;
+            icon = R.drawable.ic_edit;
+        } else {
+            show = false;
+        }
+        fabIcon.setImageResource(icon);
+        fabCard.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void onContextualFabClicked() {
+        if (currentTabId == R.id.homeFragment) {
+            homeFragment.showCreateSheet();
+        } else if (currentTabId == R.id.communitiesFragment) {
+            startActivity(new Intent(this, CreateCommunityActivity.class));
+        } else if (currentTabId == R.id.chatFragment) {
+            chatFragment.showNewChatPicker();
+        } else if (currentTabId == R.id.profileFragment) {
+            Intent i = new Intent(this, EditProfileActivity.class);
+            i.putExtra(Constants.CURRENT_USER_ID, Util.getState(Constants.CURRENT_USER_ID, ""));
+            startActivity(i);
+        }
+    }
+
+    private boolean isMentorOrAdmin() {
+        String role = userRole != null ? userRole : Util.getState(Constants.USER_ROLE, "Mentee");
+        return "Mentor".equals(role) || "Admin".equals(role);
+    }
+
     public void hideBottomBar() {
-        fabToBottomNavigationAnim.hideNavigationView();
+        if (bottomBarRow == null) return;
+        bottomBarRow.animate().translationY(bottomBarRow.getHeight() + 48f)
+                .setDuration(180).start();
     }
 
     public void showBottomBar() {
-        fabToBottomNavigationAnim.showNavigationView();
+        if (bottomBarRow == null) return;
+        bottomBarRow.animate().translationY(0f).setDuration(180).start();
     }
 
     private void handleFreshUserData(UserData userData) {
@@ -285,6 +346,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Util.saveState(Constants.USER_ROLE, userRole);
         userData.setUserRole(userRole);
         sharedUserViewModel1.updateUserData(userData);
+        updateContextualFab(currentTabId);
         SnackbarHandler snackbarHandler = (message, duration, type) -> {
             CustomSnackbar.show(MainActivity.this, message, duration, type);
         };
@@ -297,6 +359,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             chipNavigationBar.setItemSelected(R.id.homeFragment, true);
         }
         replaceFragment(homeFragment);
+        currentTabId = R.id.homeFragment;
+        updateContextualFab(R.id.homeFragment);
     }
 
     private void handleCachedUser() {
@@ -338,6 +402,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                     }
                     Util.saveState(Constants.USER_ROLE, remoteUserData.getUserRole() != null
                             ? remoteUserData.getUserRole() : "Mentee");
+                    userRole = remoteUserData.getUserRole();
+                    updateContextualFab(currentTabId);
                 } else if (localUserData != null) {
                     userData = localUserData;
                     sharedUserViewModel1.setUserData(localUserData);
