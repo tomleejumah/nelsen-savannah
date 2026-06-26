@@ -18,6 +18,13 @@ import java.util.Locale
 class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
     private val events = mutableListOf<Event>()
 
+    fun interface OnEventClick {
+        fun onClick(event: Event)
+    }
+
+    /** Invoked when an event card is tapped (host shows the actions sheet). */
+    var onEventClick: OnEventClick? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_event_timeline, parent, false)
@@ -44,6 +51,7 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
         private val tvEventDate: TextView = itemView.findViewById(R.id.tvEventDate)
         private val tvEventTitle: TextView = itemView.findViewById(R.id.tvEventTitle)
         private val tvEventTime: TextView = itemView.findViewById(R.id.tvEventTime)
+        private val tvEventPlace: TextView = itemView.findViewById(R.id.tvEventPlace)
         private val tvEventBadge: TextView = itemView.findViewById(R.id.tvEventBadge)
         private val timelineDot: View = itemView.findViewById(R.id.timelineDot)
         private val dottedLine: View = itemView.findViewById(R.id.dottedLine)
@@ -62,8 +70,24 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
 //            tvEventDate.text = dateFormat.format(event.date.toDate())
             tvEventDate.text = dateFormat.format(Date(event.date))
 
-            tvEventTitle.text = event.title
+            tvEventTitle.text = if (event.title.isNotBlank()) event.title
+                else "Session with " + listOf(event.mentorName, event.menteeName)
+                    .firstOrNull { it.isNotBlank() }.orEmpty()
             tvEventTime.text = "${event.startTime} - ${event.endTime}"
+
+            val online = "online".equals(event.mode, ignoreCase = true)
+            val place = if (online) "Online" else event.location
+            if (place.isNotBlank()) {
+                tvEventPlace.visibility = View.VISIBLE
+                tvEventPlace.text = place
+                tvEventPlace.setCompoundDrawablesWithIntrinsicBounds(
+                    if (online) R.drawable.ic_video else R.drawable.ic_location, 0, 0, 0
+                )
+            } else {
+                tvEventPlace.visibility = View.GONE
+            }
+
+            eventCard.setOnClickListener { onEventClick?.onClick(event) }
 
             // Hide line for last item
 //            timelineView.visibility = if (isLast) View.INVISIBLE else View.VISIBLE

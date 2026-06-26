@@ -230,6 +230,9 @@ data class Event(
     val menteeName: String = "",
     val status: Int = 0,
     val description: String? = null,
+    val mode: String = "physical",   // "physical" | "online"
+    val location: String = "",       // physical venue / address
+    val meetingLink: String = "",    // online meeting (e.g. Google Meet) url
 //    val participants: Map<String, Boolean>? = null
     val participants: List<String>? = null
 )

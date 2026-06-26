@@ -201,6 +201,9 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 userData.getFirstName() + " " + userData.getLastName(), //todo get user name from cache
                 0,                                            // status
                 null,                                         // description
+                "physical",                                   // mode
+                "",                                           // location
+                "",                                           // meetingLink
                 participants                                  // participants map
         );
 //todo switch to view model/repository

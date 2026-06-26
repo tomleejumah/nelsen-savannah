@@ -937,15 +937,19 @@ object FirebaseRemoteDataSource {
             "mentorName" to mentorName,
             "menteeName" to menteeName,
             "status" to status,
-            "description" to description
+            "description" to description,
+            "mode" to mode,
+            "location" to location,
+            "meetingLink" to meetingLink
         )
     }
 
     fun Event.getTitleForUser(uid: String): String {
+        if (title.isNotBlank()) return title
         return when {
             mentorId == uid -> "Session with $menteeName"
             menteeId == uid -> "Session with $mentorName"
-            else -> title  // Fallback for announcements
+            else -> "Event"
         }
     }
 
