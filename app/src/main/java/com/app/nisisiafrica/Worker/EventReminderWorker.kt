@@ -98,6 +98,6 @@ class EventReminderWorker(
 
     companion object {
         private const val TAG = "EventReminderWorker"
-        private const val REMINDER_LEAD_MS = 60L * 60L * 1000L // 1 hour before
+        private const val REMINDER_LEAD_MS = 30L * 60L * 1000L // 30 minutes before
     }
 }

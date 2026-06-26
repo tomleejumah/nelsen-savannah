@@ -161,6 +161,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         EventViewModelFactory factory = new EventViewModelFactory(repository);
         eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
         eventAdapter = new EventAdapter();
+        eventAdapter.setOnEventClick(this::showEventActions);
         rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
         rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvUpcomingEvents.setAdapter(eventAdapter);
@@ -761,6 +762,65 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //            txtDateInfo.setText("• Blue Underline: Your schedules");
 //        }
 
+    }
+
+    /**
+     * Shows a bottom sheet of contextual actions for an event: add to calendar,
+     * and either join the meeting (online, when it's time) or view the location.
+     */
+    private void showEventActions(Event event) {
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        View sheet = LayoutInflater.from(requireContext())
+                .inflate(R.layout.sheet_event_actions, null);
+
+        TextView title = sheet.findViewById(R.id.tvSheetTitle);
+        TextView subtitle = sheet.findViewById(R.id.tvSheetSubtitle);
+        View btnPrimary = sheet.findViewById(R.id.btnPrimaryAction);
+        TextView btnPrimaryText = sheet.findViewById(R.id.btnPrimaryActionText);
+        View btnCalendar = sheet.findViewById(R.id.btnAddCalendar);
+
+        String t = event.getTitle();
+        title.setText(t != null && !t.trim().isEmpty() ? t
+                : ("Session with " + (event.getMentorName() != null ? event.getMentorName() : "")));
+
+        boolean online = com.app.nisisiafrica.Utils.EventActions.isOnline(event);
+        String place = online ? "Online meeting" : event.getLocation();
+        subtitle.setText(event.getStartTime() + " - " + event.getEndTime()
+                + (place != null && !place.isEmpty() ? "  \u2022  " + place : ""));
+
+        boolean joinTime = online && com.app.nisisiafrica.Utils.EventActions.isJoinTime(event);
+        if (online) {
+            btnPrimaryText.setText(joinTime ? "Join Google Meet" : "Add to Google Calendar");
+            btnPrimary.setOnClickListener(v -> {
+                if (joinTime) {
+                    com.app.nisisiafrica.Utils.EventActions.joinMeeting(requireContext(), event);
+                } else {
+                    com.app.nisisiafrica.Utils.EventActions.addToCalendar(requireContext(), event);
+                }
+                dialog.dismiss();
+            });
+            btnCalendar.setVisibility(joinTime ? View.VISIBLE : View.GONE);
+            btnCalendar.setOnClickListener(v -> {
+                com.app.nisisiafrica.Utils.EventActions.addToCalendar(requireContext(), event);
+                dialog.dismiss();
+            });
+        } else {
+            btnPrimaryText.setText("Add to Google Calendar");
+            btnPrimary.setOnClickListener(v -> {
+                com.app.nisisiafrica.Utils.EventActions.addToCalendar(requireContext(), event);
+                dialog.dismiss();
+            });
+            btnCalendar.setVisibility(View.VISIBLE);
+            ((TextView) sheet.findViewById(R.id.btnAddCalendarText)).setText("View location");
+            btnCalendar.setOnClickListener(v -> {
+                com.app.nisisiafrica.Utils.EventActions.openLocation(requireContext(), event);
+                dialog.dismiss();
+            });
+        }
+
+        dialog.setContentView(sheet);
+        dialog.show();
     }
 
     private void getEvents(UserData userData, View view) {

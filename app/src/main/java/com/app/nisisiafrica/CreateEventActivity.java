@@ -19,9 +19,13 @@ import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.Event;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.data.remote.NotificationSender;
+import android.view.View;
+
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -33,9 +37,10 @@ import kotlin.Unit;
 
 public class CreateEventActivity extends AppCompatActivity {
 
-    private TextInputEditText etTitle, etDescription;
+    private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink;
     private TextView tvDate, tvStart, tvEnd;
-    private MaterialButton btnSave;
+    private MaterialButton btnSave, btnModeOnline;
+    private TextInputLayout tilLocation, tilMeetingLink;
 
     private final Calendar dateCal = Calendar.getInstance();
     private boolean dateSet = false;
@@ -58,10 +63,24 @@ public class CreateEventActivity extends AppCompatActivity {
 
         etTitle = findViewById(R.id.etEventTitle);
         etDescription = findViewById(R.id.etEventDescription);
+        etLocation = findViewById(R.id.etEventLocation);
+        etMeetingLink = findViewById(R.id.etMeetingLink);
         tvDate = findViewById(R.id.tvDate);
         tvStart = findViewById(R.id.tvStartTime);
         tvEnd = findViewById(R.id.tvEndTime);
         btnSave = findViewById(R.id.btnSaveEvent);
+        btnModeOnline = findViewById(R.id.btnModeOnline);
+        tilLocation = findViewById(R.id.tilLocation);
+        tilMeetingLink = findViewById(R.id.tilMeetingLink);
+
+        MaterialButtonToggleGroup toggleMode = findViewById(R.id.toggleMode);
+        toggleMode.check(R.id.btnModePhysical);
+        toggleMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            boolean online = checkedId == R.id.btnModeOnline;
+            tilMeetingLink.setVisibility(online ? View.VISIBLE : View.GONE);
+            tilLocation.setVisibility(online ? View.GONE : View.VISIBLE);
+        });
 
         tvDate.setOnClickListener(v -> pickDate());
         tvStart.setOnClickListener(v -> pickTime(true));
@@ -122,6 +141,19 @@ public class CreateEventActivity extends AppCompatActivity {
 
         long eventMillis = dateCal.getTimeInMillis();
 
+        boolean online = btnModeOnline.isChecked();
+        String location = etLocation.getText() != null ? etLocation.getText().toString().trim() : "";
+        String meetingLink = etMeetingLink.getText() != null ? etMeetingLink.getText().toString().trim() : "";
+
+        if (online && meetingLink.isEmpty()) {
+            etMeetingLink.setError("Add a meeting link");
+            return;
+        }
+        if (!online && location.isEmpty()) {
+            etLocation.setError("Add a location");
+            return;
+        }
+
         // For personal/test events the mentee is the creator; a real booking flow
         // would set a distinct menteeId, in which case that person gets notified.
         final String menteeId = uid;
@@ -139,6 +171,9 @@ public class CreateEventActivity extends AppCompatActivity {
                 creatorName,
                 0,                  // status
                 description.isEmpty() ? null : description,
+                online ? "online" : "physical",
+                location,
+                meetingLink,
                 null                // participants
         );
 
