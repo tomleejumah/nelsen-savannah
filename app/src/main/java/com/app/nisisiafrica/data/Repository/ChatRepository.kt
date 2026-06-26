@@ -43,6 +43,21 @@ class ChatRepository(private val appDatabase: AppDatabase) {
         writeMessage(chatroomId, imageUrl, "image", "\uD83D\uDCF7 Photo", receiverId, onComplete)
     }
 
+    /**
+     * Sends a non-image attachment (document or audio). [type] is "file" or "audio";
+     * the URL is stored as the message body and opened on tap.
+     */
+    fun sendMediaMessage(
+        chatroomId: String,
+        url: String,
+        type: String,
+        receiverId: String?,
+        onComplete: (Boolean) -> Unit
+    ) {
+        val preview = if (type == "audio") "\uD83C\uDFB5 Audio" else "\uD83D\uDCC4 Document"
+        writeMessage(chatroomId, url, type, preview, receiverId, onComplete)
+    }
+
     /** Resets the current user's unread badge for a room (called when it's opened). */
     fun markRoomRead(chatroomId: String) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return

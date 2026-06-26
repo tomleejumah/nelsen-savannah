@@ -674,6 +674,22 @@ object FirebaseRemoteDataSource {
             }
     }
 
+    /** Deletes a chat room and its messages (best effort) for both participants. */
+    fun deleteChatRoom(chatroomId: String, onComplete: (Boolean) -> Unit) {
+        val firestore = FirebaseFirestore.getInstance()
+        val roomRef = firestore.collection("chatRooms").document(chatroomId)
+        roomRef.collection("messages").get()
+            .addOnSuccessListener { snap ->
+                val batch = firestore.batch()
+                for (d in snap.documents) batch.delete(d.reference)
+                batch.delete(roomRef)
+                batch.commit().addOnCompleteListener { onComplete(it.isSuccessful) }
+            }
+            .addOnFailureListener {
+                roomRef.delete().addOnCompleteListener { onComplete(it.isSuccessful) }
+            }
+    }
+
     // In ChatRepository
     fun getChatRoomsPagingSource(): PagingSource<QuerySnapshot, Chatroom> {
         val firestore = FirebaseFirestore.getInstance()

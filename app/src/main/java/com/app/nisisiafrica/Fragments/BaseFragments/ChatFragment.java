@@ -81,6 +81,7 @@ public class ChatFragment extends Fragment {
     private View chipNavigationBar;
     private UserData myUserData;
     private String selectedOtherUserId;
+    private boolean selectedIsMentor = false;
     private OnBackPressedCallback backCallback;
     private ConcatAdapter concatAdapter;
     private ChatSearchAdapter searchAdapter;
@@ -90,6 +91,8 @@ public class ChatFragment extends Fragment {
     private String currentChatId;
     private String currentReceiverId;
     private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
+    private ActivityResultLauncher<String> documentPicker;
+    private String pendingMediaType = "file";
 
     @Nullable
     @Override
@@ -99,6 +102,11 @@ public class ChatFragment extends Fragment {
         imagePicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
                     if (uri != null) sendPickedImage(uri);
+                });
+
+        documentPicker = registerForActivityResult(
+                new ActivityResultContracts.GetContent(), uri -> {
+                    if (uri != null) sendPickedMedia(uri, pendingMediaType);
                 });
 
         initConfiguration();
@@ -111,9 +119,7 @@ public class ChatFragment extends Fragment {
                 Toast.makeText(requireContext(), "Open a chat first", Toast.LENGTH_SHORT).show();
                 return;
             }
-            imagePicker.launch(new PickVisualMediaRequest.Builder()
-                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                    .build());
+            showAttachmentChooser();
         });
 
         // Mentors get a "start chat" entry point to DM their mentees.
@@ -146,6 +152,9 @@ public class ChatFragment extends Fragment {
         });
         pagedAdapter = new ChatRoomAdapter(chatroom -> {
             openChat(chatroom);
+            return Unit.INSTANCE;
+        }, chatroom -> {
+            confirmDeleteChat(chatroom);
             return Unit.INSTANCE;
         });
 
@@ -247,6 +256,36 @@ public class ChatFragment extends Fragment {
         viewModel.markRead(chatId);
     }
 
+    /** Confirms then deletes a chat (skips system/AI/announcement rooms). */
+    private void confirmDeleteChat(Chatroom chatroom) {
+        if (chatroom == null) return;
+        String type = chatroom.getType() != null ? chatroom.getType() : "direct";
+        if ("system".equals(type) || "ai".equals(type)) {
+            Toast.makeText(requireContext(), "This chat can't be deleted", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getUid();
+        String name = chatroom.getOtherUserName(currentUserId);
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete chat")
+                .setMessage("Delete your conversation" + (name != null ? " with " + name : "") + "? This can't be undone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (d, w) -> {
+                    String chatId = chatroom.getChatroomId();
+                    chatRoomViewModel.deleteChatRoom(chatId, ok -> {
+                        if (binding == null) return Unit.INSTANCE;
+                        Toast.makeText(requireContext(),
+                                ok ? "Chat deleted" : "Couldn't delete chat", Toast.LENGTH_SHORT).show();
+                        if (ok && chatId.equals(currentChatId)) {
+                            binding.overlappingPanels.closePanels();
+                            currentChatId = null;
+                        }
+                        return Unit.INSTANCE;
+                    });
+                })
+                .show();
+    }
+
     /** Bottom-sheet picker letting a mentor jump into a DM with one of their mentees. */
     private void showNewChatPicker() {
         java.util.List<Chatroom> mentees = new ArrayList<>();
@@ -274,6 +313,50 @@ public class ChatFragment extends Fragment {
         adapter.submit(mentees);
         dialog.setContentView(rv);
         dialog.show();
+    }
+
+    /** Lets the user attach a photo, document, or audio file to the open chat. */
+    private void showAttachmentChooser() {
+        CharSequence[] options = {"Photo", "Document", "Audio"};
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Send attachment")
+                .setItems(options, (d, which) -> {
+                    switch (which) {
+                        case 0:
+                            imagePicker.launch(new PickVisualMediaRequest.Builder()
+                                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                                    .build());
+                            break;
+                        case 1:
+                            pendingMediaType = "file";
+                            documentPicker.launch("*/*");
+                            break;
+                        case 2:
+                            pendingMediaType = "audio";
+                            documentPicker.launch("audio/*");
+                            break;
+                    }
+                })
+                .show();
+    }
+
+    private void sendPickedMedia(Uri uri, String type) {
+        if (currentChatId == null) return;
+        Toast.makeText(requireContext(), "Uploading...", Toast.LENGTH_SHORT).show();
+        final String chatId = currentChatId;
+        final String receiverId = currentReceiverId;
+        String folder = "audio".equals(type) ? "chat_audio" : "chat_files";
+        StorageUploader.upload(uri, folder, (success, url) -> {
+            if (binding == null || viewModel == null) return;
+            if (success && url != null) {
+                viewModel.sendMediaMessage(chatId, url, type, receiverId, ok -> {
+                    if (!ok) Toast.makeText(requireContext(), "Not sent", Toast.LENGTH_SHORT).show();
+                    return Unit.INSTANCE;
+                });
+            } else {
+                Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void sendPickedImage(Uri uri) {
@@ -329,14 +412,19 @@ public class ChatFragment extends Fragment {
                 bindProfilePanelMinimal(otherName);
 
                 if (otherUserId != null) {
+                    selectedIsMentor = false;
                     FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(otherUserId, user -> {
                         // Ignore late callbacks from a previously opened chat.
                         if (!otherUserId.equals(selectedOtherUserId)) return Unit.INSTANCE;
-                        if (user != null) {
+                        boolean hasName = user != null
+                                && (((user.getFirstName() != null && !user.getFirstName().isEmpty()))
+                                || (user.getEmail() != null && !user.getEmail().isEmpty()));
+                        if (user != null && hasName) {
                             userData = user;
                             Glide.with(this).load(user.getPhotoUrl()).circleCrop()
                                     .placeholder(R.drawable.ic_person).into(binding.tvHeaderAvatar);
                             binding.tvChatRole.setText(user.getUserRole());
+                            selectedIsMentor = "Mentor".equals(user.getUserRole());
                             bindProfilePanel(user);
                         } else {
                             // The partner is likely a mentor (stored under /mentors, not /users).
@@ -350,7 +438,11 @@ public class ChatFragment extends Fragment {
 
                     binding.btnViewProfile.setOnClickListener(v -> {
                         Intent intent = new Intent(getActivity(), ProfileActivity.class);
-                        intent.putExtra(Constants.USER_ID, otherUserId);
+                        if (selectedIsMentor) {
+                            intent.putExtra(Constants.MENTOR_ID, otherUserId);
+                        } else {
+                            intent.putExtra(Constants.USER_ID, otherUserId);
+                        }
                         startActivity(intent);
                     });
                 }
@@ -366,6 +458,7 @@ public class ChatFragment extends Fragment {
                 bindProfilePanelMinimal(fallbackName);
                 return Unit.INSTANCE;
             }
+            selectedIsMentor = true;
             String name = mentor.getMentorName() != null && !mentor.getMentorName().isEmpty()
                     ? mentor.getMentorName() : fallbackName;
             binding.tvProfileName.setText(name != null ? name : "");

@@ -21,4 +21,8 @@ class ChatRoomViewModel(private val chatRepository: ChatRoomRepository): ViewMod
 
     val pinnedChatRooms: LiveData<List<Chatroom>> =
         chatRepository.getPinnedChatRooms().asLiveData()
+
+    fun deleteChatRoom(chatroomId: String, onComplete: (Boolean) -> Unit) {
+        chatRepository.deleteChatRoom(chatroomId, onComplete)
+    }
 }

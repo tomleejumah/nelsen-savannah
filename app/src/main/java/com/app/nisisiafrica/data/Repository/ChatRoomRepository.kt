@@ -23,4 +23,7 @@ class ChatRoomRepository() {
 
     fun getPinnedChatRooms(): Flow<List<Chatroom>> =
         FirebaseRemoteDataSource.getPinnedChatRooms()
+
+    fun deleteChatRoom(chatroomId: String, onComplete: (Boolean) -> Unit) =
+        FirebaseRemoteDataSource.deleteChatRoom(chatroomId, onComplete)
 }
