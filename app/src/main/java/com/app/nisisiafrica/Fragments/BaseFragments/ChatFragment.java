@@ -122,10 +122,8 @@ public class ChatFragment extends Fragment {
             showAttachmentChooser();
         });
 
-        // Mentors get a "start chat" entry point to DM their mentees.
-        boolean canStartChat = "Mentor".equals(role) || "Admin".equals(role);
-        binding.fabNewChat.setVisibility(canStartChat ? View.VISIBLE : View.GONE);
-        binding.fabNewChat.setOnClickListener(v -> showNewChatPicker());
+        // Start-chat is now triggered from MainActivity's contextual bottom-bar FAB.
+        binding.fabNewChat.setVisibility(View.GONE);
 
         // Initialize user metadata and global rooms
         handleUserMetadata();
@@ -287,7 +285,7 @@ public class ChatFragment extends Fragment {
     }
 
     /** Bottom-sheet picker letting a mentor jump into a DM with one of their mentees. */
-    private void showNewChatPicker() {
+    public void showNewChatPicker() {
         java.util.List<Chatroom> mentees = new ArrayList<>();
         for (Chatroom r : loadedRooms) {
             String type = r.getType() != null ? r.getType() : "direct";

@@ -182,14 +182,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //                        .error(R.drawable.ic_error)
                     .into(imgDp);
 
-            if ("Mentor".equals(userData.getUserRole())) {
-                plusIcon.setVisibility(View.VISIBLE);
-                if (fabCreateMain != null) fabCreateMain.setVisibility(View.VISIBLE);
-            } else {
-                plusIcon.setVisibility(View.GONE);
-                if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
-                collapseSpeedDial();
-            }
+            // Floating speed-dial replaced by MainActivity's contextual bottom-bar FAB.
+            if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
+            collapseSpeedDial();
+            plusIcon.setVisibility("Mentor".equals(userData.getUserRole()) ? View.VISIBLE : View.GONE);
 
             getEvents(data, view);
 
@@ -598,7 +594,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         fabCreateMain.animate().rotation(0f).setDuration(200).start();
     }
 
-    private void showCreateSheet() {
+    public void showCreateSheet() {
         if (getContext() == null) return;
         BottomSheetDialog sheet = new BottomSheetDialog(getContext());
         View sheetView = getLayoutInflater().inflate(R.layout.sheet_create, null);
