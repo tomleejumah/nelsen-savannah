@@ -24,7 +24,8 @@ export const Route = createFileRoute("/blogs")({
 });
 
 function BlogsPage() {
-  const [featured, ...rest] = BLOGS;
+  const featured = BLOGS[0]!;
+  const rest = BLOGS.slice(1);
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
