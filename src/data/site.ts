@@ -111,7 +111,6 @@ export const ROADMAP = [
   },
 ];
 
-const _STATS_MARKER = null;
 export const STATS = [
   { value: "4,200+", label: "Mentees guided" },
   { value: "380", label: "Active mentors" },
