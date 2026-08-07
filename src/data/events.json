@@ -1,0 +1,72 @@
+[
+  {
+    "id": "evt-career-expo-nairobi",
+    "title": "Career Compass Expo: 60 Paths in One Room",
+    "date": "2026-09-12",
+    "time": "9:00 AM – 4:00 PM",
+    "venue": "Sarit Expo Centre, Westlands",
+    "city": "Nairobi",
+    "format": "In person",
+    "program": "Career Compass",
+    "seats": 400,
+    "seatsTaken": 318,
+    "price": "Free",
+    "summary": "Sixty professionals, sixty stations. Mentees rotate, ask anything, and leave with a shortlist of paths that fit them."
+  },
+  {
+    "id": "evt-mock-interview-week",
+    "title": "Mock Interview Week (Live Panels)",
+    "date": "2026-09-24",
+    "time": "5:30 PM – 8:00 PM",
+    "venue": "Nelsen Savanna Hub, Kilimani",
+    "city": "Nairobi",
+    "format": "In person",
+    "program": "Comms & Interview Lab",
+    "seats": 60,
+    "seatsTaken": 51,
+    "price": "KES 500",
+    "summary": "Real hiring managers, recorded sessions, and written feedback within 48 hours of your panel."
+  },
+  {
+    "id": "evt-mentor-onboarding",
+    "title": "Mentor Academy Onboarding Cohort 12",
+    "date": "2026-10-04",
+    "time": "10:00 AM – 1:00 PM",
+    "venue": "Online (Zoom)",
+    "city": "Virtual",
+    "format": "Online",
+    "program": "Mentor Academy",
+    "seats": 120,
+    "seatsTaken": 44,
+    "price": "Free",
+    "summary": "Training on listening frameworks, safeguarding, and how to run a six-month mentorship without burning out."
+  },
+  {
+    "id": "evt-wellbeing-campus-tour",
+    "title": "Wellbeing Campus Tour: Money, Pressure, People",
+    "date": "2026-10-18",
+    "time": "2:00 PM – 5:00 PM",
+    "venue": "Kenyatta University Main Hall",
+    "city": "Kiambu",
+    "format": "In person",
+    "program": "Social Life & Wellbeing",
+    "seats": 250,
+    "seatsTaken": 96,
+    "price": "Free",
+    "summary": "An honest session on peer pressure, first-salary money habits, and where to get help before things break."
+  },
+  {
+    "id": "evt-juniors-seniors-mixer",
+    "title": "Juniors Meet Seniors Industry Mixer",
+    "date": "2026-11-07",
+    "time": "6:00 PM – 9:00 PM",
+    "venue": "The Alchemist, Westlands",
+    "city": "Nairobi",
+    "format": "In person",
+    "program": "Juniors Meet Seniors",
+    "seats": 150,
+    "seatsTaken": 143,
+    "price": "KES 1,000",
+    "summary": "Curated pairing night across tech, finance, health, media, and public service. Come with one question, leave with a mentor."
+  }
+]
