@@ -25,10 +25,10 @@ export const PROGRAMS: Program[] = [
     tone: "brand",
   },
   {
-    slug: "comms-and-interview-lab",
-    title: "Comms & Interview Lab",
+    slug: "communication-lab",
+    title: "Communication Lab",
     blurb:
-      "Speak, pitch, and interview with control. Mock panels, recorded feedback, and CV clinics with hiring managers.",
+      "Speak, write and present with control. Public speaking, workplace communication and personal branding — with interview practice as one module of the syllabus.",
     audience: "Job seekers & interns",
     tone: "ember",
   },
@@ -66,6 +66,54 @@ export const PROGRAMS: Program[] = [
   },
 ];
 
+export const STATS = [
+
+export const PARTNERS = [
+  {
+    name: "Recruitment agencies",
+    detail:
+      "Vetted hiring partners across tech, finance, health, media and trades receive shortlists from our cohorts.",
+  },
+  {
+    name: "Employer talent pipelines",
+    detail:
+      "Companies use us as an early pipeline — internships, attachments and graduate roles come to the cohort first.",
+  },
+  {
+    name: "Placement follow-through",
+    detail:
+      "Your mentor stays with you through applications and the first months on the job, not just the introduction.",
+  },
+];
+
+export const ROADMAP = [
+  {
+    phase: "Now",
+    title: "The mentorship platform",
+    body: "Programs, cohorts, events with seat reservations, blogs and mentor matching — live on this site.",
+    status: "Live",
+  },
+  {
+    phase: "Next",
+    title: "Nelsen Connect App",
+    body: "A digital learning and empowerment hub: curated learning paths, real projects, milestones and direct mentor-to-mentee conversations.",
+    status: "In design",
+  },
+  {
+    phase: "Later",
+    title: "Nelsen LMS",
+    body: "A multi-tenant learning system for teachers, students and supervisors — competency grids, rubric-based marking, live progress dashboards and WCAG 2.2 AA accessibility built in.",
+    status: "Planned",
+  },
+  {
+    phase: "Later",
+    title: "Gallery & courses library",
+    body: "Photo and video archive of cohorts, plus an on-demand course library backed by live data.",
+    status: "Planned",
+  },
+];
+
+const _STATS_MARKER = null;
 export const STATS = [
   { value: "4,200+", label: "Mentees guided" },
   { value: "380", label: "Active mentors" },
