@@ -37,10 +37,10 @@ function ProgramsPage() {
       <section className="relative overflow-hidden bg-hero-gradient px-5 pb-20 pt-36 sm:px-8 sm:pt-44">
         <div className="mx-auto max-w-4xl text-center">
           <p className="eyebrow text-ember">Our Programs</p>
-          <h1 className="mt-4 text-4xl font-bold text-primary-foreground sm:text-6xl">
+          <h1 className="mt-4 text-4xl font-bold text-on-dark sm:text-6xl">
             Structured guidance for every stage of the climb
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-primary-foreground/70">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-on-dark/70">
             Each program runs in cohorts with a trained mentor, clear goals, and sessions you can
             actually attend. Pick the one that matches where you are right now.
           </p>

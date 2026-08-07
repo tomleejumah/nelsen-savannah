@@ -38,16 +38,16 @@ function Index() {
       <section className="relative overflow-hidden bg-hero-gradient">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
           <div>
-            <span className="glass-panel inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-primary-foreground">
+            <span className="glass-dark inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-on-dark">
               <Sparkles className="h-3.5 w-3.5 text-ember" />
               {ORG.legal}
             </span>
-            <h1 className="mt-6 text-4xl font-bold leading-[1.05] text-primary-foreground sm:text-6xl lg:text-[4.2rem]">
+            <h1 className="mt-6 text-4xl font-bold leading-[1.05] text-on-dark sm:text-6xl lg:text-[4.2rem]">
               Every young person deserves a{" "}
               <span className="bg-ember-gradient bg-clip-text text-transparent">map</span>, not a
               guess.
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/70 sm:text-lg">
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-on-dark/70 sm:text-lg">
               We pair teens, students and junior professionals with mentors who have already walked
               the road — on careers, communication, interviews, money and social life. Not just the
               four careers everyone talks about.
@@ -61,7 +61,7 @@ function Index() {
               </Link>
               <Link
                 to="/programs"
-                className="glass-panel inline-flex items-center gap-2 rounded-full px-6 py-3.5 font-display text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
+                className="glass-dark inline-flex items-center gap-2 rounded-full px-6 py-3.5 font-display text-sm font-semibold text-on-dark transition-transform hover:-translate-y-0.5"
               >
                 Become a mentor
               </Link>
@@ -70,10 +70,10 @@ function Index() {
             <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
               {STATS.map((s) => (
                 <div key={s.label}>
-                  <dt className="font-display text-2xl font-bold text-primary-foreground sm:text-3xl">
+                  <dt className="font-display text-2xl font-bold text-on-dark sm:text-3xl">
                     {s.value}
                   </dt>
-                  <dd className="mt-1 text-xs text-primary-foreground/60">{s.label}</dd>
+                  <dd className="mt-1 text-xs text-on-dark/60">{s.label}</dd>
                 </div>
               ))}
             </dl>
@@ -88,9 +88,9 @@ function Index() {
               height={1408}
               className="relative w-full rounded-[2rem] border border-white/10 object-cover shadow-elevated"
             />
-            <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
-              <p className="text-xs text-primary-foreground/70">
-                <span className="font-display font-semibold text-primary-foreground">380 mentors</span>{" "}
+            <div className="glass-dark absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
+              <p className="text-xs text-on-dark/70">
+                <span className="font-display font-semibold text-on-dark">380 mentors</span>{" "}
                 across tech, health, finance, media, trades and public service.
               </p>
             </div>
@@ -219,22 +219,22 @@ function Index() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-2xl">
             <p className="eyebrow text-ember">Reviews</p>
-            <h2 className="mt-4 text-3xl font-bold text-primary-foreground sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-bold text-on-dark sm:text-4xl">
               What mentees and mentors say
             </h2>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {REVIEWS.map((r) => (
-              <figure key={r.name} className="glass-panel rounded-3xl p-7">
+              <figure key={r.name} className="glass-dark rounded-3xl p-7">
                 <Quote className="h-6 w-6 text-ember" />
-                <blockquote className="mt-4 text-sm leading-relaxed text-primary-foreground/85">
+                <blockquote className="mt-4 text-sm leading-relaxed text-on-dark/85">
                   {r.quote}
                 </blockquote>
                 <figcaption className="mt-6 border-t border-white/10 pt-4">
-                  <span className="block font-display text-sm font-semibold text-primary-foreground">
+                  <span className="block font-display text-sm font-semibold text-on-dark">
                     {r.name}
                   </span>
-                  <span className="block text-xs text-primary-foreground/60">{r.role}</span>
+                  <span className="block text-xs text-on-dark/60">{r.role}</span>
                 </figcaption>
               </figure>
             ))}

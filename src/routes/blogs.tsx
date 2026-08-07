@@ -40,7 +40,7 @@ function BlogsPage() {
         <article className="group grid overflow-hidden rounded-3xl border border-border/70 bg-card lg:grid-cols-[1.1fr_1fr]">
           <div className="bg-hero-gradient p-10 sm:p-14">
             <span className="eyebrow text-ember">{featured.category}</span>
-            <h2 className="mt-4 text-3xl font-bold text-primary-foreground sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-bold text-on-dark sm:text-4xl">
               {featured.title}
             </h2>
           </div>

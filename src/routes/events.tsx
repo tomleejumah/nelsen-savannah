@@ -81,7 +81,7 @@ function EventsPage() {
               key={event.id}
               className="grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 lg:grid-cols-[auto_1fr_auto] lg:items-center"
             >
-              <div className="flex w-fit flex-col items-center rounded-2xl bg-hero-gradient px-5 py-4 text-primary-foreground">
+              <div className="flex w-fit flex-col items-center rounded-2xl bg-hero-gradient px-5 py-4 text-on-dark">
                 <span className="font-display text-3xl font-bold">
                   {new Date(event.date).getDate()}
                 </span>
