@@ -1,9 +1,9 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Compass, Quote, Sparkles, Star, UsersRound } from "lucide-react";
+import { ArrowRight, Briefcase, Compass, Quote, Star, UsersRound } from "lucide-react";
 
 import heroImg from "@/assets/hero-mentorship.jpg";
 import eventsData from "@/data/events.json";
-import { ORG, PROGRAMS, REVIEWS, STATS } from "@/data/site";
+import { PARTNERS, PROGRAMS, REVIEWS, ROADMAP, STATS } from "@/data/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,11 +38,7 @@ function Index() {
       <section className="relative overflow-hidden bg-hero-gradient">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
           <div>
-            <span className="glass-dark inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-on-dark">
-              <Sparkles className="h-3.5 w-3.5 text-ember" />
-              {ORG.legal}
-            </span>
-            <h1 className="mt-6 text-4xl font-bold leading-[1.05] text-on-dark sm:text-6xl lg:text-[4.2rem]">
+            <h1 className="text-4xl font-bold leading-[1.05] text-on-dark sm:text-6xl lg:text-[4.2rem]">
               Every young person deserves a{" "}
               <span className="bg-ember-gradient bg-clip-text text-transparent">map</span>, not a
               guess.
