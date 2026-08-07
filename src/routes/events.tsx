@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CalendarDays, Clock, MapPin, Ticket, Users } from "lucide-react";
+import { Clock, MapPin, Ticket, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import eventsData from "@/data/events.json";
@@ -10,16 +10,16 @@ type Event = (typeof eventsData)[number];
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Events — Expos, Mock Interviews & Mentor Mixers | Nelsen Savanna" },
+      { title: "Events — Expos, Practice Labs & Mentor Mixers | Nelsen Savanna" },
       {
         name: "description",
         content:
-          "Reserve a seat at Nelsen Savanna events: career expos, live mock interview panels, wellbeing campus tours and mentor mixers across Kenya.",
+          "Reserve a seat at Nelsen Savanna events: career expos, live practice panels, wellbeing campus tours and mentor mixers across Kenya.",
       },
       { property: "og:title", content: "Events | Nelsen Savanna" },
       {
         property: "og:description",
-        content: "Career expos, mock interview panels, campus tours and mentor mixers — reserve a seat.",
+        content: "Career expos, practice panels, campus tours and mentor mixers — reserve a seat.",
       },
     ],
   }),
@@ -36,7 +36,7 @@ function EventsPage() {
     if (reserved.includes(event.id)) return;
     setReserved((prev) => [...prev, event.id]);
     toast.success(`Seat reserved: ${event.title}`, {
-      description: `${new Date(event.date).toDateString()} · ${event.venue}. A confirmation email is on its way.`,
+      description: `${event.venue}. A confirmation email with the exact date is on its way.`,
     });
   };
 
@@ -48,8 +48,8 @@ function EventsPage() {
           Show up once and the path gets clearer
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Seats are limited and released per cohort. Reserve early — most sessions fill within a
-          week.
+          Seats are limited and released per cohort. Reserve early — we confirm exact dates by email
+          once your seat is held.
         </p>
 
         <div className="mt-8 inline-flex gap-1.5 rounded-full bg-secondary p-1.5">
@@ -79,17 +79,8 @@ function EventsPage() {
           return (
             <article
               key={event.id}
-              className="grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 lg:grid-cols-[auto_1fr_auto] lg:items-center"
+              className="grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center"
             >
-              <div className="flex w-fit flex-col items-center rounded-2xl bg-hero-gradient px-5 py-4 text-on-dark">
-                <span className="font-display text-3xl font-bold">
-                  {new Date(event.date).getDate()}
-                </span>
-                <span className="eyebrow text-ember">
-                  {new Date(event.date).toLocaleDateString("en-GB", { month: "short" })}
-                </span>
-              </div>
-
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon">
@@ -102,14 +93,6 @@ function EventsPage() {
                 <h2 className="mt-3 text-xl font-bold sm:text-2xl">{event.title}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{event.summary}</p>
                 <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                  <li className="flex items-center gap-1.5">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {new Date(event.date).toLocaleDateString("en-GB", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "long",
-                    })}
-                  </li>
                   <li className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5" /> {event.time}
                   </li>

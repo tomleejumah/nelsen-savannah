@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
 
+import logoAsset from "@/assets/nelsen-logo.png.asset.json";
 import { ORG, PROGRAMS } from "@/data/site";
 
 export function Footer() {
@@ -8,12 +9,14 @@ export function Footer() {
     <footer className="border-t border-border/60 bg-secondary/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-ember-gradient font-display text-sm font-bold text-maroon-foreground">
-              NS
-            </span>
-            <span className="font-display text-lg font-bold">{ORG.name}</span>
-          </div>
+          <img
+            src={logoAsset.url}
+            alt="Nelsen Savannah logo"
+            width={900}
+            height={129}
+            loading="lazy"
+            className="h-8 w-auto"
+          />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             {ORG.legal}. We connect young people with mentors who have already walked the road —
             careers, communication, work and life.

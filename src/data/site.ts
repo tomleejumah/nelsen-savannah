@@ -25,10 +25,10 @@ export const PROGRAMS: Program[] = [
     tone: "brand",
   },
   {
-    slug: "comms-and-interview-lab",
-    title: "Comms & Interview Lab",
+    slug: "communication-lab",
+    title: "Communication Lab",
     blurb:
-      "Speak, pitch, and interview with control. Mock panels, recorded feedback, and CV clinics with hiring managers.",
+      "Speak, write and present with control. Public speaking, workplace communication and personal branding — with interview practice as one module of the syllabus.",
     audience: "Job seekers & interns",
     tone: "ember",
   },
@@ -66,6 +66,51 @@ export const PROGRAMS: Program[] = [
   },
 ];
 
+export const PARTNERS = [
+  {
+    name: "Recruitment agencies",
+    detail:
+      "Vetted hiring partners across tech, finance, health, media and trades receive shortlists from our cohorts.",
+  },
+  {
+    name: "Employer talent pipelines",
+    detail:
+      "Companies use us as an early pipeline — internships, attachments and graduate roles come to the cohort first.",
+  },
+  {
+    name: "Placement follow-through",
+    detail:
+      "Your mentor stays with you through applications and the first months on the job, not just the introduction.",
+  },
+];
+
+export const ROADMAP = [
+  {
+    phase: "Now",
+    title: "The mentorship platform",
+    body: "Programs, cohorts, events with seat reservations, blogs and mentor matching — live on this site.",
+    status: "Live",
+  },
+  {
+    phase: "Next",
+    title: "Nelsen Connect App",
+    body: "A digital learning and empowerment hub: curated learning paths, real projects, milestones and direct mentor-to-mentee conversations.",
+    status: "In design",
+  },
+  {
+    phase: "Later",
+    title: "Nelsen LMS",
+    body: "A multi-tenant learning system for teachers, students and supervisors — competency grids, rubric-based marking, live progress dashboards and WCAG 2.2 AA accessibility built in.",
+    status: "Planned",
+  },
+  {
+    phase: "Later",
+    title: "Gallery & courses library",
+    body: "Photo and video archive of cohorts, plus an on-demand course library backed by live data.",
+    status: "Planned",
+  },
+];
+
 export const STATS = [
   { value: "4,200+", label: "Mentees guided" },
   { value: "380", label: "Active mentors" },
@@ -82,7 +127,7 @@ export const REVIEWS = [
   },
   {
     name: "Brian O.",
-    role: "Mentee · Comms & Interview Lab",
+    role: "Mentee · Communication Lab",
     quote:
       "The mock panel was brutal in the best way. Three weeks later I walked into a real interview calm, and I got the offer.",
   },
@@ -126,8 +171,8 @@ export const BLOGS = [
     slug: "interview-answers-that-land",
     title: "The four-sentence answer that wins interviews",
     excerpt:
-      "Situation, decision, action, result. A simple structure our Comms Lab mentees use to stop rambling under pressure.",
-    category: "Interviews",
+      "Situation, decision, action, result. A simple structure our Communication Lab mentees use to stop rambling under pressure.",
+    category: "Communication",
     date: "2026-07-12",
     readMinutes: 5,
   },

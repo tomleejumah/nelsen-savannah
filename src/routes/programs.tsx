@@ -8,7 +8,7 @@ import { PROGRAMS } from "@/data/site";
 export const Route = createFileRoute("/programs")({
   head: () => ({
     meta: [
-      { title: "Our Programs — Career, Comms & Workplace Mentorship | Nelsen Savanna" },
+      { title: "Our Programs — Career, Communication & Workplace Mentorship | Nelsen Savanna" },
       {
         name: "description",
         content:
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/programs")({
       {
         property: "og:description",
         content:
-          "Career Compass, Comms & Interview Lab, Social Life & Wellbeing, Juniors Meet Seniors, Mentor Academy and Savanna Circles.",
+          "Career Compass, Communication Lab, Social Life & Wellbeing, Juniors Meet Seniors, Mentor Academy and Savanna Circles.",
       },
     ],
   }),
