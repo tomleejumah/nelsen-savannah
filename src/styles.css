@@ -69,6 +69,7 @@
   --color-maroon: var(--maroon);
   --color-maroon-foreground: var(--maroon-foreground);
   --color-sky-tint: var(--sky-tint);
+  --color-on-dark: var(--on-dark);
 }
 
 :root {
@@ -103,6 +104,7 @@
   --maroon: oklch(0.36 0.13 18);
   --maroon-foreground: oklch(0.97 0.02 40);
   --sky-tint: oklch(0.62 0.1 246);
+  --on-dark: oklch(0.975 0.008 250);
 
   --gradient-hero: linear-gradient(
     145deg,
@@ -160,6 +162,7 @@
   --maroon: oklch(0.46 0.15 18);
   --maroon-foreground: oklch(0.97 0.02 40);
   --sky-tint: oklch(0.72 0.09 246);
+  --on-dark: oklch(0.975 0.008 250);
 
   --gradient-hero: linear-gradient(
     145deg,
@@ -211,6 +214,12 @@
 @utility glass-panel {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(160%);
+}
+
+@utility glass-dark {
+  background: oklch(1 0 0 / 0.08);
+  border: 1px solid oklch(1 0 0 / 0.14);
   backdrop-filter: blur(18px) saturate(160%);
 }
 
