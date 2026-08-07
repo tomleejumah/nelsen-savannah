@@ -234,9 +234,7 @@ function Index() {
               to="/events"
               className="group flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-elevated"
             >
-              <span className="eyebrow text-ember">
-                {new Date(e.date).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}
-              </span>
+              <span className="eyebrow text-ember">{e.program}</span>
               <h3 className="mt-3 text-lg font-bold leading-snug">{e.title}</h3>
               <p className="mt-2 flex-1 text-sm text-muted-foreground">{e.venue}</p>
               <span className="mt-5 text-xs text-muted-foreground">
@@ -272,6 +270,37 @@ function Index() {
               </figure>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Roadmap */}
+      <section className="border-t border-border/60 bg-secondary/40 py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="eyebrow text-ember">Roadmap</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">What we are building next</h2>
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground sm:text-base">
+              The mentorship programme comes first. The learning app, the LMS and the gallery follow
+              — here is the honest order.
+            </p>
+          </div>
+          <ol className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {ROADMAP.map((r) => (
+              <li
+                key={r.title}
+                className="rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="eyebrow text-muted-foreground/70">{r.phase}</span>
+                  <span className="rounded-full bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon">
+                    {r.status}
+                  </span>
+                </div>
+                <h3 className="mt-5 text-lg font-bold leading-snug">{r.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
