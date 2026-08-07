@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EventsRouteImport } from './routes/events'
 import { Route as ProgramsRouteImport } from './routes/programs'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
+  '/events': typeof EventsRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
+  '/events': typeof EventsRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
+  '/events': typeof EventsRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/blogs' | '/contact' | '/programs'
+  fullPaths: '/' | '/blogs' | '/contact' | '/events' | '/programs'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/blogs' | '/contact' | '/programs'
-  id: '__root__' | '/' | '/blogs' | '/contact' | '/programs'
+  to: '/' | '/blogs' | '/contact' | '/events' | '/programs'
+  id: '__root__' | '/' | '/blogs' | '/contact' | '/events' | '/programs'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BlogsRoute: typeof BlogsRoute
   ContactRoute: typeof ContactRoute
+  EventsRoute: typeof EventsRoute
   ProgramsRoute: typeof ProgramsRoute
 }
 
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programs': {
       id: '/programs'
       path: '/programs'
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BlogsRoute: BlogsRoute,
   ContactRoute: ContactRoute,
+  EventsRoute: EventsRoute,
   ProgramsRoute: ProgramsRoute,
 }
 export const routeTree = rootRouteImport
