@@ -66,8 +66,6 @@ export const PROGRAMS: Program[] = [
   },
 ];
 
-export const STATS = [
-
 export const PARTNERS = [
   {
     name: "Recruitment agencies",
