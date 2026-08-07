@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, Menu, X } from "lucide-react";
 
+import logoAsset from "@/assets/nelsen-logo.png.asset.json";
 import { PROGRAMS } from "@/data/site";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
@@ -35,18 +36,14 @@ export function Navbar() {
             : "max-w-7xl rounded-3xl border border-transparent px-2 py-3 sm:px-4",
         )}
       >
-        <Link to="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ember-gradient font-display text-sm font-bold text-maroon-foreground">
-            NS
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-display text-sm font-bold leading-tight text-foreground sm:text-base">
-              Nelsen Savanna
-            </span>
-            <span className="hidden text-[0.6rem] uppercase tracking-[0.18em] text-muted-foreground sm:block">
-              Mentors &amp; Mentees
-            </span>
-          </span>
+        <Link to="/" className="flex min-w-0 items-center" aria-label="Nelsen Savannah — home">
+          <img
+            src={logoAsset.url}
+            alt="Nelsen Savannah logo"
+            width={900}
+            height={129}
+            className="h-7 w-auto shrink-0 sm:h-8"
+          />
         </Link>
 
         <div className="ml-auto hidden items-center gap-1 lg:flex">
