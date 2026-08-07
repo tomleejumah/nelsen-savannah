@@ -6,7 +6,7 @@ import { BLOGS } from "@/data/site";
 export const Route = createFileRoute("/blogs")({
   head: () => ({
     meta: [
-      { title: "Blogs — Career, Interview & Wellbeing Guidance | Nelsen Savanna" },
+      { title: "Blogs — Career, Communication & Wellbeing Guidance | Nelsen Savanna" },
       {
         name: "description",
         content:

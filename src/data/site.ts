@@ -127,7 +127,7 @@ export const REVIEWS = [
   },
   {
     name: "Brian O.",
-    role: "Mentee · Comms & Interview Lab",
+    role: "Mentee · Communication Lab",
     quote:
       "The mock panel was brutal in the best way. Three weeks later I walked into a real interview calm, and I got the offer.",
   },
@@ -171,8 +171,8 @@ export const BLOGS = [
     slug: "interview-answers-that-land",
     title: "The four-sentence answer that wins interviews",
     excerpt:
-      "Situation, decision, action, result. A simple structure our Comms Lab mentees use to stop rambling under pressure.",
-    category: "Interviews",
+      "Situation, decision, action, result. A simple structure our Communication Lab mentees use to stop rambling under pressure.",
+    category: "Communication",
     date: "2026-07-12",
     readMinutes: 5,
   },

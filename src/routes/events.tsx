@@ -10,16 +10,16 @@ type Event = (typeof eventsData)[number];
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Events — Expos, Mock Interviews & Mentor Mixers | Nelsen Savanna" },
+      { title: "Events — Expos, Practice Labs & Mentor Mixers | Nelsen Savanna" },
       {
         name: "description",
         content:
-          "Reserve a seat at Nelsen Savanna events: career expos, live mock interview panels, wellbeing campus tours and mentor mixers across Kenya.",
+          "Reserve a seat at Nelsen Savanna events: career expos, live practice panels, wellbeing campus tours and mentor mixers across Kenya.",
       },
       { property: "og:title", content: "Events | Nelsen Savanna" },
       {
         property: "og:description",
-        content: "Career expos, mock interview panels, campus tours and mentor mixers — reserve a seat.",
+        content: "Career expos, practice panels, campus tours and mentor mixers — reserve a seat.",
       },
     ],
   }),
