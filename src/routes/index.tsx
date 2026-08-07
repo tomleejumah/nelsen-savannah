@@ -1,24 +1,274 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { ArrowRight, Compass, Quote, Sparkles, Star, UsersRound } from "lucide-react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import heroImg from "@/assets/hero-mentorship.jpg";
+import eventsData from "@/data/events.json";
+import { ORG, PROGRAMS, REVIEWS, STATS } from "@/data/site";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Nelsen Savanna — Mentors & Mentees, Guided Career Pathways" },
+      {
+        name: "description",
+        content:
+          "Nelsen Savanna connects Kenyan youth with trained mentors — career mapping, communication and interview skills, wellbeing, and junior-to-senior workplace mentorship.",
+      },
+      { property: "og:title", content: "Nelsen Savanna — Mentors & Mentees" },
+      {
+        property: "og:description",
+        content:
+          "Youth guidance in every aspect: careers, comms, interviews and social life. We bring mentors and mentees together.",
+      },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+const toneClass = {
+  brand: "bg-brand/10 text-brand-soft",
+  ember: "bg-ember/10 text-ember",
+  maroon: "bg-maroon/10 text-maroon",
+} as const;
+
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div>
+      {/* Hero — split screen */}
+      <section className="relative overflow-hidden bg-hero-gradient">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
+          <div>
+            <span className="glass-dark inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold text-on-dark">
+              <Sparkles className="h-3.5 w-3.5 text-ember" />
+              {ORG.legal}
+            </span>
+            <h1 className="mt-6 text-4xl font-bold leading-[1.05] text-on-dark sm:text-6xl lg:text-[4.2rem]">
+              Every young person deserves a{" "}
+              <span className="bg-ember-gradient bg-clip-text text-transparent">map</span>, not a
+              guess.
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-on-dark/70 sm:text-lg">
+              We pair teens, students and junior professionals with mentors who have already walked
+              the road — on careers, communication, interviews, money and social life. Not just the
+              four careers everyone talks about.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link
+                to="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
+              >
+                Find me a mentor <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/programs"
+                className="glass-dark inline-flex items-center gap-2 rounded-full px-6 py-3.5 font-display text-sm font-semibold text-on-dark transition-transform hover:-translate-y-0.5"
+              >
+                Become a mentor
+              </Link>
+            </div>
+
+            <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
+              {STATS.map((s) => (
+                <div key={s.label}>
+                  <dt className="font-display text-2xl font-bold text-on-dark sm:text-3xl">
+                    {s.value}
+                  </dt>
+                  <dd className="mt-1 text-xs text-on-dark/60">{s.label}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-6 rounded-[2.5rem] bg-ember/10 blur-3xl" />
+            <img
+              src={heroImg}
+              alt="A young mentee in conversation with her professional mentor"
+              width={1200}
+              height={1408}
+              className="relative w-full rounded-[2rem] border border-white/10 object-cover shadow-elevated"
+            />
+            <div className="glass-dark absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
+              <p className="text-xs text-on-dark/70">
+                <span className="font-display font-semibold text-on-dark">380 mentors</span>{" "}
+                across tech, health, finance, media, trades and public service.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
+        <div className="max-w-2xl">
+          <p className="eyebrow text-ember">How it works</p>
+          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+            Two groups, one deliberate bridge
+          </h2>
+        </div>
+        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+          {[
+            {
+              icon: Compass,
+              title: "Tell us where you stand",
+              body: "A short intake on your stage, interests and constraints — school, campus, or first job.",
+            },
+            {
+              icon: UsersRound,
+              title: "We match, not guess",
+              body: "You are paired with a trained mentor in your field within 14 days, plus a cohort of peers.",
+            },
+            {
+              icon: Star,
+              title: "Sessions with structure",
+              body: "Monthly sessions, written goals, and a review at week 12 so progress is visible, not vague.",
+            },
+          ].map(({ icon: Icon, title, body }, i) => (
+            <article
+              key={title}
+              className="rounded-3xl border border-border/70 bg-card p-8 transition-shadow hover:shadow-elevated"
+            >
+              <div className="flex items-center justify-between">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="font-display text-sm text-muted-foreground/50">0{i + 1}</span>
+              </div>
+              <h3 className="mt-6 text-xl font-bold">{title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* Programs */}
+      <section className="border-y border-border/60 bg-secondary/40 py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <p className="eyebrow text-ember">Our programs</p>
+              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+                Guidance for the parts of life nobody schedules
+              </h2>
+            </div>
+            <Link
+              to="/programs"
+              className="inline-flex items-center gap-1.5 font-display text-sm font-semibold hover:text-ember"
+            >
+              All programs <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {PROGRAMS.map((p) => (
+              <Link
+                key={p.slug}
+                to="/programs"
+                hash={p.slug}
+                className="group rounded-3xl border border-border/70 bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-elevated"
+              >
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass[p.tone]}`}
+                >
+                  {p.audience}
+                </span>
+                <h3 className="mt-5 text-xl font-bold group-hover:text-ember">{p.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.blurb}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Events teaser */}
+      <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="eyebrow text-ember">Upcoming</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Next three rooms to be in</h2>
+          </div>
+          <Link
+            to="/events"
+            className="inline-flex items-center gap-1.5 font-display text-sm font-semibold hover:text-ember"
+          >
+            Reserve a seat <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {eventsData.slice(0, 3).map((e) => (
+            <Link
+              key={e.id}
+              to="/events"
+              className="group flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-elevated"
+            >
+              <span className="eyebrow text-ember">
+                {new Date(e.date).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}
+              </span>
+              <h3 className="mt-3 text-lg font-bold leading-snug">{e.title}</h3>
+              <p className="mt-2 flex-1 text-sm text-muted-foreground">{e.venue}</p>
+              <span className="mt-5 text-xs text-muted-foreground">
+                {e.seats - e.seatsTaken} seats left · {e.price}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section className="border-t border-border/60 bg-hero-gradient py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="eyebrow text-ember">Reviews</p>
+            <h2 className="mt-4 text-3xl font-bold text-on-dark sm:text-4xl">
+              What mentees and mentors say
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {REVIEWS.map((r) => (
+              <figure key={r.name} className="glass-dark rounded-3xl p-7">
+                <Quote className="h-6 w-6 text-ember" />
+                <blockquote className="mt-4 text-sm leading-relaxed text-on-dark/85">
+                  {r.quote}
+                </blockquote>
+                <figcaption className="mt-6 border-t border-white/10 pt-4">
+                  <span className="block font-display text-sm font-semibold text-on-dark">
+                    {r.name}
+                  </span>
+                  <span className="block text-xs text-on-dark/60">{r.role}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
+        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card p-10 text-center sm:p-16">
+          <div className="absolute inset-x-0 -top-24 mx-auto h-48 w-48 rounded-full bg-ember/20 blur-3xl" />
+          <h2 className="relative text-3xl font-bold sm:text-4xl">
+            Ready to stop guessing your next step?
+          </h2>
+          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Cohorts open every month. Join as a mentee, or bring your experience and mentor someone
+            who needs the road map you wish you had.
+          </p>
+          <div className="relative mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
+            >
+              Join a cohort <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/events"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3.5 font-display text-sm font-semibold transition-colors hover:bg-accent"
+            >
+              Browse events
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
