@@ -5,11 +5,15 @@ import com.app.nisisiafrica.Constants;
 /**
  * Single source of truth for role checks.
  *
- * Roles were previously compared against string literals scattered across the
- * codebase, which is how Admin ended up being treated as a Mentee in some
- * screens: a check for {@code "Mentor".equals(role)} silently excludes admins.
- * Prefer {@link #canCreate()} over testing for a specific role, so a new role
- * only has to be taught about here.
+ * MentUI chrome (tokens/layouts) is shared across Mentee, Mentor, and Admin.
+ * Visibility differs by capability:
+ * <ul>
+ *   <li>{@link #isMentee()} — browse/book mentors, reserve seats</li>
+ *   <li>{@link #canCreate()} — Mentor + Admin: create stories/events; talk via Chats
+ *       (no Book Mentor / mentor browse lists)</li>
+ *   <li>{@link #canManageApp()} — Admin only (banners, app-wide content)</li>
+ * </ul>
+ * Prefer these helpers over string literals so Admin is never treated as Mentee.
  */
 public final class Roles {
 
@@ -34,6 +38,15 @@ public final class Roles {
 
     public static boolean isMentee() {
         return !isAdmin() && !isMentor();
+    }
+
+    /** Mentee-only: show mentor list / Book mentor / Find a mentor. */
+    public static boolean browsesMentors() {
+        return isMentee();
+    }
+
+    public static boolean browsesMentors(String role) {
+        return !isAdmin(role) && !isMentor(role);
     }
 
     /** Whether the user may author content: stories, events, communities, announcements. */

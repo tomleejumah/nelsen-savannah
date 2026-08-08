@@ -1,41 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Night overrides for the semantic tokens declared in values/colors.xml.
-      Values mirror the .dark block of the Nelsen Savannah web app.
-
-      Only semantic tokens are overridden here. The brand_* constants stay
-      fixed across themes, so the logo red never shifts.
+      MentUI dark overrides. Maroon 900/700/600/500 stay from values/colors.xml.
+      Only backgrounds, surfaces, text, lines, and tint chips swap.
     -->
 
-    <!-- Surfaces: true near-black, matching the web dark background/card -->
-    <color name="surface_app">#020204</color>
-    <color name="surface_card">#06080D</color>
-    <color name="surface_muted">#0D1117</color>
-    <color name="surface_inverse">#F0F4F9</color>
-    <color name="outline_soft">#1F2530</color>
+    <color name="bg">#170F12</color>
+    <color name="surface">#20161A</color>
+    <color name="surface_2">#2B1D21</color>
+    <color name="ink">#F4E9EA</color>
+    <color name="ink_soft">#D9C4C8</color>
+    <color name="muted">#AC8C92</color>
+    <color name="line">#3A2429</color>
 
-    <!-- Text -->
-    <color name="text_strong">#F0F4F9</color>
-    <color name="text_body">#DDE3EA</color>
-    <color name="text_muted">#9EA5AE</color>
+    <color name="maroon_100">#3A1D25</color>
+    <color name="maroon_050">#2B1219</color>
+
+    <color name="tag_blue_bg">#1C2A44</color>
+    <color name="tag_blue_text">#9DB6EC</color>
+    <color name="status_pending_bg">#3A2C13</color>
+    <color name="status_pending_text">#E8B968</color>
+
+    <color name="shadow_maroon">#66000000</color>
+
+    <!-- Semantic aliases follow MentUI dark -->
+    <color name="surface_app">@color/bg</color>
+    <color name="surface_card">@color/surface</color>
+    <color name="surface_muted">@color/surface_2</color>
+    <color name="surface_inverse">@color/ink</color>
+    <color name="outline_soft">@color/line</color>
+
+    <color name="text_strong">@color/ink</color>
+    <color name="text_body">@color/ink_soft</color>
+    <color name="text_muted">@color/muted</color>
     <color name="text_on_action">#FFF6F4</color>
+    <color name="text_primary">@color/ink</color>
+    <color name="text_secondary">@color/ink_soft</color>
+    <color name="text_tertiary">@color/muted</color>
 
-    <!-- Navy has no contrast on near-black, so primary becomes the web's
-         dark maroon and the accent lifts to match. -->
-    <color name="action_primary">#E64343</color>
-    <color name="action_accent">#EA3C3F</color>
+    <color name="action_primary">@color/maroon_700</color>
+    <color name="action_accent">@color/maroon_500</color>
 
-    <!-- Chat bubbles -->
-    <color name="bubble_sent">#7E1220</color>
-    <color name="bubble_received">#141821</color>
-    <color name="bubble_quote_bg">#33EA3C3F</color>
+    <color name="bubble_sent">@color/maroon_700</color>
+    <color name="bubble_received">@color/surface_2</color>
+    <color name="bubble_quote_bg">#337C1F32</color>
 
-    <color name="blur_overlay">#CC06080D</color>
+    <color name="blur_overlay">#CC170F12</color>
 
-    <!-- Per-tab nav accents lifted for contrast on black -->
-    <color name="nav_home">#EA3C3F</color>
-    <color name="nav_communities">#70A3D4</color>
-    <color name="nav_chat">#82A9CF</color>
-    <color name="nav_profile">#E07A93</color>
+    <color name="nav_home">@color/maroon_500</color>
+    <color name="nav_communities">@color/maroon_600</color>
+    <color name="nav_chat">@color/maroon_500</color>
+    <color name="nav_profile">@color/maroon_600</color>
+
+    <color name="unread_background">@color/maroon_050</color>
+    <color name="background_primary">@color/bg</color>
+    <color name="background_secondary">@color/surface</color>
+    <color name="card_background">@color/surface</color>
+    <color name="progress_background">@color/surface_2</color>
 </resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MentUI section "step" mark: 3 ascending bars (maroon_500). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="3dp"
+        android:height="5dp"
+        android:gravity="bottom|start"
+        android:left="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/maroon_500" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+    <item
+        android:width="3dp"
+        android:height="9dp"
+        android:gravity="bottom|start"
+        android:left="5dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/maroon_500" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+    <item
+        android:width="3dp"
+        android:height="14dp"
+        android:gravity="bottom|start"
+        android:left="10dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/maroon_500" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -25,8 +25,16 @@
         <item name="android:textColorPrimary">@color/text_strong</item>
         <item name="android:textColorSecondary">@color/text_muted</item>
         <item name="android:textColorHint">@color/text_muted</item>
+        <item name="colorControlNormal">@color/maroon_500</item>
+        <item name="colorControlActivated">@color/maroon_500</item>
 
-        <item name="android:fontFamily">@font/poppins_regular</item>
-        <item name="android:windowBackground">@color/surface_app</item>
+        <item name="android:fontFamily">@font/font_ui</item>
+        <item name="android:windowBackground">@color/bg</item>
+
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeBackground">@color/maroon_700</item>
+        <item name="actionModeSplitBackground">@color/maroon_700</item>
+        <item name="android:actionModeBackground">@color/maroon_700</item>
+        <item name="actionModeStyle">@style/Widget.Nelsen.ActionMode</item>
     </style>
 </resources>
