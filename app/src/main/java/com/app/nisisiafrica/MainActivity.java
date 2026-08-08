@@ -41,6 +41,7 @@ import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.ProfileFragment;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.Worker.BookingWorker;
@@ -286,8 +287,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private boolean isMentorOrAdmin() {
-        String role = userRole != null ? userRole : Util.getState(Constants.USER_ROLE, "Mentee");
-        return "Mentor".equals(role) || "Admin".equals(role);
+        String role = userRole != null ? userRole : Roles.current();
+        return Roles.canCreate(role);
     }
 
     public void hideBottomBar() {

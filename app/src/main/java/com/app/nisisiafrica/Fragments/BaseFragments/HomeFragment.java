@@ -46,6 +46,7 @@ import com.app.nisisiafrica.QuestionnaireActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.app.nisisiafrica.Utils.NotificationCounter;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.AllMentorsActivity;
 import com.app.nisisiafrica.StoryViewerActivity;
@@ -185,7 +186,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             // Floating speed-dial replaced by MainActivity's contextual bottom-bar FAB.
             if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
             collapseSpeedDial();
-            plusIcon.setVisibility("Mentor".equals(userData.getUserRole()) ? View.VISIBLE : View.GONE);
+            plusIcon.setVisibility(Roles.canCreate(userData.getUserRole()) ? View.VISIBLE : View.GONE);
 
             getEvents(data, view);
 
@@ -216,7 +217,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
 
         btnBookMentor.setOnClickListener(v -> {
-            if (userData != null && "Mentor".equals(userData.getUserRole())) {
+            if (userData != null && Roles.canCreate(userData.getUserRole())) {
                 showCreateSheet();
             } else {
                 startActivity(new Intent(getActivity(), AllMentorsActivity.class));
@@ -295,7 +296,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
-            if (userData != null && "Mentor".equals(userData.getUserRole())) {
+            if (userData != null && Roles.canCreate(userData.getUserRole())) {
                 showCreateSheet();
             } else {
                 startActivity(new Intent(getActivity(), AllMentorsActivity.class));

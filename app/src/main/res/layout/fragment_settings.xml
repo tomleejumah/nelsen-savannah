@@ -197,6 +197,22 @@
                 android:drawableLeft="@drawable/ic_lock_nisisi"
                 android:text="Lock App" />
 
+            <!-- Admin-only; hidden for everyone else in SettingsFragment. -->
+            <TextView
+                android:id="@+id/tvManageBanners"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginVertical="10dp"
+                android:background="?attr/selectableItemBackground"
+                android:drawableLeft="@drawable/ic_image_placeholder"
+                android:drawablePadding="19dp"
+                android:gravity="center_vertical"
+                android:text="Manage home banners"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/cl_language_options"
                 android:layout_width="match_parent"

@@ -29,9 +29,11 @@ import com.app.nisisiafrica.DiditVerificationHandler;
 import com.app.nisisiafrica.Interfaces.KYCCallBack;
 import com.app.nisisiafrica.LockScreenActivity;
 import com.app.nisisiafrica.PinManager;
+import com.app.nisisiafrica.BannerAdminActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SetpinActivity;
 import com.app.nisisiafrica.Utils.ThemeManager;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
@@ -97,8 +99,12 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.btn_facebook).setOnClickListener(v -> openUrlInBrowser(URL_FACEBOOK));
 
         RelativeLayout cardVerifyProfile = view.findViewById(R.id.cardVerifyProfile);
-        cardVerifyProfile.setVisibility(Util.getState(Constants.USER_ROLE,"Mentee")
-                .equals("Mentee") ? View.GONE : View.VISIBLE);
+        cardVerifyProfile.setVisibility(Roles.isMentee() ? View.GONE : View.VISIBLE);
+
+        View manageBanners = view.findViewById(R.id.tvManageBanners);
+        manageBanners.setVisibility(Roles.canManageApp() ? View.VISIBLE : View.GONE);
+        manageBanners.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), BannerAdminActivity.class)));
 
         handler = new DiditVerificationHandler(
                 requireActivity(),

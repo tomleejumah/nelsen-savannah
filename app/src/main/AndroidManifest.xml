@@ -37,6 +37,9 @@
         tools:replace="android:label"
         tools:targetApi="31">
         <activity
+            android:name=".BannerAdminActivity"
+            android:exported="false" />
+        <activity
             android:name=".SetpinActivity"
             android:exported="false" />
         <activity
