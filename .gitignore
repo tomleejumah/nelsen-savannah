@@ -3,3 +3,8 @@ node_modules
 firebase-service-account.json
 *.log
 .DS_Store
+data/*.sqlite
+data/*.sqlite-*
+uploads/*
+!uploads/.gitkeep
+!data/.gitkeep
