@@ -71,7 +71,7 @@ async function trackTotals(trackId) {
   return { modulesTotal, lessonsTotal };
 }
 
-async function recomputeTrackProgress(uid, trackId) {
+export async function recomputeTrackProgress(uid, trackId) {
   const lessons = await dbAll(
     "SELECT lesson_id, module_id FROM lessons WHERE track_id = ? ORDER BY sort_order ASC",
     [trackId],
