@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.data.remote;
 
+import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
 
 import okhttp3.OkHttpClient;
@@ -31,5 +32,9 @@ public class ApiClient {
 
     public static NotificationApiService getNotificationService() {
         return getClient().create(NotificationApiService.class);
+    }
+
+    public static LmsApiService getLmsService() {
+        return getClient().create(LmsApiService.class);
     }
 }
