@@ -195,3 +195,102 @@ export const BLOGS = [
     readMinutes: 8,
   },
 ];
+export type LearningTrack = {
+  slug: string;
+  title: string;
+  blurb: string;
+  level: "Foundation" | "Intermediate" | "Advanced";
+  modules: number;
+  hours: number;
+  tone: "brand" | "ember" | "maroon";
+};
+
+export const LEARNING_TRACKS: LearningTrack[] = [
+  {
+    slug: "career-foundations",
+    title: "Career Foundations",
+    blurb:
+      "Map your strengths to real professions, understand what each path demands, and build a first three-year plan.",
+    level: "Foundation",
+    modules: 8,
+    hours: 10,
+    tone: "brand",
+  },
+  {
+    slug: "communication-mastery",
+    title: "Communication Mastery",
+    blurb:
+      "Speaking, writing and presenting with control — with interview practice as one module inside the syllabus.",
+    level: "Intermediate",
+    modules: 10,
+    hours: 14,
+    tone: "ember",
+  },
+  {
+    slug: "workplace-readiness",
+    title: "Workplace Readiness",
+    blurb:
+      "Professional etiquette, feedback, email and meeting craft, and how to work well with a senior colleague.",
+    level: "Intermediate",
+    modules: 7,
+    hours: 9,
+    tone: "maroon",
+  },
+  {
+    slug: "money-and-wellbeing",
+    title: "Money & Wellbeing",
+    blurb:
+      "Budgeting a first salary, black tax, boundaries, peer pressure and looking after your mental health.",
+    level: "Foundation",
+    modules: 6,
+    hours: 8,
+    tone: "brand",
+  },
+  {
+    slug: "mentor-certification",
+    title: "Mentor Certification",
+    blurb:
+      "Listening frameworks, safeguarding, goal-setting and progress tracking for professionals giving back.",
+    level: "Advanced",
+    modules: 9,
+    hours: 12,
+    tone: "ember",
+  },
+  {
+    slug: "digital-and-portfolio",
+    title: "Digital Skills & Portfolio",
+    blurb:
+      "Practical digital tools plus a portfolio and CV you can actually send to a hiring partner.",
+    level: "Intermediate",
+    modules: 8,
+    hours: 11,
+    tone: "maroon",
+  },
+];
+
+export const LMS_FEATURES = [
+  {
+    title: "Guided learning paths",
+    detail: "Each track unlocks module by module, so mentees always know the next step.",
+  },
+  {
+    title: "Mentor-marked assignments",
+    detail: "Rubric-based feedback from a real mentor instead of an automated score.",
+  },
+  {
+    title: "Competency grids",
+    detail: "See exactly which skills are proven, in progress, or still untouched.",
+  },
+  {
+    title: "Live progress dashboards",
+    detail: "Mentees, mentors and supervisors share one honest view of progress.",
+  },
+  {
+    title: "Certificates that hold up",
+    detail: "Verifiable completion records our hiring partners can trust.",
+  },
+  {
+    title: "Accessible by design",
+    detail: "WCAG 2.2 AA targets, keyboard-first navigation and low-bandwidth mode.",
+  },
+];
