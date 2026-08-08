@@ -204,10 +204,17 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         });
 
-        // Banner carousel permanently hidden.
+        // Carousel code kept; UI hidden forever (visibility only — do not remove).
+        bannerViewPager = view.findViewById(R.id.bannerViewPager);
+        bannerAdapter = new BannerAdapter(getContext(), bannerList);
+        if (bannerViewPager != null) {
+            bannerViewPager.setAdapter(bannerAdapter);
+        }
+        bannersRef = FirebaseDatabase.getInstance().getReference("banners");
+        fetchBannersRealtime();
+        setupAutoScroll();
         View bannerCarousel = view.findViewById(R.id.bannerCarousel);
         if (bannerCarousel != null) bannerCarousel.setVisibility(View.GONE);
-        bannerViewPager = view.findViewById(R.id.bannerViewPager);
         if (bannerViewPager != null) bannerViewPager.setVisibility(View.GONE);
 
         setupHomeTopBlur(view);
