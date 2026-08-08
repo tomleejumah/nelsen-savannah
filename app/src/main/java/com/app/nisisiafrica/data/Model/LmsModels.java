@@ -55,29 +55,47 @@ public final class LmsModels {
     public static class EnrollmentEnvelope {
         public boolean ok;
         public String source;
-        public Enrollment data;
+        public EnrollmentData data;
         public String error;
+    }
+
+    public static class EnrollmentData {
+        public Enrollment enrollment;
     }
 
     public static class EnrollmentListEnvelope {
         public boolean ok;
         public String source;
-        public List<Enrollment> data;
+        public EnrollmentsData data;
         public String error;
+    }
+
+    public static class EnrollmentsData {
+        public List<Enrollment> enrollments;
     }
 
     public static class ProgressEnvelope {
         public boolean ok;
         public String source;
-        public Progress data;
+        public ProgressData data;
         public String error;
     }
 
-    public static class ProgressListEnvelope {
+    public static class ProgressData {
+        public Progress progress;
+        public Enrollment enrollment;
+    }
+
+    public static class ProgressMapEnvelope {
         public boolean ok;
         public String source;
-        public List<Progress> data;
+        public ProgressMapData data;
         public String error;
+    }
+
+    public static class ProgressMapData {
+        public Map<String, Object> byLessonId;
+        public Map<String, Object> byTrackId;
     }
 
     /** CourseItem-compatible track card + LMS extras. */
@@ -149,18 +167,37 @@ public final class LmsModels {
     }
 
     public static class Enrollment {
+        public String uid;
         public String trackId;
+        public String status;
+        public float trackPercent;
+        public int modulesCompleted;
+        public int modulesTotal;
+        public int lessonsCompleted;
+        public int lessonsTotal;
+        public String mentorId;
         public long enrolledAt;
+        public String platform;
+        public String courseTitle;
+        public String courseImageUrl;
+        public String nextLessonId;
         public float progressPct;
     }
 
     public static class Progress {
         public String lessonId;
+        public String moduleId;
         public String trackId;
         public boolean opened;
         public float contentPct;
         public float quizPct;
+        public float assignmentPct;
+        public float lessonPercent;
+        public float trackPercent;
+        public float modulePercent;
+        public String status;
         public String lastPlatform;
+        public long updatedAt;
     }
 
     public static class EnrollBody {

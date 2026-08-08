@@ -64,7 +64,7 @@ public interface LmsApiService {
             @Body LmsModels.ProgressBody body);
 
     @GET("lms/progress/me")
-    Call<LmsModels.ProgressListEnvelope> myProgress(
+    Call<LmsModels.ProgressMapEnvelope> myProgress(
             @Header("Authorization") String bearer,
             @Query("trackId") String trackId);
 }
