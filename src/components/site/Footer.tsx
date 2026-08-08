@@ -51,18 +51,29 @@ export function Footer() {
                 </Link>
               </li>
             ))}
-            <li className="text-muted-foreground/60">Gallery — coming soon</li>
           </ul>
         </nav>
 
         <div className="text-sm">
           <h3 className="eyebrow text-muted-foreground">Reach us</h3>
           <ul className="mt-4 space-y-3 text-muted-foreground">
-            <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-ember" /> {ORG.email}
+            <li>
+              <a
+                href={`mailto:${ORG.email}`}
+                className="flex items-center gap-2 transition-colors hover:text-maroon"
+              >
+                <Mail className="h-4 w-4 shrink-0 text-ember" /> {ORG.email}
+              </a>
             </li>
-            <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0 text-ember" /> {ORG.phone}
+            <li>
+              <a
+                href={`https://wa.me/${ORG.whatsapp}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 transition-colors hover:text-maroon"
+              >
+                <Phone className="h-4 w-4 shrink-0 text-ember" /> {ORG.phone}
+              </a>
             </li>
             <li className="flex items-center gap-2">
               <MapPin className="h-4 w-4 shrink-0 text-ember" /> {ORG.location}
