@@ -18,25 +18,46 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
+/**
+ * Stories rail with a pinned "+ Add story" cell at index 0.
+ * Story click positions are offset by 1 relative to the data list.
+ */
 public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> {
 
+    private static final int TYPE_ADD = 0;
+    private static final int TYPE_STORY = 1;
+
     public interface OnStoryClick {
-        void onStoryClick(int position);
+        void onStoryClick(int storyIndexInData);
+    }
+
+    public interface OnAddClick {
+        void onAddClick();
     }
 
     private final Context context;
     private final List<Story> stories = new ArrayList<>();
     private final OnStoryClick listener;
+    private OnAddClick addListener;
 
     public StoryAdapter(Context context, OnStoryClick listener) {
         this.context = context;
         this.listener = listener;
     }
 
+    public void setOnAddClick(OnAddClick addListener) {
+        this.addListener = addListener;
+    }
+
     public void submit(List<Story> newStories) {
         stories.clear();
         stories.addAll(newStories);
         notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position == 0 ? TYPE_ADD : TYPE_STORY;
     }
 
     @NonNull
@@ -48,7 +69,17 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Story story = stories.get(position);
+        if (getItemViewType(position) == TYPE_ADD) {
+            holder.company.setText("+ Add");
+            holder.logo.setImageResource(R.drawable.ic_add_circle);
+            holder.itemView.setOnClickListener(v -> {
+                if (addListener != null) addListener.onAddClick();
+            });
+            return;
+        }
+
+        int dataIndex = position - 1;
+        Story story = stories.get(dataIndex);
         holder.company.setText(story.companyName != null ? story.companyName : "");
         if (story.logoUrl != null && !story.logoUrl.isEmpty()) {
             Glide.with(context)
@@ -65,13 +96,14 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
         }
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onStoryClick(holder.getBindingAdapterPosition());
+            int idx = holder.getBindingAdapterPosition() - 1;
+            if (listener != null && idx >= 0) listener.onStoryClick(idx);
         });
     }
 
     @Override
     public int getItemCount() {
-        return stories.size();
+        return stories.size() + 1; // pinned + Add
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,7 +32,9 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.app.nisisiafrica.Adapters.BannerAdapter;
 import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.EventAdapter;
+import com.app.nisisiafrica.Adapters.ProgrammesAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
+import com.app.nisisiafrica.AllProgrammesActivity;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
 import com.app.nisisiafrica.Constants;
@@ -47,7 +50,9 @@ import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Roles;
+import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
 import com.app.nisisiafrica.Utils.Util;
+import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.AllMentorsActivity;
 import com.app.nisisiafrica.StoryViewerActivity;
 import com.app.nisisiafrica.Adapters.StoryAdapter;
@@ -186,7 +191,13 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             // Floating speed-dial replaced by MainActivity's contextual bottom-bar FAB.
             if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
             collapseSpeedDial();
-            plusIcon.setVisibility(Roles.canCreate(userData.getUserRole()) ? View.VISIBLE : View.GONE);
+            if (plusIcon != null) {
+                plusIcon.setVisibility(Roles.canCreate(userData.getUserRole()) ? View.VISIBLE : View.GONE);
+            }
+
+            // Mentors + Admins: no mentor browse/book — Chats for mentees.
+            // Mentees: full mentor list + Book mentor.
+            applyMentorListVisibility(!Roles.browsesMentors(userData.getUserRole()), view);
 
             getEvents(data, view);
 
@@ -211,38 +222,56 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             storyIntent.putExtra(StoryViewerActivity.EXTRA_START_INDEX, position);
             startActivity(storyIntent);
         });
+        storyAdapter.setOnAddClick(() -> {
+            if (Roles.canCreate()) {
+                startActivity(new Intent(getActivity(), CreateStoryActivity.class));
+            } else {
+                Toast.makeText(getContext(), "Mentors create stories from Create", Toast.LENGTH_SHORT).show();
+            }
+        });
         rvStories.setAdapter(storyAdapter);
         storiesRef = FirebaseDatabase.getInstance().getReference("stories");
         fetchStoriesRealtime();
 
 
         btnBookMentor.setOnClickListener(v -> {
-            if (userData != null && Roles.canCreate(userData.getUserRole())) {
+            if (!Roles.browsesMentors()) {
                 showCreateSheet();
             } else {
                 startActivity(new Intent(getActivity(), AllMentorsActivity.class));
             }
         });
 
+        // Mentors/Admins never land on "Book a mentor" from the empty calendar state.
+        View emptyBook = view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor);
+        if (emptyBook != null && !Roles.browsesMentors()) {
+            emptyBook.setVisibility(View.GONE);
+        }
+
         view.findViewById(R.id.imgNotification).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), NotificationsActivity.class);
             startActivity(intent);
         });
 
-        view.findViewById(R.id.plusIcon).setOnClickListener(v -> showCreateSheet());
-
+        if (plusIcon != null) {
+            plusIcon.setOnClickListener(v -> showCreateSheet());
+        }
         View calendarLayout = view.findViewById(R.id.layoutCalendar);
+        if (calendarLayout != null) {
         View monthHeader = calendarLayout.findViewById(R.id.layoutMonthHeader);
         TimelineView timelineView = calendarLayout.findViewById(R.id.timeline);
-        timelineView.setVisibility(View.GONE);
-        TextView tvMonthTitle = monthHeader.findViewById(R.id.tvMonthTitle);
+        if (timelineView != null) timelineView.setVisibility(View.GONE);
+        TextView tvMonthTitle = monthHeader != null ? monthHeader.findViewById(R.id.tvMonthTitle) : null;
         TextView dateHeader = calendarLayout.findViewById(R.id.dateHeader);
         txtDateInfo = calendarLayout.findViewById(R.id.txtDateInfo);
-        dateHeader.setText("Your Calender");
+        if (dateHeader != null) dateHeader.setText("Your Calender");
         YearMonth currentMonth = YearMonth.now();
-        tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
+        if (tvMonthTitle != null) {
+            tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
+        }
 
         CalendarView calendarView = view.findViewById(R.id.calendarView);
+        if (calendarView != null) {
         userViewModel.getBookedDates(Util.
                         getState(Constants.CURRENT_USER_ID, ""))
                 .observe(getViewLifecycleOwner(), bookings -> {
@@ -265,7 +294,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     calendarView.notifyCalendarChanged();
                 }
         );
-        binder.setup(calendarView, tvMonthTitle);
+        if (tvMonthTitle != null) binder.setup(calendarView, tvMonthTitle);
+        }
+        }
 
         searchView = view.findViewById(R.id.search_view);
         historyList = view.findViewById(R.id.history_list);
@@ -296,15 +327,18 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
-            if (userData != null && Roles.canCreate(userData.getUserRole())) {
+            if (!Roles.browsesMentors()) {
                 showCreateSheet();
             } else {
                 startActivity(new Intent(getActivity(), AllMentorsActivity.class));
             }
         });
 
-        view.findViewById(R.id.tvSeeMore).setOnClickListener(v ->
-                startActivity(new Intent(getActivity(), AllMentorsActivity.class)));
+        view.findViewById(R.id.tvSeeMore).setOnClickListener(v -> {
+            if (Roles.browsesMentors()) {
+                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+            }
+        });
 
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
@@ -315,6 +349,23 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         sharedViewModel.getCourses().observe(getViewLifecycleOwner(), pagingData -> {
             coursesAdapter.submitData(getLifecycle(), pagingData);
         });
+
+        RecyclerView rcProgrammes = view.findViewById(R.id.rcProgrammes);
+        if (rcProgrammes != null) {
+            rcProgrammes.setLayoutManager(new LinearLayoutManager(getContext(),
+                    LinearLayoutManager.HORIZONTAL, false));
+            ProgrammesAdapter programmesAdapter = new ProgrammesAdapter(false);
+            rcProgrammes.setAdapter(programmesAdapter);
+            programmesAdapter.setOnProgrammeClick(p ->
+                    startActivity(new Intent(getActivity(), AllProgrammesActivity.class)));
+            ProgrammesDataSource.fetch(programmesAdapter::submit);
+        }
+        View seeAllProgrammes = view.findViewById(R.id.seeAllProgrammes);
+        if (seeAllProgrammes != null) {
+            seeAllProgrammes.setOnClickListener(v ->
+                    startActivity(new Intent(getActivity(), AllProgrammesActivity.class)));
+        }
+
         //todo mentee url
         List<String> studentimages = new ArrayList<>();
         studentimages.add("url");
@@ -486,7 +537,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 }
                 if (storyAdapter != null) storyAdapter.submit(storyList);
                 if (storiesContainer != null) {
-                    storiesContainer.setVisibility(storyList.isEmpty() ? View.GONE : View.VISIBLE);
+                    storiesContainer.setVisibility(View.VISIBLE);
+                }
+                View emptyHint = getView() != null
+                        ? getView().findViewById(R.id.tvStoriesEmptyHint) : null;
+                if (emptyHint != null) {
+                    emptyHint.setVisibility(storyList.isEmpty() ? View.VISIBLE : View.GONE);
                 }
             }
 
@@ -660,13 +716,11 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     private void goToViewAll(View v) {
         if (v.getId() == R.id.seeAll) {
-            // going to view Courses
-            Intent intent = new Intent(getActivity(), ViewAllActivity.class);
-            intent.putExtra("isCourses", true);
-            startActivity(intent);
+            startActivity(new Intent(getActivity(), AllCoursesActivity.class));
         } else if (v.getId() == R.id.ShowALl) {
-            // going to view Mentors (dedicated screen)
-            startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+            if (Roles.browsesMentors()) {
+                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+            }
         }
     }
 
@@ -812,13 +866,25 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         dialog.show();
     }
 
+    private void applyMentorListVisibility(boolean isMentorOrAdmin, View view) {
+        int vis = isMentorOrAdmin ? View.GONE : View.VISIBLE;
+        View header = view.findViewById(R.id.mentorsSectionHeader);
+        if (header != null) header.setVisibility(vis);
+        if (rcMentors != null) rcMentors.setVisibility(vis);
+        // Empty-state CTA: mentors get Create, mentees get Book.
+        if (btnBookMentor != null && isMentorOrAdmin) {
+            btnBookMentor.setText("Create");
+        }
+    }
+
     private void getEvents(UserData userData, View view) {
         eventViewModel.getEvents().observe(getViewLifecycleOwner(), events -> {
 
             if (events.isEmpty()) {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
                 rvUpcomingEvents.setVisibility(View.GONE);
-                btnBookMentor.setText(Objects.equals(userData.getUserRole(), "Mentor") ? "Create" : "Book a mentor");
+                btnBookMentor.setText(!Roles.browsesMentors(userData.getUserRole())
+                        ? "Create" : "Book a mentor");
             } else {
                 view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
                 rvUpcomingEvents.setVisibility(View.VISIBLE);

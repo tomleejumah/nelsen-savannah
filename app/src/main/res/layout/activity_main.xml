@@ -31,7 +31,6 @@
         <androidx.cardview.widget.CardView
             android:layout_width="wrap_content"
             android:layout_height="54dp"
-            app:cardBackgroundColor="@android:color/transparent"
             app:cardCornerRadius="27dp"
             app:cardElevation="6dp">
 
@@ -45,7 +44,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_gravity="center"
-                    android:background="@android:color/transparent"
                     android:paddingHorizontal="6dp"
                     app:cnb_menuResource="@menu/main_bottom_menu"
                     app:cnb_orientationMode="horizontal" />
