@@ -27,6 +27,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -117,6 +118,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                     LmsModels.TrackDetailEnvelope body = response.body();
                     if (response.isSuccessful() && body != null && body.ok && body.data != null) {
                         bindTrack(body.data);
+                        resumeProgress();
                     } else {
                         showFallback();
                     }
@@ -129,6 +131,32 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }
             });
         });
+    }
+
+    private void resumeProgress() {
+        if (TextUtils.isEmpty(trackId)) return;
+        withBearer(bearer -> ApiClient.getLmsService().myProgress(bearer, trackId)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.ProgressMapEnvelope> call,
+                                           Response<LmsModels.ProgressMapEnvelope> response) {
+                        LmsModels.ProgressMapEnvelope body = response.body();
+                        if (!response.isSuccessful() || body == null || !body.ok || body.data == null) {
+                            return;
+                        }
+                        Object trackObj = body.data.byTrackId != null
+                                ? body.data.byTrackId.get(trackId) : null;
+                        if (trackObj instanceof Map) {
+                            Object pct = ((Map<?, ?>) trackObj).get("trackPercent");
+                            if (pct instanceof Number) {
+                                tvDesc.append("\n" + ((Number) pct).intValue() + "% complete");
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.ProgressMapEnvelope> call, Throwable t) {}
+                }));
     }
 
     private void bindTrack(LmsModels.TrackDetailData data) {
@@ -275,7 +303,8 @@ public class TrackLearnActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<LmsModels.EnrollmentEnvelope> call,
                                            Response<LmsModels.EnrollmentEnvelope> response) {
-                        if (response.isSuccessful()) {
+                        LmsModels.EnrollmentEnvelope body = response.body();
+                        if (response.isSuccessful() && body != null && body.ok) {
                             btnEnroll.setText("Enrolled");
                             btnEnroll.setEnabled(false);
                             Toast.makeText(TrackLearnActivity.this, "Enrolled", Toast.LENGTH_SHORT).show();
