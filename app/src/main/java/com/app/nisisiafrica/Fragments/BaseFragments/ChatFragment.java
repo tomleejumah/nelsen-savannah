@@ -55,7 +55,6 @@ import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.data.remote.StorageUploader;
 import com.app.nisisiafrica.databinding.FragmentChatBinding;
 import com.bumptech.glide.Glide;
-import com.discord.panels.PanelState;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -80,9 +79,8 @@ public class ChatFragment extends Fragment {
     private ChatRoomViewModel chatRoomViewModel;
     private UserData userData;
     private String joinedAT, role;
-    private boolean isPanelOpen, isMentor;
+    private boolean isChatOpen, isMentor;
     private View chipNavigationBar;
-    private UserData myUserData;
     private String selectedOtherUserId;
     private boolean selectedIsMentor = false;
     private OnBackPressedCallback backCallback;
@@ -131,7 +129,7 @@ public class ChatFragment extends Fragment {
         // Initialize user metadata and global rooms
         handleUserMetadata();
         chatRoomViewModel.initPinnedChats();
-        loadMyProfile();
+
 
         return binding.getRoot();
     }
@@ -236,8 +234,7 @@ public class ChatFragment extends Fragment {
         currentChatId = chatId;
         currentReceiverId = chatroom.getOtherUserId(currentUserId);
 
-        binding.overlappingPanels.openEndPanel();
-        isPanelOpen = true;
+        showChatDetail();
         binding.etMessage.setText("");
         clearReply();
 
@@ -277,7 +274,7 @@ public class ChatFragment extends Fragment {
                         Toast.makeText(requireContext(),
                                 ok ? "Chat deleted" : "Couldn't delete chat", Toast.LENGTH_SHORT).show();
                         if (ok && chatId.equals(currentChatId)) {
-                            binding.overlappingPanels.closePanels();
+                            showChatList();
                             currentChatId = null;
                         }
                         return Unit.INSTANCE;
@@ -389,10 +386,8 @@ public class ChatFragment extends Fragment {
                 binding.tvChatName.setText("Announcements");
                 binding.tvChatRole.setText("Official Updates");
                 Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
-                // No partner profile for system rooms — keep the start panel showing "me".
                 userData = null;
                 selectedOtherUserId = null;
-                bindProfilePanel(myUserData);
                 break;
             case "ai":
                 binding.tvChatName.setText("Nelsen AI Assistant");
@@ -401,19 +396,19 @@ public class ChatFragment extends Fragment {
                 Glide.with(this).load(R.drawable.cyborg).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
-                bindProfilePanel(myUserData);
                 break;
             default: // Direct Chat
                 binding.btnViewProfile.setVisibility(View.VISIBLE);
                 String otherUserId = chatroom.getOtherUserId(currentUserId);
                 String otherName = chatroom.getOtherUserName(currentUserId);
                 binding.tvChatName.setText(otherName);
+                binding.tvChatRole.setText("");
+                Glide.with(this).load(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
 
-                // Reset immediately so the profile panel never shows the previously
-                // opened person while the new one is still loading.
+                // Reset immediately so the header never shows the previously opened
+                // person while the new one is still loading.
                 userData = null;
                 selectedOtherUserId = otherUserId;
-                bindProfilePanelMinimal(otherName);
 
                 if (otherUserId != null) {
                     selectedIsMentor = false;
@@ -429,7 +424,6 @@ public class ChatFragment extends Fragment {
                                     .placeholder(R.drawable.ic_person).into(binding.tvHeaderAvatar);
                             binding.tvChatRole.setText(user.getUserRole());
                             selectedIsMentor = "Mentor".equals(user.getUserRole());
-                            bindProfilePanel(user);
                         } else {
                             // The partner is likely a mentor (stored under /mentors, not /users).
                             loadMentorProfileFallback(otherUserId, otherName);
@@ -440,40 +434,21 @@ public class ChatFragment extends Fragment {
                         return Unit.INSTANCE;
                     });
 
-                    binding.btnViewProfile.setOnClickListener(v -> {
-                        Intent intent = new Intent(getActivity(), ProfileActivity.class);
-                        if (selectedIsMentor) {
-                            intent.putExtra(Constants.MENTOR_ID, otherUserId);
-                        } else {
-                            intent.putExtra(Constants.USER_ID, otherUserId);
-                        }
-                        startActivity(intent);
-                    });
                 }
                 break;
         }
     }
 
-    /** Builds the profile panel from the /mentors node when the partner has no /users record. */
+    /** Fills the header from the /mentors node when the partner has no /users record. */
     private void loadMentorProfileFallback(String mentorId, String fallbackName) {
         FirebaseRemoteDataSource.INSTANCE.getMentorData(mentorId, mentor -> {
             if (binding == null || !mentorId.equals(selectedOtherUserId)) return Unit.INSTANCE;
-            if (mentor == null) {
-                bindProfilePanelMinimal(fallbackName);
-                return Unit.INSTANCE;
-            }
+            if (mentor == null) return Unit.INSTANCE;
             selectedIsMentor = true;
             String name = mentor.getMentorName() != null && !mentor.getMentorName().isEmpty()
                     ? mentor.getMentorName() : fallbackName;
-            binding.tvProfileName.setText(name != null ? name : "");
-            binding.tvProfileRole.setText("Mentor");
-            binding.tvAbout.setText(mentor.getMentorDescription() != null ? mentor.getMentorDescription() : "");
-            binding.email.setText("");
-            binding.joinedTittle.setText("MENTEES");
-            binding.tvJoined.setText(mentor.getStudentsCount() != null ? mentor.getStudentsCount() : "-");
+            binding.tvChatName.setText(name != null ? name : "");
             binding.tvChatRole.setText("Mentor");
-            Glide.with(this).load(mentor.getMentorImageUrl())
-                    .placeholder(R.drawable.ic_person).circleCrop().into(binding.tvProfileAvatar);
             Glide.with(this).load(mentor.getMentorImageUrl())
                     .placeholder(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
             return Unit.INSTANCE;
@@ -740,67 +715,39 @@ public class ChatFragment extends Fragment {
 //    }
 
     private void setupGlobalClickListeners() {
-        binding.allChatInfo.setOnClickListener(v -> {
-            // Panel content is already kept in sync by updateChatHeader (selected
-            // chat = their profile; otherwise mine). Just reveal it.
-            if (selectedOtherUserId == null && myUserData != null) {
-                bindProfilePanel(myUserData);
-            }
-            binding.overlappingPanels.openStartPanel();
-        });
-
-        binding.icBack.setOnClickListener(v -> {
-            binding.overlappingPanels.closePanels();
-            Util.saveState(Constants.IS_MENTOR, false);
-        });
+        binding.allChatInfo.setOnClickListener(v -> openPartnerProfile());
+        binding.icBack.setOnClickListener(v -> showChatList());
     }
 
-    /**
-     * Loads the signed-in user's profile so the start panel always defaults to
-     * "me" until another profile is explicitly selected.
-     */
-    private void loadMyProfile() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
-        FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(uid, u -> {
-            myUserData = u;
-            if (userData == null) bindProfilePanel(myUserData);
-            return Unit.INSTANCE;
-        }, e -> Unit.INSTANCE);
+    /** Opens the conversation partner's full profile. No-op for system/AI rooms. */
+    private void openPartnerProfile() {
+        if (selectedOtherUserId == null) return;
+        Intent intent = new Intent(getActivity(), ProfileActivity.class);
+        intent.putExtra(selectedIsMentor ? Constants.MENTOR_ID : Constants.USER_ID, selectedOtherUserId);
+        startActivity(intent);
     }
 
-    /** Shows the selected person's name instantly while their full data loads. */
-    private void bindProfilePanelMinimal(String name) {
+    /** Shows the open conversation and hides the bottom nav so the input has room. */
+    private void showChatDetail() {
         if (binding == null) return;
-        binding.tvProfileName.setText(name != null ? name : "");
-        binding.tvProfileRole.setText("");
-        binding.tvAbout.setText("");
-        binding.email.setText("");
-        binding.tvJoined.setText("-");
-        Glide.with(requireContext()).load(R.drawable.ic_person).circleCrop().into(binding.tvProfileAvatar);
+        isChatOpen = true;
+        binding.chatListContainer.setVisibility(View.GONE);
+        binding.chatDetailContainer.setVisibility(View.VISIBLE);
+        if (chipNavigationBar != null) chipNavigationBar.setVisibility(View.GONE);
     }
 
-    private void bindProfilePanel(UserData u) {
-        if (u == null || binding == null) return;
-        String first = u.getFirstName() != null ? u.getFirstName() : "";
-        String last = u.getLastName() != null ? u.getLastName() : "";
-        binding.tvProfileName.setText((first + " " + last).trim());
-        binding.tvProfileRole.setText(u.getUserRole() != null ? u.getUserRole() : "");
-        binding.tvAbout.setText(u.getBio() != null ? u.getBio() : "");
-        binding.email.setText(u.getEmail() != null ? u.getEmail() : "");
-        Glide.with(requireContext())
-                .load(u.getPhotoUrl())
-                .placeholder(R.drawable.ic_person)
-                .circleCrop()
-                .into(binding.tvProfileAvatar);
-
-        binding.joinedTittle.setText("LAST LOGIN");
-        if (u.getLastLogin() != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-            binding.tvJoined.setText(sdf.format(new Date(u.getLastLogin())));
-        } else {
-            binding.tvJoined.setText("-");
-        }
+    /** Returns to the conversation list. */
+    private void showChatList() {
+        if (binding == null) return;
+        isChatOpen = false;
+        binding.chatDetailContainer.setVisibility(View.GONE);
+        binding.chatListContainer.setVisibility(View.VISIBLE);
+        if (chipNavigationBar != null) chipNavigationBar.setVisibility(View.VISIBLE);
+        Util.saveState(Constants.IS_MENTOR, false);
+        userData = null;
+        selectedOtherUserId = null;
+        clearReply();
+        hideKeyboard();
     }
 
     private void handleUserMetadata() {
@@ -817,9 +764,8 @@ public class ChatFragment extends Fragment {
         backCallback = new OnBackPressedCallback(false) {
             @Override
             public void handleOnBackPressed() {
-                if (isPanelOpen) {
-                    binding.overlappingPanels.closePanels();
-                    Util.saveState(Constants.IS_MENTOR, false);
+                if (isChatOpen) {
+                    showChatList();
                 } else if (getActivity() instanceof MainActivity) {
                     ((MainActivity) getActivity()).navigateToHomeTab();
                 }
@@ -843,22 +789,6 @@ public class ChatFragment extends Fragment {
         // Sync back-handling to actual visibility once the preload show/hide settles.
         view.post(() -> {
             if (backCallback != null) backCallback.setEnabled(!isHidden());
-        });
-
-        binding.overlappingPanels.registerEndPanelStateListeners(newState -> {
-            if (newState instanceof PanelState.Opening || newState instanceof PanelState.Opened) {
-                chipNavigationBar.setVisibility(View.GONE);
-                isPanelOpen = true;
-            } else if (newState instanceof PanelState.Closing || newState instanceof PanelState.Closed) {
-                chipNavigationBar.setVisibility(View.VISIBLE);
-                isPanelOpen = false;
-                Util.saveState(Constants.IS_MENTOR, false);
-                // No conversation selected anymore -> start panel defaults back to me.
-                userData = null;
-                selectedOtherUserId = null;
-                bindProfilePanel(myUserData);
-            }
-            hideKeyboard();
         });
     }
 
