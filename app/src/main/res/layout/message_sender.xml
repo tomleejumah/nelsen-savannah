@@ -18,6 +18,53 @@
         android:paddingHorizontal="14dp"
         android:paddingVertical="9dp">
 
+        <!-- Quoted reply. Colours are fixed light-on-dark because the outgoing
+             bubble is dark in both themes. -->
+        <LinearLayout
+            android:id="@+id/quotedReply"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/quote_bg_outgoing"
+            android:clickable="true"
+            android:focusable="true"
+            android:minHeight="38dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <View
+                android:layout_width="3dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="5dp">
+
+                <TextView
+                    android:id="@+id/tvQuotedSender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvQuotedSnippet"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="#DDE6F2"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
         <ImageView
             android:id="@+id/ivImage"
             android:layout_width="220dp"

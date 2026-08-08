@@ -91,15 +91,30 @@ data class MentorItem(
 //    val isOnline: Boolean = false
 )
 
+/** Firestore wire format for a chat message. */
 data class ChatMessage(
     val messageId: String = "",
     val senderId: String = "",
     val senderName: String = "",
     val message: String = "",
     val timestamp: Timestamp? = null,
-    val type: String = "text"
+    val type: String = "text",
+    val replyToId: String = "",
+    val replyToSender: String = "",
+    val replyToSnippet: String = "",
+    val deleted: Boolean = false
 )
 
+/**
+ * Local cache of a chat message.
+ *
+ * The quoted-reply fields are denormalised on purpose: storing the snippet
+ * alongside the reply means a quote still renders when the original is
+ * deleted or has scrolled out of the synced window.
+ *
+ * [deleted] marks a tombstone. The body is cleared on both Firestore and here,
+ * but the row survives so replies pointing at it stay coherent.
+ */
 @Entity(tableName = "messages")
 data class ChatMessageEntity(
     @PrimaryKey val messageId: String,
@@ -109,8 +124,14 @@ data class ChatMessageEntity(
     val message: String,
     val timestamp: Long,
     val type: String = "text",
-    val status: String = "sent"
-)
+    val status: String = "sent",
+    val replyToId: String = "",
+    val replyToSender: String = "",
+    val replyToSnippet: String = "",
+    val deleted: Boolean = false
+) {
+    val isReply: Boolean get() = replyToId.isNotEmpty()
+}
 
 data class Chatroom(
     val chatroomId: String = "",
