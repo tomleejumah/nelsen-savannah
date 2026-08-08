@@ -4,6 +4,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -26,7 +27,9 @@ import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -34,7 +37,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * In-app LMS track player. Catalog from GET /lms/tracks/:id (+ modules).
+ * MentUI Course track: hero + stats + lesson nodes + sticky Continue.
+ * Binds LMS when live; otherwise stubs lesson list from course extras.
+ * Lesson-level progress uses LMS status when present — otherwise UI stubs locked/current.
  */
 public class TrackLearnActivity extends AppCompatActivity {
 
@@ -44,14 +49,21 @@ public class TrackLearnActivity extends AppCompatActivity {
     public static final String EXTRA_FALLBACK_URL = "extra_fallback_url";
 
     private ProgressBar progress;
+    private ProgressBar trackProgress;
     private TextView tvTitle;
     private TextView tvDesc;
+    private TextView tvProgressLabel;
+    private TextView tvStatDone;
+    private TextView tvStatProgress;
+    private TextView tvStatLocked;
     private TextView tvPlayerPlaceholder;
     private VideoView videoView;
     private LinearLayout modulesContainer;
     private MaterialButton btnEnroll;
     private String trackId;
     private String fallbackUrl;
+    private final List<LmsModels.LessonDto> flatLessons = new ArrayList<>();
+    private LmsModels.LessonDto resumeLesson;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -73,8 +85,13 @@ public class TrackLearnActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         progress = findViewById(R.id.progress);
+        trackProgress = findViewById(R.id.trackProgress);
         tvTitle = findViewById(R.id.tvTitle);
         tvDesc = findViewById(R.id.tvDesc);
+        tvProgressLabel = findViewById(R.id.tvProgressLabel);
+        tvStatDone = findViewById(R.id.tvStatDone);
+        tvStatProgress = findViewById(R.id.tvStatProgress);
+        tvStatLocked = findViewById(R.id.tvStatLocked);
         tvPlayerPlaceholder = findViewById(R.id.tvPlayerPlaceholder);
         videoView = findViewById(R.id.videoView);
         modulesContainer = findViewById(R.id.modulesContainer);
@@ -83,7 +100,13 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (!TextUtils.isEmpty(title)) tvTitle.setText(title);
         if (!TextUtils.isEmpty(desc)) tvDesc.setText(desc);
 
-        btnEnroll.setOnClickListener(v -> enroll());
+        btnEnroll.setOnClickListener(v -> {
+            if (resumeLesson != null) {
+                openLesson(resumeLesson);
+            } else if (btnEnroll.isEnabled()) {
+                enroll();
+            }
+        });
         loadTrack();
     }
 
@@ -149,7 +172,10 @@ public class TrackLearnActivity extends AppCompatActivity {
                         if (trackObj instanceof Map) {
                             Object pct = ((Map<?, ?>) trackObj).get("trackPercent");
                             if (pct instanceof Number) {
-                                tvDesc.append("\n" + ((Number) pct).intValue() + "% complete");
+                                int p = ((Number) pct).intValue();
+                                trackProgress.setProgress(p);
+                                tvProgressLabel.setText(
+                                        String.format(Locale.getDefault(), "Overall progress · %d%%", p));
                             }
                         }
                     }
@@ -163,75 +189,145 @@ public class TrackLearnActivity extends AppCompatActivity {
         LmsModels.TrackCard track = data.track;
         if (track != null) {
             if (!TextUtils.isEmpty(track.courseTitle)) tvTitle.setText(track.courseTitle);
-            if (!TextUtils.isEmpty(track.does)) tvDesc.setText(track.does);
+            String meta = "";
+            if (!TextUtils.isEmpty(track.tutorName)) meta = track.tutorName;
+            if (!TextUtils.isEmpty(track.lessons)) {
+                meta += (meta.isEmpty() ? "" : " · ") + track.lessons + " lessons";
+            }
+            if (!TextUtils.isEmpty(track.duration)) {
+                meta += (meta.isEmpty() ? "" : " · ") + track.duration + " h";
+            }
+            if (!meta.isEmpty()) tvDesc.setText(meta);
+            else if (!TextUtils.isEmpty(track.does)) tvDesc.setText(track.does);
+            int pct = Math.round(track.trackPercent);
+            trackProgress.setProgress(pct);
+            tvProgressLabel.setText(
+                    String.format(Locale.getDefault(), "Overall progress · %d%%", pct));
             if (track.enrolled) {
-                btnEnroll.setText("Enrolled");
-                btnEnroll.setEnabled(false);
+                btnEnroll.setText("Continue learning");
             }
         }
         modulesContainer.removeAllViews();
+        flatLessons.clear();
         List<LmsModels.ModuleDto> modules = data.modules;
         if (modules == null || modules.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText("Modules will appear when published");
-            empty.setTextColor(getColor(R.color.text_secondary));
-            modulesContainer.addView(empty);
+            showFallbackLessonsHint();
             return;
         }
+        // Load first module lessons for the vertical list (expand others on tap).
         for (LmsModels.ModuleDto module : modules) {
             TextView header = new TextView(this);
             header.setText(module.title != null ? module.title : "Module");
-            header.setTextSize(15f);
-            header.setPadding(0, 16, 0, 8);
-            header.setTextColor(getColor(R.color.text_primary));
+            header.setTextSize(14f);
+            header.setPadding(0, 12, 0, 4);
+            header.setTextColor(getColor(R.color.muted));
             modulesContainer.addView(header);
-            MaterialButton openMod = new MaterialButton(this,
-                    null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-            openMod.setText("Open module (" + module.lessonCount + " lessons)");
-            openMod.setOnClickListener(v -> loadModuleLessons(module.moduleId));
-            modulesContainer.addView(openMod);
+            loadModuleLessonsInto(module.moduleId, module == modules.get(0));
         }
     }
 
-    private void loadModuleLessons(String moduleId) {
-        if (TextUtils.isEmpty(moduleId)) return;
-        progress.setVisibility(View.VISIBLE);
+    private void loadModuleLessonsInto(String moduleId, boolean autoExpand) {
+        if (TextUtils.isEmpty(moduleId) || !autoExpand) return;
         withBearer(bearer -> ApiClient.getLmsService().module(bearer, moduleId)
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(Call<LmsModels.ModuleDetailEnvelope> call,
                                            Response<LmsModels.ModuleDetailEnvelope> response) {
-                        progress.setVisibility(View.GONE);
                         LmsModels.ModuleDetailEnvelope body = response.body();
-                        if (!response.isSuccessful() || body == null || !body.ok || body.data == null) {
-                            Toast.makeText(TrackLearnActivity.this, "Module unavailable", Toast.LENGTH_SHORT).show();
+                        if (!response.isSuccessful() || body == null || !body.ok
+                                || body.data == null || body.data.lessons == null) {
                             return;
                         }
-                        modulesContainer.removeAllViews();
-                        if (body.data.module != null && body.data.module.title != null) {
-                            TextView header = new TextView(TrackLearnActivity.this);
-                            header.setText(body.data.module.title);
-                            header.setTextSize(16f);
-                            header.setPadding(0, 8, 0, 8);
-                            header.setTextColor(getColor(R.color.text_primary));
-                            modulesContainer.addView(header);
-                        }
-                        if (body.data.lessons == null) return;
-                        for (LmsModels.LessonDto lesson : body.data.lessons) {
-                            MaterialButton lessonBtn = new MaterialButton(TrackLearnActivity.this,
-                                    null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-                            lessonBtn.setText(lesson.title != null ? lesson.title : "Lesson");
-                            lessonBtn.setOnClickListener(v -> openLesson(lesson));
-                            modulesContainer.addView(lessonBtn);
-                        }
+                        flatLessons.clear();
+                        flatLessons.addAll(body.data.lessons);
+                        renderLessonNodes(flatLessons);
                     }
 
                     @Override
-                    public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {
-                        progress.setVisibility(View.GONE);
-                        Toast.makeText(TrackLearnActivity.this, "Could not load module", Toast.LENGTH_SHORT).show();
-                    }
+                    public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {}
                 }));
+    }
+
+    private void renderLessonNodes(List<LmsModels.LessonDto> lessons) {
+        // Keep module headers; append lesson rows after last child or rebuild bottom.
+        int done = 0, inProg = 0, locked = 0;
+        resumeLesson = null;
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (int i = 0; i < lessons.size(); i++) {
+            LmsModels.LessonDto lesson = lessons.get(i);
+            String status = lesson.status != null ? lesson.status.toLowerCase(Locale.US) : "";
+            boolean isDone = "done".equals(status) || "completed".equals(status)
+                    || lesson.lessonPercent >= 100f;
+            boolean isCurrent = "current".equals(status) || "in_progress".equals(status)
+                    || (!isDone && resumeLesson == null && lesson.lessonPercent > 0);
+            boolean isLocked = "locked".equals(status)
+                    || (!isDone && !isCurrent && resumeLesson != null && lesson.lessonPercent <= 0
+                    && i > 0 && lessons.get(i - 1).lessonPercent < 100f);
+
+            // Default when LMS has no per-lesson status yet:
+            if (TextUtils.isEmpty(status) && lesson.lessonPercent <= 0) {
+                if (i == 0) {
+                    isCurrent = true;
+                    isLocked = false;
+                } else {
+                    isLocked = true;
+                    isCurrent = false;
+                }
+            }
+
+            if (isDone) done++;
+            else if (isLocked) locked++;
+            else {
+                inProg++;
+                if (resumeLesson == null) resumeLesson = lesson;
+            }
+
+            View row = inflater.inflate(R.layout.item_lesson_node, modulesContainer, false);
+            TextView node = row.findViewById(R.id.lessonNode);
+            TextView title = row.findViewById(R.id.tvLessonTitle);
+            TextView meta = row.findViewById(R.id.tvLessonMeta);
+            TextView action = row.findViewById(R.id.tvLessonAction);
+            View line = row.findViewById(R.id.lessonLine);
+            line.setVisibility(i == lessons.size() - 1 ? View.INVISIBLE : View.VISIBLE);
+
+            title.setText(lesson.title != null ? lesson.title : "Lesson");
+            String mins = lesson.estimatedMinutes > 0
+                    ? lesson.estimatedMinutes + " min" : "";
+            String type = lesson.type != null ? lesson.type : "";
+            meta.setText((mins + (mins.isEmpty() || type.isEmpty() ? "" : " · ") + type).trim());
+
+            if (isDone) {
+                node.setBackgroundResource(R.drawable.bg_lesson_node_done);
+                node.setText("✓");
+                node.setTextColor(getColor(R.color.white));
+                action.setVisibility(View.GONE);
+            } else if (isCurrent) {
+                node.setBackgroundResource(R.drawable.bg_lesson_node_current);
+                node.setText("▶");
+                node.setTextColor(getColor(R.color.maroon_700));
+                action.setVisibility(View.VISIBLE);
+                action.setText("Resume");
+            } else {
+                node.setBackgroundResource(R.drawable.bg_lesson_node_locked);
+                node.setText("🔒");
+                node.setTextColor(getColor(R.color.muted));
+                action.setVisibility(View.GONE);
+            }
+
+            boolean clickable = !isLocked;
+            row.setAlpha(isLocked ? 0.55f : 1f);
+            row.setOnClickListener(v -> {
+                if (clickable) openLesson(lesson);
+            });
+            modulesContainer.addView(row);
+        }
+        tvStatDone.setText(String.valueOf(done));
+        tvStatProgress.setText(String.valueOf(inProg));
+        tvStatLocked.setText(String.valueOf(locked));
+        if (resumeLesson != null) {
+            btnEnroll.setText("Continue learning");
+            btnEnroll.setEnabled(true);
+        }
     }
 
     private void openLesson(LmsModels.LessonDto lesson) {
@@ -305,9 +401,9 @@ public class TrackLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.EnrollmentEnvelope> response) {
                         LmsModels.EnrollmentEnvelope body = response.body();
                         if (response.isSuccessful() && body != null && body.ok) {
-                            btnEnroll.setText("Enrolled");
-                            btnEnroll.setEnabled(false);
+                            btnEnroll.setText("Continue learning");
                             Toast.makeText(TrackLearnActivity.this, "Enrolled", Toast.LENGTH_SHORT).show();
+                            loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
                                     "Enroll failed (" + response.code() + ")", Toast.LENGTH_SHORT).show();
@@ -322,6 +418,16 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
+    private void showFallbackLessonsHint() {
+        TextView hint = new TextView(this);
+        hint.setText("Lessons will appear here when the LMS publishes modules for this track.");
+        hint.setTextColor(getColor(R.color.muted));
+        modulesContainer.addView(hint);
+        tvStatDone.setText("0");
+        tvStatProgress.setText("0");
+        tvStatLocked.setText("—");
+    }
+
     private void showFallback() {
         if (!TextUtils.isEmpty(fallbackUrl)
                 && (fallbackUrl.contains(".mp4") || fallbackUrl.contains("playback")
@@ -330,13 +436,10 @@ public class TrackLearnActivity extends AppCompatActivity {
             tvPlayerPlaceholder.setText("Playing linked media");
         } else {
             tvPlayerPlaceholder.setVisibility(View.VISIBLE);
-            tvPlayerPlaceholder.setText(
-                    "In-app learning is wiring up. Course content will play here when LMS is live.");
+            tvPlayerPlaceholder.setText("Course player ready — lessons sync when LMS is live.");
             modulesContainer.removeAllViews();
-            TextView hint = new TextView(this);
-            hint.setText("Progress, quizzes, and certificates will sync from /lms once the API is deployed.");
-            hint.setTextColor(getColor(R.color.text_secondary));
-            modulesContainer.addView(hint);
+            showFallbackLessonsHint();
+            // TODO: lesson-level progress not tracked offline yet — UI stubs only.
         }
     }
 
