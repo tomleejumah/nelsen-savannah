@@ -207,44 +207,6 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
         }
     }
 
-//    private void addNotification(String postID, String senderId,String text,String coursePublisher) {
-//
-//        HashMap<String,Object> map=new HashMap<>();
-//
-//        map.put("senderId",senderId);
-//        map.put("text",text);
-//        map.put("courseID",postID);
-//
-//        if (!coursePublisher.equals(Util.getState(Constants.CURRENT_USER_ID, ""))){
-//            FirebaseDatabase.getInstance().getReference().child("Notifications").
-//                    child(coursePublisher).push().setValue(map);
-//        }
-//    }
-
-    /*private void addNotification(String postID, String coursePublisher, String text) {
-        String currentUserId = Util.getState(Constants.CURRENT_USER_ID, "");
-
-        if (coursePublisher.equals(currentUserId)) {
-            return;
-        }
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("coursePublisher", coursePublisher);
-        data.put("postID", postID);
-        data.put("text", text);
-
-        FirebaseFunctions.getInstance()
-                .getHttpsCallable("sendLikeNotification")
-                .call(data)
-                .addOnSuccessListener(result -> {
-                    Log.d("Notification", "Sent successfully");
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("Notification", "Failed to send", e);
-                });
-    }
-     */
-
     private static final String TAG = "CoursesAdapter";
     private void addNotification(String courseId, String tutorId, String text) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();

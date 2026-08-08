@@ -29,4 +29,3 @@ rootProject.name = "Nelsen Savannah"
 include ':app'
 include ':CustomSnackbarLib'
 include ':overlapimagelistview'
-include ':fabtobottomnavigation'

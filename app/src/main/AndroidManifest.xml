@@ -62,9 +62,6 @@
         <activity
             android:name=".CreateEventActivity"
             android:exported="false" />
-        <activity
-            android:name=".ViewAllEvents"
-            android:exported="false" />
 
         <service
             android:name=".Service.FCMService"

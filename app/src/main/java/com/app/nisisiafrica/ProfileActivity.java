@@ -107,6 +107,8 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     private CircleImageView imgDp;
     private EdgeBlurImageView dpImage;
     private CustomTarget<Bitmap> paletteTarget;
+    private DatabaseReference ratingsRef;
+    private ValueEventListener ratingsListener;
     private int defaultColor;
     private String id, role;
     private UserViewModel sharedUserViewModel;
@@ -545,10 +547,10 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         }
         card.setVisibility(View.VISIBLE);
 
-        DatabaseReference ratingsRef = FirebaseDatabase.getInstance()
+        ratingsRef = FirebaseDatabase.getInstance()
                 .getReference("mentors").child(mentorId).child("ratings");
 
-        ratingsRef.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+        ratingsListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 long count = 0;
@@ -574,7 +576,8 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
             }
-        });
+        };
+        ratingsRef.addValueEventListener(ratingsListener);
 
         ratingBar.setOnRatingBarChangeListener((bar, rating, fromUser) -> {
             if (!fromUser || rating <= 0) return;
@@ -1165,6 +1168,10 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (ratingsRef != null && ratingsListener != null) {
+            ratingsRef.removeEventListener(ratingsListener);
+            ratingsListener = null;
+        }
         if (paletteTarget != null) {
 //            Glide.with(this).clear(paletteTarget);
         }
