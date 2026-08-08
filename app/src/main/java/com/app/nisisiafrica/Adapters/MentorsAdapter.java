@@ -1,12 +1,14 @@
 package com.app.nisisiafrica.Adapters;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,8 +27,8 @@ import com.bumptech.glide.Glide;
 import com.zen.overlapimagelistview.OverlapImageListView;
 
 import java.util.List;
+import java.util.Locale;
 
-import de.hdodenhof.circleimageview.CircleImageView;
 public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter.ViewHolder> {
     private boolean isExpanded;
     private Context mContext;
@@ -71,7 +73,8 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        private CircleImageView ivTutorProfile;
+        private ImageView ivTutorProfile;
+        private TextView tvMentorInitials;
         private TextView tvTutorName;
         private TextView tvTutorDescription;
         private TextView tvStudentsCount;
@@ -82,6 +85,7 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivTutorProfile = itemView.findViewById(R.id.iv_tutor_profile);
+            tvMentorInitials = itemView.findViewById(R.id.tvMentorInitials);
             tvTutorName = itemView.findViewById(R.id.tv_tutor_name);
             tvTutorDescription = itemView.findViewById(R.id.tv_tutor_description);
             tvStudentsCount = itemView.findViewById(R.id.tv_students_count);
@@ -91,12 +95,14 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
         }
 
         void bind(MentorItem mentorItem) {
-            Glide.with(mContext).load(mentorItem.getMentorImageUrl()).into(ivTutorProfile);
             tvTutorName.setText(mentorItem.getMentorName());
             tvTutorDescription.setText(mentorItem.getMentorDescription());
+            bindAvatar(mentorItem);
 
             List<String> studentImages = mentorItem.getStudentImages();
-            OverlapImages.load(overlapImage, studentImages);
+            if (overlapImage != null && overlapImage.getVisibility() == View.VISIBLE) {
+                OverlapImages.load(overlapImage, studentImages);
+            }
             String count = mentorItem.getStudentsCount();
             long n = 0;
             if (count != null && !count.isEmpty()) {
@@ -107,16 +113,13 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
             Double rating = mentorItem.getAverageRating();
             boolean hasHistory = (rating != null && rating > 0) || n > 0;
             if (hasHistory && rating != null && rating > 0) {
-                tvMentorTag.setText(String.format(java.util.Locale.getDefault(),
-                        "★ %.1f · %d students", rating, n));
-                tvStudentsCount.setText(n > 0 ? n + " mentees" : "");
+                tvMentorTag.setText(String.format(Locale.getDefault(), "★ %.1f · %d students", rating, n));
             } else if (hasHistory) {
                 tvMentorTag.setText(n + " students");
-                tvStudentsCount.setText(n + " mentees");
             } else {
                 tvMentorTag.setText("New mentor");
-                tvStudentsCount.setText("");
             }
+            if (tvStudentsCount != null) tvStudentsCount.setText("");
 
             boolean hideBook = !com.app.nisisiafrica.Utils.Roles.browsesMentors();
             btnBookNow.setVisibility(hideBook ? View.GONE : View.VISIBLE);
@@ -135,6 +138,33 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
                 intent.putExtra(Constants.MENTOR_NAME, mentorItem.getMentorName());
                 mContext.startActivity(intent);
             });
+        }
+
+        private void bindAvatar(MentorItem mentorItem) {
+            String url = mentorItem.getMentorImageUrl();
+            String initials = initialsFor(mentorItem.getMentorName());
+            tvMentorInitials.setText(initials);
+            if (!TextUtils.isEmpty(url) && !"default".equals(url)) {
+                ivTutorProfile.setVisibility(View.VISIBLE);
+                tvMentorInitials.setVisibility(View.GONE);
+                ivTutorProfile.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+                ivTutorProfile.setClipToOutline(true);
+                Glide.with(mContext).load(url).centerCrop().into(ivTutorProfile);
+            } else {
+                ivTutorProfile.setVisibility(View.GONE);
+                tvMentorInitials.setVisibility(View.VISIBLE);
+            }
+        }
+
+        private String initialsFor(String name) {
+            if (TextUtils.isEmpty(name)) return "?";
+            String[] parts = name.trim().split("\\s+");
+            if (parts.length == 1) {
+                return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase(Locale.getDefault());
+            }
+            String a = parts[0].substring(0, 1);
+            String b = parts[parts.length - 1].substring(0, 1);
+            return (a + b).toUpperCase(Locale.getDefault());
         }
     }
 }

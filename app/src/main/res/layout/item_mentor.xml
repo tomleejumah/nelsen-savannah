@@ -1,31 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/eventCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginVertical="6dp"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="@dimen/radius_card_md"
-    app:cardElevation="2dp"
-    app:strokeColor="@color/line"
-    app:strokeWidth="1dp">
+    android:orientation="vertical"
+    android:paddingHorizontal="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="14dp">
+        android:paddingVertical="14dp">
 
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/iv_tutor_profile"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:src="@drawable/donation"
-            app:civ_border_color="@color/line"
-            app:civ_border_width="1dp" />
+        <FrameLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_mentor_avatar">
+
+            <ImageView
+                android:id="@+id/iv_tutor_profile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_mentor_avatar"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/tvMentorInitials"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/font_ui"
+                android:gravity="center"
+                android:textColor="@color/maroon_700"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="BS" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -47,14 +60,16 @@
                     android:fontFamily="@font/font_display"
                     android:textColor="@color/ink"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    tools:text="Binti Salim" />
 
-                <ImageButton
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:background="@android:color/transparent"
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="6dp"
                     android:src="@drawable/ic_badge_verified"
-                    app:tint="@color/maroon_600" />
+                    app:tint="@color/maroon_700"
+                    tools:ignore="ContentDescription" />
             </LinearLayout>
 
             <TextView
@@ -65,56 +80,61 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/font_ui"
                 android:maxLines="2"
-                android:textColor="@color/ink_soft"
-                android:textSize="13sp" />
+                android:textColor="@color/muted"
+                android:textSize="13sp"
+                tools:text="Android native developer, hands-on with modern mobile apps." />
 
-            <TextView
-                android:id="@+id/tvMentorTag"
-                style="@style/Nelsen.Tag.Maroon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="New mentor" />
-
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_marginTop="10dp">
 
-                <com.zen.overlapimagelistview.OverlapImageListView
-                    android:id="@+id/overlapImage"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    app:circleCount="3"
-                    app:fillColor="@color/surface_2"
-                    app:strokeColor="@color/surface"
-                    app:strokeWidth="3dp"
-                    tools:ignore="MissingConstraints" />
+                <TextView
+                    android:id="@+id/tvMentorTag"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp"
+                    tools:text="New mentor" />
 
+                <!-- Kept for binding compatibility; unused in MentUI list row. -->
                 <TextView
                     android:id="@+id/tv_students_count"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/font_ui"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
+
+                <com.zen.overlapimagelistview.OverlapImageListView
+                    android:id="@+id/overlapImage"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    app:circleCount="3"
+                    tools:ignore="MissingConstraints" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btn_book_now"
                     android:layout_width="wrap_content"
-                    android:layout_height="36dp"
+                    android:layout_height="34dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
                     android:background="@drawable/bg_btn_primary"
+                    android:minWidth="0dp"
                     android:paddingHorizontal="14dp"
                     android:text="Book now"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="12sp"
                     android:textStyle="bold" />
-            </LinearLayout>
+            </RelativeLayout>
         </LinearLayout>
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/line" />
+</LinearLayout>
