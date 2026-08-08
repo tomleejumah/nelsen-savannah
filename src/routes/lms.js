@@ -134,6 +134,12 @@ router.get(
   requireRoles("Mentor", "Admin"),
   lmsController.adminMenteeProgress,
 );
+router.post(
+  "/admin/seed",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.adminForceSeed,
+);
 
 // M6 TODO — events (501 until scheduled)
 router.get("/events", authenticateUser, lmsController.eventsTodo);
