@@ -90,8 +90,10 @@ function Index() {
             />
             <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
               <p className="text-xs text-muted-foreground">
-                <span className="font-display font-semibold text-foreground">380 mentors</span>{" "}
-                across tech, health, finance, media, trades and public service.
+                <span className="font-display font-semibold text-foreground">
+                  Based in Dagoretti
+                </span>{" "}
+                — mentorship, faith programmes, and coding labs for Nairobi youth.
               </p>
             </div>
           </div>
@@ -253,9 +255,9 @@ function Index() {
       <section className="border-t border-border/60 bg-hero-gradient py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-2xl">
-            <p className="eyebrow text-ember">Reviews</p>
+            <p className="eyebrow text-ember">Voices</p>
             <h2 className="mt-4 text-3xl font-bold text-on-dark sm:text-4xl">
-              What mentees and mentors say
+              What we hear in cohorts
             </h2>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">

@@ -8,17 +8,12 @@ import { ORG, PROGRAMS } from "@/data/site";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Us — Become a Mentor or Join a Cohort | Nelsen Savanna" },
+      { title: "Contact Us — Join a Cohort or Mentor | Nelsen Savannah" },
       {
         name: "description",
-        content:
-          "Talk to Nelsen Savanna about joining a mentorship cohort, mentoring young people, or partnering with us in Nairobi, Kenya.",
+        content: `Reach Nelsen Savannah in Dagoretti, Nairobi — ${ORG.phone} or ${ORG.email}.`,
       },
-      { property: "og:title", content: "Contact Nelsen Savanna" },
-      {
-        property: "og:description",
-        content: "Join as a mentee, apply to mentor, or partner with our youth guidance programs.",
-      },
+      { property: "og:title", content: "Contact Nelsen Savannah" },
     ],
   }),
   component: ContactPage,
@@ -36,33 +31,80 @@ function ContactPage() {
             Tell us where you are, and we will match the guidance
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Whether you are a student picking a path, a junior professional stuck at a plateau, or a
-            senior ready to mentor — start here. We reply within two working days.
+            Student, junior professional, or someone ready to mentor — write us. We reply within two
+            working days, or message on WhatsApp for a faster hello.
           </p>
 
           <ul className="mt-10 space-y-4 text-sm">
-            {[
-              { icon: Mail, label: ORG.email },
-              { icon: Phone, label: ORG.phone },
-              { icon: MapPin, label: ORG.location },
-            ].map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-3">
+            <li>
+              <a
+                href={`mailto:${ORG.email}`}
+                className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
+              >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
-                  <Icon className="h-4 w-4" />
+                  <Mail className="h-4 w-4" />
                 </span>
-                <span className="text-muted-foreground">{label}</span>
-              </li>
-            ))}
+                {ORG.email}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`tel:${ORG.phone.replace(/\s/g, "")}`}
+                className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                  <Phone className="h-4 w-4" />
+                </span>
+                {ORG.phone}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://wa.me/${ORG.whatsapp}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                  <Phone className="h-4 w-4" />
+                </span>
+                WhatsApp · {ORG.phone}
+              </a>
+            </li>
+            <li className="flex items-center gap-3 text-muted-foreground">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                <MapPin className="h-4 w-4" />
+              </span>
+              {ORG.location}
+            </li>
           </ul>
         </div>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            toast.success("Message received", {
-              description: "Our team will get back to you within two working days.",
+            const fd = new FormData(e.target as HTMLFormElement);
+            const name = String(fd.get("name") || "");
+            const email = String(fd.get("email") || "");
+            const phone = String(fd.get("phone") || "");
+            const program = String(fd.get("program") || "");
+            const message = String(fd.get("message") || "");
+            const subject = encodeURIComponent(`Nelsen Savannah — ${role}: ${name}`);
+            const body = encodeURIComponent(
+              [
+                `Role: ${role}`,
+                `Name: ${name}`,
+                `Email: ${email}`,
+                `Phone: ${phone}`,
+                `Program: ${program}`,
+                "",
+                message,
+              ].join("\n"),
+            );
+            window.location.href = `mailto:${ORG.email}?subject=${subject}&body=${body}`;
+            toast.success("Opening your email app", {
+              description: "If nothing opens, write us on WhatsApp or email directly.",
             });
-            (e.target as HTMLFormElement).reset();
           }}
           className="rounded-3xl border border-border/70 bg-card p-7 shadow-elevated sm:p-9"
         >
@@ -87,9 +129,9 @@ function ContactPage() {
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <Field label="Full name" name="name" placeholder="Amina Wanjiru" required />
+            <Field label="Full name" name="name" placeholder="Your full name" required />
             <Field label="Email" name="email" type="email" placeholder="you@email.com" required />
-            <Field label="Phone" name="phone" placeholder="+254 7.." />
+            <Field label="Phone" name="phone" placeholder="+254 7…" />
             <label className="grid gap-1.5 text-sm">
               <span className="font-medium">Program of interest</span>
               <select
@@ -111,17 +153,28 @@ function ContactPage() {
               name="message"
               rows={4}
               required
-              placeholder="A short paragraph about your situation and goals."
+              placeholder="Where you are now, and what you want next."
               className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </label>
 
           <button
             type="submit"
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
           >
             Send message <Send className="h-4 w-4" />
           </button>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Or{" "}
+            <a
+              href={`https://wa.me/${ORG.whatsapp}`}
+              className="font-medium text-foreground underline-offset-2 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              WhatsApp {ORG.phone}
+            </a>
+          </p>
         </form>
       </div>
     </div>
@@ -147,8 +200,8 @@ function Field({
       <input
         name={name}
         type={type}
-        placeholder={placeholder}
         required={required}
+        placeholder={placeholder}
         className="h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
     </label>

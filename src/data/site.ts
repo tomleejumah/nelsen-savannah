@@ -3,8 +3,11 @@ export const ORG = {
   legal: "Nelsen Savannah Organization + Company Limited",
   tagline: "Every young person deserves a map, not a guess.",
   email: "hello@nelsensavanna.co.ke",
-  phone: "+254 700 000 000",
-  location: "Nairobi, Kenya",
+  phone: "+254 102 849 247",
+  phoneAlt: "+254 742 437 625",
+  whatsapp: "254102849247",
+  location: "Dagoretti, Nairobi, Kenya",
+  websiteLegacy: "https://www.nisisi.africa",
 };
 
 export type Program = {
@@ -67,73 +70,61 @@ export const PARTNERS = [
 export const ROADMAP = [
   {
     phase: "Now",
-    title: "The mentorship platform",
-    body: "Programs, cohorts, events with seat reservations, media and mentor matching — live on this site.",
+    title: "Mentorship site + companion app",
+    body: "Programs, events, media, and mentor matching on this site — with the Android app for day-to-day mentorship.",
     status: "Live",
   },
   {
     phase: "Next",
-    title: "Nelsen Connect App",
-    body: "The companion Android app (rebranded from Nisisi Connect Hub): curated learning paths, real projects, milestones and direct mentor-to-mentee conversations.",
-    status: "In design",
+    title: "Shared LMS API",
+    body: "Tracks, progress %, and assignments on one API so mentees learn on Android and the web with the same account.",
+    status: "Building",
   },
   {
     phase: "Later",
-    title: "Nelsen LMS",
-    body: "A multi-tenant learning system for teachers, students and supervisors — competency grids, rubric-based marking, live progress dashboards and WCAG 2.2 AA accessibility built in.",
+    title: "Certificates & mentor marking",
+    body: "Quizzes, mentor-marked work, and certificates once a track hits the pass threshold.",
     status: "Planned",
   },
   {
     phase: "Later",
-    title: "Gallery & courses library",
-    body: "Photo and video archive of cohorts, plus an on-demand course library backed by live data.",
+    title: "Gallery & course library",
+    body: "Cohort photos and an on-demand library backed by live LMS data.",
     status: "Planned",
   },
 ];
 
 export const STATS = [
-  { value: "4,200+", label: "Mentees guided" },
-  { value: "380", label: "Active mentors" },
-  { value: "62", label: "Career paths mapped" },
-  { value: "91%", label: "Complete their cohort" },
+  { value: "4", label: "Core programmes" },
+  { value: "2", label: "WhatsApp lines" },
+  { value: "Dagoretti", label: "Home base, Nairobi" },
+  { value: "App + web", label: "Where learning lives" },
 ];
 
 export const REVIEWS = [
   {
-    name: "Amina W.",
-    role: "Mentee · Sela programme",
+    name: "Mentee · Sela",
+    role: "Cohort note",
     quote:
-      "I came in unsure where to start. Sela gave me a mentor who checks in every fortnight and a clearer map for the next year.",
+      "Having a named mentor and a written 90-day aim made the difference — not another motivational talk.",
   },
   {
-    name: "Brian O.",
-    role: "Mentee · Trailblazers",
+    name: "Mentee · Trailblazers",
+    role: "Cohort note",
     quote:
-      "Trailblazers pushed me into rooms I would not have walked into alone. The peer cohort kept me honest.",
+      "The peer circle forced me to send the outreach messages I kept postponing. Accountability over vibes.",
   },
   {
-    name: "Dr. Faith K.",
-    role: "Mentor · Go for it Codelab",
+    name: "Mentor · Codelab",
+    role: "Volunteer note",
     quote:
-      "I have mentored informally for years. Nelsen Savannah gave the relationship structure — goals, sessions, and a way to measure whether I was actually helping.",
+      "Structure helps: goals, sessions, and a clear way to see whether the mentee actually shipped something.",
   },
   {
-    name: "Kevin M.",
-    role: "Mentee · Scripture Safari",
+    name: "Parent · Scripture Safari",
+    role: "Programme note",
     quote:
-      "Scripture Safari became my board of directors. Faith talk, career talk, hard talk. Nothing performative.",
-  },
-  {
-    name: "Sharon N.",
-    role: "Mentee · Go for it Codelab",
-    quote:
-      "The Codelab sessions taught me to ship small projects and ask better questions. That combination changed my year.",
-  },
-  {
-    name: "Tom A.",
-    role: "Mentor · Trailblazers",
-    quote:
-      "It is the most professional youth programme I have volunteered with in Kenya — clear goals, real accountability.",
+      "Friday Safari days mix faith, mentorship, and play — kids come home tired in the best way.",
   },
 ];
 

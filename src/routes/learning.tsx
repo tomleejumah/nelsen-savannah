@@ -76,7 +76,7 @@ function LearningPage() {
               to="/contact"
               className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
             >
-              Request a track <ArrowRight className="h-4 w-4" />
+              Join a cohort <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/programs"
@@ -162,7 +162,7 @@ function LearningPage() {
             to="/contact"
             className="mt-10 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-ember"
           >
-            Join the early access list <ArrowRight className="h-4 w-4" />
+            Talk to us about a track <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
