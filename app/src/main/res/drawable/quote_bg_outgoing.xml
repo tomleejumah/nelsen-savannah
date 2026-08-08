@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sits on the dark outgoing bubble in both themes, so the tint is a fixed
-     translucent white rather than a theme token. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#26FFFFFF" />
-    <corners android:radius="8dp" />
+    <solid android:color="#33FFFFFF" />
+    <corners android:radius="@dimen/radius_chip" />
 </shape>

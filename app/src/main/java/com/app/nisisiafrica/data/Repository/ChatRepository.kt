@@ -79,34 +79,75 @@ class ChatRepository(private val appDatabase: AppDatabase) {
         if (uid == null || message.senderId != uid) return onComplete(false)
 
         val db = FirebaseFirestore.getInstance()
+        val ref = db.collection("chatRooms").document(chatroomId)
+            .collection("messages").document(message.messageId)
+
+        // Optimistic local tombstone; reverted if Firestore rejects the write
+        // (typically missing `allow update` on messages in security rules).
         scope.launch { dao.markDeleted(message.messageId) }
 
-        db.collection("chatRooms").document(chatroomId)
-            .collection("messages").document(message.messageId)
-            .update(mapOf("deleted" to true, "message" to "", "type" to "text"))
+        val payload = hashMapOf<String, Any>(
+            "deleted" to true,
+            "message" to "",
+            "type" to "text"
+        )
+        ref.update(payload)
             .addOnSuccessListener {
                 refreshRoomPreviewAfterDelete(chatroomId, message.messageId)
                 onComplete(true)
             }
-            .addOnFailureListener { onComplete(false) }
+            .addOnFailureListener { updateErr ->
+                // Fallback: merge-set in case update is blocked but write isn't.
+                ref.set(payload, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener {
+                        refreshRoomPreviewAfterDelete(chatroomId, message.messageId)
+                        onComplete(true)
+                    }
+                    .addOnFailureListener { setErr ->
+                        android.util.Log.e(
+                            "ChatRepository",
+                            "delete failed update=${updateErr.message} set=${setErr.message}"
+                        )
+                        scope.launch { dao.insert(message) } // restore
+                        onComplete(false)
+                    }
+            }
     }
 
     /**
-     * If the deleted message was the room's most recent one, the room preview
-     * still shows its text. Recompute it from the newest surviving message.
+     * If the deleted message was the room's most recent one, recompute the
+     * preview from the newest surviving (non-deleted) message.
      */
     private fun refreshRoomPreviewAfterDelete(chatroomId: String, deletedId: String) {
         val db = FirebaseFirestore.getInstance()
         db.collection("chatRooms").document(chatroomId)
             .collection("messages")
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(1)
+            .limit(8)
             .get()
             .addOnSuccessListener { snap ->
-                val newest = snap.documents.firstOrNull() ?: return@addOnSuccessListener
-                if (newest.id != deletedId) return@addOnSuccessListener
-                db.collection("chatRooms").document(chatroomId)
-                    .update("lastMessage", DELETED_PLACEHOLDER)
+                val newestAlive = snap.documents.firstOrNull { doc ->
+                    doc.getBoolean("deleted") != true
+                }
+                val preview = when {
+                    newestAlive == null -> DELETED_PLACEHOLDER
+                    else -> {
+                        val type = newestAlive.getString("type") ?: "text"
+                        val body = newestAlive.getString("message").orEmpty()
+                        when (type) {
+                            "image" -> "\uD83D\uDCF7 Photo"
+                            "audio" -> "\uD83C\uDFB5 Audio"
+                            "file" -> "\uD83D\uDCC4 Document"
+                            else -> body.ifBlank { DELETED_PLACEHOLDER }
+                        }
+                    }
+                }
+                // Only rewrite the room preview when the deleted msg was (or is) top.
+                val top = snap.documents.firstOrNull()
+                if (top == null || top.id == deletedId || newestAlive == null) {
+                    db.collection("chatRooms").document(chatroomId)
+                        .update("lastMessage", preview)
+                }
             }
     }
 

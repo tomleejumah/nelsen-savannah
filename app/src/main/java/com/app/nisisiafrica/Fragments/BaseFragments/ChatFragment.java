@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +22,8 @@ import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.ActionMode;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ConcatAdapter;
@@ -81,7 +85,6 @@ public class ChatFragment extends Fragment {
     private UserData userData;
     private String joinedAT, role;
     private boolean isChatOpen, isMentor;
-    private View chipNavigationBar;
     private String selectedOtherUserId;
     private boolean selectedIsMentor = false;
     private OnBackPressedCallback backCallback;
@@ -95,6 +98,7 @@ public class ChatFragment extends Fragment {
     private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
     private ActivityResultLauncher<String> documentPicker;
     private String pendingMediaType = "file";
+    private ActionMode messageActionMode;
 
     @Nullable
     @Override
@@ -517,8 +521,16 @@ public class ChatFragment extends Fragment {
         );
         new ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvMessages);
 
-        adapter.setOnMessageLongClick((message, isMine) -> {
-            showMessageActions(message, isMine);
+        adapter.setOnSelectionChanged(count -> {
+            if (count == 0) {
+                finishActionMode();
+            } else {
+                ensureActionMode();
+                if (messageActionMode != null) {
+                    messageActionMode.setTitle(String.valueOf(count));
+                    refreshActionModeMenu();
+                }
+            }
             return Unit.INSTANCE;
         });
         adapter.setOnQuotedClick(messageId -> {
@@ -533,7 +545,7 @@ public class ChatFragment extends Fragment {
         viewModel.loadMessages(chatId);
         viewModel.getMessages().observe(getViewLifecycleOwner(), messages -> {
             adapter.submitList(messages);
-            if (!messages.isEmpty())
+            if (!messages.isEmpty() && (messageActionMode == null))
                 binding.rvMessages.smoothScrollToPosition(messages.size() - 1);
         });
     }
@@ -565,28 +577,167 @@ public class ChatFragment extends Fragment {
     }
 
     /**
-     * Long-press actions on a single message. Distinct from the long-press on a
-     * chat ROOM in the list panel, which deletes the whole conversation.
+     * WhatsApp-style ActionMode: reply / forward / delete as top-bar icons
+     * while one or more messages are selected.
      */
-    private void showMessageActions(ChatMessageEntity message, boolean isMine) {
-        List<String> labels = new ArrayList<>();
-        labels.add("Reply");
-        labels.add("Copy");
-        if (isMine) labels.add("Delete");
-
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setItems(labels.toArray(new String[0]), (dialog, which) -> {
-                    switch (labels.get(which)) {
-                        case "Reply":
-                            triggerReply(message);
-                            break;
-                        case "Copy":
-                            copyToClipboard(previewOf(message));
-                            break;
-                        case "Delete":
-                            confirmDeleteMessage(message);
-                            break;
+    private void ensureActionMode() {
+        if (messageActionMode != null || !(getActivity() instanceof AppCompatActivity)) return;
+        messageActionMode = ((AppCompatActivity) requireActivity())
+                .startSupportActionMode(new ActionMode.Callback() {
+                    @Override
+                    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                        mode.getMenuInflater().inflate(R.menu.chat_message_actions, menu);
+                        return true;
                     }
+
+                    @Override
+                    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                        refreshActionModeMenu(menu);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                        java.util.List<ChatMessageEntity> selected = adapter.selectedMessages();
+                        if (selected.isEmpty()) return false;
+                        int id = item.getItemId();
+                        if (id == R.id.action_reply) {
+                            triggerReply(selected.get(0));
+                            mode.finish();
+                            return true;
+                        }
+                        if (id == R.id.action_forward) {
+                            forwardInApp(selected);
+                            mode.finish();
+                            return true;
+                        }
+                        if (id == R.id.action_share) {
+                            shareExternally(selected);
+                            mode.finish();
+                            return true;
+                        }
+                        if (id == R.id.action_delete) {
+                            confirmDeleteSelected(selected);
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public void onDestroyActionMode(ActionMode mode) {
+                        messageActionMode = null;
+                        if (adapter != null) adapter.clearSelection();
+                    }
+                });
+    }
+
+    private void refreshActionModeMenu() {
+        if (messageActionMode != null) refreshActionModeMenu(messageActionMode.getMenu());
+    }
+
+    private void refreshActionModeMenu(Menu menu) {
+        if (menu == null || adapter == null) return;
+        java.util.List<ChatMessageEntity> selected = adapter.selectedMessages();
+        String uid = FirebaseAuth.getInstance().getUid();
+        boolean allMine = !selected.isEmpty();
+        for (ChatMessageEntity m : selected) {
+            if (uid == null || !uid.equals(m.getSenderId())) {
+                allMine = false;
+                break;
+            }
+        }
+        MenuItem reply = menu.findItem(R.id.action_reply);
+        MenuItem delete = menu.findItem(R.id.action_delete);
+        if (reply != null) reply.setVisible(selected.size() == 1);
+        if (delete != null) delete.setVisible(allMine);
+    }
+
+    private void finishActionMode() {
+        if (messageActionMode != null) {
+            messageActionMode.finish();
+            messageActionMode = null;
+        } else if (adapter != null) {
+            adapter.clearSelection();
+        }
+    }
+
+    /** Forward into another chat (picker). Falls back to share if no rooms. */
+    private void forwardInApp(java.util.List<ChatMessageEntity> selected) {
+        if (loadedRooms.isEmpty()) {
+            shareExternally(selected);
+            return;
+        }
+        StringBuilder body = new StringBuilder();
+        for (ChatMessageEntity m : selected) {
+            if (body.length() > 0) body.append("\n\n");
+            body.append(previewOf(m));
+        }
+        final String text = body.toString();
+        java.util.List<Chatroom> targets = new ArrayList<>();
+        for (Chatroom r : loadedRooms) {
+            String type = r.getType() != null ? r.getType() : "direct";
+            if ("direct".equals(type) && r.getChatroomId() != null
+                    && !r.getChatroomId().equals(currentChatId)) {
+                targets.add(r);
+            }
+        }
+        if (targets.isEmpty()) {
+            shareExternally(selected);
+            return;
+        }
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        RecyclerView rv = new RecyclerView(requireContext());
+        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
+        ChatSearchAdapter picker = new ChatSearchAdapter(room -> {
+            dialog.dismiss();
+            String receiverId = room.getOtherUserId(FirebaseAuth.getInstance().getUid());
+            viewModel.sendMessage(room.getChatroomId(), text, receiverId, ok -> {
+                Toast.makeText(requireContext(),
+                        ok ? "Forwarded" : "Couldn't forward", Toast.LENGTH_SHORT).show();
+                return Unit.INSTANCE;
+            });
+        });
+        rv.setAdapter(picker);
+        picker.submit(targets);
+        dialog.setContentView(rv);
+        dialog.show();
+    }
+
+    private void shareExternally(java.util.List<ChatMessageEntity> selected) {
+        StringBuilder body = new StringBuilder();
+        for (ChatMessageEntity m : selected) {
+            if (body.length() > 0) body.append("\n\n");
+            body.append(previewOf(m));
+        }
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.putExtra(Intent.EXTRA_TEXT, body.toString());
+        startActivity(Intent.createChooser(share, "Share"));
+    }
+
+    private void confirmDeleteSelected(java.util.List<ChatMessageEntity> selected) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(selected.size() == 1 ? "Delete message?" : "Delete " + selected.size() + " messages?")
+                .setMessage("They will be replaced with \"This message was deleted\" for everyone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (d, w) -> {
+                    if (currentChatId == null) return;
+                    for (ChatMessageEntity message : selected) {
+                        if (replyingTo != null
+                                && replyingTo.getMessageId().equals(message.getMessageId())) {
+                            clearReply();
+                        }
+                        viewModel.deleteMessage(currentChatId, message, ok -> {
+                            if (!ok && binding != null) {
+                                Toast.makeText(requireContext(),
+                                        "Couldn't delete — check Firestore rules allow message updates",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                            return Unit.INSTANCE;
+                        });
+                    }
+                    finishActionMode();
                 })
                 .show();
     }
@@ -597,28 +748,6 @@ public class ChatFragment extends Fragment {
         if (clipboard == null) return;
         clipboard.setPrimaryClip(ClipData.newPlainText("message", text));
         Toast.makeText(requireContext(), "Copied", Toast.LENGTH_SHORT).show();
-    }
-
-    private void confirmDeleteMessage(ChatMessageEntity message) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Delete message?")
-                .setMessage("It will be replaced with \"This message was deleted\" for everyone.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Delete", (d, w) -> {
-                    if (currentChatId == null) return;
-                    // Drop a pending reply that points at the message being removed.
-                    if (replyingTo != null
-                            && replyingTo.getMessageId().equals(message.getMessageId())) {
-                        clearReply();
-                    }
-                    viewModel.deleteMessage(currentChatId, message, ok -> {
-                        if (!ok && binding != null) {
-                            Toast.makeText(requireContext(), "Couldn't delete", Toast.LENGTH_SHORT).show();
-                        }
-                        return Unit.INSTANCE;
-                    });
-                })
-                .show();
     }
 
     /** Jumps to the quoted original and flashes it; no-ops when it isn't loaded. */
@@ -734,7 +863,9 @@ public class ChatFragment extends Fragment {
         isChatOpen = true;
         binding.chatListContainer.setVisibility(View.GONE);
         binding.chatDetailContainer.setVisibility(View.VISIBLE);
-        if (chipNavigationBar != null) chipNavigationBar.setVisibility(View.GONE);
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setChatConversationOpen(true);
+        }
     }
 
     /** Returns to the conversation list. */
@@ -743,12 +874,15 @@ public class ChatFragment extends Fragment {
         isChatOpen = false;
         binding.chatDetailContainer.setVisibility(View.GONE);
         binding.chatListContainer.setVisibility(View.VISIBLE);
-        if (chipNavigationBar != null) chipNavigationBar.setVisibility(View.VISIBLE);
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setChatConversationOpen(false);
+        }
         Util.saveState(Constants.IS_MENTOR, false);
         userData = null;
         selectedOtherUserId = null;
         clearReply();
         hideKeyboard();
+        finishActionMode();
     }
 
     private void handleUserMetadata() {
@@ -765,7 +899,9 @@ public class ChatFragment extends Fragment {
         backCallback = new OnBackPressedCallback(false) {
             @Override
             public void handleOnBackPressed() {
-                if (isChatOpen) {
+                if (messageActionMode != null) {
+                    finishActionMode();
+                } else if (isChatOpen) {
                     showChatList();
                 } else if (getActivity() instanceof MainActivity) {
                     ((MainActivity) getActivity()).navigateToHomeTab();
@@ -783,10 +919,6 @@ public class ChatFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        if (getActivity() != null) {
-            chipNavigationBar = getActivity().findViewById(R.id.chipNavigationBar);
-        }
-
         // Sync back-handling to actual visibility once the preload show/hide settles.
         view.post(() -> {
             if (backCallback != null) backCallback.setEnabled(!isHidden());

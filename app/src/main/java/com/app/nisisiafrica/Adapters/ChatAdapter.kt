@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.text.TextPaint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,22 +22,29 @@ import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.LinkedHashSet
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
 class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val items = mutableListOf<Any>()
     private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    private val selectedIds = LinkedHashSet<String>()
 
     var onReply: ((ChatMessageEntity) -> Unit)? = null
 
-    /** Long-press on a bubble. The boolean says whether the message is the current user's. */
-    var onMessageLongClick: ((ChatMessageEntity, Boolean) -> Unit)? = null
+    /** First long-press enters selection; subsequent taps toggle. */
+    var onSelectionChanged: ((Int) -> Unit)? = null
 
     /** Tap on a quoted block; carries the id of the message being quoted. */
     var onQuotedClick: ((String) -> Unit)? = null
 
     /** Set while a jumped-to message should flash, then cleared. */
     private var highlightedId: String? = null
+
+    val selectionCount: Int get() = selectedIds.size
+    val inSelectionMode: Boolean get() = selectedIds.isNotEmpty()
 
     companion object {
         private const val VIEW_TYPE_DATE = 0
@@ -52,22 +60,46 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             items.add(getDateLabel(Date(msgs.first().timestamp)))
             items.addAll(msgs)
         }
+        // Drop selections that no longer exist in the list.
+        val liveIds = newMessages.map { it.messageId }.toSet()
+        selectedIds.retainAll(liveIds)
         notifyDataSetChanged()
+        onSelectionChanged?.invoke(selectedIds.size)
     }
 
     fun getItemAt(position: Int): Any = items[position]
 
-    /** Adapter position of [messageId], or -1 when it isn't in the loaded window. */
     fun positionOf(messageId: String): Int =
         items.indexOfFirst { it is ChatMessageEntity && it.messageId == messageId }
 
-    /** Flashes [messageId] once to show where a quote jumped to. */
     fun flashMessage(messageId: String) {
         val position = positionOf(messageId)
         if (position < 0) return
         highlightedId = messageId
         notifyItemChanged(position)
     }
+
+    fun toggleSelection(message: ChatMessageEntity) {
+        if (message.deleted) return
+        if (!selectedIds.add(message.messageId)) selectedIds.remove(message.messageId)
+        val pos = positionOf(message.messageId)
+        if (pos >= 0) notifyItemChanged(pos)
+        onSelectionChanged?.invoke(selectedIds.size)
+    }
+
+    fun clearSelection() {
+        if (selectedIds.isEmpty()) return
+        val old = selectedIds.toList()
+        selectedIds.clear()
+        old.forEach { id ->
+            val pos = positionOf(id)
+            if (pos >= 0) notifyItemChanged(pos)
+        }
+        onSelectionChanged?.invoke(0)
+    }
+
+    fun selectedMessages(): List<ChatMessageEntity> =
+        items.filterIsInstance<ChatMessageEntity>().filter { selectedIds.contains(it.messageId) }
 
     private fun getDateLabel(date: Date?): String {
         date ?: return "Unknown"
@@ -95,9 +127,11 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             is MessageViewHolder -> {
                 val message = items[position] as ChatMessageEntity
                 holder.bind(
-                    message,
+                    message = message,
                     isMine = message.senderId == currentUserId,
-                    onMessageLongClick = onMessageLongClick,
+                    selected = selectedIds.contains(message.messageId),
+                    selectionMode = inSelectionMode,
+                    onToggle = { toggleSelection(it) },
                     onQuotedClick = onQuotedClick
                 )
                 if (highlightedId == message.messageId) {
@@ -145,18 +179,28 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         fun bind(
             message: ChatMessageEntity,
             isMine: Boolean,
-            onMessageLongClick: ((ChatMessageEntity, Boolean) -> Unit)?,
+            selected: Boolean,
+            selectionMode: Boolean,
+            onToggle: (ChatMessageEntity) -> Unit,
             onQuotedClick: ((String) -> Unit)?
         ) {
-            // Reset state carried over from a recycled row.
             tvMessage.paintFlags = tvMessage.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
             tvMessage.setOnClickListener(null)
             tvMessage.setTypeface(null, Typeface.NORMAL)
             tvMessage.setTextColor(defaultTextColor)
             tvMessage.alpha = 1f
-            itemView.setBackgroundColor(Color.TRANSPARENT)
+            ivImage?.setOnClickListener(null)
+            ivImage?.setOnLongClickListener(null)
+
+            val selectBg = if (selected) {
+                ColorUtils.setAlphaComponent(ThemeColors.accent(itemView.context), 50)
+            } else {
+                Color.TRANSPARENT
+            }
+            itemView.setBackgroundColor(selectBg)
 
             bindQuote(message, onQuotedClick)
+            applyQuoteMinWidth(message)
 
             when {
                 message.deleted -> {
@@ -173,7 +217,9 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                         .load(message.message)
                         .placeholder(R.drawable.ic_image_placeholder)
                         .into(ivImage)
-                    ivImage.setOnClickListener { openUrl(it, message.message) }
+                    if (!selectionMode) {
+                        ivImage.setOnClickListener { openUrl(it, message.message) }
+                    }
                 }
                 message.type == "file" || message.type == "audio" -> {
                     ivImage?.visibility = View.GONE
@@ -181,7 +227,9 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     tvMessage.text = if (message.type == "audio") "\uD83C\uDFB5 Audio message"
                         else "\uD83D\uDCC4 Document — tap to open"
                     tvMessage.paintFlags = tvMessage.paintFlags or Paint.UNDERLINE_TEXT_FLAG
-                    tvMessage.setOnClickListener { openUrl(it, message.message) }
+                    if (!selectionMode) {
+                        tvMessage.setOnClickListener { openUrl(it, message.message) }
+                    }
                 }
                 else -> {
                     ivImage?.visibility = View.GONE
@@ -192,19 +240,29 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
 
-            // Deleted messages have no actions worth offering.
-            if (message.deleted || onMessageLongClick == null) {
-                llMessage?.setOnLongClickListener(null)
-                llMessage?.isLongClickable = false
-            } else {
-                llMessage?.setOnLongClickListener {
-                    it.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
-                    onMessageLongClick(message, isMine)
-                    true
-                }
+            val longClick = View.OnLongClickListener {
+                it.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                onToggle(message)
+                true
+            }
+            val click = View.OnClickListener {
+                if (selectionMode) onToggle(message)
             }
 
-            // tvSender only exists on the received-message layout.
+            if (message.deleted) {
+                llMessage?.setOnLongClickListener(null)
+                llMessage?.setOnClickListener(null)
+                itemView.setOnLongClickListener(null)
+                itemView.setOnClickListener(null)
+                llMessage?.isLongClickable = false
+            } else {
+                llMessage?.setOnLongClickListener(longClick)
+                itemView.setOnLongClickListener(longClick)
+                ivImage?.setOnLongClickListener(longClick)
+                llMessage?.setOnClickListener(if (selectionMode) click else null)
+                itemView.setOnClickListener(if (selectionMode) click else null)
+            }
+
             if (tvSender != null) {
                 val isAi = message.senderId == "ai_assistant"
                 if (isAi) {
@@ -216,6 +274,26 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     llMessage?.setBackgroundResource(R.drawable.message_bg)
                 }
             }
+        }
+
+        /**
+         * When the reply body is short but the quoted snippet is long, grow the
+         * bubble so the quote isn't clipped to a tiny wrap_content width.
+         */
+        private fun applyQuoteMinWidth(message: ChatMessageEntity) {
+            val bubble = llMessage ?: return
+            if (!message.isReply || message.deleted) {
+                bubble.minimumWidth = 0
+                return
+            }
+            val density = itemView.resources.displayMetrics.density
+            val paint = TextPaint(tvQuotedSnippet?.paint ?: tvMessage.paint)
+            val snippet = message.replyToSnippet.ifEmpty { ChatRepository.DELETED_PLACEHOLDER }
+            val sender = message.replyToSender.ifEmpty { "Message" }
+            val needed = max(paint.measureText(snippet.take(90)), paint.measureText(sender))
+            val min = (160 * density).toInt()
+            val max = (280 * density).toInt()
+            bubble.minimumWidth = min(max, max(min, (needed + 36 * density).toInt()))
         }
 
         private fun bindQuote(message: ChatMessageEntity, onQuotedClick: ((String) -> Unit)?) {
@@ -232,7 +310,6 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             quote.setOnClickListener { onQuotedClick?.invoke(message.replyToId) }
         }
 
-        /** Brief accent wash over the row, so a jump target is obvious. */
         fun flash() {
             val accent = ThemeColors.accent(itemView.context)
             val from = ColorUtils.setAlphaComponent(accent, 60)

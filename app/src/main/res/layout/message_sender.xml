@@ -50,7 +50,7 @@
                     android:layout_height="wrap_content"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/white"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
@@ -60,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="2"
-                    android:textColor="#DDE6F2"
+                    android:textColor="@color/maroon_100"
                     android:textSize="13sp" />
             </LinearLayout>
         </LinearLayout>
@@ -78,7 +78,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:lineSpacingExtra="2dp"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/white"
             android:textSize="15sp" />
 
         <TextView
@@ -87,7 +87,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:layout_marginTop="3dp"
-            android:textColor="#AEB6C2"
+            android:textColor="@color/maroon_100"
             android:textSize="10sp" />
     </LinearLayout>
 
