@@ -2,6 +2,7 @@ package com.app.nisisiafrica.Fragments.BaseFragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,8 @@ import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.bumptech.glide.Glide;
+
+import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -44,6 +47,7 @@ public class ProfileFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         CircleImageView avatar = view.findViewById(R.id.profileAvatar);
+        TextView avatarInitial = view.findViewById(R.id.profileAvatarInitial);
         TextView name = view.findViewById(R.id.profileName);
         TextView role = view.findViewById(R.id.profileRole);
         TextView email = view.findViewById(R.id.profileEmail);
@@ -61,7 +65,7 @@ public class ProfileFragment extends Fragment {
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         userViewModel.getUserData().observe(getViewLifecycleOwner(), user -> {
             if (user == null) return;
-            bindHeader(user, avatar, name, role, email);
+            bindHeader(user, avatar, avatarInitial, name, role, email);
         });
 
         UserData current = userViewModel.getUserData().getValue();
@@ -71,7 +75,7 @@ public class ProfileFragment extends Fragment {
                 userViewModel.fetchingCurrentUserDataFromDB(uid);
             }
         } else {
-            bindHeader(current, avatar, name, role, email);
+            bindHeader(current, avatar, avatarInitial, name, role, email);
         }
 
         if (getChildFragmentManager().findFragmentById(R.id.profileSettingsContainer) == null) {
@@ -88,8 +92,8 @@ public class ProfileFragment extends Fragment {
         });
     }
 
-    private void bindHeader(UserData user, CircleImageView avatar, TextView name,
-                            TextView role, TextView email) {
+    private void bindHeader(UserData user, CircleImageView avatar, TextView avatarInitial,
+                            TextView name, TextView role, TextView email) {
         isMentor = "Mentor".equals(user.getUserRole());
 
         String displayName = user.getDisplayName();
@@ -108,14 +112,30 @@ public class ProfileFragment extends Fragment {
         }
 
         String photo = user.getPhotoUrl();
+        String initial = initialFor(displayName, user.getFirstName());
         if (photo != null && !photo.isEmpty() && !"default".equals(photo)) {
+            avatarInitial.setVisibility(View.GONE);
             Glide.with(this)
                     .load(photo)
                     .placeholder(R.drawable.ic_person)
                     .error(R.drawable.ic_person)
                     .into(avatar);
         } else {
-            avatar.setImageResource(R.drawable.ic_person);
+            avatar.setImageDrawable(null);
+            avatar.setCircleBackgroundColor(
+                    androidx.core.content.ContextCompat.getColor(requireContext(), R.color.maroon_700));
+            avatarInitial.setText(initial);
+            avatarInitial.setVisibility(View.VISIBLE);
         }
+    }
+
+    private String initialFor(String displayName, String firstName) {
+        if (!TextUtils.isEmpty(firstName)) {
+            return firstName.substring(0, 1).toUpperCase(Locale.getDefault());
+        }
+        if (!TextUtils.isEmpty(displayName)) {
+            return displayName.trim().substring(0, 1).toUpperCase(Locale.getDefault());
+        }
+        return "?";
     }
 }

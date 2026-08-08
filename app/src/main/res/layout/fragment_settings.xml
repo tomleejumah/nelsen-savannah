@@ -34,22 +34,14 @@
             android:orientation="vertical"
             android:paddingBottom="120dp">
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:text="General"
-                android:textSize="12sp" />
-
-
             <RelativeLayout
                 android:id="@+id/cardVerifyProfile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/card_background"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_tag_maroon"
                 android:padding="16dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
 
                 <ImageView
                     android:background="@drawable/pin_button"
@@ -57,7 +49,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:padding="9dp"
-                    android:src="@drawable/ic_user"
+                    android:src="@drawable/ic_receipt"
                     android:layout_centerVertical="true" />
 
                 <TextView
@@ -78,8 +70,9 @@
                     android:id="@+id/txtVerificationStatus"
                     android:textSize="12sp"
                     android:textColor="@color/status_pending_text"
-                    android:background="@drawable/bg_tag_maroon"
-                    android:padding="6dp"
+                    android:background="@color/status_pending_bg"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
                     android:layout_toStartOf="@id/arrow_verification"
                     android:layout_marginEnd="8dp"
                     android:layout_centerVertical="true" />
@@ -93,6 +86,16 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true" />
             </RelativeLayout>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="GENERAL"
+                android:textAllCaps="true"
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
 
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -155,7 +158,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Rate Us"
+                    android:text="Rate us"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -170,7 +173,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="Display"
+                android:text="DISPLAY"
+                android:textAllCaps="true"
+                android:textColor="@color/muted"
                 android:textSize="12sp" />
             <Switch
                 android:layout_marginVertical="10dp"
@@ -184,7 +189,7 @@
                 android:id="@+id/darkModeSwitch"
                 android:textSize="16sp"
                 android:drawableLeft="@drawable/ic_dark_mode"
-                android:text="Dark Mode" />
+                android:text="Dark mode" />
 
             <Switch
                 android:layout_marginVertical="10dp"
@@ -198,7 +203,7 @@
                 android:id="@+id/lockApp"
                 android:textSize="16sp"
                 android:drawableLeft="@drawable/ic_lock_nisisi"
-                android:text="Lock App" />
+                android:text="Lock app" />
 
             <!-- Admin-only; hidden for everyone else in SettingsFragment. -->
             <TextView
@@ -238,7 +243,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="56dp"
-                    android:text="Language Options"
+                    android:text="Language"
                     app:layout_constraintHorizontal_bias="0"
                     app:layout_constraintHorizontal_chainStyle="packed"
                     app:layout_constraintStart_toStartOf="parent"
@@ -280,7 +285,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="Help"
+                android:text="HELP"
+                android:textAllCaps="true"
+                android:textColor="@color/muted"
                 android:textSize="12sp" />
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/cl_feedback"
@@ -308,7 +315,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Share with Us what you think"
+                    android:text="Share feedback"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -344,7 +351,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Privacy Policy"
+                    android:text="Privacy policy"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -365,8 +372,9 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Connect With Us"
-                        android:textSize="24sp"
+                        android:text="Connect with us"
+                        android:fontFamily="@font/font_display"
+                        android:textSize="22sp"
                         android:textStyle="bold"
                         android:gravity="center"
                         android:layout_marginBottom="8dp" />
@@ -375,7 +383,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Follow our journey and engage with our community!"
+                        android:text="Follow our journey and engage with the community"
                         android:textColor="@color/muted"
                         android:textSize="14sp"
                         android:gravity="center"

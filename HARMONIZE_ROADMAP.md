@@ -37,7 +37,7 @@ Courses are the only LMS catalog fetch so far (`GET /lms/tracks`).
 Match MentUI mentor cards: avatar initials, verified badge, bio, `★ rating · N students` / `New mentor`, **Book now**, header **Show more**. Confirm mentee-only gate still works.
 
 ## H5 — Profile tab + Settings
-**Status:** `pending`  
+**Status:** `done`  
 Align Profile header (name, role badge, email, Edit profile, verification card) and Settings sections (GENERAL / DISPLAY / HELP / Connect with us) with screenshots. Keep nested Settings under Profile tab.
 
 ---
