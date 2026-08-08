@@ -82,10 +82,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private static final String CHANNEL_ID = "nisisi_notifications";
     private static int REQUEST_CODE_NOTIFICATIONS = 210;
     private final CompositeDisposable disposables = new CompositeDisposable();
-    private final HomeFragment homeFragment = new HomeFragment();
-    private final ChatFragment chatFragment = new ChatFragment();
-    private final CommunitiesFragment communitiesFragment = new CommunitiesFragment();
-    private final ProfileFragment profileFragment = new ProfileFragment();
+    private HomeFragment homeFragment;
+    private ChatFragment chatFragment;
+    private CommunitiesFragment communitiesFragment;
+    private ProfileFragment profileFragment;
     private String userRole, currentUser;
     private UserData userData, cachedUserData;
     private UserDao userDao;
@@ -98,6 +98,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private ImageView fabIcon;
     private View bottomBarRow;
     private View fabCard;
+    /** True while a conversation is open inside ChatFragment — hides the create-chat FAB. */
+    private boolean chatConversationOpen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,18 +136,16 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         } else handleCachedUser();
 
         fragmentManager = getSupportFragmentManager();
-        preloadAllFragments();
-
-        if (savedInstanceState == null) {
-            replaceFragment(homeFragment);
-        }
+        // Dark-mode toggle recreates the activity. FragmentManager restores the
+        // previous fragments — adding them again stacks a second Home on top.
+        resolveFragments(savedInstanceState);
 //TODO: show dialog fragment once everyday  new FullscreenDialogFragment(this).show();
 
         setupBlurBars();
 
         ChipNavigationBar chipNavigationBar = findViewById(R.id.chipNavigationBar);
-        chipNavigationBar.setItemSelected(R.id.homeFragment, true);
-        updateContextualFab(R.id.homeFragment);
+        chipNavigationBar.setItemSelected(currentTabId, true);
+        updateContextualFab(currentTabId);
 
         chipNavigationBar.setOnItemSelectedListener(i -> {
             if (i == R.id.homeFragment) {
@@ -169,39 +169,87 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         getUserBookedDates(this);
     }
 
-    private void preloadAllFragments() {
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.fragmentContainer, homeFragment, "HOME_FRAGMENT");
-        fragmentTransaction.add(R.id.fragmentContainer, communitiesFragment, "COMMUNITIES_FRAGMENT");
-        fragmentTransaction.add(R.id.fragmentContainer, chatFragment, "CHAT_FRAGMENT");
-        fragmentTransaction.add(R.id.fragmentContainer, profileFragment, "PROFILE_FRAGMENT");
-        fragmentTransaction.hide(communitiesFragment);
-        fragmentTransaction.hide(chatFragment);
-        fragmentTransaction.hide(profileFragment);
-        fragmentTransaction.commitNow();
+    /**
+     * Binds the four tab fragments. On a cold start we create + preload them;
+     * after a config change (e.g. dark-mode toggle) we reuse the ones the
+     * FragmentManager already restored so we never stack duplicates.
+     */
+    private void resolveFragments(Bundle savedInstanceState) {
+        if (savedInstanceState == null) {
+            homeFragment = new HomeFragment();
+            communitiesFragment = new CommunitiesFragment();
+            chatFragment = new ChatFragment();
+            profileFragment = new ProfileFragment();
+
+            FragmentTransaction ft = fragmentManager.beginTransaction();
+            ft.add(R.id.fragmentContainer, homeFragment, "HOME_FRAGMENT");
+            ft.add(R.id.fragmentContainer, communitiesFragment, "COMMUNITIES_FRAGMENT");
+            ft.add(R.id.fragmentContainer, chatFragment, "CHAT_FRAGMENT");
+            ft.add(R.id.fragmentContainer, profileFragment, "PROFILE_FRAGMENT");
+            ft.hide(communitiesFragment);
+            ft.hide(chatFragment);
+            ft.hide(profileFragment);
+            ft.commitNow();
+            currentlyDisplayedFragment = homeFragment;
+            currentTabId = R.id.homeFragment;
+            return;
+        }
+
+        homeFragment = (HomeFragment) fragmentManager.findFragmentByTag("HOME_FRAGMENT");
+        communitiesFragment = (CommunitiesFragment) fragmentManager.findFragmentByTag("COMMUNITIES_FRAGMENT");
+        chatFragment = (ChatFragment) fragmentManager.findFragmentByTag("CHAT_FRAGMENT");
+        profileFragment = (ProfileFragment) fragmentManager.findFragmentByTag("PROFILE_FRAGMENT");
+        if (homeFragment == null) homeFragment = new HomeFragment();
+        if (communitiesFragment == null) communitiesFragment = new CommunitiesFragment();
+        if (chatFragment == null) chatFragment = new ChatFragment();
+        if (profileFragment == null) profileFragment = new ProfileFragment();
+
+        if (homeFragment.isVisible()) {
+            currentlyDisplayedFragment = homeFragment;
+            currentTabId = R.id.homeFragment;
+        } else if (communitiesFragment.isVisible()) {
+            currentlyDisplayedFragment = communitiesFragment;
+            currentTabId = R.id.communitiesFragment;
+        } else if (chatFragment.isVisible()) {
+            currentlyDisplayedFragment = chatFragment;
+            currentTabId = R.id.chatFragment;
+        } else if (profileFragment.isVisible()) {
+            currentlyDisplayedFragment = profileFragment;
+            currentTabId = R.id.profileFragment;
+        } else {
+            currentlyDisplayedFragment = homeFragment;
+            currentTabId = R.id.homeFragment;
+            replaceFragment(homeFragment);
+        }
     }
 
-//    @Override
-//    public boolean onSupporcoursestNavigateUp() {
-//        return navController.navigateUp() || super.onSupportNavigateUp();
-//    }
-
     private void replaceFragment(Fragment fragmentToShow) {
+        if (fragmentToShow == null) return;
+        if (fragmentToShow == currentlyDisplayedFragment && fragmentToShow.isVisible()) return;
+
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-        if (currentlyDisplayedFragment != null) {
+        if (currentlyDisplayedFragment != null && currentlyDisplayedFragment.isAdded()) {
             fragmentTransaction.hide(currentlyDisplayedFragment);
         }
 
-        // Show the new fragment
         if (fragmentToShow.isAdded()) {
             fragmentTransaction.show(fragmentToShow);
         } else {
-            fragmentTransaction.add(R.id.fragmentContainer, fragmentToShow);
+            String tag = tagFor(fragmentToShow);
+            fragmentTransaction.add(R.id.fragmentContainer, fragmentToShow, tag);
         }
 
         fragmentTransaction.commitNowAllowingStateLoss();
         currentlyDisplayedFragment = fragmentToShow;
+    }
+
+    private String tagFor(Fragment f) {
+        if (f == homeFragment) return "HOME_FRAGMENT";
+        if (f == communitiesFragment) return "COMMUNITIES_FRAGMENT";
+        if (f == chatFragment) return "CHAT_FRAGMENT";
+        if (f == profileFragment) return "PROFILE_FRAGMENT";
+        return f.getClass().getSimpleName();
     }
     private void initFCM() {
         SharedPreferences prefs = getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE);
@@ -260,16 +308,28 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         } else if (tabId == R.id.communitiesFragment) {
             show = canCreate;
         } else if (tabId == R.id.chatFragment) {
-            show = canCreate;
+            // Same create-chat FAB as the list — hide once a conversation is open.
+            show = canCreate && !chatConversationOpen;
             icon = R.drawable.ic_chat;
         } else if (tabId == R.id.profileFragment) {
-            show = true;
-            icon = R.drawable.ic_edit;
+            // Edit profile lives inside the profile screen; no side FAB.
+            show = false;
         } else {
             show = false;
         }
         fabIcon.setImageResource(icon);
         fabCard.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    /** Called by ChatFragment when entering/leaving a conversation. */
+    public void setChatConversationOpen(boolean open) {
+        chatConversationOpen = open;
+        if (currentTabId == R.id.chatFragment) {
+            updateContextualFab(currentTabId);
+        }
+        if (bottomBarRow != null) {
+            bottomBarRow.setVisibility(open ? View.GONE : View.VISIBLE);
+        }
     }
 
     private void onContextualFabClicked() {
