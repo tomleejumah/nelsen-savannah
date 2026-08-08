@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 
 import { LMS_FEATURES } from "@/data/site";
-import { LMS_MILESTONES } from "@/data/lms-roadmap.js";
+import { LMS_MILESTONES, LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { fetchLmsTracks, type TrackCardDto } from "@/lib/lmsApi";
+import { fetchLmsTracks, enrollInTrack, type TrackCardDto } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/learning")({
   head: () => ({
@@ -47,12 +47,44 @@ const toneClass = {
   maroon: "bg-maroon/10 text-maroon",
 } as const;
 
+type DisplayTrack = {
+  id: string;
+  title: string;
+  blurb: string;
+  audience: string[];
+  moduleCount: number;
+  hours: string;
+  lessons: string;
+  trackPercent: number;
+  enrolled: boolean;
+};
+
 function LearningPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [tracks, setTracks] = useState<TrackCardDto[]>([]);
-  const [source, setSource] = useState<string | null>(null);
+  const [apiTracks, setApiTracks] = useState<TrackCardDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const previewTracks = useMemo<DisplayTrack[]>(
+    () =>
+      LMS_TRACKS.map((track) => {
+        const modules = modulesForTrack(track.id);
+        const minutes = modules.reduce((a, m) => a + m.estimatedMinutes, 0);
+        const lessons = modules.reduce((a, m) => a + m.lessons.length, 0);
+        return {
+          id: track.id,
+          title: track.title,
+          blurb: track.blurb,
+          audience: track.audience,
+          moduleCount: modules.length,
+          hours: String(Math.max(1, Math.round(minutes / 60))),
+          lessons: String(lessons),
+          trackPercent: 0,
+          enrolled: false,
+        };
+      }),
+    [],
+  );
 
   const loadTracks = useCallback(async (u: User) => {
     setLoading(true);
@@ -61,16 +93,14 @@ function LearningPage() {
       const token = await u.getIdToken();
       const envelope = await fetchLmsTracks(token);
       if (!envelope.ok || !envelope.data?.tracks) {
-        setTracks([]);
+        setApiTracks([]);
         setError(envelope.error || "Could not load tracks");
-        setSource(envelope.source);
         return;
       }
-      setTracks(envelope.data.tracks);
-      setSource(envelope.source);
+      setApiTracks(envelope.data.tracks);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
-      setTracks([]);
+      setApiTracks([]);
     } finally {
       setLoading(false);
     }
@@ -80,18 +110,49 @@ function LearningPage() {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       setUser(next);
       if (next) void loadTracks(next);
-      else {
-        setTracks([]);
-        setSource(null);
-      }
+      else setApiTracks([]);
     });
   }, [loadTracks]);
 
+  const [busyTrack, setBusyTrack] = useState<string | null>(null);
+
+  const liveTracks: DisplayTrack[] = apiTracks.map((t) => ({
+    id: t.trackId,
+    title: t.courseTitle,
+    blurb: t.does,
+    audience: t.audience,
+    moduleCount: t.moduleCount,
+    hours: t.duration,
+    lessons: t.lessons,
+    trackPercent: t.trackPercent,
+    enrolled: t.enrolled,
+  }));
+
+  async function onEnroll(trackId: string) {
+    if (!user) return;
+    setBusyTrack(trackId);
+    try {
+      const token = await user.getIdToken();
+      const result = await enrollInTrack(token, trackId);
+      if (!result.ok) {
+        setError(result.error || "Enroll failed");
+        return;
+      }
+      await loadTracks(user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Enroll failed");
+    } finally {
+      setBusyTrack(null);
+    }
+  }
+
+  const showingLive = Boolean(user && liveTracks.length > 0 && !error);
+  const tracks = showingLive ? liveTracks : previewTracks;
   const nextMilestone = LMS_MILESTONES.find((m) => m.status === "planned");
 
   return (
     <div className="pb-24">
-      <section className="relative overflow-hidden bg-background px-5 pb-20 pt-36 sm:px-8 sm:pt-44">
+      <section className="relative overflow-hidden bg-background px-5 pb-16 pt-36 sm:px-8 sm:pt-44">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
@@ -102,7 +163,9 @@ function LearningPage() {
             Mentorship you attend. Learning you keep.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Tracks from the shared LMS API — same JSON Android consumes.
+            Browse the tracks below. Sign in with the{" "}
+            <span className="text-foreground">same Google email as the Android app</span> so your
+            progress % stays in sync.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             {!user ? (
@@ -110,7 +173,7 @@ function LearningPage() {
                 to="/login"
                 className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
               >
-                <LogIn className="h-4 w-4" /> Sign in to browse tracks
+                <LogIn className="h-4 w-4" /> Sign in
               </Link>
             ) : (
               <button
@@ -131,84 +194,83 @@ function LearningPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-20 max-w-7xl px-5 sm:px-8">
+      <section className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow text-ember">Tracks</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
-              {user
-                ? loading
-                  ? "Loading tracks…"
-                  : `${tracks.length} learning tracks`
-                : "Sign in to load tracks"}
+              {loading ? "Loading tracks…" : `${tracks.length} learning tracks`}
             </h2>
           </div>
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-            Live from <code className="text-xs">GET /lms/tracks</code>
-            {source ? (
-              <>
-                {" "}
-                · source <code className="text-xs">{source}</code>
-              </>
-            ) : null}
-          </p>
+          {!user && (
+            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+              Preview of the catalog. Sign in with your app email to enroll and track progress.
+            </p>
+          )}
+          {user && showingLive && (
+            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+              Live catalog for {user.email}
+            </p>
+          )}
         </div>
 
-        {error && (
+        {error && user && (
           <p className="mt-6 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
+            {error} — showing catalog preview until the API responds.
           </p>
         )}
 
-        {!user && (
-          <div className="mt-10 rounded-3xl border border-border/70 bg-card/50 p-8 text-center">
-            <p className="text-muted-foreground">
-              Use the same Google account as the Android app to see the catalog.
-            </p>
-            <Link
-              to="/login"
-              className="mt-5 inline-flex items-center gap-2 font-display text-sm font-semibold text-maroon hover:text-ember"
-            >
-              <LogIn className="h-4 w-4" /> Sign in
-            </Link>
-          </div>
-        )}
-
-        {user && (
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {tracks.map((track) => {
-              const tone = trackTone(track.audience);
-              return (
-                <article
-                  key={track.trackId}
-                  className="flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          {tracks.map((track) => {
+            const tone = trackTone(track.audience);
+            return (
+              <article
+                key={track.id}
+                className="flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
+              >
+                <span
+                  className={`self-start rounded-full px-3 py-1 text-xs font-semibold ${toneClass[tone]}`}
                 >
-                  <span
-                    className={`self-start rounded-full px-3 py-1 text-xs font-semibold ${toneClass[tone]}`}
-                  >
-                    {track.audience.join(" · ")}
+                  {track.audience.join(" · ")}
+                </span>
+                <h3 className="mt-5 text-xl font-bold leading-snug">{track.title}</h3>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                  {track.blurb}
+                </p>
+                <div className="mt-6 flex items-center gap-5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 text-ember" /> {track.moduleCount} modules
                   </span>
-                  <h3 className="mt-5 text-xl font-bold leading-snug">
-                    {track.courseTitle}
-                  </h3>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {track.does}
-                  </p>
-                  <div className="mt-6 flex items-center gap-5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-ember" />{" "}
-                      {track.moduleCount} modules
+                  <span className="flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5 text-ember" /> ~{track.hours} hrs ·{" "}
+                    {track.lessons} lessons
+                  </span>
+                </div>
+                {showingLive && (
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-foreground">
+                      {track.enrolled ? `${track.trackPercent}% complete` : "Not enrolled"}
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <BookOpen className="h-3.5 w-3.5 text-ember" /> ~
-                      {track.duration} hrs · {track.lessons} lessons
-                    </span>
+                    {track.enrolled ? (
+                      <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand-soft">
+                        Enrolled
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busyTrack === track.id}
+                        onClick={() => void onEnroll(track.id)}
+                        className="rounded-full bg-maroon/10 px-3 py-1.5 text-xs font-semibold text-maroon hover:bg-maroon/20 disabled:opacity-50"
+                      >
+                        {busyTrack === track.id ? "…" : "Enroll"}
+                      </button>
+                    )}
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                )}
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className="mx-auto mt-24 max-w-7xl px-5 sm:px-8">
@@ -222,11 +284,11 @@ function LearningPage() {
             </span>
           </div>
           <h2 className="mt-5 max-w-3xl text-3xl font-bold sm:text-4xl">
-            The Nelsen LMS will host every track, assignment and certificate
+            One account. Progress on app and web.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Shared API on nisisi-africa-webhook. Android and this site enroll, track %, and play
-            lessons from the same endpoints.
+            Use the same Google email in the Android app and on this site. Enrollments, lesson %, and
+            certificates stay with that account across both.
           </p>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
