@@ -19,4 +19,5 @@ jobs:
           cd /home/server/WebHooks/Nisisi-Africa/
           rm -rf node_modules
           npm install --production
+          mkdir -p data uploads uploads/_tmp
           /usr/local/bin/pm2 start src/app.js --name nisisi-africa || /usr/local/bin/pm2 restart nisisi-africa
