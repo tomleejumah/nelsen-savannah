@@ -1,61 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Brand palette, mirroring the Nelsen Savannah web app (src/styles.css).
-      Web authors its tokens in oklch; these are the sRGB equivalents.
-
-      Two layers live here:
-        1. brand_*  fixed constants. Identical in light and dark.
-        2. semantic tokens (surface_*, text_*, action_*, nav_*, bubble_*).
-           These are overridden in values-night/colors.xml, so referencing
-           them is what makes a colour theme-aware.
-
-      In layouts prefer the Material theme attributes (?attr/colorPrimary,
-      ?attr/colorOnSurface ...). Use the semantic tokens below inside
-      drawables and third-party attributes, where theme attrs are unreliable.
+      MentUI design tokens (single source of truth).
+      Layouts should prefer MentUI names (maroon_*, bg, surface, ink, …).
+      Legacy semantic aliases (surface_app, action_primary, …) map onto MentUI
+      so existing screens pick up the restyle without a mass rename.
     -->
+
+    <!-- Maroon scale (same in light + dark) -->
+    <color name="maroon_900">#4C0F1E</color>
+    <color name="maroon_700">#7C1F32</color>
+    <color name="maroon_600">#93283F</color>
+    <color name="maroon_500">#A8324B</color>
+    <color name="maroon_100">#F6E7EA</color>
+    <color name="maroon_050">#FBF2F3</color>
+
+    <!-- Surfaces / text / line (light; night overrides) -->
+    <color name="bg">#FFFFFF</color>
+    <color name="surface">#FBF7F7</color>
+    <color name="surface_2">#F3E9EB</color>
+    <color name="ink">#241016</color>
+    <color name="ink_soft">#4A363B</color>
+    <color name="muted">#8A7378</color>
+    <color name="line">#EFE2E4</color>
+
+    <color name="tag_blue_bg">#E7EEFB</color>
+    <color name="tag_blue_text">#33509E</color>
+    <color name="status_pending_bg">#F7E3D0</color>
+    <color name="status_pending_text">#8A5A17</color>
+
+    <color name="shadow_maroon">#1A4C0F1E</color>
+
+    <!-- Legacy brand constants (logo / third-party) -->
     <color name="brand_navy">#112555</color>
     <color name="brand_navy_dark">#0A1731</color>
     <color name="brand_navy_soft">#4476A4</color>
-    <color name="brand_maroon">#D40924</color>
-    <color name="brand_maroon_dark">#8A1538</color>
-    <color name="brand_maroon_light">#EA3C3F</color>
-    <color name="brand_ember">#C50220</color>
+    <color name="brand_maroon">@color/maroon_700</color>
+    <color name="brand_maroon_dark">@color/maroon_900</color>
+    <color name="brand_maroon_light">@color/maroon_500</color>
+    <color name="brand_ember">@color/maroon_600</color>
     <color name="brand_logo_red">#E31E24</color>
 
-    <!-- Semantic surfaces (light values; night overrides in values-night) -->
-    <color name="surface_app">#F9FBFE</color>
-    <color name="surface_card">#FFFFFF</color>
-    <color name="surface_muted">#EAF1F8</color>
-    <color name="surface_inverse">#0A1731</color>
-    <color name="outline_soft">#D8DFE8</color>
+    <!-- Semantic aliases → MentUI (theme + existing layouts) -->
+    <color name="surface_app">@color/bg</color>
+    <color name="surface_card">@color/surface</color>
+    <color name="surface_muted">@color/surface_2</color>
+    <color name="surface_inverse">@color/ink</color>
+    <color name="outline_soft">@color/line</color>
 
-    <!-- Semantic text -->
-    <color name="text_strong">#0A1731</color>
-    <color name="text_body">#1F2A3D</color>
-    <color name="text_muted">#5C6A7D</color>
-    <color name="text_on_action">#F9FBFE</color>
+    <color name="text_strong">@color/ink</color>
+    <color name="text_body">@color/ink_soft</color>
+    <color name="text_muted">@color/muted</color>
+    <color name="text_on_action">#FFFFFFFF</color>
+    <color name="text_primary">@color/ink</color>
+    <color name="text_secondary">@color/ink_soft</color>
+    <color name="text_tertiary">@color/muted</color>
 
-    <!-- Semantic actions: primary is navy by day, maroon by night (navy is
-         unreadable on a near-black surface) -->
-    <color name="action_primary">#112555</color>
-    <color name="action_accent">#D40924</color>
+    <color name="action_primary">@color/maroon_700</color>
+    <color name="action_accent">@color/maroon_600</color>
 
-    <!-- Chat bubbles -->
-    <color name="bubble_sent">#112555</color>
-    <color name="bubble_received">#EAF1F8</color>
-    <color name="bubble_quote_bg">#1AD40924</color>
+    <color name="bubble_sent">@color/maroon_700</color>
+    <color name="bubble_received">@color/surface_2</color>
+    <color name="bubble_quote_bg">#1A7C1F32</color>
 
-    <!-- Translucent overlay behind the blurred bottom bar -->
     <color name="blur_overlay">#CCFFFFFF</color>
 
-    <!-- Bottom-nav per-tab accents, distinct but inside the navy/maroon family -->
-    <color name="nav_home">#D40924</color>
-    <color name="nav_communities">#112555</color>
-    <color name="nav_chat">#4476A4</color>
-    <color name="nav_profile">#8A1538</color>
+    <color name="nav_home">@color/maroon_700</color>
+    <color name="nav_communities">@color/maroon_600</color>
+    <color name="nav_chat">@color/maroon_500</color>
+    <color name="nav_profile">@color/maroon_900</color>
 
-    <!-- Referenced by sound_progress.xml / SoundProgressBarVertical -->
     <color name="colorAccent">@color/action_accent</color>
 
     <color name="black">#FF000000</color>
@@ -80,64 +94,46 @@
     <color name="transparent">@android:color/transparent</color>
     <color name="gray_light">#FFF5F5F5</color>
     <color name="gray_dark">#FF808080</color>
-    <color name="unread_background">#F5F5F5</color>
+    <color name="unread_background">@color/maroon_050</color>
 
-    <!-- Timeline colors -->
-    <color name="timeline_completed">#373636</color>   <!-- Green for completed -->
+    <color name="timeline_completed">#373636</color>
     <color name="timeline_active">#000</color>
-    <!-- Orange for active -->
-    <!-- <color name="timeline_inactive">#E0E0E0</color>    Gray for inactive -->
-    <color name="timeline_inactive">#000</color>    <!-- Gray for inactive -->
+    <color name="timeline_inactive">#000</color>
     <color name="radio_btn_deselected">#CCCCCC</color>
+    <color name="timeline_today">@color/maroon_700</color>
 
-    <color name="timeline_today">#2196F3</color>
-
-    <color name="colorProgressBg">#dcdcdc</color>
-    <color name="colorSolidText">#ff000000</color>
-    <color name="colorEtTint">#aab9cb</color>
+    <color name="colorProgressBg">@color/surface_2</color>
+    <color name="colorSolidText">@color/ink</color>
+    <color name="colorEtTint">@color/muted</color>
     <color name="yellow">#FCD267</color>
-
     <color name="crop_radio_btn_default_color">#555555</color>
-
     <color name="place_holder_color">#C0C0C0</color>
-
-    <color name="hint_text_color_light">#9E9E9E</color>
-    <color name="hint_text_color_dark">#BDBDBD</color>
-
+    <color name="hint_text_color_light">@color/muted</color>
+    <color name="hint_text_color_dark">@color/muted</color>
     <color name="background_color_dark">#1E1E1E</color>
-    <color name="primary_blue">#091441</color>
-    <color name="background_color_light">#FFFFFFFF</color>
+    <color name="primary_blue">@color/maroon_700</color>
+    <color name="background_color_light">@color/bg</color>
     <color name="light_blue_600">#FF039BE5</color>
     <color name="light_blue_900">#FF01579B</color>
     <color name="light_blue_A200">#FF40C4FF</color>
     <color name="light_blue_A400">#FF00B0FF</color>
     <color name="black_overlay">#66000000</color>
-    <!-- Primary Colors -->
-    <color name="primary_gradient_start">#6366F1</color>
-    <color name="primary_gradient_end">#8B5CF6</color>
-    <color name="primary_dark">#4F46E5</color>
 
-    <!-- Background Colors -->
-    <color name="background_primary">#F8FAFC</color>
-    <color name="background_secondary">#F1F5F9</color>
-    <color name="card_background">#FFFFFF</color>
+    <color name="primary_gradient_start">@color/maroon_900</color>
+    <color name="primary_gradient_end">@color/maroon_500</color>
+    <color name="primary_dark">@color/maroon_900</color>
 
-    <!-- Text Colors -->
-    <color name="text_primary">#1E293B</color>
-    <color name="text_secondary">#64748B</color>
-    <color name="text_tertiary">#94A3B8</color>
+    <color name="background_primary">@color/bg</color>
+    <color name="background_secondary">@color/surface</color>
+    <color name="card_background">@color/surface</color>
     <color name="colorOverlay">#40FFFFFF</color>
     <color name="accent_success">#10B981</color>
-
-    <!-- Accent Colors -->
     <color name="accent_warning">#F59E0B</color>
     <color name="accent_error">#EF4444</color>
     <color name="accent_gold">#F59E0B</color>
     <color name="accent_gold_light">#FEF3C7</color>
+    <color name="progress_background">@color/surface_2</color>
 
-    <color name="progress_background">#E2E8F0</color>
-
-    <!-- Dark Theme Colors -->
     <color name="dark_background_primary">#0F172A</color>
     <color name="dark_background_secondary">#1E293B</color>
     <color name="dark_card_background">#334155</color>
