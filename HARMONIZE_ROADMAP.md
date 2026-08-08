@@ -33,7 +33,7 @@ Courses are the only LMS catalog fetch so far (`GET /lms/tracks`).
 **Work:** surface failures (no silent empty), fix Home `CoursesAdapter` DiffUtil (`courseId`), confirm Home / All courses rails bind LMS tracks.
 
 ## H4 — Mentors rail (Firebase → UI)
-**Status:** `pending`  
+**Status:** `done`  
 Match MentUI mentor cards: avatar initials, verified badge, bio, `★ rating · N students` / `New mentor`, **Book now**, header **Show more**. Confirm mentee-only gate still works.
 
 ## H5 — Profile tab + Settings
