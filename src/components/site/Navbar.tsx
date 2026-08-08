@@ -87,12 +87,6 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
           <Link
-            to="/login"
-            className="hidden rounded-full border border-border/70 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-maroon sm:inline-flex"
-          >
-            Sign in
-          </Link>
-          <Link
             to="/contact"
             className="hidden rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
           >
@@ -169,13 +163,6 @@ export function Navbar() {
               </Link>
             ),
           )}
-          <Link
-            to="/login"
-            onClick={() => setOpen(false)}
-            className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
-          >
-            Sign in
-          </Link>
         </div>
       )}
     </header>
