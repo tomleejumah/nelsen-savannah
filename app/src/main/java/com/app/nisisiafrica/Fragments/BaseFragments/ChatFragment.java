@@ -24,6 +24,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ConcatAdapter;
@@ -119,6 +123,7 @@ public class ChatFragment extends Fragment {
         setupRecyclerView();
         setupGlobalClickListeners();
         setupBackNavigation();
+        setupChatGlassChrome();
 
         binding.btnAttach.setOnClickListener(v -> {
             if (currentChatId == null) {
@@ -248,9 +253,12 @@ public class ChatFragment extends Fragment {
         // Access Control: mentors & admins may post announcements; mentees read only.
         if ("system".equals(type)) {
             boolean canPost = Roles.canCreate(role);
-            binding.bottomChatBar.setVisibility(canPost ? View.VISIBLE : View.GONE);
+            int vis = canPost ? View.VISIBLE : View.GONE;
+            binding.bottomChatBar.setVisibility(vis);
+            binding.chatComposerBlur.setVisibility(vis);
         } else {
             binding.bottomChatBar.setVisibility(View.VISIBLE);
+            binding.chatComposerBlur.setVisibility(View.VISIBLE);
         }
 
         startRealtimeMessages(chatId);
@@ -857,6 +865,43 @@ public class ChatFragment extends Fragment {
         startActivity(intent);
     }
 
+    /** Glass header + composer — same blur/transparency trick as the bottom nav. */
+    private void setupChatGlassChrome() {
+        if (binding == null || getActivity() == null) return;
+        eightbitlab.com.blurview.BlurTarget target = getActivity().findViewById(R.id.blurTarget);
+        int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
+        try {
+            if (target != null) {
+                binding.chatHeaderBlur.setupWith(target).setBlurRadius(20f).setOverlayColor(overlay);
+                binding.chatComposerBlur.setupWith(target).setBlurRadius(20f).setOverlayColor(overlay);
+            } else {
+                binding.chatHeaderBlur.setOverlayColor(overlay);
+                binding.chatComposerBlur.setOverlayColor(overlay);
+            }
+        } catch (Exception e) {
+            Log.w("ChatFragment", "Chat glass blur failed", e);
+            binding.chatHeaderBlur.setBackgroundColor(overlay);
+            binding.chatComposerBlur.setBackgroundColor(overlay);
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.llHeader, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), bars.top + dp(10), v.getPaddingRight(), dp(12));
+            return insets;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomChatBar, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            // MainActivity already pads bottom when chat is open; keep a small composer pad.
+            v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), dp(8) + Math.max(0, bars.bottom / 4));
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(binding.chatDetailContainer);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
     /** Shows the open conversation and hides the bottom nav so the input has room. */
     private void showChatDetail() {
         if (binding == null) return;
@@ -866,6 +911,7 @@ public class ChatFragment extends Fragment {
         if (getActivity() instanceof MainActivity) {
             ((MainActivity) getActivity()).setChatConversationOpen(true);
         }
+        ViewCompat.requestApplyInsets(binding.chatDetailContainer);
     }
 
     /** Returns to the conversation list. */
