@@ -3,6 +3,7 @@ package com.app.nisisiafrica;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,27 +18,33 @@ import androidx.work.WorkManager;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.Event;
+import com.app.nisisiafrica.data.Model.ProgrammeItem;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.app.nisisiafrica.data.remote.NotificationSender;
+import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
 import android.view.View;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 import kotlin.Unit;
 
 public class CreateEventActivity extends AppCompatActivity {
 
-    private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink;
+    private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink, etSeats, etPrice;
+    private MaterialAutoCompleteTextView etProgram;
     private TextView tvDate, tvStart, tvEnd;
     private MaterialButton btnSave, btnModeOnline;
     private TextInputLayout tilLocation, tilMeetingLink;
@@ -65,7 +72,27 @@ public class CreateEventActivity extends AppCompatActivity {
         etDescription = findViewById(R.id.etEventDescription);
         etLocation = findViewById(R.id.etEventLocation);
         etMeetingLink = findViewById(R.id.etMeetingLink);
+        etProgram = findViewById(R.id.etProgram);
+        etSeats = findViewById(R.id.etSeats);
+        etPrice = findViewById(R.id.etPrice);
         tvDate = findViewById(R.id.tvDate);
+        tvStart = findViewById(R.id.tvStartTime);
+        tvEnd = findViewById(R.id.tvEndTime);
+        btnSave = findViewById(R.id.btnSaveEvent);
+        btnModeOnline = findViewById(R.id.btnModeOnline);
+        tilLocation = findViewById(R.id.tilLocation);
+        tilMeetingLink = findViewById(R.id.tilMeetingLink);
+
+        ProgrammesDataSource.fetch(programmes -> {
+            List<String> titles = new ArrayList<>();
+            titles.add(""); // optional blank
+            for (ProgrammeItem p : programmes) {
+                if (p.title != null && !p.title.isEmpty()) titles.add(p.title);
+            }
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                    this, android.R.layout.simple_dropdown_item_1line, titles);
+            etProgram.setAdapter(adapter);
+        });
         tvStart = findViewById(R.id.tvStartTime);
         tvEnd = findViewById(R.id.tvEndTime);
         btnSave = findViewById(R.id.btnSaveEvent);
@@ -154,6 +181,19 @@ public class CreateEventActivity extends AppCompatActivity {
             return;
         }
 
+        String program = etProgram.getText() != null ? etProgram.getText().toString().trim() : "";
+        String price = etPrice.getText() != null ? etPrice.getText().toString().trim() : "";
+        int seats = 0;
+        String seatsRaw = etSeats.getText() != null ? etSeats.getText().toString().trim() : "";
+        if (!seatsRaw.isEmpty()) {
+            try {
+                seats = Integer.parseInt(seatsRaw);
+            } catch (NumberFormatException ignored) {
+                etSeats.setError("Enter a number");
+                return;
+            }
+        }
+
         // For personal/test events the mentee is the creator; a real booking flow
         // would set a distinct menteeId, in which case that person gets notified.
         final String menteeId = uid;
@@ -174,7 +214,11 @@ public class CreateEventActivity extends AppCompatActivity {
                 online ? "online" : "physical",
                 location,
                 meetingLink,
-                null                // participants
+                null,               // participants
+                program,
+                seats,
+                0,                  // seatsTaken
+                price
         );
 
         btnSave.setEnabled(false);

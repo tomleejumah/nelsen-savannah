@@ -86,9 +86,10 @@ data class MentorItem(
     val mentorDescription: String = "",
     val studentsCount: String? = null,
     val studentImages: List<String>? = null,
-    val bookedDates: Set<LocalDate>? = null
-
-//    val isOnline: Boolean = false
+    val bookedDates: Set<LocalDate>? = null,
+    /** Specialty tags used to pair questionnaire answers to mentors. */
+    val categories: List<String>? = null,
+    val averageRating: Double? = null,
 )
 
 /** Firestore wire format for a chat message. */
@@ -255,7 +256,14 @@ data class Event(
     val location: String = "",       // physical venue / address
     val meetingLink: String = "",    // online meeting (e.g. Google Meet) url
 //    val participants: Map<String, Boolean>? = null
-    val participants: List<String>? = null
+    val participants: List<String>? = null,
+    /** Linked programme name (shared with web AppEvent.program). */
+    val program: String = "",
+    /** Capacity; seats left = seats - seatsTaken. */
+    val seats: Int = 0,
+    val seatsTaken: Int = 0,
+    /** e.g. "Free" or "KES 500" */
+    val price: String = "",
 )
 
 data class Announcement(
