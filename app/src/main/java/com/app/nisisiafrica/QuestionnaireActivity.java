@@ -98,17 +98,64 @@ public class QuestionnaireActivity extends AppCompatActivity {
                 prefs.edit().putInt(KEY_PROGRESS, currentIndex).apply();
                 loadSection(currentIndex);
             } else {
-                // Submit
+                // Submit → derive mentor categories and pair the mentee.
                 prefs.edit().putBoolean(KEY_SUBMITTED, true).apply();
                 submitted = true;
                 disableAllInputs();
                 btnPrev.setEnabled(false);
                 btnNext.setEnabled(false);
                 btnNext.setText("Submitted");
-                Toast.makeText(this, "Submitted. This form is now locked.", Toast.LENGTH_LONG).show();
-                // todo NOTE:  persist to Room here. For now, answers are in SharedPreferences.
+                java.util.List<String> categories = deriveMentorCategories();
+                persistQuestionnaireAndOpenMentors(categories);
             }
         });
+    }
+
+    /** Maps questionnaire answers onto mentor specialty tags for pairing. */
+    private java.util.List<String> deriveMentorCategories() {
+        int age = prefs.getInt("user_age", -1);
+        boolean hasJob = prefs.getBoolean("user_has_job", false);
+        java.util.ArrayList<String> cats = new java.util.ArrayList<>();
+        if (age >= 7 && age <= 15) {
+            cats.add("foundation");
+            cats.add("discovery");
+            cats.add("youth");
+        } else if (age >= 16 && age <= 21) {
+            cats.add("career");
+            cats.add("identity");
+            cats.add("youth");
+        } else if (hasJob) {
+            cats.add("career");
+            cats.add("leadership");
+            cats.add("professional");
+        } else {
+            cats.add("skills");
+            cats.add("career");
+            cats.add("employment");
+        }
+        return cats;
+    }
+
+    private void persistQuestionnaireAndOpenMentors(java.util.List<String> categories) {
+        String uid = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("users").child(uid)
+                    .child("preferredMentorCategories")
+                    .setValue(categories);
+            com.google.firebase.database.FirebaseDatabase.getInstance()
+                    .getReference("users").child(uid)
+                    .child("questionnaireCompleted")
+                    .setValue(true);
+        }
+        Toast.makeText(this,
+                "Matched you with mentors in: " + android.text.TextUtils.join(", ", categories),
+                Toast.LENGTH_LONG).show();
+        android.content.Intent intent = new android.content.Intent(this, AllMentorsActivity.class);
+        intent.putStringArrayListExtra(AllMentorsActivity.EXTRA_CATEGORIES,
+                new java.util.ArrayList<>(categories));
+        startActivity(intent);
+        finish();
     }
 
     private List<Section> buildSections() {

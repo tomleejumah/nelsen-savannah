@@ -163,7 +163,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         //todo use realtime student count/images/booked dates
 
-        mentorItem = new MentorItem(id, dpImageUrl, name, description, "", new ArrayList<>(), new HashSet<>());
+        mentorItem = new MentorItem(id, dpImageUrl, name, description, "", new ArrayList<>(), new HashSet<>(), null, null);
         FirebaseRemoteDataSource.INSTANCE.saveOrUpdateMentor(mentorItem, aBoolean -> {
             Log.d(TAG, "updateMentorProfile: " + aBoolean);
             //update bio
