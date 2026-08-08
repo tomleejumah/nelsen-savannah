@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.data.remote
 
+import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.app.nisisiafrica.data.Model.CourseItem
@@ -14,10 +15,20 @@ import kotlinx.coroutines.tasks.await
  */
 class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
 
+    companion object {
+        private const val TAG = "LmsTracks"
+    }
+
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CourseItem> {
         val lms = loadFromLms()
         if (lms is LoadResult.Page && lms.data.isNotEmpty()) {
+            Log.i(TAG, "LMS has ${lms.data.size} tracks — using API (not Firebase)")
             return lms
+        }
+        if (lms is LoadResult.Page) {
+            Log.w(TAG, "LMS empty (0 tracks) — falling back to Firebase courses/")
+        } else if (lms is LoadResult.Error) {
+            Log.w(TAG, "LMS error: ${lms.throwable.message} — falling back to Firebase courses/")
         }
         return loadFromFirebase()
     }
@@ -25,16 +36,33 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
     private suspend fun loadFromLms(): LoadResult<Int, CourseItem> {
         return try {
             val user = FirebaseAuth.getInstance().currentUser
-                ?: return LoadResult.Page(emptyList(), null, null)
+            if (user == null) {
+                Log.w(TAG, "No Firebase user — skip LMS")
+                return LoadResult.Page(emptyList(), null, null)
+            }
             val token = user.getIdToken(false).await().token
-                ?: return LoadResult.Page(emptyList(), null, null)
+            if (token.isNullOrBlank()) {
+                Log.w(TAG, "Empty ID token — skip LMS")
+                return LoadResult.Page(emptyList(), null, null)
+            }
             val response = ApiClient.getLmsService()
                 .tracks("Bearer $token")
                 .execute()
-            val body: LmsModels.TracksEnvelope? = response.body()
-            if (!response.isSuccessful || body == null || !body.ok || body.data?.tracks == null) {
+            if (!response.isSuccessful) {
+                val err = response.errorBody()?.string()?.take(240)
+                Log.w(TAG, "LMS HTTP ${response.code()} $err")
                 return LoadResult.Page(emptyList(), null, null)
             }
+            val body: LmsModels.TracksEnvelope? = response.body()
+            if (body == null) {
+                Log.w(TAG, "LMS body null after Gson (check duration/lessons types)")
+                return LoadResult.Page(emptyList(), null, null)
+            }
+            if (!body.ok || body.data?.tracks == null) {
+                Log.w(TAG, "LMS ok=${body.ok} error=${body.error}")
+                return LoadResult.Page(emptyList(), null, null)
+            }
+            Log.i(TAG, "LMS ok source=${body.source} trackCount=${body.data.tracks.size}")
             val items = body.data.tracks.map { card ->
                 CourseItem(
                     courseId = card.courseId ?: card.trackId ?: "",
@@ -43,14 +71,15 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
                     tutorAvatarUrl = card.tutorAvatarUrl ?: "",
                     tutorName = card.tutorName ?: "",
                     courseTitle = card.courseTitle ?: "",
-                    duration = card.duration ?: "",
-                    lessons = card.lessons ?: "",
+                    duration = card.durationString(),
+                    lessons = card.lessonsString(),
                     courseLink = card.courseLink ?: "",
                     isLiked = card.isLiked,
                 )
             }.filter { it.courseId.isNotBlank() }
             LoadResult.Page(items, prevKey = null, nextKey = null)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "LMS exception", e)
             LoadResult.Page(emptyList(), null, null)
         }
     }
@@ -80,8 +109,10 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
                     isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java) ?: false,
                 )
             }
+            Log.i(TAG, "Firebase courses/ count=${items.size}")
             LoadResult.Page(items, prevKey = null, nextKey = null)
         } catch (e: Exception) {
+            Log.e(TAG, "Firebase courses failed", e)
             LoadResult.Error(e)
         }
     }

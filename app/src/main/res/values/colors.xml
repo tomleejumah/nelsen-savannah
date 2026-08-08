@@ -63,7 +63,7 @@
     <color name="bubble_received">@color/surface_2</color>
     <color name="bubble_quote_bg">#1A7C1F32</color>
 
-    <color name="blur_overlay">#CCFFFFFF</color>
+    <color name="blur_overlay">#99FFFFFF</color>
 
     <color name="nav_home">@color/maroon_700</color>
     <color name="nav_communities">@color/maroon_600</color>

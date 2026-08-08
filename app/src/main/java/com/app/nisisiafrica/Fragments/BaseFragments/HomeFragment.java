@@ -22,6 +22,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.paging.LoadState;
@@ -197,21 +198,19 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
             // Mentors + Admins: no mentor browse/book — Chats for mentees.
             // Mentees: full mentor list + Book mentor.
-            applyMentorListVisibility(!Roles.browsesMentors(userData.getUserRole()), view);
+            applyMentorListVisibility(false, view); // TEMP: always show mentors list
 
             getEvents(data, view);
 
         });
 
+        // Banner carousel permanently hidden.
+        View bannerCarousel = view.findViewById(R.id.bannerCarousel);
+        if (bannerCarousel != null) bannerCarousel.setVisibility(View.GONE);
         bannerViewPager = view.findViewById(R.id.bannerViewPager);
-        bannerAdapter = new BannerAdapter(getContext(), bannerList);
-        bannerViewPager.setAdapter(bannerAdapter);
+        if (bannerViewPager != null) bannerViewPager.setVisibility(View.GONE);
 
-        // Initialize Realtime Database reference
-        bannersRef = FirebaseDatabase.getInstance().getReference("banners");
-
-        fetchBannersRealtime();
-        setupAutoScroll();
+        setupHomeTopBlur(view);
 
         storiesContainer = view.findViewById(R.id.storiesContainer);
         RecyclerView rvStories = view.findViewById(R.id.rvStories);
@@ -875,6 +874,23 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         dialog.setContentView(sheet);
         dialog.show();
+    }
+
+    private void setupHomeTopBlur(View view) {
+        eightbitlab.com.blurview.BlurView topBlur = view.findViewById(R.id.homeTopBlur);
+        if (topBlur == null || getActivity() == null) return;
+        eightbitlab.com.blurview.BlurTarget target = getActivity().findViewById(R.id.blurTarget);
+        int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
+        try {
+            if (target != null) {
+                topBlur.setupWith(target).setBlurRadius(16f).setOverlayColor(overlay);
+            } else {
+                topBlur.setOverlayColor(overlay);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Home top blur failed", e);
+            topBlur.setBackgroundColor(overlay);
+        }
     }
 
     private void applyMentorListVisibility(boolean isMentorOrAdmin, View view) {

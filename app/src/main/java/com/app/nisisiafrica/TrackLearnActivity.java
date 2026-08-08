@@ -191,11 +191,11 @@ public class TrackLearnActivity extends AppCompatActivity {
             if (!TextUtils.isEmpty(track.courseTitle)) tvTitle.setText(track.courseTitle);
             String meta = "";
             if (!TextUtils.isEmpty(track.tutorName)) meta = track.tutorName;
-            if (!TextUtils.isEmpty(track.lessons)) {
-                meta += (meta.isEmpty() ? "" : " · ") + track.lessons + " lessons";
+            if (!TextUtils.isEmpty(track.lessonsString())) {
+                meta += (meta.isEmpty() ? "" : " · ") + track.lessonsString() + " lessons";
             }
-            if (!TextUtils.isEmpty(track.duration)) {
-                meta += (meta.isEmpty() ? "" : " · ") + track.duration + " h";
+            if (!TextUtils.isEmpty(track.durationString())) {
+                meta += (meta.isEmpty() ? "" : " · ") + track.durationString() + " h";
             }
             if (!meta.isEmpty()) tvDesc.setText(meta);
             else if (!TextUtils.isEmpty(track.does)) tvDesc.setText(track.does);
