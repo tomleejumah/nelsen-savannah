@@ -9,7 +9,12 @@ export const authenticateUser = async (req, res, next) => {
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
-    req.user = { uid: decodedToken.uid };
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email || '',
+      displayName: decodedToken.name || '',
+      photoUrl: decodedToken.picture || '',
+    };
     next();
   } catch (error) {
     console.error('Auth error:', error);
