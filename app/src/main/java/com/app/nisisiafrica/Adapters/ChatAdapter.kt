@@ -81,9 +81,17 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun toggleSelection(message: ChatMessageEntity) {
         if (message.deleted) return
+        val wasSelecting = inSelectionMode
         if (!selectedIds.add(message.messageId)) selectedIds.remove(message.messageId)
-        val pos = positionOf(message.messageId)
-        if (pos >= 0) notifyItemChanged(pos)
+        val nowSelecting = inSelectionMode
+        // Entering/leaving selection must rebind ALL rows so single-tap selects
+        // (otherwise only the long-pressed row has selectionMode=true).
+        if (wasSelecting != nowSelecting) {
+            notifyDataSetChanged()
+        } else {
+            val pos = positionOf(message.messageId)
+            if (pos >= 0) notifyItemChanged(pos)
+        }
         onSelectionChanged?.invoke(selectedIds.size)
     }
 
@@ -238,6 +246,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 }
             }
 
+            // TODO(read-receipts): single tick = delivered, double tick = read (not implemented yet).
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
 
             val longClick = View.OnLongClickListener {
@@ -254,13 +263,25 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 llMessage?.setOnClickListener(null)
                 itemView.setOnLongClickListener(null)
                 itemView.setOnClickListener(null)
+                tvMessage.setOnClickListener(null)
+                ivImage?.setOnClickListener(null)
                 llMessage?.isLongClickable = false
             } else {
                 llMessage?.setOnLongClickListener(longClick)
                 itemView.setOnLongClickListener(longClick)
                 ivImage?.setOnLongClickListener(longClick)
-                llMessage?.setOnClickListener(if (selectionMode) click else null)
-                itemView.setOnClickListener(if (selectionMode) click else null)
+                tvMessage.setOnLongClickListener(longClick)
+                // In selection mode, any tap on the bubble content toggles (no long-press).
+                if (selectionMode) {
+                    llMessage?.setOnClickListener(click)
+                    itemView.setOnClickListener(click)
+                    tvMessage.setOnClickListener(click)
+                    ivImage?.setOnClickListener(click)
+                } else {
+                    llMessage?.setOnClickListener(null)
+                    itemView.setOnClickListener(null)
+                    // Image/file open handlers already set above when !selectionMode.
+                }
             }
 
             if (tvSender != null) {
