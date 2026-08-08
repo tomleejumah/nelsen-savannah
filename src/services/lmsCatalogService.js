@@ -35,7 +35,7 @@ function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false
     tutorAvatarUrl: row.tutor_avatar_url || row.tutorAvatarUrl || "",
     tutorName: row.tutor_name || row.tutorName || "Nelsen Savannah",
     courseTitle: row.title || row.courseTitle || "",
-    duration: row.duration || "1",
+    duration: String(row.duration != null && row.duration !== "" ? row.duration : "1"),
     lessons,
     courseLink: "",
     isLiked: Boolean(isLiked),
