@@ -31,6 +31,7 @@ import com.app.nisisiafrica.LockScreenActivity;
 import com.app.nisisiafrica.PinManager;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SetpinActivity;
+import com.app.nisisiafrica.Utils.ThemeManager;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
@@ -86,6 +87,7 @@ public class SettingsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
         lockSwitch = view.findViewById(R.id.lockApp);
+        setupDarkModeSwitch(view);
 
         view.findViewById(R.id.tv_share_app).setOnClickListener(v -> shareApp());
         view.findViewById(R.id.tv_rate_app).setOnClickListener(v -> rateApp(getContext()));
@@ -154,6 +156,23 @@ public class SettingsFragment extends Fragment {
         lockSwitch.setOnCheckedChangeListener(lockListener);
 
         return view;
+    }
+
+    /**
+     * Binds the Dark Mode switch. AppCompat recreates the activity stack when the
+     * night mode changes, so the toggle applies immediately; the choice is
+     * persisted and re-applied by {@code App.onCreate()} on the next launch.
+     */
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
+    private void setupDarkModeSwitch(View view) {
+        Switch darkSwitch = view.findViewById(R.id.darkModeSwitch);
+        if (darkSwitch == null) return;
+        darkSwitch.setOnCheckedChangeListener(null);
+        darkSwitch.setChecked(ThemeManager.isDarkMode());
+        darkSwitch.setOnCheckedChangeListener((button, isChecked) -> {
+            if (isChecked == ThemeManager.isDarkMode()) return;
+            ThemeManager.setDarkMode(isChecked);
+        });
     }
 
     private void shareApp() {

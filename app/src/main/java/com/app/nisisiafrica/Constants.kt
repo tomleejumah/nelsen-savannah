@@ -9,5 +9,6 @@ object  Constants {
     const val USER_ROLE = "userRole"
     const val USER_CREATED_AT = "userCreatedAt"
     const val USER_ID = "user-Id"
+    const val DARK_MODE = "darkMode"
 
 }

@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.ThemeColors;
 import com.app.nisisiafrica.data.Model.PostComment;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
 
@@ -30,8 +31,6 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
     private final String postId;
     private final OnReply onReply;
 
-    private static final int LIKED_COLOR = Color.parseColor("#4F46E5");
-    private static final int UNLIKED_COLOR = Color.parseColor("#9CA3AF");
 
     public CommentAdapter(CommunityRepository repository, String communityId, String postId, OnReply onReply) {
         this.repository = repository;
@@ -84,15 +83,18 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
             holder.time.setText("");
         }
 
-        // Reflect the current user's like state.
-        holder.like.setColorFilter(UNLIKED_COLOR);
+        // Reflect the current user's like state. Colours resolve from the active
+        // theme so they follow light/dark mode.
+        final int likedColor = ThemeColors.accent(holder.itemView.getContext());
+        final int unlikedColor = ThemeColors.muted(holder.itemView.getContext());
+        holder.like.setColorFilter(unlikedColor);
         repository.hasLikedComment(communityId, postId, c.getId(), liked ->
-                holder.like.setColorFilter(liked ? LIKED_COLOR : UNLIKED_COLOR));
+                holder.like.setColorFilter(liked ? likedColor : unlikedColor));
 
         holder.like.setOnClickListener(v ->
                 repository.toggleCommentLike(communityId, postId, c.getId(), (success, nowLiked) -> {
                     if (!success) return;
-                    holder.like.setColorFilter(nowLiked ? LIKED_COLOR : UNLIKED_COLOR);
+                    holder.like.setColorFilter(nowLiked ? likedColor : unlikedColor);
                     long count = c.getLikeCount() + (nowLiked ? 1 : -1);
                     if (count < 0) count = 0;
                     c.setLikeCount(count);

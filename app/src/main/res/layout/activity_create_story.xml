@@ -13,7 +13,7 @@
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_nisisi_back"
         app:title="Create Story"
-        app:titleTextColor="#1F2937" />
+        app:titleTextColor="?attr/colorOnSurface" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:layout_marginBottom="12dp"
                 android:alpha="0.6"
                 android:text="Stories appear at the top of Home and expire automatically."
-                android:textColor="#1F2937"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="13sp" />
 
             <com.google.android.material.textfield.TextInputLayout
@@ -146,7 +146,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:backgroundTint="#1F2937"
+        android:backgroundTint="?attr/colorPrimary"
         android:paddingVertical="12dp"
         android:text="Publish Story"
         android:textColor="#FFFFFF"

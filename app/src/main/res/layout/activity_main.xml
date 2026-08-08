@@ -74,7 +74,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_add"
-                    app:tint="#1F2937" />
+                    app:tint="?attr/colorPrimary" />
             </eightbitlab.com.blurview.BlurView>
         </androidx.cardview.widget.CardView>
     </LinearLayout>

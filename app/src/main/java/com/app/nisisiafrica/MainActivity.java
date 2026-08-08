@@ -236,13 +236,16 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         eightbitlab.com.blurview.BlurTarget target = findViewById(R.id.blurTarget);
         eightbitlab.com.blurview.BlurView navBlur = findViewById(R.id.navBlur);
         eightbitlab.com.blurview.BlurView fabBlur = findViewById(R.id.fabBlur);
+        // Overlay tint follows the theme so the bars stay legible in dark mode.
+        int overlay = ContextCompat.getColor(this, R.color.blur_overlay);
         try {
-            navBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(0xCCFFFFFF);
-            fabBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(0xCCFFFFFF);
+            navBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(overlay);
+            fabBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(overlay);
         } catch (Exception e) {
             Log.w(TAG, "Blur setup failed; falling back to solid bars", e);
-            navBlur.setBackgroundColor(0xF2FFFFFF);
-            fabBlur.setBackgroundColor(0xF2FFFFFF);
+            int solid = ContextCompat.getColor(this, R.color.surface_card);
+            navBlur.setBackgroundColor(solid);
+            fabBlur.setBackgroundColor(solid);
         }
     }
 

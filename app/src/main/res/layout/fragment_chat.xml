@@ -310,7 +310,7 @@
                     android:layout_margin="20dp"
                     android:src="@drawable/ic_chat"
                     android:visibility="gone"
-                    app:backgroundTint="#128C7E"
+                    app:backgroundTint="?attr/colorPrimary"
                     app:tint="#FFFFFF"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent" />
@@ -319,7 +319,7 @@
         </FrameLayout>
 
         <FrameLayout
-            android:background="#009688"
+            android:background="?attr/colorPrimary"
             android:id="@+id/end_panel"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -424,7 +424,7 @@
                         <View
                             android:layout_width="4dp"
                             android:layout_height="36dp"
-                            android:background="#128C7E"
+                            android:background="?attr/colorSecondary"
                             android:layout_marginEnd="8dp"/>
 
                         <LinearLayout
@@ -437,7 +437,7 @@
                                 android:id="@+id/tvReplySender"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="#128C7E"
+                                android:textColor="?attr/colorSecondary"
                                 android:textStyle="bold"
                                 android:textSize="12sp"/>
 
@@ -474,7 +474,7 @@
                             android:padding="9dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/ic_image_placeholder"
-                            android:tint="#128C7E" />
+                            android:tint="?attr/colorPrimary" />
 
                         <EditText
                             android:clickable="true"

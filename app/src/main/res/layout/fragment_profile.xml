@@ -58,7 +58,7 @@
                             android:fontFamily="@font/semibold"
                             android:maxLines="1"
                             android:text="Your Name"
-                            android:textColor="#1F2937"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -71,7 +71,7 @@
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="2dp"
                             android:text="Mentee"
-                            android:textColor="#4F46E5"
+                            android:textColor="?attr/colorSecondary"
                             android:textSize="12sp" />
 
                         <TextView
@@ -82,7 +82,7 @@
                             android:alpha="0.6"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="#1F2937"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -94,7 +94,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:text="Edit Profile"
-                    android:textColor="#1F2937"
+                    android:textColor="?attr/colorOnSurface"
                     app:cornerRadius="12dp"
                     app:strokeColor="#D1D5DB" />
             </LinearLayout>
@@ -120,7 +120,7 @@
                         android:layout_weight="1"
                         android:fontFamily="@font/semibold"
                         android:text="Profile"
-                        android:textColor="#1F2937"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -137,7 +137,7 @@
                             android:layout_height="26dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_notifications"
-                            app:tint="#1F2937" />
+                            app:tint="?attr/colorPrimary" />
 
                         <TextView
                             android:id="@+id/profileNotifCount"

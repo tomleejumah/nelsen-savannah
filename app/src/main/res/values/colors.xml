@@ -1,5 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+      Brand palette, mirroring the Nelsen Savannah web app (src/styles.css).
+      Web authors its tokens in oklch; these are the sRGB equivalents.
+
+      Two layers live here:
+        1. brand_*  fixed constants. Identical in light and dark.
+        2. semantic tokens (surface_*, text_*, action_*, nav_*, bubble_*).
+           These are overridden in values-night/colors.xml, so referencing
+           them is what makes a colour theme-aware.
+
+      In layouts prefer the Material theme attributes (?attr/colorPrimary,
+      ?attr/colorOnSurface ...). Use the semantic tokens below inside
+      drawables and third-party attributes, where theme attrs are unreliable.
+    -->
+    <color name="brand_navy">#112555</color>
+    <color name="brand_navy_dark">#0A1731</color>
+    <color name="brand_navy_soft">#4476A4</color>
+    <color name="brand_maroon">#D40924</color>
+    <color name="brand_maroon_dark">#8A1538</color>
+    <color name="brand_maroon_light">#EA3C3F</color>
+    <color name="brand_ember">#C50220</color>
+    <color name="brand_logo_red">#E31E24</color>
+
+    <!-- Semantic surfaces (light values; night overrides in values-night) -->
+    <color name="surface_app">#F9FBFE</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_muted">#EAF1F8</color>
+    <color name="surface_inverse">#0A1731</color>
+    <color name="outline_soft">#D8DFE8</color>
+
+    <!-- Semantic text -->
+    <color name="text_strong">#0A1731</color>
+    <color name="text_body">#1F2A3D</color>
+    <color name="text_muted">#5C6A7D</color>
+    <color name="text_on_action">#F9FBFE</color>
+
+    <!-- Semantic actions: primary is navy by day, maroon by night (navy is
+         unreadable on a near-black surface) -->
+    <color name="action_primary">#112555</color>
+    <color name="action_accent">#D40924</color>
+
+    <!-- Chat bubbles -->
+    <color name="bubble_sent">#112555</color>
+    <color name="bubble_received">#EAF1F8</color>
+    <color name="bubble_quote_bg">#1AD40924</color>
+
+    <!-- Translucent overlay behind the blurred bottom bar -->
+    <color name="blur_overlay">#CCFFFFFF</color>
+
+    <!-- Bottom-nav per-tab accents, distinct but inside the navy/maroon family -->
+    <color name="nav_home">#D40924</color>
+    <color name="nav_communities">#112555</color>
+    <color name="nav_chat">#4476A4</color>
+    <color name="nav_profile">#8A1538</color>
+
+    <!-- Referenced by sound_progress.xml / SoundProgressBarVertical -->
+    <color name="colorAccent">@color/action_accent</color>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="purple_200">#FFBB86FC</color>

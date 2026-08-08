@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/semibold"
         android:text="Event"
-        android:textColor="#1F2937"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:background="@drawable/info_card_bg"
-        android:backgroundTint="#1F2937"
+        android:backgroundTint="?attr/colorPrimary"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingVertical="14dp"
@@ -66,7 +66,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Add to Google Calendar"
-            android:textColor="#1F2937"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>

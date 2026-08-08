@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Night overrides for the semantic tokens declared in values/colors.xml.
+      Values mirror the .dark block of the Nelsen Savannah web app.
+
+      Only semantic tokens are overridden here. The brand_* constants stay
+      fixed across themes, so the logo red never shifts.
+    -->
+
+    <!-- Surfaces: true near-black, matching the web dark background/card -->
+    <color name="surface_app">#020204</color>
+    <color name="surface_card">#06080D</color>
+    <color name="surface_muted">#0D1117</color>
+    <color name="surface_inverse">#F0F4F9</color>
+    <color name="outline_soft">#1F2530</color>
+
+    <!-- Text -->
+    <color name="text_strong">#F0F4F9</color>
+    <color name="text_body">#DDE3EA</color>
+    <color name="text_muted">#9EA5AE</color>
+    <color name="text_on_action">#FFF6F4</color>
+
+    <!-- Navy has no contrast on near-black, so primary becomes the web's
+         dark maroon and the accent lifts to match. -->
+    <color name="action_primary">#E64343</color>
+    <color name="action_accent">#EA3C3F</color>
+
+    <!-- Chat bubbles -->
+    <color name="bubble_sent">#7E1220</color>
+    <color name="bubble_received">#141821</color>
+    <color name="bubble_quote_bg">#33EA3C3F</color>
+
+    <color name="blur_overlay">#CC06080D</color>
+
+    <!-- Per-tab nav accents lifted for contrast on black -->
+    <color name="nav_home">#EA3C3F</color>
+    <color name="nav_communities">#70A3D4</color>
+    <color name="nav_chat">#82A9CF</color>
+    <color name="nav_profile">#E07A93</color>
+</resources>

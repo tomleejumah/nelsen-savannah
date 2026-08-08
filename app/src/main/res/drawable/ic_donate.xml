@@ -14,7 +14,7 @@
       android:fillColor="#ed9da0"/>
   <path
       android:pathData="M779.49,218.28 L457.53,332.11a31.87,31.87 0,0 1,-40.62 -19.4L361.59,156.27a31.87,31.87 0,0 1,19.4 -40.62L702.96,1.82a31.87,31.87 0,0 1,40.62 19.4l55.31,156.43a31.87,31.87 0,0 1,-19.4 40.62Z"
-      android:fillColor="#6c63ff"/>
+      android:fillColor="@color/action_accent"/>
   <path
       android:pathData="M798.89,177.65l0.29,0.83a30.4,30.4 0,0 1,-18.53 38.79l-323.58,114.4a30.4,30.4 0,0 1,-38.79 -18.53l-0.29,-0.83Z"
       android:strokeAlpha="0.096"

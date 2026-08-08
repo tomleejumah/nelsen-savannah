@@ -25,7 +25,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Nisisi Africa"
+rootProject.name = "Nelsen Savannah"
 include ':app'
 include ':CustomSnackbarLib'
 include ':overlapimagelistview'

@@ -104,7 +104,7 @@
       android:fillColor="#e6e6e6"/>
   <path
       android:pathData="M796.85,677.6l-68.32,-48.33c23.04,-22.45 44,-54.41 64.05,-90.55l68.32,48.33C833.6,618.05 810.47,648.48 796.85,677.6Z"
-      android:fillColor="#6c63ff"/>
+      android:fillColor="@color/action_accent"/>
   <path
       android:pathData="M796.87,605.98m-20.17,0a20.17,20.17 0,1 1,40.33 0a20.17,20.17 0,1 1,-40.33 0"
       android:fillColor="#fff"/>
@@ -113,7 +113,7 @@
       android:fillColor="#e6e6e6"/>
   <path
       android:pathData="M474.77,487.21a38.56,38.56 0,0 1,-6.71 -22.86,0.81 0.81,0 0,0 -0.63,-0.81v-1.42h-7.92v1.4h-0.11a0.81,0.81 0,0 0,-0.81 0.81q0,0.03 0,0.06a35.19,35.19 0,0 1,-6.32 23.4,2.24 2.24,0 0,0 -0.41,1.36l0.87,26.79a2.32,2.32 0,0 0,2.3 2.24h17.92a2.32,2.32 0,0 0,2.3 -2.28l0.33,-26.01A4.69,4.69 0,0 0,474.77 487.21Z"
-      android:fillColor="#6c63ff"/>
+      android:fillColor="@color/action_accent"/>
   <path
       android:fillColor="#FF000000"
       android:pathData="M465.7,458.15a2.15,2.15 0,0 1,-4.29 0"
@@ -127,7 +127,7 @@
       android:fillColor="#e6e6e6"/>
   <path
       android:pathData="M718.66,618.14a72.18,72.18 0,0 1,-12.56 -42.79,1.52 1.52,0 0,0 -1.19,-1.52v-2.66L690.09,571.16v2.63h-0.2a1.52,1.52 0,0 0,-1.52 1.52q0,0.06 0,0.11 1.75,24.42 -11.83,43.81a4.19,4.19 0,0 0,-0.76 2.54l1.62,50.15a4.34,4.34 0,0 0,4.3 4.19h33.54a4.34,4.34 0,0 0,4.31 -4.26l0.62,-48.69A8.79,8.79 0,0 0,718.66 618.14Z"
-      android:fillColor="#6c63ff"/>
+      android:fillColor="@color/action_accent"/>
   <path
       android:fillColor="#FF000000"
       android:pathData="M701.68,563.75a4.02,4.02 0,0 1,-8.03 0"
@@ -138,7 +138,7 @@
       android:fillColor="#fff"/>
   <path
       android:pathData="M664.55,677.52L580.86,677.52c5.85,-31.63 4.5,-69.83 0,-110.91L664.55,566.61C660.16,607.69 658.85,645.89 664.55,677.52Z"
-      android:fillColor="#6c63ff"/>
+      android:fillColor="@color/action_accent"/>
   <path
       android:pathData="M623.21,619.04m-20.17,0a20.17,20.17 0,1 1,40.33 0a20.17,20.17 0,1 1,-40.33 0"
       android:fillColor="#fff"/>

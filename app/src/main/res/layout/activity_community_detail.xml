@@ -60,7 +60,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:textColor="#4F46E5"
+                                android:textColor="?attr/colorSecondary"
                                 android:textSize="13sp" />
 
                             <com.google.android.material.button.MaterialButton
@@ -80,7 +80,7 @@
                     android:layout_marginStart="20dp"
                     android:layout_marginTop="4dp"
                     android:text="Posts"
-                    android:textColor="#1F2937"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
@@ -111,7 +111,7 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="20dp"
             android:src="@drawable/ic_add_circle"
-            app:backgroundTint="#1F2937"
+            app:backgroundTint="?attr/colorPrimary"
             app:tint="#FFFFFF" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
