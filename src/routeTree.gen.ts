@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as LearningRouteImport } from './routes/learning'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ProgramsRouteImport } from './routes/programs'
 
@@ -36,6 +37,11 @@ const LearningRoute = LearningRouteImport.update({
   path: '/learning',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaRoute = MediaRouteImport.update({
   id: '/media',
   path: '/media',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRoute
+  '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRoute
+  '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
 }
@@ -69,20 +77,36 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRoute
+  '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/contact' | '/events' | '/learning' | '/media' | '/programs'
+  fullPaths:
+    | '/'
+    | '/contact'
+    | '/events'
+    | '/learning'
+    | '/login'
+    | '/media'
+    | '/programs'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/contact' | '/events' | '/learning' | '/media' | '/programs'
+  to:
+    | '/'
+    | '/contact'
+    | '/events'
+    | '/learning'
+    | '/login'
+    | '/media'
+    | '/programs'
   id:
     | '__root__'
     | '/'
     | '/contact'
     | '/events'
     | '/learning'
+    | '/login'
     | '/media'
     | '/programs'
   fileRoutesById: FileRoutesById
@@ -92,6 +116,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
   LearningRoute: typeof LearningRoute
+  LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
   ProgramsRoute: typeof ProgramsRoute
 }
@@ -126,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearningRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media': {
       id: '/media'
       path: '/media'
@@ -148,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
   LearningRoute: LearningRoute,
+  LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
   ProgramsRoute: ProgramsRoute,
 }
