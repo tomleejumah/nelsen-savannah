@@ -95,11 +95,12 @@
         android:background="@color/bg"
         android:visibility="gone">
 
-        <!-- Glass header: paints under status bar (MainActivity drops top pad while open). -->
-        <eightbitlab.com.blurview.BlurView
+        <!-- Translucent header (not BlurView — nested BlurView inside activity BlurTarget crashes). -->
+        <FrameLayout
             android:id="@+id/chatHeaderBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@color/blur_overlay"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -179,7 +180,7 @@
                         app:tint="@color/muted" />
                 </LinearLayout>
             </LinearLayout>
-        </eightbitlab.com.blurview.BlurView>
+        </FrameLayout>
 
         <!-- Kept id for any legacy binding references -->
         <View
@@ -202,10 +203,11 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/chatHeaderBlur" />
 
-        <eightbitlab.com.blurview.BlurView
+        <FrameLayout
             android:id="@+id/chatComposerBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@color/blur_overlay"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
@@ -324,7 +326,7 @@
                         app:tint="@color/white" />
                 </LinearLayout>
             </LinearLayout>
-        </eightbitlab.com.blurview.BlurView>
+        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
