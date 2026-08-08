@@ -632,14 +632,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
 
-    private void fetchMentors() {
-        FirebaseRemoteDataSource.INSTANCE.fetchMentors(this);
-    }
-
-    private void fetchCourses() {
-        FirebaseRemoteDataSource.INSTANCE.fetchCourses(this);
-    }
-
     private void getMentorsID() {
         DatabaseReference rolesRef = FirebaseDatabase.getInstance()
                 .getReference("roles");
