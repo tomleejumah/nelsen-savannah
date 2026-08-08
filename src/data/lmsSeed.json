@@ -449,9 +449,9 @@
       "lessons": [
         {
           "id": "ui-demo-1",
-          "title": "Welcome (read)",
-          "type": "read",
-          "does": "Open and mark content progress.",
+          "title": "Welcome (video)",
+          "type": "video",
+          "does": "Play the demo MP4; open and mark content progress.",
           "estimatedMinutes": 5
         },
         {
