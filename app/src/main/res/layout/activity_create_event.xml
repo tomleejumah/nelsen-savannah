@@ -13,7 +13,7 @@
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_nisisi_back"
         app:title="Create Event"
-        app:titleTextColor="#1F2937" />
+        app:titleTextColor="?attr/colorOnSurface" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -49,7 +49,7 @@
                 android:gravity="center_vertical"
                 android:padding="14dp"
                 android:text="Select date"
-                android:textColor="#1F2937"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="16sp" />
 
             <LinearLayout
@@ -68,7 +68,7 @@
                     android:gravity="center"
                     android:padding="14dp"
                     android:text="Start time"
-                    android:textColor="#1F2937"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp" />
 
                 <View
@@ -84,7 +84,7 @@
                     android:gravity="center"
                     android:padding="14dp"
                     android:text="End time"
-                    android:textColor="#1F2937"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp" />
             </LinearLayout>
 
@@ -170,7 +170,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:backgroundTint="#1F2937"
+        android:backgroundTint="?attr/colorPrimary"
         android:paddingVertical="12dp"
         android:text="Create Event"
         android:textColor="#FFFFFF"

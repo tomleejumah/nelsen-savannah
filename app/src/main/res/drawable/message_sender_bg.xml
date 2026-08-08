@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#1F2937" />
+    <solid android:color="@color/bubble_sent" />
     <corners
         android:topLeftRadius="18dp"
         android:topRightRadius="18dp"

@@ -3,7 +3,7 @@
 
     <style name="Theme.Nisisi.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/nelsen_icon</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/nisisi_logo</item>
         <item name="postSplashScreenTheme">@style/Base.Theme.NisisiAfrica</item>
         <item name="android:fontFamily">@font/poppins_regular</item>
         <item name="android:windowSplashScreenBrandingImage">@drawable/nelsen_branding</item>

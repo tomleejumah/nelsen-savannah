@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_people"
-                app:tint="#4F46E5" />
+                app:tint="?attr/colorSecondary" />
         </FrameLayout>
 
         <LinearLayout
@@ -45,7 +45,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="Community"
-                android:textColor="#1F2937"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -82,7 +82,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:textColor="#4F46E5"
+                    android:textColor="?attr/colorSecondary"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>

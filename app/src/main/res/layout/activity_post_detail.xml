@@ -43,7 +43,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textColor="#1F2937"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
@@ -87,7 +87,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
                 android:text="Comments"
-                android:textColor="#1F2937"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
@@ -136,7 +136,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="#4F46E5"
+                android:textColor="?attr/colorSecondary"
                 android:textSize="12sp" />
 
             <ImageView

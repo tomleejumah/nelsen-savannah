@@ -118,7 +118,7 @@
             android:layout_marginTop="12dp"
             android:backgroundTint="#FFFFFF"
             android:text="Learn more"
-            android:textColor="#1F2937"
+            android:textColor="?attr/colorOnSurface"
             android:visibility="gone"
             app:cornerRadius="12dp" />
 

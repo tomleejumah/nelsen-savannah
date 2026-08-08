@@ -2,11 +2,11 @@ package com.app.nisisiafrica;
 
 import android.app.Application;
 
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
+import com.app.nisisiafrica.Utils.ThemeManager;
 import com.app.nisisiafrica.Utils.Util;
 
 import me.didit.sdk.DiditSdk;
@@ -19,8 +19,9 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
 
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        // Util must be initialised first: the theme preference is read from it.
         Util.init(this);
+        ThemeManager.applyPersistedMode();
         appDatabase = AppDatabase.getInstance(this);
         DiditSdk.INSTANCE.initialize(this);
         ProcessLifecycleOwner.get().getLifecycle()
