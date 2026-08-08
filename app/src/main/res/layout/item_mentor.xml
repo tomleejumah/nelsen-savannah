@@ -1,35 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="wrap_content"-->
-<!--    xmlns:tools="http://schemas.android.com/tools"-->
-<!--    android:foreground="?attr/selectableItemBackground"-->
-<!--    app:cardCornerRadius="12dp"-->
-<!--    app:cardUseCompatPadding="true">-->
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/eventCard" android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="#FAFAFA" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:strokeWidth="0dp">
-  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp">
-    <!-- Left - Profile Image -->
-    <de.hdodenhof.circleimageview.CircleImageView android:id="@+id/iv_tutor_profile" android:layout_width="60dp" android:layout_height="60dp" android:src="@drawable/donation" app:civ_border_width="1dp" app:civ_border_color="@color/light_black"/>
-    <!-- Middle - Tutor Details -->
-    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:layout_marginEnd="12dp" android:orientation="vertical">
-      <!-- Name and Rate Row -->
-      <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-        <TextView android:gravity="center_vertical" android:id="@+id/tv_tutor_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sarah Johnson" android:textSize="16sp" android:textStyle="bold"/>
-        <ImageButton android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_badge_verified" android:backgroundTint="@color/white"/>
-      </LinearLayout>
-      <!-- Description -->
-      <TextView android:id="@+id/tv_tutor_description" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Experienced tutor specializing in Front-End Web/Mobile Development." android:textSize="14sp" android:maxLines="2" android:ellipsize="end" android:layout_marginBottom="4dp"/>
-      <!-- Stats Row -->
-      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-        <!-- Students Count -->
-        <com.zen.overlapimagelistview.OverlapImageListView android:id="@+id/overlapImage" android:layout_width="28dp" android:layout_height="28dp" app:circleCount="3" app:fillColor="#000000" app:strokeColor="#FFFFFF" app:strokeWidth="4dp" tools:ignore="MissingConstraints"/>
-        <TextView android:layout_gravity="center_vertical" android:layout_marginStart="4dp" android:id="@+id/tv_students_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="124+ mentees" android:textSize="14sp"/>
-        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
-        <!-- Right - Book Now Button -->
-        <androidx.appcompat.widget.AppCompatButton android:background="@drawable/button_black_rounded" android:textColor="@color/white" android:textAllCaps="false" android:id="@+id/btn_book_now" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Book Now" android:textSize="12sp" android:textStyle="bold" app:cornerRadius="6dp"/>
-      </LinearLayout>
-    </LinearLayout>
-  </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/eventCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="@dimen/radius_card_md"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/line"
+    app:strokeWidth="1dp">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="14dp">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iv_tutor_profile"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/donation"
+            app:civ_border_color="@color/line"
+            app:civ_border_width="1dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_tutor_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/font_display"
+                    android:textColor="@color/ink"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@android:color/transparent"
+                    android:src="@drawable/ic_badge_verified"
+                    app:tint="@color/maroon_600" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_tutor_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/font_ui"
+                android:maxLines="2"
+                android:textColor="@color/ink_soft"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvMentorTag"
+                style="@style/Nelsen.Tag.Maroon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="New mentor" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.zen.overlapimagelistview.OverlapImageListView
+                    android:id="@+id/overlapImage"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    app:circleCount="3"
+                    app:fillColor="@color/surface_2"
+                    app:strokeColor="@color/surface"
+                    app:strokeWidth="3dp"
+                    tools:ignore="MissingConstraints" />
+
+                <TextView
+                    android:id="@+id/tv_students_count"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_book_now"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_btn_primary"
+                    android:paddingHorizontal="14dp"
+                    android:text="Book now"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
