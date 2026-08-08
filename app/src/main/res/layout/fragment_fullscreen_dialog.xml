@@ -129,7 +129,7 @@
                             android:layout_height="wrap_content"
                             android:text="Help those in need directly"
                             android:textSize="14sp"
-                            android:textColor="#666666" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
@@ -171,7 +171,7 @@
                             android:layout_height="wrap_content"
                             android:text="All funds go to beneficiaries"
                             android:textSize="14sp"
-                            android:textColor="#666666" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
@@ -212,7 +212,7 @@
                             android:layout_height="wrap_content"
                             android:text="Detailed impact statements"
                             android:textSize="14sp"
-                            android:textColor="#666666" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 

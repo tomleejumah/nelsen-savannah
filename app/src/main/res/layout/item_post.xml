@@ -74,7 +74,7 @@
                 android:layout_marginStart="20dp"
                 android:drawablePadding="4dp"
                 android:gravity="center_vertical"
-                android:textColor="#6B7280"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="13sp"
                 app:drawableStartCompat="@drawable/ic_chat" />
         </LinearLayout>

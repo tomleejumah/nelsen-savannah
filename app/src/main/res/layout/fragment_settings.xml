@@ -63,7 +63,7 @@
                     android:layout_height="wrap_content"
                     android:text="Verification progress"
                     android:textSize="16sp"
-                    android:textColor="#000000"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_toEndOf="@id/icon_verification"
                     android:layout_marginStart="16dp"
                     android:layout_centerVertical="true" />

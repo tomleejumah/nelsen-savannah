@@ -272,7 +272,7 @@
                 android:background="@drawable/edit_text_bg"
                 android:drawableLeft="@drawable/ic_google"
                 android:text="Google"
-                android:textColor="#000"
+                android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold"
                 app:backgroundTint="@null" />
 
@@ -285,7 +285,7 @@
                 android:background="@drawable/edit_text_bg"
                 android:drawableLeft="@drawable/ic_apple"
                 android:text="AppleID"
-                android:textColor="#000"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:visibility="gone"
@@ -300,7 +300,7 @@
                 android:background="@drawable/edit_text_bg"
                 android:drawableLeft="@drawable/ic_facebook"
                 android:text="facebook"
-                android:textColor="#000"
+                android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold"
                 app:backgroundTint="@null" />
 

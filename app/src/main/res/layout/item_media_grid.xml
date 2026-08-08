@@ -44,7 +44,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Document.pdf"
                 android:textSize="10sp"
-                android:textColor="#000000"
+                android:textColor="?attr/colorOnSurface"
                 android:maxLines="2"
                 android:ellipsize="end"
                 android:gravity="center"

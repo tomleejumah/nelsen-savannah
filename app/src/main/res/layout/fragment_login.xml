@@ -213,7 +213,7 @@
                 android:text="Google"
                 android:textStyle="bold"
                 android:drawableLeft="@drawable/ic_google"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface" />
 
             <Button
                 android:layout_marginEnd="8dp"
@@ -228,7 +228,7 @@
                 android:textStyle="bold"
                 android:textSize="12sp"
                 android:drawableLeft="@drawable/ic_apple"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface" />
 
             <Button
                 android:visibility="gone"
@@ -241,7 +241,7 @@
                 android:text="facebook"
                 android:textStyle="bold"
                 android:drawableLeft="@drawable/ic_facebook"
-                android:textColor="#000" />
+                android:textColor="?attr/colorOnSurface" />
 
         </LinearLayout>
         <View

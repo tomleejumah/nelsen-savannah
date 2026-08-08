@@ -10,7 +10,7 @@
     <!-- Mask for ripple effect -->
     <item android:id="@android:id/mask">
         <shape android:shape="oval">
-            <solid android:color="#FFFFFF"/>
+            <solid android:color="@color/surface_card"/>
         </shape>
     </item>
 </ripple>
