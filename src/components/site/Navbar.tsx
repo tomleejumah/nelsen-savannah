@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, Menu, X } from "lucide-react";
 
-import logoAsset from "@/assets/nelsen-logo.png.asset.json";
 import { PROGRAMS } from "@/data/site";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
@@ -15,6 +15,9 @@ const LINKS = [
   { to: "/events", label: "Events" },
   { to: "/contact", label: "Contact Us" },
 ] as const;
+
+const navLinkClass =
+  "rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-maroon focus-visible:text-maroon data-[status=active]:text-maroon";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -39,23 +42,14 @@ export function Navbar() {
         )}
       >
         <Link to="/" className="flex min-w-0 items-center" aria-label="Nelsen Savannah — home">
-          <img
-            src={logoAsset.url}
-            alt="Nelsen Savannah logo"
-            width={900}
-            height={129}
-            className="h-7 w-auto shrink-0 sm:h-8"
-          />
+          <BrandMark />
         </Link>
 
         <div className="ml-auto hidden items-center gap-1 lg:flex">
           {LINKS.map((link) =>
             "dropdown" in link && link.dropdown ? (
               <div key={link.to} className="group relative">
-                <Link
-                  to={link.to}
-                  className="flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground data-[status=active]:text-foreground"
-                >
+                <Link to={link.to} className={cn(navLinkClass, "flex items-center gap-1")}>
                   {link.label}
                   <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
                 </Link>
@@ -82,7 +76,7 @@ export function Navbar() {
                 key={link.to}
                 to={link.to}
                 activeOptions={{ exact: link.to === "/" }}
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground data-[status=active]:text-foreground"
+                className={navLinkClass}
               >
                 {link.label}
               </Link>
@@ -118,7 +112,7 @@ export function Navbar() {
                   <Link
                     to={link.to}
                     onClick={() => setOpen(false)}
-                    className="min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
+                    className="min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon data-[status=active]:text-maroon"
                   >
                     {link.label}
                   </Link>
@@ -163,7 +157,7 @@ export function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
+                className="block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon data-[status=active]:text-maroon"
               >
                 {link.label}
               </Link>
