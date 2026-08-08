@@ -18,6 +18,7 @@ const LINKS = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [mobilePrograms, setMobilePrograms] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -108,17 +109,65 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="glass-panel mx-auto mt-2 max-w-7xl rounded-2xl p-3 shadow-elevated lg:hidden">
-          {LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setOpen(false)}
-              className="block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="glass-panel mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-7xl overflow-y-auto rounded-2xl p-3 shadow-elevated lg:hidden">
+          {LINKS.map((link) =>
+            "dropdown" in link && link.dropdown ? (
+              <div key={link.to}>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                  <Link
+                    to={link.to}
+                    onClick={() => setOpen(false)}
+                    className="min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
+                  >
+                    {link.label}
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Toggle programs list"
+                    aria-expanded={mobilePrograms}
+                    onClick={() => setMobilePrograms((v) => !v)}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border/70"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        mobilePrograms && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </div>
+                {mobilePrograms && (
+                  <div className="mb-1 ml-3 space-y-0.5 border-l border-border/60 pl-2">
+                    {PROGRAMS.map((p) => (
+                      <Link
+                        key={p.slug}
+                        to="/programs"
+                        hash={p.slug}
+                        onClick={() => setOpen(false)}
+                        className="block min-w-0 rounded-xl px-3 py-2 transition-colors hover:bg-accent/70"
+                      >
+                        <span className="block truncate font-display text-sm font-semibold text-foreground">
+                          {p.title}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {p.audience}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setOpen(false)}
+                className="block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
+              >
+                {link.label}
+              </Link>
+            ),
+          )}
         </div>
       )}
     </header>
