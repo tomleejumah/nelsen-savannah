@@ -75,6 +75,7 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
         private TextView tvTutorName;
         private TextView tvTutorDescription;
         private TextView tvStudentsCount;
+        private TextView tvMentorTag;
         private AppCompatButton btnBookNow;
         private OverlapImageListView overlapImage;
 
@@ -84,6 +85,7 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
             tvTutorName = itemView.findViewById(R.id.tv_tutor_name);
             tvTutorDescription = itemView.findViewById(R.id.tv_tutor_description);
             tvStudentsCount = itemView.findViewById(R.id.tv_students_count);
+            tvMentorTag = itemView.findViewById(R.id.tvMentorTag);
             btnBookNow = itemView.findViewById(R.id.btn_book_now);
             overlapImage = itemView.findViewById(R.id.overlapImage);
         }
@@ -93,7 +95,6 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
             tvTutorName.setText(mentorItem.getMentorName());
             tvTutorDescription.setText(mentorItem.getMentorDescription());
 
-            // Dynamic mentee count + recent mentee avatars (replaces the static "124+").
             List<String> studentImages = mentorItem.getStudentImages();
             OverlapImages.load(overlapImage, studentImages);
             String count = mentorItem.getStudentsCount();
@@ -102,7 +103,23 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
                 try { n = Long.parseLong(count.replaceAll("[^0-9]", "")); } catch (NumberFormatException ignored) {}
             }
             if (n <= 0 && studentImages != null) n = studentImages.size();
-            tvStudentsCount.setText(n > 0 ? n + " mentees" : "New mentor");
+
+            Double rating = mentorItem.getAverageRating();
+            boolean hasHistory = (rating != null && rating > 0) || n > 0;
+            if (hasHistory && rating != null && rating > 0) {
+                tvMentorTag.setText(String.format(java.util.Locale.getDefault(),
+                        "★ %.1f · %d students", rating, n));
+                tvStudentsCount.setText(n > 0 ? n + " mentees" : "");
+            } else if (hasHistory) {
+                tvMentorTag.setText(n + " students");
+                tvStudentsCount.setText(n + " mentees");
+            } else {
+                tvMentorTag.setText("New mentor");
+                tvStudentsCount.setText("");
+            }
+
+            boolean hideBook = !com.app.nisisiafrica.Utils.Roles.browsesMentors();
+            btnBookNow.setVisibility(hideBook ? View.GONE : View.VISIBLE);
 
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(mContext, ProfileActivity.class);

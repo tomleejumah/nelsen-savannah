@@ -204,7 +204,11 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 "physical",                                   // mode
                 "",                                           // location
                 "",                                           // meetingLink
-                participants                                  // participants map
+                participants,                                 // participants map
+                "",                                           // program
+                0,                                            // seats
+                0,                                            // seatsTaken
+                ""                                            // price
         );
 //todo switch to view model/repository
         FirebaseRemoteDataSource.INSTANCE.createEvent(event, event.getMentorId(), event.getMenteeId(), success -> {

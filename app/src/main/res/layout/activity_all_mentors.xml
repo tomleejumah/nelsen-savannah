@@ -16,17 +16,24 @@
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:layout_width="match_parent"
             android:layout_height="220dp"
-            app:contentScrim="?attr/colorSurface"
+            app:contentScrim="@color/maroon_900"
             app:expandedTitleMarginStart="20dp"
-            app:expandedTitleTextColor="#FFFFFF"
+            app:expandedTitleTextColor="@color/white"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
-            app:title="Find a Mentor"
+            app:title="Find a mentor"
             app:titleCollapseMode="scale">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_hero_maroon"
+                app:layout_collapseMode="parallax" />
 
             <ImageView
                 android:id="@+id/headerImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:alpha="0.35"
                 android:contentDescription="@null"
                 android:scaleType="centerCrop"
                 android:src="@drawable/mentor_img"
@@ -36,7 +43,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#55000000"
+                android:background="#33000000"
                 app:layout_collapseMode="parallax" />
 
             <com.google.android.material.appbar.MaterialToolbar
@@ -45,7 +52,7 @@
                 android:layout_height="?attr/actionBarSize"
                 app:layout_collapseMode="pin"
                 app:navigationIcon="@drawable/ic_back"
-                app:navigationIconTint="#FFFFFF" />
+                app:navigationIconTint="@color/white" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
@@ -64,8 +71,9 @@
             android:layout_marginStart="20dp"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="6dp"
-            android:alpha="0.7"
+            android:fontFamily="@font/font_ui"
             android:text="Browse all mentors"
+            android:textColor="@color/muted"
             android:textSize="13sp" />
 
         <androidx.recyclerview.widget.RecyclerView
