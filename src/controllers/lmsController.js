@@ -14,6 +14,8 @@ import {
 } from "../services/lmsEnrollmentService.js";
 import { getPrimaryEngine } from "../db/lmsDb.js";
 import { lmsErr, lmsOk } from "../utils/lmsResponse.js";
+import path from "path";
+import fs from "fs";
 
 function profileFromReq(req) {
   return {
@@ -171,5 +173,78 @@ export async function getProgressMe(req, res) {
   } catch (err) {
     console.error("[GET /lms/progress/me]", err);
     return lmsErr(res, "Failed to load progress", 500, getPrimaryEngine());
+  }
+}
+
+export async function uploadMedia(req, res) {
+  try {
+    const { saveUploadedMedia } = await import("../services/lmsMediaService.js");
+    const { dbGet } = await import("../db/lmsDb.js");
+    const roleRow = await dbGet("SELECT role FROM roles WHERE uid = ?", [
+      req.user.uid,
+    ]);
+    const result = await saveUploadedMedia({
+      uid: req.user.uid,
+      role: roleRow?.role,
+      file: req.file,
+      lessonId: req.body?.lessonId || null,
+    });
+    return lmsOk(res, result.data, result.source, 201);
+  } catch (err) {
+    console.error("[POST /lms/media/upload]", err);
+    return lmsErr(
+      res,
+      err.message || "Upload failed",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+export async function getMedia(req, res) {
+  try {
+    const { getMediaStatus } = await import("../services/lmsMediaService.js");
+    const result = await getMediaStatus(req.params.mediaId);
+    if (result.notFound) {
+      return lmsErr(res, "Media not found", 404, result.source);
+    }
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[GET /lms/media/:id]", err);
+    return lmsErr(res, "Failed to load media", 500, getPrimaryEngine());
+  }
+}
+
+/** Signed play — query uid+token (no Bearer) so <video>/ExoPlayer can load. */
+export async function playMedia(req, res) {
+  try {
+    const {
+      getMediaFileRow,
+      userMayPlayMedia,
+      verifyMediaPlayToken,
+    } = await import("../services/lmsMediaService.js");
+    const mediaId = req.params.mediaId;
+    const uid = req.query.uid;
+    const token = req.query.token;
+    if (!uid || !token || !verifyMediaPlayToken(mediaId, uid, token)) {
+      return res.status(403).json({ error: "Invalid or expired playback token" });
+    }
+    if (!(await userMayPlayMedia(uid, mediaId))) {
+      return res.status(403).json({ error: "Not enrolled" });
+    }
+    const row = await getMediaFileRow(mediaId);
+    if (!row || !row.storage_path) {
+      return res.status(404).json({ error: "Media not found" });
+    }
+    const abs = path.isAbsolute(row.storage_path)
+      ? row.storage_path
+      : path.resolve(process.cwd(), row.storage_path);
+    if (!fs.existsSync(abs)) {
+      return res.status(404).json({ error: "File missing on disk" });
+    }
+    return res.sendFile(abs);
+  } catch (err) {
+    console.error("[GET /lms/media/:id/play]", err);
+    return res.status(500).json({ error: "Playback failed" });
   }
 }

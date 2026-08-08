@@ -333,11 +333,31 @@ export async function getLessonById(uid, lessonId) {
         return { source: getPrimaryEngine(), data: null, notFound: true };
       }
       const lesson = mapLesson(row);
+      let playbackUrl = null;
+      let playbackExpiresAt = null;
+
+      const enrolled = await dbGet(
+        "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
+        [uid, row.track_id],
+      );
+      if (enrolled && row.media_id) {
+        const { playbackUrlFor } = await import("./lmsMediaService.js");
+        const play = playbackUrlFor(row.media_id, uid);
+        playbackUrl = play.playbackUrl;
+        playbackExpiresAt = play.playbackExpiresAt;
+      } else if (enrolled && row.content_url && !row.media_id) {
+        // legacy/external URL only when enrolled
+        playbackUrl = row.content_url;
+      }
+
       return {
         source: getPrimaryEngine(),
         data: {
           lesson: {
             ...lesson,
+            contentUrl: enrolled ? lesson.contentUrl : null,
+            playbackUrl,
+            playbackExpiresAt,
             bodyHtml: null,
             quiz: null,
             assignmentPrompt: null,
@@ -360,6 +380,8 @@ export async function getLessonById(uid, lessonId) {
     data: {
       lesson: {
         ...mapLesson({ lesson_id: lessonId, ...l }),
+        playbackUrl: null,
+        playbackExpiresAt: null,
         bodyHtml: null,
         quiz: null,
         assignmentPrompt: null,

@@ -29,6 +29,11 @@
 - `DELETE /lms/enrollments/:trackId` — unenroll
 - `PATCH /lms/progress/:lessonId` — upsert progress → lesson/module/track %
 - `GET /lms/progress/me` — resume map `byLessonId` / `byTrackId`
-- `GET /uploads/*` — static files from `UPLOAD_DIR`
+- `POST /lms/media/upload` — multipart `file` (+ optional `lessonId`); Mentor/Admin; disk under `UPLOAD_DIR`
+- `GET /lms/media/:mediaId` — status metadata
+- `GET /lms/media/:mediaId/play?uid=&token=` — signed play (enrolled only)
+- Lesson `GET` returns `playbackUrl` only when enrolled
+- `GET /uploads/*` — raw static (prefer signed `/play` for learners)
+
 
 Catalog seed: `src/data/lmsSeed.json` (from `LMS_TRACKS` / `LMS_MODULES`) on empty DB.
