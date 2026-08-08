@@ -110,7 +110,6 @@ dependencies {
     implementation 'androidx.palette:palette:1.0.0'
     implementation libs.blurview
     implementation libs.paging.runtime
-    implementation 'com.github.discord:OverlappingPanels:0.1.5'
     implementation 'com.github.ozcanalasalvar.picker:datepicker:2.0.7'
     implementation 'com.github.ozcanalasalvar.picker:wheelview:2.0.7'
 
