@@ -206,7 +206,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#FFFFFF"
+        android:background="?attr/colorSurface"
         android:fillViewport="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -220,7 +220,7 @@
                 android:orientation="horizontal"
                 android:padding="12dp"
                 android:gravity="center_vertical"
-                android:background="#FFFFFF"
+                android:background="?attr/colorSurface"
                 android:elevation="2dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -240,7 +240,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:text="Profile"
-                    android:textColor="#000000"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -297,7 +297,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:textColor="#000000"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
@@ -306,7 +306,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textColor="#666666"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp" />
             </LinearLayout>
 
@@ -334,7 +334,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="ABOUT"
-                        android:textColor="#999999"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1" />
@@ -344,7 +344,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp"
                         android:lineSpacingExtra="4dp" />
                 </LinearLayout>
@@ -363,7 +363,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="ROLE"
-                        android:textColor="#999999"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1" />
@@ -373,7 +373,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -392,7 +392,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="MENTOR"
-                        android:textColor="#999999"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1" />
@@ -402,7 +402,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -421,7 +421,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="JOINED"
-                        android:textColor="#999999"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1" />
@@ -431,7 +431,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:textColor="#000000"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -451,7 +451,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="RATE THIS MENTOR"
-                        android:textColor="#999999"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1" />
@@ -470,7 +470,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:textColor="#666666"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="13sp" />
                 </LinearLayout>
 
@@ -485,7 +485,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="MEDIA"
-                        android:textColor="#999999"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1"
@@ -520,7 +520,7 @@
                             android:layout_marginTop="16dp"
                             android:text="No media yet"
                             android:textSize="14sp"
-                            android:textColor="#999999" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
                 </LinearLayout>
 

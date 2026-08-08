@@ -98,7 +98,7 @@
                 android:layout_marginTop="4dp"
                 android:drawablePadding="6dp"
                 android:gravity="center_vertical"
-                android:textColor="#6B7280"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="13sp"
                 android:visibility="gone" />
 

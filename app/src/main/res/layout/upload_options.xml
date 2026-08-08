@@ -224,7 +224,7 @@
                                             android:layout_marginHorizontal="10dp"
                                             android:layout_marginTop="4dp"
                                             android:text="12 pages • 4.2 MB"
-                                            android:textColor="#666666"
+                                            android:textColor="?attr/colorOnSurfaceVariant"
                                             android:textSize="14sp" />
                                     </LinearLayout>
 

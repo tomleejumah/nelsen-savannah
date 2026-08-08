@@ -4,8 +4,8 @@
     <com.google.android.material.appbar.AppBarLayout android:background="@color/white" android:layout_width="match_parent" android:layout_height="wrap_content">
       <LinearLayout android:id="@+id/top1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:gravity="center_vertical" android:orientation="horizontal" android:padding="4dp">
         <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
-          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/poppins_regular" android:paddingEnd="20dp" android:text="Greatness Begins " android:textColor="#000000" android:textSize="18sp" android:textStyle="bold"/>
-          <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/gradient_pill" android:fontFamily="@font/poppins_regular" android:paddingEnd="20dp" android:paddingBottom="5dp" android:text="with  guidance" android:textColor="#000000" android:textSize="18sp" android:textStyle="bold"/>
+          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/poppins_regular" android:paddingEnd="20dp" android:text="Greatness Begins " android:textColor="?attr/colorOnSurface" android:textSize="18sp" android:textStyle="bold"/>
+          <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/gradient_pill" android:fontFamily="@font/poppins_regular" android:paddingEnd="20dp" android:paddingBottom="5dp" android:text="with  guidance" android:textColor="?attr/colorOnSurface" android:textSize="18sp" android:textStyle="bold"/>
         </LinearLayout>
         <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
         <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:clickable="true" android:focusable="true" android:padding="8dp">
@@ -81,19 +81,19 @@
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="24dp" android:gravity="center">
               <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
                 <ImageView android:id="@+id/btnBeMentor" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_mentor" android:background="@drawable/item_background_selectable" android:clickable="true" android:focusable="true" android:contentDescription="Deposit"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Be a \n Mentor" android:layout_gravity="center" android:gravity="center" android:textSize="12sp" android:textColor="#000000" android:layout_marginTop="8dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Be a \n Mentor" android:layout_gravity="center" android:gravity="center" android:textSize="12sp" android:textColor="?attr/colorOnSurface" android:layout_marginTop="8dp"/>
               </LinearLayout>
               <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
                 <ImageView android:id="@+id/btnOurShop" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_shopping" android:background="@drawable/item_background_selectable" android:clickable="true" android:focusable="true" android:contentDescription="Deposit"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="our \n Shop" android:gravity="center" android:textSize="12sp" android:textColor="#000000" android:layout_marginTop="8dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="our \n Shop" android:gravity="center" android:textSize="12sp" android:textColor="?attr/colorOnSurface" android:layout_marginTop="8dp"/>
               </LinearLayout>
               <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
                 <ImageView android:id="@+id/btnRecMe" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_who_am_i" android:background="@drawable/item_background_selectable" android:clickable="true" android:focusable="true" android:contentDescription="Deposit"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Who \n I'm I" android:gravity="center" android:textSize="12sp" android:textColor="#000000" android:layout_marginTop="8dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Who \n I'm I" android:gravity="center" android:textSize="12sp" android:textColor="?attr/colorOnSurface" android:layout_marginTop="8dp"/>
               </LinearLayout>
               <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
                 <ImageView android:id="@+id/btnDonate" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_donate" android:background="@drawable/item_background_selectable" android:clickable="true" android:focusable="true" android:contentDescription="Deposit"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Donate \n to Us" android:gravity="center" android:textSize="12sp" android:textColor="#000000" android:layout_marginTop="8dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Donate \n to Us" android:gravity="center" android:textSize="12sp" android:textColor="?attr/colorOnSurface" android:layout_marginTop="8dp"/>
               </LinearLayout>
             </LinearLayout>
           </LinearLayout>
