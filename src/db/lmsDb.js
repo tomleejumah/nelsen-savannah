@@ -1,23 +1,34 @@
 /**
- * LMS primary DB — Postgres if DATABASE_URL is set, else SQLite at data/lms.sqlite.
- * Documented choice is logged at startup via getPrimaryEngine().
+ * LMS primary DB — Postgres if DATABASE_URL is set, else SQLite via sql.js
+ * (WASM — no native addon; better-sqlite3 segfaults on the VPS Node 20 host).
  */
 
 import fs from "fs";
 import path from "path";
+import { createRequire } from "module";
 import { fileURLToPath } from "url";
-import Database from "better-sqlite3";
+import initSqlJs from "sql.js";
 import pg from "pg";
 
+const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
+// resolve("sql.js") → …/dist/sql-wasm.js
+const sqlJsDist = path.dirname(require.resolve("sql.js"));
 
 let engine = null; // "postgres" | "sqlite"
 let sqlite = null;
+let sqlitePath = null;
 let pgPool = null;
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
+}
+
+function persistSqlite() {
+  if (!sqlite || !sqlitePath) return;
+  const data = sqlite.export();
+  fs.writeFileSync(sqlitePath, Buffer.from(data));
 }
 
 const SQLITE_SCHEMA = `
@@ -326,20 +337,29 @@ async function initPostgres(databaseUrl) {
   engine = "postgres";
 }
 
-function initSqlite() {
+async function initSqlite() {
   const dataDir = process.env.LMS_DATA_DIR || path.join(ROOT, "data");
   ensureDir(dataDir);
-  const dbPath = path.join(dataDir, "lms.sqlite");
-  sqlite = new Database(dbPath);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
+  sqlitePath = path.join(dataDir, "lms.sqlite");
+
+  const SQL = await initSqlJs({
+    locateFile: (file) => path.join(sqlJsDist, file),
+  });
+
+  if (fs.existsSync(sqlitePath)) {
+    sqlite = new SQL.Database(fs.readFileSync(sqlitePath));
+  } else {
+    sqlite = new SQL.Database();
+  }
+  sqlite.run("PRAGMA foreign_keys = ON;");
   sqlite.exec(SQLITE_SCHEMA);
+  persistSqlite();
   engine = "sqlite";
 }
 
 /**
  * Initialize primary store. Tries Postgres when DATABASE_URL is set;
- * on auth/connect failure falls back to SQLite (documented for VPS).
+ * on auth/connect failure falls back to SQLite (sql.js WASM).
  */
 export async function initLmsDb() {
   const databaseUrl = process.env.DATABASE_URL?.trim();
@@ -354,9 +374,8 @@ export async function initLmsDb() {
       );
     }
   }
-  initSqlite();
-  const dataDir = process.env.LMS_DATA_DIR || path.join(ROOT, "data");
-  console.log(`[lms-db] primary=sqlite path=${path.join(dataDir, "lms.sqlite")}`);
+  await initSqlite();
+  console.log(`[lms-db] primary=sqlite(sql.js) path=${sqlitePath}`);
   return engine;
 }
 
@@ -368,10 +387,32 @@ export function isDbReady() {
   return engine === "sqlite" ? !!sqlite : !!pgPool;
 }
 
+function sqliteGet(sql, params = []) {
+  const stmt = sqlite.prepare(sql);
+  stmt.bind(params);
+  let row = null;
+  if (stmt.step()) {
+    row = stmt.getAsObject();
+  }
+  stmt.free();
+  return row;
+}
+
+function sqliteAll(sql, params = []) {
+  const stmt = sqlite.prepare(sql);
+  stmt.bind(params);
+  const rows = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return rows;
+}
+
 /** Run a SELECT that returns one row or null */
 export async function dbGet(sql, params = []) {
   if (engine === "sqlite") {
-    return sqlite.prepare(sql).get(...params) ?? null;
+    return sqliteGet(sql, params);
   }
   const res = await pgPool.query(toPg(sql), params);
   return res.rows[0] ?? null;
@@ -380,7 +421,7 @@ export async function dbGet(sql, params = []) {
 /** Run a SELECT that returns many rows */
 export async function dbAll(sql, params = []) {
   if (engine === "sqlite") {
-    return sqlite.prepare(sql).all(...params);
+    return sqliteAll(sql, params);
   }
   const res = await pgPool.query(toPg(sql), params);
   return res.rows;
@@ -389,7 +430,9 @@ export async function dbAll(sql, params = []) {
 /** Run INSERT/UPDATE/DELETE */
 export async function dbRun(sql, params = []) {
   if (engine === "sqlite") {
-    return sqlite.prepare(sql).run(...params);
+    sqlite.run(sql, params);
+    persistSqlite();
+    return { changes: sqlite.getRowsModified() };
   }
   return pgPool.query(toPg(sql), params);
 }

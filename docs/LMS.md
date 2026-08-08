@@ -3,8 +3,8 @@
 ## Primary store
 
 - Prefer **Postgres** when `DATABASE_URL` is set.
-- If Postgres is missing or auth fails (common on the VPS), the API uses **SQLite** at `data/lms.sqlite`.
-- Startup logs: `[lms-db] primary=sqlite|postgres`.
+- Else **SQLite via sql.js** (WASM) at `data/lms.sqlite` — avoids native `better-sqlite3` (segfaults on VPS Node 20).
+- Startup logs: `[lms-db] primary=postgres|sqlite`.
 - Dual-write to Firebase RTDB still runs.
 
 ## Env
