@@ -32,6 +32,43 @@ export type TrackCardDto = {
   moduleCount: number;
 };
 
+export type EnrollmentDto = {
+  uid: string;
+  trackId: string;
+  status: string;
+  trackPercent: number;
+  modulesCompleted: number;
+  modulesTotal: number;
+  lessonsCompleted: number;
+  lessonsTotal: number;
+  mentorId: string | null;
+  enrolledAt: number;
+  platform: string;
+  courseTitle?: string;
+  courseImageUrl?: string;
+  nextLessonId?: string | null;
+};
+
+export type ProgressMapDto = {
+  byLessonId: Record<
+    string,
+    {
+      lessonPercent: number;
+      status: string;
+      contentPct: number;
+      updatedAt: number;
+    }
+  >;
+  byTrackId: Record<
+    string,
+    {
+      trackPercent: number;
+      status: string;
+      nextLessonId?: string | null;
+    }
+  >;
+};
+
 export type LmsEnvelope<T> = {
   ok: boolean;
   source: "postgres" | "sqlite" | "rtdb";
@@ -42,10 +79,14 @@ export type LmsEnvelope<T> = {
 async function lmsFetch<T>(
   path: string,
   idToken?: string | null,
+  init?: RequestInit,
 ): Promise<LmsEnvelope<T>> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...(init?.headers as Record<string, string> | undefined),
+  };
   if (idToken) headers.Authorization = `Bearer ${idToken}`;
-  const res = await fetch(`${LMS_API_BASE}${path}`, { headers });
+  const res = await fetch(`${LMS_API_BASE}${path}`, { ...init, headers });
   const json = (await res.json()) as LmsEnvelope<T>;
   if (!res.ok && !json.error) {
     return {
@@ -64,4 +105,50 @@ export async function fetchLmsMe(idToken: string) {
 
 export async function fetchLmsTracks(idToken: string) {
   return lmsFetch<{ tracks: TrackCardDto[] }>("/lms/tracks", idToken);
+}
+
+export async function enrollInTrack(idToken: string, trackId: string) {
+  return lmsFetch<{ enrollment: EnrollmentDto }>("/lms/enrollments", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackId, platform: "web" }),
+  });
+}
+
+export async function fetchMyEnrollments(idToken: string) {
+  return lmsFetch<{ enrollments: EnrollmentDto[] }>(
+    "/lms/enrollments/me",
+    idToken,
+  );
+}
+
+export async function patchLessonProgress(
+  idToken: string,
+  lessonId: string,
+  body: {
+    opened?: boolean;
+    contentPct?: number;
+    quizPct?: number;
+    assignmentPct?: number;
+    lastPlatform?: "web" | "android";
+  },
+) {
+  return lmsFetch<{
+    progress: {
+      lessonId: string;
+      lessonPercent: number;
+      trackPercent: number;
+      modulePercent: number;
+      status: string;
+    };
+  }>(`/lms/progress/${lessonId}`, idToken, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, lastPlatform: body.lastPlatform || "web" }),
+  });
+}
+
+export async function fetchMyProgress(idToken: string, trackId?: string) {
+  const q = trackId ? `?trackId=${encodeURIComponent(trackId)}` : "";
+  return lmsFetch<ProgressMapDto>(`/lms/progress/me${q}`, idToken);
 }
