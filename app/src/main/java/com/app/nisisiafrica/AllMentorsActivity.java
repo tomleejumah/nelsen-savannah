@@ -48,7 +48,7 @@ public class AllMentorsActivity extends AppCompatActivity {
 
         // Mentors + Admins talk to mentees from Chats — they don't browse/book mentors.
         if (!Roles.browsesMentors()) {
-            Toast.makeText(this, "Open Chats to message your mentees", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Open Chat to message your mentees", Toast.LENGTH_LONG).show();
             finish();
             return;
         }

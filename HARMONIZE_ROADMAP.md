@@ -24,7 +24,7 @@ Mark status: `pending` → `in_progress` → `done`. Say **“do Hn”** or **�
 **Out of scope:** fragment class renames (`CommunitiesFragment` stays)
 
 ## H2 — Spelling / label pass
-**Status:** `pending`  
+**Status:** `done`  
 Fix hardcoded typos & nav-facing copy: `Calender`→Calendar, `Recorgnize`→Recognize, `ShowALl`→Show more, Groups screen toolbar, speed-dial “Community” vs Groups, toast “Chats”→Chat where user-facing.
 
 ## H3 — Courses from API on Home
