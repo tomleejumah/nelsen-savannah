@@ -2,7 +2,6 @@ package com.app.nisisiafrica.Adapters;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +20,7 @@ import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.TrackLearnActivity;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.R;
@@ -130,12 +130,13 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             });
 
             ((CompactViewHolder) holder).courseBody.setOnClickListener(v -> {
-                String url = item.getCourseLink();
-                if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                    url = "https://" + url;
-                }
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                mContext.startActivity(browserIntent);
+                Intent learn = new Intent(mContext, TrackLearnActivity.class);
+                learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, item.getCourseId());
+                learn.putExtra(TrackLearnActivity.EXTRA_TITLE, item.getCourseTitle());
+                learn.putExtra(TrackLearnActivity.EXTRA_DESC,
+                        item.getTutorName() != null ? "with " + item.getTutorName() : "");
+                learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, item.getCourseLink());
+                mContext.startActivity(learn);
             });
 //            ((CompactViewHolder) holder.courseBody.setOnClickListener(v -> {
 //
