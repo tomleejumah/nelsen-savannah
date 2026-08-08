@@ -21,10 +21,12 @@
             android:background="@android:color/transparent"
             app:elevation="0dp">
 
-            <eightbitlab.com.blurview.BlurView
+            <!-- Not a BlurView: nested BlurView inside activity BlurTarget crashes on setup. -->
+            <FrameLayout
                 android:id="@+id/homeTopBlur"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:background="@color/blur_overlay">
 
             <LinearLayout
                 android:id="@+id/top1"
@@ -82,7 +84,7 @@
                     android:layout_marginStart="8dp"
                     android:src="@drawable/ic_person" />
             </LinearLayout>
-            </eightbitlab.com.blurview.BlurView>
+            </FrameLayout>
         </com.google.android.material.appbar.AppBarLayout>
 
         <ScrollView

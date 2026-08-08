@@ -884,20 +884,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     private void setupHomeTopBlur(View view) {
-        eightbitlab.com.blurview.BlurView topBlur = view.findViewById(R.id.homeTopBlur);
-        if (topBlur == null || getActivity() == null) return;
-        eightbitlab.com.blurview.BlurTarget target = getActivity().findViewById(R.id.blurTarget);
-        int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
-        try {
-            if (target != null) {
-                topBlur.setupWith(target).setBlurRadius(16f).setOverlayColor(overlay);
-            } else {
-                topBlur.setOverlayColor(overlay);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Home top blur failed", e);
-            topBlur.setBackgroundColor(overlay);
-        }
+        View topBar = view.findViewById(R.id.homeTopBlur);
+        if (topBar == null) return;
+        // Translucent wash only — real BlurView cannot live inside activity BlurTarget.
+        topBar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blur_overlay));
     }
 
     private void applyMentorListVisibility(boolean isMentorOrAdmin, View view) {

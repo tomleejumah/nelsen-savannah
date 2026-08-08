@@ -907,27 +907,13 @@ public class ChatFragment extends Fragment {
         startActivity(intent);
     }
 
-    /** Glass header + composer — same blur/transparency trick as the bottom nav. */
+    /** Translucent header + composer (wash only — BlurView cannot nest inside BlurTarget). */
     private void setupChatGlassChrome() {
         if (binding == null || getActivity() == null) return;
         if (binding.chatHeaderBlur == null || binding.chatComposerBlur == null) return;
-        eightbitlab.com.blurview.BlurTarget target = getActivity().findViewById(R.id.blurTarget);
         int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
-        try {
-            if (target != null) {
-                binding.chatHeaderBlur.setupWith(target).setBlurRadius(20f).setOverlayColor(overlay);
-                binding.chatComposerBlur.setupWith(target).setBlurRadius(20f).setOverlayColor(overlay);
-            } else {
-                binding.chatHeaderBlur.setBackgroundColor(overlay);
-                binding.chatComposerBlur.setBackgroundColor(overlay);
-            }
-        } catch (Exception e) {
-            Log.w("ChatFragment", "Chat glass blur failed", e);
-            try {
-                binding.chatHeaderBlur.setBackgroundColor(overlay);
-                binding.chatComposerBlur.setBackgroundColor(overlay);
-            } catch (Exception ignored) {}
-        }
+        binding.chatHeaderBlur.setBackgroundColor(overlay);
+        binding.chatComposerBlur.setBackgroundColor(overlay);
 
         if (binding.llHeader != null) {
             ViewCompat.setOnApplyWindowInsetsListener(binding.llHeader, (v, insets) -> {

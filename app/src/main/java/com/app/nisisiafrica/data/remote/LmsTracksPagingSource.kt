@@ -7,7 +7,9 @@ import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 /**
  * Prefer LMS GET /lms/tracks; if empty or unreachable, list Firebase RTDB `courses/`.
@@ -33,17 +35,17 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
         return loadFromFirebase()
     }
 
-    private suspend fun loadFromLms(): LoadResult<Int, CourseItem> {
-        return try {
+    private suspend fun loadFromLms(): LoadResult<Int, CourseItem> = withContext(Dispatchers.IO) {
+        try {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null) {
                 Log.w(TAG, "No Firebase user — skip LMS")
-                return LoadResult.Page(emptyList(), null, null)
+                return@withContext LoadResult.Page(emptyList(), null, null)
             }
             val token = user.getIdToken(false).await().token
             if (token.isNullOrBlank()) {
                 Log.w(TAG, "Empty ID token — skip LMS")
-                return LoadResult.Page(emptyList(), null, null)
+                return@withContext LoadResult.Page(emptyList(), null, null)
             }
             val response = ApiClient.getLmsService()
                 .tracks("Bearer $token")
@@ -51,16 +53,16 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
             if (!response.isSuccessful) {
                 val err = response.errorBody()?.string()?.take(240)
                 Log.w(TAG, "LMS HTTP ${response.code()} $err")
-                return LoadResult.Page(emptyList(), null, null)
+                return@withContext LoadResult.Page(emptyList(), null, null)
             }
             val body: LmsModels.TracksEnvelope? = response.body()
             if (body == null) {
                 Log.w(TAG, "LMS body null after Gson (check duration/lessons types)")
-                return LoadResult.Page(emptyList(), null, null)
+                return@withContext LoadResult.Page(emptyList(), null, null)
             }
             if (!body.ok || body.data?.tracks == null) {
                 Log.w(TAG, "LMS ok=${body.ok} error=${body.error}")
-                return LoadResult.Page(emptyList(), null, null)
+                return@withContext LoadResult.Page(emptyList(), null, null)
             }
             Log.i(TAG, "LMS ok source=${body.source} trackCount=${body.data.tracks.size}")
             val items = body.data.tracks.map { card ->
@@ -84,8 +86,8 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
         }
     }
 
-    private suspend fun loadFromFirebase(): LoadResult<Int, CourseItem> {
-        return try {
+    private suspend fun loadFromFirebase(): LoadResult<Int, CourseItem> = withContext(Dispatchers.IO) {
+        try {
             val snapshot = FirebaseDatabase.getInstance().reference
                 .child("courses")
                 .orderByKey()
