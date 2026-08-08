@@ -43,9 +43,9 @@ class PinnedChatAdapter(
             // Logic for Pinned Items (Announcements / AI)
             if (chatroom.chatroomId == "announcements") {
                 tvName.text = "Announcements"
-                Glide.with(tvAvatar.context).load(R.drawable.nisisi_logo).into(tvAvatar)
+                Glide.with(tvAvatar.context).load(R.drawable.nelsen_icon).into(tvAvatar)
             } else {
-                tvName.text="Nisisi AI Assistant"
+                tvName.text="Nelsen AI Assistant"
                 Glide.with(tvAvatar.context).load(R.drawable.cyborg).circleCrop().into(tvAvatar)
             }
 

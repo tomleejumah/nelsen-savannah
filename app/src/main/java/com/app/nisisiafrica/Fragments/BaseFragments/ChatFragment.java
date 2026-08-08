@@ -382,14 +382,14 @@ public class ChatFragment extends Fragment {
             case "system":
                 binding.tvChatName.setText("Announcements");
                 binding.tvChatRole.setText("Official Updates");
-                Glide.with(this).load(R.drawable.nisisi_logo).circleCrop().into(binding.tvHeaderAvatar);
+                Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
                 // No partner profile for system rooms — keep the start panel showing "me".
                 userData = null;
                 selectedOtherUserId = null;
                 bindProfilePanel(myUserData);
                 break;
             case "ai":
-                binding.tvChatName.setText("Nisisi AI Assistant");
+                binding.tvChatName.setText("Nelsen AI Assistant");
                 binding.tvChatRole.setText("Virtual Help");
                 //todo update
                 Glide.with(this).load(R.drawable.cyborg).circleCrop().into(binding.tvHeaderAvatar);

@@ -9,13 +9,13 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="450dp"
-        android:src="@drawable/nisisi_logo"
+        android:src="@drawable/nelsen_icon"
         />
     <TextView
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome to Nisisi Connect Hub"
+        android:text="Welcome to Nelsen Savannah"
         android:textSize="20sp"
         android:textStyle="bold"
         android:fontFamily="@font/poppins_bold"
