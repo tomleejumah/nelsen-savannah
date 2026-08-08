@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/app_name"
-            android:textColor="@android:color/white"
+            android:textColor="@android:color/black"
             android:textSize="25sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -32,7 +32,7 @@
         android:layout_height="200dp"
         android:layout_marginTop="80dp"
         android:layout_marginStart="0dp"
-        android:src="@drawable/nisisi_newlogo" />
+        android:src="@drawable/nelsen_savannah_logo" />
 
     <TextView
         android:layout_alignParentBottom="true"
@@ -45,8 +45,8 @@
         android:fontFamily="@font/poppins_regular"
         android:includeFontPadding="false"
         android:letterSpacing="-0.01"
-        android:text="Welcome to \nNisisi Org."
-        android:textColor="@color/white"
+        android:text="Welcome to \nNelsen Savannah"
+        android:textColor="@android:color/black"
         android:textSize="41sp" />
 
 </RelativeLayout>

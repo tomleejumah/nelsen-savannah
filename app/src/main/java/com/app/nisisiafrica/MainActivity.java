@@ -467,7 +467,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
 
     private void createNotificationChannel() {
-        CharSequence name = "Nisisi Notifications";
+        CharSequence name = "Nelsen Notifications";
         String description = "Notifications for likes, comments, and messages";
         int importance = NotificationManager.IMPORTANCE_HIGH;
 

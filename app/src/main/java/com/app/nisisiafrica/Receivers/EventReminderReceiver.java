@@ -42,7 +42,7 @@ public class EventReminderReceiver extends BroadcastReceiver {
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.nisisi_logo)
+                .setSmallIcon(R.drawable.nelsen_icon)
                 .setContentTitle(title != null ? title : "Upcoming")
                 .setContentText(text != null ? text : "")
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(text != null ? text : ""))
