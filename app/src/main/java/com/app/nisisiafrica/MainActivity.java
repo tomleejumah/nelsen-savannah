@@ -61,7 +61,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
-import com.trinitymirror.fabtobottomnavigation.FabToBottomNavigationAnim;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

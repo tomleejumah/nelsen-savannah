@@ -100,7 +100,6 @@ dependencies {
     implementation 'com.github.ismaeldivita:chip-navigation-bar:1.4.0'
     implementation project(':CustomSnackbarLib')
     implementation project(':overlapimagelistview')
-    implementation project (':fabtobottomnavigation')
     implementation ("com.hbb20:ccp:2.5.0")
     implementation libs.dotsindicator
     implementation libs.core.splashscreen

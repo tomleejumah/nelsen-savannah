@@ -328,4 +328,10 @@ public class EditProfileActivity extends AppCompatActivity {
         });
 
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        FirebaseRemoteDataSource.INSTANCE.stopFetchingCoursesByMentorId();
+    }
 }

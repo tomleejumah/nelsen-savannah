@@ -44,6 +44,9 @@ object FirebaseRemoteDataSource {
     private const val TAG = "FirebaseUserHelper"
     private val db = FirebaseDatabase.getInstance().getReference()
 
+    private var mentorCoursesQuery: com.google.firebase.database.Query? = null
+    private var mentorCoursesListener: ValueEventListener? = null
+
     //todo update to use paging and migrate to use suspending functions
     fun saveOrUpdateUser(
         userData: UserData,
@@ -236,8 +239,9 @@ object FirebaseRemoteDataSource {
         mentorId: String,
         firebaseCallback: FirebaseCallback
     ) {
+        stopFetchingCoursesByMentorId()
         val coursesRef = db.child("courses").orderByChild("tutorId").equalTo(mentorId)
-        coursesRef.addValueEventListener(object : ValueEventListener {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val courses = mutableListOf<CourseItem>()
                 for (courseSnapshot in snapshot.children) {
@@ -269,7 +273,16 @@ object FirebaseRemoteDataSource {
             override fun onCancelled(error: DatabaseError) {
                 firebaseCallback.onError(error.toException())
             }
-        })
+        }
+        coursesRef.addValueEventListener(listener)
+        mentorCoursesQuery = coursesRef
+        mentorCoursesListener = listener
+    }
+
+    fun stopFetchingCoursesByMentorId() {
+        mentorCoursesListener?.let { mentorCoursesQuery?.removeEventListener(it) }
+        mentorCoursesQuery = null
+        mentorCoursesListener = null
     }
 
     fun saveOrUpdateCourse(
