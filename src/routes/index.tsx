@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Briefcase, Compass, Quote, Star, UsersRound } from "lucide-react";
 
 import heroImg from "@/assets/hero-mentorship.jpg";
-import eventsData from "@/data/events.json";
+import { EVENTS, eventVenue } from "@/data/events";
 import { PARTNERS, PROGRAMS, REVIEWS, ROADMAP, STATS } from "@/data/site";
 
 export const Route = createFileRoute("/")({
@@ -232,17 +232,17 @@ function Index() {
           </Link>
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {eventsData.slice(0, 3).map((e) => (
+          {EVENTS.slice(0, 3).map((e) => (
             <Link
-              key={e.id}
+              key={e.eventId}
               to="/events"
               className="group flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-elevated"
             >
-              <span className="eyebrow text-ember">{e.program}</span>
+              <span className="eyebrow text-ember">{e.program ?? eventVenue(e)}</span>
               <h3 className="mt-3 text-lg font-bold leading-snug">{e.title}</h3>
-              <p className="mt-2 flex-1 text-sm text-muted-foreground">{e.venue}</p>
+              <p className="mt-2 flex-1 text-sm text-muted-foreground">{eventVenue(e)}</p>
               <span className="mt-5 text-xs text-muted-foreground">
-                {e.seats - e.seatsTaken} seats left · {e.price}
+                {(e.seats ?? 0) - (e.seatsTaken ?? 0)} seats left · {e.price ?? "—"}
               </span>
             </Link>
           ))}
