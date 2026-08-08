@@ -582,7 +582,29 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         ratingBar.setOnRatingBarChangeListener((bar, rating, fromUser) -> {
             if (!fromUser || rating <= 0) return;
             ratingsRef.child(uid).setValue((double) rating)
-                    .addOnSuccessListener(u -> Toast.makeText(this, "Thanks for rating!", Toast.LENGTH_SHORT).show());
+                    .addOnSuccessListener(u -> {
+                        Toast.makeText(this, "Thanks for rating!", Toast.LENGTH_SHORT).show();
+                        // Persist the average onto the mentor node so list cards stay accurate.
+                        ratingsRef.get().addOnSuccessListener(snap -> {
+                            double sum = 0;
+                            long count = 0;
+                            for (DataSnapshot child : snap.getChildren()) {
+                                Double val = child.getValue(Double.class);
+                                if (val != null) {
+                                    sum += val;
+                                    count++;
+                                }
+                            }
+                            if (count > 0) {
+                                FirebaseDatabase.getInstance().getReference("mentors")
+                                        .child(mentorId)
+                                        .updateChildren(java.util.Map.of(
+                                                "averageRating", sum / count,
+                                                "ratingsCount", count
+                                        ));
+                            }
+                        });
+                    });
         });
     }
 
