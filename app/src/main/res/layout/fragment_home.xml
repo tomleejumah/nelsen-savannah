@@ -374,13 +374,13 @@
                         app:drawableStartCompat="@drawable/ic_step_mark" />
 
                     <TextView
-                        android:id="@+id/ShowALl"
+                        android:id="@+id/showMoreMentors"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:fontFamily="@font/font_ui"
-                        android:text="See all"
+                        android:text="Show more"
                         android:textColor="@color/maroon_600"
                         android:textSize="14sp" />
                 </RelativeLayout>
@@ -555,11 +555,11 @@
                     android:visibility="gone">
 
                     <TextView
-                        android:id="@+id/txtRecorgnizeMe"
+                        android:id="@+id/txtRecognizeMe"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="10dp"
-                        android:text="Recorgnize me" />
+                        android:text="Recognize me" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
@@ -590,7 +590,7 @@
                 android:background="@drawable/bg_date_chip"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="Community"
+                android:text="Group"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="13sp" />
 

@@ -264,7 +264,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         TextView tvMonthTitle = monthHeader != null ? monthHeader.findViewById(R.id.tvMonthTitle) : null;
         TextView dateHeader = calendarLayout.findViewById(R.id.dateHeader);
         txtDateInfo = calendarLayout.findViewById(R.id.txtDateInfo);
-        if (dateHeader != null) dateHeader.setText("Your Calender");
+        if (dateHeader != null) dateHeader.setText("Your Calendar");
         YearMonth currentMonth = YearMonth.now();
         if (tvMonthTitle != null) {
             tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
@@ -403,7 +403,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             scrollChangeListener.onParentScroll(oldScrollY, scrollY);
         });
 
-        view.findViewById(R.id.txtRecorgnizeMe).setOnClickListener(v -> {
+        view.findViewById(R.id.txtRecognizeMe).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
             startActivity(intent);
         });
@@ -454,7 +454,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             startActivity(intent);
         });
 
-        TextView showAll = view.findViewById(R.id.ShowALl);
+        TextView showAll = view.findViewById(R.id.showMoreMentors);
         TextView txtSeeAll = view.findViewById(R.id.seeAll);
         txtSeeAll.setPaintFlags(txtSeeAll.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         View.OnClickListener listener = this::goToViewAll;
@@ -717,7 +717,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private void goToViewAll(View v) {
         if (v.getId() == R.id.seeAll) {
             startActivity(new Intent(getActivity(), AllCoursesActivity.class));
-        } else if (v.getId() == R.id.ShowALl) {
+        } else if (v.getId() == R.id.showMoreMentors) {
             if (Roles.browsesMentors()) {
                 startActivity(new Intent(getActivity(), AllMentorsActivity.class));
             }

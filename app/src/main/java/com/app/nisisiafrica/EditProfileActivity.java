@@ -115,7 +115,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        findViewById(R.id.coursesTittle).setVisibility(isMentor ? View.VISIBLE : View.GONE);
+        findViewById(R.id.coursesTitle).setVisibility(isMentor ? View.VISIBLE : View.GONE);
         findViewById(R.id.addCoursesBtn).setVisibility(isMentor ? View.VISIBLE : View.GONE);
 
         EditText txtDescription = findViewById(R.id.txtDescription);

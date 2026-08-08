@@ -194,7 +194,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginVertical="8dp"
                 android:text="Your Courses"
-                android:id="@+id/coursesTittle"
+                android:id="@+id/coursesTitle"
                 android:textSize="16sp" />
 
             <androidx.recyclerview.widget.RecyclerView
