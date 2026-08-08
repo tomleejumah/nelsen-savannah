@@ -17,6 +17,7 @@ import com.app.nisisiafrica.Adapters.CommunityAdapter;
 import com.app.nisisiafrica.CommunityDetailActivity;
 import com.app.nisisiafrica.CreateCommunityActivity;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.Community;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
@@ -61,7 +62,7 @@ public class CommunitiesFragment extends Fragment {
 
         UserViewModel userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         userViewModel.getUserData().observe(getViewLifecycleOwner(), user -> {
-            boolean isMentor = user != null && "Mentor".equals(user.getUserRole());
+            boolean isMentor = user != null && Roles.canCreate(user.getUserRole());
             fab.setVisibility(isMentor ? View.VISIBLE : View.GONE);
         });
     }

@@ -38,6 +38,7 @@ import com.app.nisisiafrica.Interfaces.SwipeToReplyCallback;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModel;
 import com.app.nisisiafrica.ViewModel.ChatRoomViewModelFactory;
@@ -242,7 +243,7 @@ public class ChatFragment extends Fragment {
 
         // Access Control: mentors & admins may post announcements; mentees read only.
         if ("system".equals(type)) {
-            boolean canPost = "Admin".equals(role) || "Mentor".equals(role);
+            boolean canPost = Roles.canCreate(role);
             binding.bottomChatBar.setVisibility(canPost ? View.VISIBLE : View.GONE);
         } else {
             binding.bottomChatBar.setVisibility(View.VISIBLE);
