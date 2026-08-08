@@ -86,11 +86,14 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         if (!notification.getRead()) {
             holder.viewUnreadIndicator.setVisibility(View.VISIBLE);
             holder.itemView.setBackgroundColor(
-                    context.getResources().getColor(R.color.unread_background));
+                    context.getResources().getColor(R.color.maroon_050));
+            holder.viewUnreadIndicator.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(
+                            context.getResources().getColor(R.color.maroon_500)));
         } else {
             holder.viewUnreadIndicator.setVisibility(View.GONE);
             holder.itemView.setBackgroundColor(
-                    context.getResources().getColor(android.R.color.transparent));
+                    context.getResources().getColor(R.color.bg));
         }
 
         // Click listener

@@ -1,91 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp"
+    android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    android:background="?attr/selectableItemBackground">
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
 
-    <!-- Unread indicator dot -->
     <View
         android:id="@+id/viewUnreadIndicator"
-        android:layout_width="6dp"
-        android:layout_height="6dp"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
         android:background="@drawable/circle_notification"
-        android:backgroundTint="@color/black"
+        android:backgroundTint="@color/maroon_500"
         android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/imgSenderAvatar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/imgSenderAvatar"
-        app:layout_constraintBottom_toBottomOf="@id/imgSenderAvatar" />
+        app:layout_constraintTop_toTopOf="@id/imgSenderAvatar" />
 
-    <!-- Sender avatar -->
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/imgSenderAvatar"
         android:layout_width="44dp"
         android:layout_height="44dp"
         android:layout_marginStart="12dp"
         android:src="@drawable/ic_person"
+        app:civ_border_color="@color/line"
         app:civ_border_width="1dp"
-        app:civ_border_color="@color/gray_light"
         app:layout_constraintStart_toEndOf="@id/viewUnreadIndicator"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Notification text -->
     <TextView
         android:id="@+id/tvNotificationText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="8dp"
-        android:text=""
-        android:textSize="14sp"
-        android:textColor="@color/black"
-        android:maxLines="2"
         android:ellipsize="end"
+        android:fontFamily="@font/font_ui"
         android:lineSpacingExtra="2dp"
+        android:maxLines="2"
+        android:textColor="@color/ink"
+        android:textSize="14sp"
         app:layout_constraintEnd_toStartOf="@id/imgCourseThumbnail"
         app:layout_constraintStart_toEndOf="@id/imgSenderAvatar"
         app:layout_constraintTop_toTopOf="@id/imgSenderAvatar" />
 
-    <!-- Timestamp -->
     <TextView
         android:id="@+id/tvTimestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="2dp"
-        android:text="2h"
-        android:textColor="@color/gray_dark"
+        android:fontFamily="@font/font_ui"
+        android:textColor="@color/muted"
         android:textSize="12sp"
         app:layout_constraintStart_toEndOf="@id/imgSenderAvatar"
         app:layout_constraintTop_toBottomOf="@id/tvNotificationText" />
 
-    <!-- Course thumbnail -->
     <ImageView
         android:id="@+id/imgCourseThumbnail"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/bg_card_md"
         android:scaleType="centerCrop"
         android:src="@drawable/default_course"
-        android:background="@drawable/border_gray"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Divider -->
     <View
         android:layout_width="0dp"
-        android:layout_height="0.5dp"
+        android:layout_height="1dp"
         android:layout_marginTop="12dp"
-        android:background="@color/gray_light"
-        app:layout_constraintTop_toBottomOf="@id/imgSenderAvatar"
+        android:background="@color/line"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/imgSenderAvatar"
-        app:layout_constraintEnd_toEndOf="parent" />
-
+        app:layout_constraintTop_toBottomOf="@id/imgSenderAvatar" />
 </androidx.constraintlayout.widget.ConstraintLayout>

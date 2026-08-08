@@ -57,14 +57,8 @@ public class CommunitiesFragment extends Fragment {
         rv.setAdapter(adapter);
 
         FloatingActionButton fab = view.findViewById(R.id.fabCreateCommunity);
-        fab.setOnClickListener(v ->
-                startActivity(new Intent(requireContext(), CreateCommunityActivity.class)));
-
-        UserViewModel userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
-        userViewModel.getUserData().observe(getViewLifecycleOwner(), user -> {
-            boolean isMentor = user != null && Roles.canCreate(user.getUserRole());
-            fab.setVisibility(isMentor ? View.VISIBLE : View.GONE);
-        });
+        // Side FAB on MainActivity owns create — avoid a second floating button.
+        fab.setVisibility(View.GONE);
     }
 
     @Override

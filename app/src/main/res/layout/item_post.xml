@@ -5,9 +5,10 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
     android:layout_marginTop="10dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="1dp"
-    app:strokeColor="#ECECEC"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="@dimen/radius_card_md"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/line"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -20,7 +21,8 @@
             android:id="@+id/tvPostMeta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:alpha="0.6"
+            android:fontFamily="@font/font_ui"
+            android:textColor="@color/muted"
             android:textSize="12sp" />
 
         <TextView
@@ -28,7 +30,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="?attr/colorOnSurface"
+            android:fontFamily="@font/font_display"
+            android:textColor="@color/ink"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -38,8 +41,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:ellipsize="end"
+            android:fontFamily="@font/font_ui"
             android:maxLines="4"
-            android:textColor="#374151"
+            android:textColor="@color/ink_soft"
             android:textSize="14sp" />
 
         <ImageView
@@ -63,9 +67,10 @@
                 android:layout_height="wrap_content"
                 android:drawablePadding="4dp"
                 android:gravity="center_vertical"
-                android:textColor="?attr/colorSecondary"
+                android:textColor="@color/maroon_600"
                 android:textSize="13sp"
-                app:drawableStartCompat="@drawable/ic_like" />
+                app:drawableStartCompat="@drawable/ic_like"
+                app:drawableTint="@color/maroon_600" />
 
             <TextView
                 android:id="@+id/tvPostComments"
@@ -74,11 +79,10 @@
                 android:layout_marginStart="20dp"
                 android:drawablePadding="4dp"
                 android:gravity="center_vertical"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="@color/muted"
                 android:textSize="13sp"
-                app:drawableStartCompat="@drawable/ic_chat" />
+                app:drawableStartCompat="@drawable/ic_chat"
+                app:drawableTint="@color/muted" />
         </LinearLayout>
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

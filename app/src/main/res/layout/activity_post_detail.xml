@@ -4,6 +4,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/bg"
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
@@ -11,8 +12,10 @@
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:background="@color/bg"
         app:navigationIcon="@drawable/ic_back"
-        app:title="Post" />
+        app:title="Post"
+        app:titleTextColor="@color/ink" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -53,7 +56,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:lineSpacingExtra="3dp"
-                    android:textColor="#374151"
+                    android:textColor="@color/ink_soft"
                     android:textSize="15sp" />
 
                 <ImageView
@@ -80,7 +83,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
-                android:background="#F3F4F6" />
+                android:background="@color/surface_2" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -123,7 +126,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="6dp"
-            android:background="#F0F0F0"
+            android:background="@color/surface_2"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="8dp"
@@ -173,7 +176,7 @@
                 android:padding="11dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_send"
-                android:tint="#FFFFFF" />
+                android:tint="@color/white" />
         </LinearLayout>
     </LinearLayout>
 

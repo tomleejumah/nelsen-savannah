@@ -6,9 +6,10 @@
     android:layout_marginHorizontal="12dp"
     android:layout_marginTop="10dp"
     android:checkable="false"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="1dp"
-    app:strokeColor="#ECECEC"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="@dimen/radius_card_md"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/line"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -21,14 +22,14 @@
         <FrameLayout
             android:layout_width="46dp"
             android:layout_height="46dp"
-            android:background="@drawable/story_ring_bg"
-            android:padding="3dp">
+            android:background="@drawable/bg_chip_circle"
+            android:padding="10dp">
 
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_people"
-                app:tint="?attr/colorSecondary" />
+                app:tint="@color/maroon_700" />
         </FrameLayout>
 
         <LinearLayout
@@ -43,9 +44,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="@font/font_ui"
                 android:maxLines="1"
-                android:text="Community"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/ink"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -54,9 +55,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:alpha="0.7"
                 android:ellipsize="end"
+                android:fontFamily="@font/font_ui"
                 android:maxLines="2"
+                android:textColor="@color/ink_soft"
                 android:textSize="13sp" />
 
             <LinearLayout
@@ -72,8 +74,8 @@
                     android:layout_height="26dp"
                     android:visibility="gone"
                     app:circleCount="3"
-                    app:fillColor="#EEF0FF"
-                    app:strokeColor="#FFFFFF"
+                    app:fillColor="@color/surface_2"
+                    app:strokeColor="@color/surface"
                     app:strokeWidth="3dp" />
 
                 <TextView
@@ -82,11 +84,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:textColor="?attr/colorSecondary"
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/maroon_600"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>
