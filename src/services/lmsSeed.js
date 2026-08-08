@@ -44,6 +44,11 @@ export async function seedLmsCatalog({ force = false } = {}) {
   }
 
   if (force && count > 0) {
+    await dbRun("DELETE FROM track_likes");
+    await dbRun("DELETE FROM certificates");
+    await dbRun("DELETE FROM submissions");
+    await dbRun("DELETE FROM progress");
+    await dbRun("DELETE FROM enrollments");
     await dbRun("DELETE FROM lessons");
     await dbRun("DELETE FROM modules");
     await dbRun("DELETE FROM tracks");
@@ -76,10 +81,10 @@ export async function seedLmsCatalog({ force = false } = {}) {
             t.programSlug || "",
             t.title,
             t.blurb || "",
-            DEFAULT_TUTOR.courseImageUrl,
-            DEFAULT_TUTOR.tutorId,
-            DEFAULT_TUTOR.tutorName,
-            DEFAULT_TUTOR.tutorAvatarUrl,
+            t.courseImageUrl || DEFAULT_TUTOR.courseImageUrl,
+            t.tutorId || DEFAULT_TUTOR.tutorId,
+            t.tutorName || DEFAULT_TUTOR.tutorName,
+            t.tutorAvatarUrl || DEFAULT_TUTOR.tutorAvatarUrl,
             durationHrs,
             audienceJson,
             ti,
@@ -99,10 +104,10 @@ export async function seedLmsCatalog({ force = false } = {}) {
           courseTitle: track.title,
           does: track.blurb || "",
           audience: track.audience || ["Mentee"],
-          tutorId: DEFAULT_TUTOR.tutorId,
-          tutorName: DEFAULT_TUTOR.tutorName,
-          tutorAvatarUrl: DEFAULT_TUTOR.tutorAvatarUrl,
-          courseImageUrl: DEFAULT_TUTOR.courseImageUrl,
+          tutorId: track.tutorId || DEFAULT_TUTOR.tutorId,
+          tutorName: track.tutorName || DEFAULT_TUTOR.tutorName,
+          tutorAvatarUrl: track.tutorAvatarUrl || DEFAULT_TUTOR.tutorAvatarUrl,
+          courseImageUrl: track.courseImageUrl || DEFAULT_TUTOR.courseImageUrl,
           duration: dur,
           lessons: String(lc),
           moduleCount,

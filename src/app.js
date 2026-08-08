@@ -71,7 +71,7 @@ const PORT = process.env.PORT || 5002;
 
 async function start() {
   await initLmsDb();
-  await seedLmsCatalog();
+  await seedLmsCatalog({ force: process.env.LMS_SEED_FORCE === "1" });
   console.log(
     `[lms] UPLOAD_DIR=${UPLOAD_DIR} PUBLIC_BASE_URL=${process.env.PUBLIC_BASE_URL || "(unset)"}`,
   );

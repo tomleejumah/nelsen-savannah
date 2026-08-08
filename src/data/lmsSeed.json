@@ -12,7 +12,11 @@
         "sela-orient",
         "sela-map",
         "sela-execute"
-      ]
+      ],
+      "tutorId": "nelsen-org",
+      "tutorName": "Nelsen Savannah",
+      "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      "courseImageUrl": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=450&fit=crop"
     },
     {
       "id": "track-trailblazers",
@@ -25,7 +29,11 @@
       "moduleIds": [
         "tb-lead",
         "tb-network"
-      ]
+      ],
+      "tutorId": "nelsen-org",
+      "tutorName": "Nelsen Savannah",
+      "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      "courseImageUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=450&fit=crop"
     },
     {
       "id": "track-scripture-safari",
@@ -38,7 +46,11 @@
       "moduleIds": [
         "ss-ground",
         "ss-community"
-      ]
+      ],
+      "tutorId": "nelsen-org",
+      "tutorName": "Nelsen Savannah",
+      "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      "courseImageUrl": "https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800&h=450&fit=crop"
     },
     {
       "id": "track-codelab",
@@ -51,7 +63,11 @@
       "moduleIds": [
         "code-setup",
         "code-build"
-      ]
+      ],
+      "tutorId": "nelsen-org",
+      "tutorName": "Nelsen Savannah",
+      "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      "courseImageUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=450&fit=crop"
     },
     {
       "id": "track-mentor-academy",
@@ -64,7 +80,29 @@
       ],
       "moduleIds": [
         "mentor-safeguard"
-      ]
+      ],
+      "tutorId": "nelsen-org",
+      "tutorName": "Nelsen Savannah",
+      "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      "courseImageUrl": "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=450&fit=crop"
+    },
+    {
+      "id": "track-ui-demo",
+      "title": "[TEST] UI Demo Track",
+      "programSlug": "ui-demo",
+      "blurb": "Short track for Android + web UI testing (CourseItem fields + enroll/progress).",
+      "audience": [
+        "Mentee",
+        "Mentor",
+        "Admin"
+      ],
+      "moduleIds": [
+        "ui-demo-mod"
+      ],
+      "tutorId": "nelsen-org",
+      "tutorName": "Nelsen Savannah",
+      "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
+      "courseImageUrl": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=450&fit=crop"
     }
   ],
   "modules": [
@@ -391,6 +429,44 @@
           "title": "Practice mark",
           "type": "assignment",
           "does": "Mark a sample assignment; Admin reviews quality.",
+          "hasAssignment": true,
+          "estimatedMinutes": 15
+        }
+      ]
+    },
+    {
+      "id": "ui-demo-mod",
+      "trackId": "track-ui-demo",
+      "programSlug": "ui-demo",
+      "title": "Demo module",
+      "does": "One video-style lesson, one quiz, one assignment for end-to-end UI.",
+      "audience": [
+        "Mentee",
+        "Mentor",
+        "Admin"
+      ],
+      "estimatedMinutes": 30,
+      "lessons": [
+        {
+          "id": "ui-demo-1",
+          "title": "Welcome (read)",
+          "type": "read",
+          "does": "Open and mark content progress.",
+          "estimatedMinutes": 5
+        },
+        {
+          "id": "ui-demo-2",
+          "title": "Demo quiz",
+          "type": "quiz",
+          "does": "Submit quiz score from client.",
+          "hasQuiz": true,
+          "estimatedMinutes": 10
+        },
+        {
+          "id": "ui-demo-3",
+          "title": "Demo assignment",
+          "type": "assignment",
+          "does": "Submit text for mentor mark.",
           "hasAssignment": true,
           "estimatedMinutes": 15
         }

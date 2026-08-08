@@ -347,6 +347,12 @@ export const adminMenteeProgress = handle(
   },
 );
 
+export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
+  const { seedLmsCatalog } = await import("../services/lmsSeed.js");
+  const result = await seedLmsCatalog({ force: true });
+  return { source: result.engine, data: result };
+});
+
 /** M6 placeholder — events not implemented yet */
 export function eventsTodo(_req, res) {
   return res.status(501).json({
