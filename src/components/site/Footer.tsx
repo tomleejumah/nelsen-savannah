@@ -1,22 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
 
-import logoAsset from "@/assets/nelsen-logo.png.asset.json";
 import { ORG, PROGRAMS } from "@/data/site";
+import { BrandMark } from "./BrandMark";
 
 export function Footer() {
   return (
     <footer className="border-t border-border/60 bg-secondary/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <img
-            src={logoAsset.url}
-            alt="Nelsen Savannah logo"
-            width={900}
-            height={129}
-            loading="lazy"
-            className="h-8 w-auto"
-          />
+          <BrandMark size="sm" />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             {ORG.legal}. We connect young people with mentors who have already walked the road —
             careers, communication, work and life.
@@ -31,7 +24,7 @@ export function Footer() {
                 <Link
                   to="/programs"
                   hash={p.slug}
-                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  className="text-muted-foreground transition-colors hover:text-maroon"
                 >
                   {p.title}
                 </Link>
@@ -52,7 +45,7 @@ export function Footer() {
               <li key={l.to}>
                 <Link
                   to={l.to}
-                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  className="text-muted-foreground transition-colors hover:text-maroon"
                 >
                   {l.label}
                 </Link>

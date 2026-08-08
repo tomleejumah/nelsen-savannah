@@ -21,6 +21,7 @@
 @theme inline {
   --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Nunito", "Manrope", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -68,6 +69,7 @@
   --color-ember-foreground: var(--ember-foreground);
   --color-maroon: var(--maroon);
   --color-maroon-foreground: var(--maroon-foreground);
+  --color-logo-red: var(--logo-red);
   --color-sky-tint: var(--sky-tint);
   --color-on-dark: var(--on-dark);
 }
@@ -101,8 +103,10 @@
   --brand-soft: oklch(0.55 0.09 248);
   --ember: oklch(0.52 0.21 25);
   --ember-foreground: oklch(0.99 0.01 30);
-  --maroon: oklch(0.34 0.13 20);
+  /* Logo red / maroon from wordmark (~#C0001A) */
+  --maroon: oklch(0.48 0.205 25);
   --maroon-foreground: oklch(0.97 0.015 30);
+  --logo-red: oklch(0.48 0.205 25);
   --sky-tint: oklch(0.62 0.1 246);
   --on-dark: oklch(0.975 0.008 250);
 
@@ -159,8 +163,9 @@
   --brand-soft: oklch(0.72 0.07 248);
   --ember: oklch(0.63 0.21 26);
   --ember-foreground: oklch(0.99 0.01 30);
-  --maroon: oklch(0.55 0.17 22);
+  --maroon: oklch(0.62 0.2 25);
   --maroon-foreground: oklch(0.98 0.01 30);
+  --logo-red: oklch(0.62 0.2 25);
   --sky-tint: oklch(0.72 0.09 246);
   --on-dark: oklch(0.975 0.008 250);
 
@@ -245,4 +250,35 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+/* Logo wordmark — rounded letters + hooked “l” like the brand mark */
+.brand-wordmark {
+  font-family: var(--font-logo);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: lowercase;
+}
+
+.brand-bent-l {
+  display: inline-block;
+  position: relative;
+  font-weight: 800;
+  transform: rotate(4deg) translateY(0.02em);
+  transform-origin: top center;
+}
+
+.brand-bent-l::after {
+  content: "";
+  position: absolute;
+  left: 0.05em;
+  bottom: 0.02em;
+  width: 0.48em;
+  height: 0.32em;
+  border-style: solid;
+  border-color: currentColor;
+  border-width: 0 0 0.145em 0;
+  border-bottom-right-radius: 0.55em;
+  transform: rotate(-12deg);
+  pointer-events: none;
 }
