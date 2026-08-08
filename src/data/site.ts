@@ -68,7 +68,7 @@ export const ROADMAP = [
   {
     phase: "Now",
     title: "The mentorship platform",
-    body: "Programs, cohorts, events with seat reservations, blogs and mentor matching — live on this site.",
+    body: "Programs, cohorts, events with seat reservations, media and mentor matching — live on this site.",
     status: "Live",
   },
   {
@@ -137,44 +137,63 @@ export const REVIEWS = [
   },
 ];
 
-export const BLOGS = [
+export const MEDIA = [
   {
-    slug: "beyond-the-big-four-careers",
+    postID: "beyond-the-big-four-careers",
+    publisherID: "nelsen",
     title: "Beyond the big four: 20 careers Kenyan teens are never shown",
-    excerpt:
+    description:
       "Medicine, law, engineering, teaching. Here is what sits in the gap — and what each path actually pays, demands, and rewards.",
-    category: "Career Paths",
-    date: "2026-07-28",
+    fileType: "article",
+    fileName: "beyond-the-big-four.md",
+    mediaUrl: "",
+    thumbnailUrl: "",
+    timestamp: Date.parse("2026-07-28T12:00:00+03:00"),
     readMinutes: 7,
   },
   {
-    slug: "interview-answers-that-land",
+    postID: "interview-answers-that-land",
+    publisherID: "nelsen",
     title: "The four-sentence answer that wins interviews",
-    excerpt:
-      "Situation, decision, action, result. A simple structure our Communication Lab mentees use to stop rambling under pressure.",
-    category: "Communication",
-    date: "2026-07-12",
+    description:
+      "Situation, decision, action, result. A simple structure mentees use to stop rambling under pressure.",
+    fileType: "article",
+    fileName: "interview-answers.md",
+    mediaUrl: "",
+    thumbnailUrl: "",
+    timestamp: Date.parse("2026-07-12T12:00:00+03:00"),
     readMinutes: 5,
   },
   {
-    slug: "what-good-mentorship-looks-like",
+    postID: "what-good-mentorship-looks-like",
+    publisherID: "nelsen",
     title: "What good mentorship actually looks like (it isn't advice)",
-    excerpt:
+    description:
       "Most mentors talk too much. The best ones ask better questions and hold their mentee to the answer.",
-    category: "Mentorship",
-    date: "2026-06-30",
+    fileType: "article",
+    fileName: "good-mentorship.md",
+    mediaUrl: "",
+    thumbnailUrl: "",
+    timestamp: Date.parse("2026-06-30T12:00:00+03:00"),
     readMinutes: 6,
   },
   {
-    slug: "first-job-money-habits",
+    postID: "first-job-money-habits",
+    publisherID: "nelsen",
     title: "Your first salary: the three habits that decide the next decade",
-    excerpt:
+    description:
       "Black tax, lifestyle creep, and the 20-minute monthly ritual that keeps a junior salary from disappearing.",
-    category: "Wellbeing",
-    date: "2026-06-18",
+    fileType: "article",
+    fileName: "first-salary.md",
+    mediaUrl: "",
+    thumbnailUrl: "",
+    timestamp: Date.parse("2026-06-18T12:00:00+03:00"),
     readMinutes: 8,
   },
 ];
+
+/** @deprecated use MEDIA */
+export const BLOGS = MEDIA;
 export type LearningTrack = {
   slug: string;
   title: string;
