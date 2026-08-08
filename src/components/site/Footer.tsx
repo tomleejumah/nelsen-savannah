@@ -44,6 +44,7 @@ export function Footer() {
           <h3 className="eyebrow text-muted-foreground">Explore</h3>
           <ul className="mt-4 space-y-2">
             {[
+              { to: "/learning", label: "Learning" },
               { to: "/events", label: "Events" },
               { to: "/blogs", label: "Blogs" },
               { to: "/contact", label: "Contact us" },
