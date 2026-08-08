@@ -248,3 +248,112 @@ export async function playMedia(req, res) {
     return res.status(500).json({ error: "Playback failed" });
   }
 }
+
+function handle(label, fn) {
+  return async (req, res) => {
+    try {
+      const result = await fn(req);
+      const status = result.status || 200;
+      return lmsOk(res, result.data, result.source || getPrimaryEngine(), status);
+    } catch (err) {
+      console.error(label, err);
+      return lmsErr(
+        res,
+        err.message || "Error",
+        err.status || 500,
+        getPrimaryEngine(),
+      );
+    }
+  };
+}
+
+export const postSubmission = handle("[POST /lms/submissions]", async (req) => {
+  const { createSubmission } = await import("../services/lmsSubmissionService.js");
+  const result = await createSubmission(profileFromReq(req), req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const getMySubmissions = handle("[GET /lms/submissions/me]", async (req) => {
+  const { listMySubmissions } = await import("../services/lmsSubmissionService.js");
+  return listMySubmissions(req.user.uid, {
+    trackId: req.query.trackId,
+    status: req.query.status,
+  });
+});
+
+export const getSubmissionQueue = handle("[GET /lms/submissions/queue]", async (req) => {
+  const { listSubmissionQueue } = await import("../services/lmsSubmissionService.js");
+  return listSubmissionQueue(req.user.uid);
+});
+
+export const markSubmission = handle("[PATCH /lms/submissions/:id/mark]", async (req) => {
+  const { markSubmission: mark } = await import("../services/lmsSubmissionService.js");
+  return mark(profileFromReq(req), req.params.id, req.body || {});
+});
+
+export const getCertificatesMe = handle("[GET /lms/certificates/me]", async (req) => {
+  const { listMyCertificates } = await import("../services/lmsCertificateService.js");
+  return listMyCertificates(req.user.uid);
+});
+
+export const likeTrack = handle("[POST /lms/tracks/:trackId/like]", async (req) => {
+  const { toggleTrackLike } = await import("../services/lmsAdminService.js");
+  return toggleTrackLike(req.user.uid, req.params.trackId, req.body?.liked);
+});
+
+export const submitQuiz = handle("[POST /lms/lessons/:lessonId/quiz]", async (req) => {
+  const { submitQuiz: submit } = await import("../services/lmsAdminService.js");
+  return submit(profileFromReq(req), req.params.lessonId, req.body || {});
+});
+
+export const adminCreateTrack = handle("[POST /lms/admin/tracks]", async (req) => {
+  const svc = await import("../services/lmsAdminService.js");
+  const result = await svc.adminCreateTrack(req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const adminUpdateTrack = handle("[PUT /lms/admin/tracks/:trackId]", async (req) => {
+  const svc = await import("../services/lmsAdminService.js");
+  return svc.adminUpdateTrack(req.params.trackId, req.body || {});
+});
+
+export const adminCreateModule = handle("[POST /lms/admin/modules]", async (req) => {
+  const svc = await import("../services/lmsAdminService.js");
+  const result = await svc.adminCreateModule(req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const adminCreateLesson = handle("[POST /lms/admin/lessons]", async (req) => {
+  const svc = await import("../services/lmsAdminService.js");
+  const result = await svc.adminCreateLesson(req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const adminSetRole = handle("[PATCH /lms/admin/users/:uid/role]", async (req) => {
+  const svc = await import("../services/lmsAdminService.js");
+  return svc.adminSetRole(req.user.uid, req.params.uid, req.body?.userRole);
+});
+
+export const adminStats = handle("[GET /lms/admin/stats]", async () => {
+  const svc = await import("../services/lmsAdminService.js");
+  return svc.adminStats();
+});
+
+export const adminMenteeProgress = handle(
+  "[GET /lms/admin/mentees/:mentorId/progress]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminMenteeProgress(req.params.mentorId);
+  },
+);
+
+/** M6 placeholder — events not implemented yet */
+export function eventsTodo(_req, res) {
+  return res.status(501).json({
+    ok: false,
+    source: getPrimaryEngine() || "sqlite",
+    data: null,
+    error:
+      "TODO M6: Events API (list/reserve/seats) — see docs/LMS.md. Not implemented.",
+  });
+}
