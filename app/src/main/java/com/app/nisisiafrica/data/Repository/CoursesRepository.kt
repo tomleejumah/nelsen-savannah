@@ -8,7 +8,7 @@ import com.app.nisisiafrica.data.remote.LmsTracksPagingSource
 import kotlinx.coroutines.flow.Flow
 
 class CoursesRepository {
-    /** Top courses / ViewAll — LMS catalog via GET /lms/tracks (CourseItem-compatible). */
+    /** Top courses: LMS tracks first, Firebase `courses/` if LMS empty/unreachable. */
     fun getCoursesPagingData(): Flow<PagingData<CourseItem>> = Pager(
         config = PagingConfig(
             pageSize = 20,
