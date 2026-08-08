@@ -3,15 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/bg">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarCommunities"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent"
+        android:background="@color/bg"
         app:title="Communities"
-        app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge" />
+        app:titleTextColor="@color/ink"
+        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCommunities"
@@ -31,29 +33,37 @@
         android:padding="24dp"
         android:visibility="gone">
 
-        <ImageView
+        <FrameLayout
             android:layout_width="72dp"
             android:layout_height="72dp"
-            android:alpha="0.4"
-            android:src="@drawable/ic_people"
-            app:tint="?attr/colorPrimary" />
+            android:background="@drawable/bg_chip_circle">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_people"
+                app:tint="@color/maroon_700" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:fontFamily="@font/font_display"
             android:text="No communities yet"
-            android:textSize="16sp"
+            android:textColor="@color/ink"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:alpha="0.7"
+            android:fontFamily="@font/font_ui"
             android:gravity="center"
-            android:text="Join topic spaces, ask questions, and share with mentors and peers." />
-
+            android:text="Join topic spaces, ask questions, and share with mentors and peers."
+            android:textColor="@color/muted" />
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -66,7 +76,6 @@
         android:contentDescription="Create community"
         android:src="@drawable/ic_add_circle"
         android:visibility="gone"
-        app:backgroundTint="?attr/colorPrimary"
-        app:tint="#FFFFFF" />
-
+        app:backgroundTint="@color/maroon_700"
+        app:tint="@color/white" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
