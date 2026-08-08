@@ -51,7 +51,7 @@ function ProgramsPage() {
           width={1600}
           height={912}
           loading="lazy"
-          className="mx-auto mt-14 max-w-6xl rounded-3xl border border-white/10 object-cover shadow-elevated"
+          className="mx-auto mt-14 w-full max-w-6xl rounded-3xl border border-white/10 object-cover shadow-elevated"
         />
       </section>
 
