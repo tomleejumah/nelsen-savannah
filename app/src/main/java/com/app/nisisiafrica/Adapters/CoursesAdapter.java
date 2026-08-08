@@ -57,7 +57,10 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     private static final DiffUtil.ItemCallback<CourseItem> DIFF_CALLBACK = new DiffUtil.ItemCallback<CourseItem>() {
         @Override
         public boolean areItemsTheSame(@NonNull CourseItem oldItem, @NonNull CourseItem newItem) {
-            return oldItem.getCourseLink().equals(newItem.getCourseLink()); // Use unique identifier
+            String oldId = oldItem.getCourseId();
+            String newId = newItem.getCourseId();
+            if (oldId == null || newId == null) return false;
+            return oldId.equals(newId);
         }
 
         @Override
