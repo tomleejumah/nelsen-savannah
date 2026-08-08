@@ -34,19 +34,23 @@ const toneClass = {
 function Index() {
   return (
     <div>
-      {/* Hero — split screen */}
-      <section className="relative overflow-hidden bg-hero-gradient">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-background">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,oklch(0.52_0.21_25_/_0.08),transparent_55%),radial-gradient(ellipse_at_bottom_left,oklch(0.28_0.09_264_/_0.06),transparent_50%)]"
+        />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
           <div>
-            <h1 className="text-4xl font-bold leading-[1.05] text-on-dark sm:text-6xl lg:text-[4.2rem]">
+            <h1 className="text-4xl font-bold leading-[1.05] text-foreground sm:text-6xl lg:text-[4.2rem]">
               Every young person deserves a{" "}
               <span className="bg-ember-gradient bg-clip-text text-transparent">map</span>, not a
               guess.
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-on-dark/70 sm:text-lg">
-              We pair teens, students and junior professionals with mentors who have already walked
-              the road — on careers, communication, money and social life. Not just the four
-              careers everyone talks about.
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Companion site to the Nelsen Savannah app — we pair teens, students and junior
+              professionals with mentors who have already walked the road. Not just the four careers
+              everyone talks about.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
@@ -57,7 +61,7 @@ function Index() {
               </Link>
               <Link
                 to="/programs"
-                className="glass-dark inline-flex items-center gap-2 rounded-full px-6 py-3.5 font-display text-sm font-semibold text-on-dark transition-transform hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
               >
                 Become a mentor
               </Link>
@@ -66,10 +70,10 @@ function Index() {
             <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
               {STATS.map((s) => (
                 <div key={s.label}>
-                  <dt className="font-display text-2xl font-bold text-on-dark sm:text-3xl">
+                  <dt className="font-display text-2xl font-bold text-foreground sm:text-3xl">
                     {s.value}
                   </dt>
-                  <dd className="mt-1 text-xs text-on-dark/60">{s.label}</dd>
+                  <dd className="mt-1 text-xs text-muted-foreground">{s.label}</dd>
                 </div>
               ))}
             </dl>
@@ -82,11 +86,11 @@ function Index() {
               alt="A young mentee in conversation with her professional mentor"
               width={1200}
               height={1408}
-              className="relative w-full rounded-[2rem] border border-white/10 object-cover shadow-elevated"
+              className="relative w-full rounded-[2rem] border border-border/70 object-cover shadow-elevated"
             />
-            <div className="glass-dark absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
-              <p className="text-xs text-on-dark/70">
-                <span className="font-display font-semibold text-on-dark">380 mentors</span>{" "}
+            <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-display font-semibold text-foreground">380 mentors</span>{" "}
                 across tech, health, finance, media, trades and public service.
               </p>
             </div>
