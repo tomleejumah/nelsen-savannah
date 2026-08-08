@@ -6,25 +6,27 @@ import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
+import java.io.IOException
 
 /**
  * Loads CourseItem rows from GET /lms/tracks (identical catalog JSON as the website).
- * Falls back to empty on auth/API failure so the UI can stay quiet until LMS is reachable.
+ * Auth/API failures surface as [LoadResult.Error] so Home can show feedback instead of a silent empty rail.
  */
 class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CourseItem> {
         return try {
             val user = FirebaseAuth.getInstance().currentUser
-                ?: return LoadResult.Page(emptyList(), null, null)
+                ?: return LoadResult.Error(IOException("Sign in required to load courses"))
             val token = user.getIdToken(false).await().token
-                ?: return LoadResult.Page(emptyList(), null, null)
+                ?: return LoadResult.Error(IOException("Missing auth token for courses"))
             val response = ApiClient.getLmsService()
                 .tracks("Bearer $token")
                 .execute()
             val body: LmsModels.TracksEnvelope? = response.body()
             if (!response.isSuccessful || body == null || !body.ok || body.data?.tracks == null) {
-                return LoadResult.Page(emptyList(), null, null)
+                val msg = body?.error ?: ("Courses request failed (" + response.code() + ")")
+                return LoadResult.Error(IOException(msg))
             }
             val items = body.data.tracks.map { card ->
                 CourseItem(

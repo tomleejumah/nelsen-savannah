@@ -349,6 +349,17 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         sharedViewModel.getCourses().observe(getViewLifecycleOwner(), pagingData -> {
             coursesAdapter.submitData(getLifecycle(), pagingData);
         });
+        coursesAdapter.addLoadStateListener(loadState -> {
+            LoadState refresh = loadState.getRefresh();
+            if (refresh instanceof LoadState.Error && getContext() != null) {
+                Throwable err = ((LoadState.Error) refresh).getError();
+                String msg = err != null && err.getMessage() != null && !err.getMessage().isEmpty()
+                        ? err.getMessage()
+                        : "Couldn't load courses";
+                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+            return Unit.INSTANCE;
+        });
 
         RecyclerView rcProgrammes = view.findViewById(R.id.rcProgrammes);
         if (rcProgrammes != null) {

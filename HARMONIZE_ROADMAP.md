@@ -28,7 +28,7 @@ Mark status: `pending` → `in_progress` → `done`. Say **“do Hn”** or **�
 Fix hardcoded typos & nav-facing copy: `Calender`→Calendar, `Recorgnize`→Recognize, `ShowALl`→Show more, Groups screen toolbar, speed-dial “Community” vs Groups, toast “Chats”→Chat where user-facing.
 
 ## H3 — Courses from API on Home
-**Status:** `pending`  
+**Status:** `done`  
 Courses are the only LMS catalog fetch so far (`GET /lms/tracks`).  
 **Work:** surface failures (no silent empty), fix Home `CoursesAdapter` DiffUtil (`courseId`), confirm Home / All courses rails bind LMS tracks.
 
