@@ -10,20 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as LearningRouteImport } from './routes/learning'
+import { Route as MediaRouteImport } from './routes/media'
 import { Route as ProgramsRouteImport } from './routes/programs'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogsRoute = BlogsRouteImport.update({
-  id: '/blogs',
-  path: '/blogs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -41,6 +36,11 @@ const LearningRoute = LearningRouteImport.update({
   path: '/learning',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MediaRoute = MediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
@@ -49,50 +49,50 @@ const ProgramsRoute = ProgramsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRoute
+  '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRoute
+  '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRoute
+  '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/blogs' | '/contact' | '/events' | '/learning' | '/programs'
+  fullPaths: '/' | '/contact' | '/events' | '/learning' | '/media' | '/programs'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/blogs' | '/contact' | '/events' | '/learning' | '/programs'
+  to: '/' | '/contact' | '/events' | '/learning' | '/media' | '/programs'
   id:
     | '__root__'
     | '/'
-    | '/blogs'
     | '/contact'
     | '/events'
     | '/learning'
+    | '/media'
     | '/programs'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BlogsRoute: typeof BlogsRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
   LearningRoute: typeof LearningRoute
+  MediaRoute: typeof MediaRoute
   ProgramsRoute: typeof ProgramsRoute
 }
 
@@ -103,13 +103,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blogs': {
-      id: '/blogs'
-      path: '/blogs'
-      fullPath: '/blogs'
-      preLoaderRoute: typeof BlogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -133,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearningRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/media': {
+      id: '/media'
+      path: '/media'
+      fullPath: '/media'
+      preLoaderRoute: typeof MediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programs': {
       id: '/programs'
       path: '/programs'
@@ -145,12 +145,22 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BlogsRoute: BlogsRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
   LearningRoute: LearningRoute,
+  MediaRoute: MediaRoute,
   ProgramsRoute: ProgramsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
