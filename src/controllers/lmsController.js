@@ -5,17 +5,28 @@ import {
   getTrackById,
   getTracks,
 } from "../services/lmsCatalogService.js";
+import {
+  enrollUser,
+  getMyProgress,
+  listMyEnrollments,
+  patchLessonProgress,
+  unenrollUser,
+} from "../services/lmsEnrollmentService.js";
 import { getPrimaryEngine } from "../db/lmsDb.js";
 import { lmsErr, lmsOk } from "../utils/lmsResponse.js";
 
+function profileFromReq(req) {
+  return {
+    uid: req.user.uid,
+    email: req.user.email,
+    displayName: req.user.displayName,
+    photoUrl: req.user.photoUrl,
+  };
+}
+
 export async function getLmsMe(req, res) {
   try {
-    const result = await getMe({
-      uid: req.user.uid,
-      email: req.user.email,
-      displayName: req.user.displayName,
-      photoUrl: req.user.photoUrl,
-    });
+    const result = await getMe(profileFromReq(req));
     return lmsOk(res, result.data, result.source);
   } catch (err) {
     console.error("[GET /lms/me]", err);
@@ -86,5 +97,79 @@ export async function getLesson(req, res) {
   } catch (err) {
     console.error("[GET /lms/lessons/:id]", err);
     return lmsErr(res, "Failed to load lesson", 500, getPrimaryEngine());
+  }
+}
+
+export async function postEnrollment(req, res) {
+  try {
+    const result = await enrollUser(profileFromReq(req), {
+      trackId: req.body?.trackId,
+      platform: req.body?.platform || "web",
+    });
+    return lmsOk(res, result.data, result.source, 201);
+  } catch (err) {
+    console.error("[POST /lms/enrollments]", err);
+    return lmsErr(
+      res,
+      err.message || "Enroll failed",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+export async function getMyEnrollments(req, res) {
+  try {
+    const result = await listMyEnrollments(req.user.uid);
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[GET /lms/enrollments/me]", err);
+    return lmsErr(res, "Failed to list enrollments", 500, getPrimaryEngine());
+  }
+}
+
+export async function deleteEnrollment(req, res) {
+  try {
+    const result = await unenrollUser(req.user.uid, req.params.trackId);
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[DELETE /lms/enrollments/:trackId]", err);
+    return lmsErr(
+      res,
+      err.message || "Unenroll failed",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+export async function patchProgress(req, res) {
+  try {
+    const result = await patchLessonProgress(
+      profileFromReq(req),
+      req.params.lessonId,
+      req.body || {},
+    );
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[PATCH /lms/progress/:lessonId]", err);
+    return lmsErr(
+      res,
+      err.message || "Progress update failed",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+export async function getProgressMe(req, res) {
+  try {
+    const result = await getMyProgress(req.user.uid, {
+      trackId: req.query.trackId,
+    });
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[GET /lms/progress/me]", err);
+    return lmsErr(res, "Failed to load progress", 500, getPrimaryEngine());
   }
 }

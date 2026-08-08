@@ -24,6 +24,11 @@
 - `GET /lms/tracks/:trackId` — track + modules[]
 - `GET /lms/modules/:moduleId` — module + lessons[]
 - `GET /lms/lessons/:lessonId` — lesson detail
+- `POST /lms/enrollments` — enroll `{ trackId, platform? }`
+- `GET /lms/enrollments/me` — my enrollments + %
+- `DELETE /lms/enrollments/:trackId` — unenroll
+- `PATCH /lms/progress/:lessonId` — upsert progress → lesson/module/track %
+- `GET /lms/progress/me` — resume map `byLessonId` / `byTrackId`
 - `GET /uploads/*` — static files from `UPLOAD_DIR`
 
 Catalog seed: `src/data/lmsSeed.json` (from `LMS_TRACKS` / `LMS_MODULES`) on empty DB.
