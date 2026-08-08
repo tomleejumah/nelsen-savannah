@@ -1,6 +1,6 @@
 export const ORG = {
-  name: "Nelsen Savanna",
-  legal: "Nelsen Savanna Organization + Company Limited",
+  name: "Nelsen Savannah",
+  legal: "Nelsen Savannah Organization + Company Limited",
   tagline: "Every young person deserves a map, not a guess.",
   email: "hello@nelsensavanna.co.ke",
   phone: "+254 700 000 000",
@@ -17,52 +17,32 @@ export type Program = {
 
 export const PROGRAMS: Program[] = [
   {
-    slug: "career-compass",
-    title: "Career Compass",
-    blurb:
-      "Path-mapping for teens and campus students — beyond doctor, lawyer, engineer. Exposure to 60+ real professions.",
-    audience: "Ages 15–22",
+    slug: "sela-programme",
+    title: "Sela programme",
+    blurb: "Guided mentorship pathway for young people building clarity, confidence and next steps.",
+    audience: "Mentees",
     tone: "brand",
   },
   {
-    slug: "communication-lab",
-    title: "Communication Lab",
-    blurb:
-      "Speak, write and present with control. Public speaking, workplace communication and personal branding — with interview practice as one module of the syllabus.",
-    audience: "Job seekers & interns",
+    slug: "trailblazers",
+    title: "Trailblazers",
+    blurb: "For young leaders ready to stretch — peer cohorts, mentor access and real-world exposure.",
+    audience: "Emerging leaders",
     tone: "ember",
   },
   {
-    slug: "social-life-and-wellbeing",
-    title: "Social Life & Wellbeing",
-    blurb:
-      "Money habits, peer pressure, relationships, and mental health — the parts of growing up nobody teaches formally.",
-    audience: "Teens & young adults",
+    slug: "scripture-safari",
+    title: "Scripture Safari",
+    blurb: "Faith-rooted guidance that walks with mentees through life, purpose and community.",
+    audience: "Faith & life",
     tone: "maroon",
   },
   {
-    slug: "juniors-meet-seniors",
-    title: "Juniors Meet Seniors",
-    blurb:
-      "Structured workplace mentorship pairing junior staff with senior professionals in their industry for 6 months.",
-    audience: "0–5 years experience",
+    slug: "go-for-it-codelab",
+    title: "Go for it Codelab",
+    blurb: "Hands-on coding lab — projects, mentor feedback and skills you can show in a portfolio.",
+    audience: "Aspiring builders",
     tone: "brand",
-  },
-  {
-    slug: "mentor-academy",
-    title: "Mentor Academy",
-    blurb:
-      "Training and certification for mentors — listening frameworks, safeguarding, and goal-tracking that actually sticks.",
-    audience: "Professionals giving back",
-    tone: "ember",
-  },
-  {
-    slug: "savanna-circles",
-    title: "Savanna Circles",
-    blurb:
-      "Small monthly cohorts of 8 mentees and 2 mentors. Same room, same goals, real accountability.",
-    audience: "All members",
-    tone: "maroon",
   },
 ];
 
@@ -94,7 +74,7 @@ export const ROADMAP = [
   {
     phase: "Next",
     title: "Nelsen Connect App",
-    body: "A digital learning and empowerment hub: curated learning paths, real projects, milestones and direct mentor-to-mentee conversations.",
+    body: "The companion Android app (rebranded from Nisisi Connect Hub): curated learning paths, real projects, milestones and direct mentor-to-mentee conversations.",
     status: "In design",
   },
   {
@@ -121,39 +101,39 @@ export const STATS = [
 export const REVIEWS = [
   {
     name: "Amina W.",
-    role: "Mentee · Career Compass",
+    role: "Mentee · Sela programme",
     quote:
-      "I came in thinking my only options were medicine or law. I left with a shortlist of five careers I never knew existed — and a mentor who checks in every fortnight.",
+      "I came in unsure where to start. Sela gave me a mentor who checks in every fortnight and a clearer map for the next year.",
   },
   {
     name: "Brian O.",
-    role: "Mentee · Communication Lab",
+    role: "Mentee · Trailblazers",
     quote:
-      "The mock panel was brutal in the best way. Three weeks later I walked into a real interview calm, and I got the offer.",
+      "Trailblazers pushed me into rooms I would not have walked into alone. The peer cohort kept me honest.",
   },
   {
     name: "Dr. Faith K.",
-    role: "Mentor · Juniors Meet Seniors",
+    role: "Mentor · Go for it Codelab",
     quote:
-      "I have mentored informally for years. Nelsen Savanna gave the relationship structure — goals, sessions, and a way to measure whether I was actually helping.",
+      "I have mentored informally for years. Nelsen Savannah gave the relationship structure — goals, sessions, and a way to measure whether I was actually helping.",
   },
   {
     name: "Kevin M.",
-    role: "Mentee · Savanna Circles",
+    role: "Mentee · Scripture Safari",
     quote:
-      "The circle became my board of directors. Money talk, career talk, hard talk. Nothing performative.",
+      "Scripture Safari became my board of directors. Faith talk, career talk, hard talk. Nothing performative.",
   },
   {
     name: "Sharon N.",
-    role: "Mentee · Social Life & Wellbeing",
+    role: "Mentee · Go for it Codelab",
     quote:
-      "The wellbeing sessions taught me boundaries and budgeting in the same month. That combination changed my year.",
+      "The Codelab sessions taught me to ship small projects and ask better questions. That combination changed my year.",
   },
   {
     name: "Tom A.",
-    role: "Mentor · Mentor Academy",
+    role: "Mentor · Trailblazers",
     quote:
-      "The safeguarding training alone is worth it. It is the most professional youth programme I have volunteered with in Kenya.",
+      "It is the most professional youth programme I have volunteered with in Kenya — clear goals, real accountability.",
   },
 ];
 

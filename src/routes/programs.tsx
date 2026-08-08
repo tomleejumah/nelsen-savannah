@@ -8,17 +8,16 @@ import { PROGRAMS } from "@/data/site";
 export const Route = createFileRoute("/programs")({
   head: () => ({
     meta: [
-      { title: "Our Programs — Career, Communication & Workplace Mentorship | Nelsen Savanna" },
+      { title: "Our Programs — Sela, Trailblazers & Codelab | Nelsen Savannah" },
       {
         name: "description",
         content:
-          "Six mentorship programs for Kenyan youth: career mapping, interview and communication labs, wellbeing, and junior-to-senior workplace mentorship.",
+          "Programs from the Nelsen Savannah app: Sela programme, Trailblazers, Scripture Safari, and Go for it Codelab.",
       },
-      { property: "og:title", content: "Our Programs | Nelsen Savanna" },
+      { property: "og:title", content: "Our Programs | Nelsen Savannah" },
       {
         property: "og:description",
-        content:
-          "Career Compass, Communication Lab, Social Life & Wellbeing, Juniors Meet Seniors, Mentor Academy and Savanna Circles.",
+        content: "Sela programme, Trailblazers, Scripture Safari, and Go for it Codelab.",
       },
     ],
   }),
@@ -34,13 +33,17 @@ const toneClass = {
 function ProgramsPage() {
   return (
     <div className="pb-24">
-      <section className="relative overflow-hidden bg-hero-gradient px-5 pb-20 pt-36 sm:px-8 sm:pt-44">
-        <div className="mx-auto max-w-4xl text-center">
+      <section className="relative overflow-hidden bg-background px-5 pb-20 pt-36 sm:px-8 sm:pt-44">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
+        />
+        <div className="relative mx-auto max-w-4xl text-center">
           <p className="eyebrow text-ember">Our Programs</p>
-          <h1 className="mt-4 text-4xl font-bold text-on-dark sm:text-6xl">
+          <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-6xl">
             Structured guidance for every stage of the climb
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-on-dark/70">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
             Each program runs in cohorts with a trained mentor, clear goals, and sessions you can
             actually attend. Pick the one that matches where you are right now.
           </p>
@@ -51,7 +54,7 @@ function ProgramsPage() {
           width={1600}
           height={912}
           loading="lazy"
-          className="mx-auto mt-14 w-full max-w-6xl rounded-3xl border border-white/10 object-cover shadow-elevated"
+          className="relative mx-auto mt-14 w-full max-w-6xl rounded-3xl border border-border/70 object-cover shadow-elevated"
         />
       </section>
 
