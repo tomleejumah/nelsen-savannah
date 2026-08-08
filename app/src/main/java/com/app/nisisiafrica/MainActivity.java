@@ -101,6 +101,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     /** True while a conversation is open inside ChatFragment — hides the create-chat FAB. */
     private boolean chatConversationOpen = false;
 
+    private int insetLeft, insetTop, insetRight, insetBottom;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,7 +125,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            insetLeft = systemBars.left;
+            insetTop = systemBars.top;
+            insetRight = systemBars.right;
+            insetBottom = systemBars.bottom;
+            applyMainInsets();
             return insets;
         });
 
@@ -323,12 +329,21 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (label != null) label.setTextColor(color);
     }
 
+    private void applyMainInsets() {
+        View main = findViewById(R.id.main);
+        if (main == null) return;
+        // Chat detail paints under the status bar for a continuous glass header.
+        int top = chatConversationOpen ? 0 : insetTop;
+        main.setPadding(insetLeft, top, insetRight, insetBottom);
+    }
+
     /** Called by ChatFragment when entering/leaving a conversation. */
     public void setChatConversationOpen(boolean open) {
         chatConversationOpen = open;
         if (bottomBarRow != null) {
             bottomBarRow.setVisibility(open ? View.GONE : View.VISIBLE);
         }
+        applyMainInsets();
     }
 
     private void onContextualFabClicked() {

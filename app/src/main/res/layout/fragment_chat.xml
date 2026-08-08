@@ -13,7 +13,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    android:fitsSystemWindows="true"
     tools:context=".Fragments.BaseFragments.ChatFragment">
 
     <!-- Conversation list -->
@@ -96,15 +95,11 @@
         android:background="@color/bg"
         android:visibility="gone">
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/headerCard"
+        <!-- Glass header: paints under status bar (MainActivity drops top pad while open). -->
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/chatHeaderBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/surface"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/line"
-            app:strokeWidth="1dp"
-            app:cardCornerRadius="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -116,7 +111,8 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingHorizontal="8dp"
-                android:paddingVertical="10dp">
+                android:paddingTop="10dp"
+                android:paddingBottom="12dp">
 
                 <ImageButton
                     android:id="@+id/ic_back"
@@ -125,7 +121,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Back"
                     android:src="@drawable/ic_back"
-                    app:tint="?attr/colorOnSurface" />
+                    app:tint="@color/ink" />
 
                 <!-- Tapping the header opens the partner's full profile. -->
                 <LinearLayout
@@ -157,8 +153,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
+                            android:fontFamily="@font/font_ui"
                             android:maxLines="1"
-                            android:textColor="?attr/colorOnSurface"
+                            android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -168,7 +165,7 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textColor="@color/muted"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -179,10 +176,19 @@
                         android:layout_marginEnd="6dp"
                         android:contentDescription="View full profile"
                         android:src="@drawable/ic_arrow_right"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        app:tint="@color/muted" />
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </eightbitlab.com.blurview.BlurView>
+
+        <!-- Kept id for any legacy binding references -->
+        <View
+            android:id="@+id/headerCard"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvMessages"
@@ -191,129 +197,134 @@
             android:clipToPadding="false"
             android:paddingHorizontal="10dp"
             android:paddingVertical="12dp"
-            app:layout_constraintBottom_toTopOf="@id/bottomChatBar"
+            app:layout_constraintBottom_toTopOf="@id/chatComposerBlur"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/headerCard" />
+            app:layout_constraintTop_toBottomOf="@id/chatHeaderBlur" />
 
-        <LinearLayout
-            android:id="@+id/bottomChatBar"
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/chatComposerBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/surface"
-            android:elevation="6dp"
-            android:orientation="vertical"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
-            <!-- Reply preview sits ABOVE the input row so it's never hidden. -->
             <LinearLayout
-                android:id="@+id/replyPreview"
+                android:id="@+id/bottomChatBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:background="@drawable/quote_bg_incoming"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp"
-                android:visibility="gone">
+                android:orientation="vertical"
+                android:paddingHorizontal="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@color/maroon_600" />
-
+                <!-- Reply preview sits ABOVE the input row so it's never hidden. -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/replyPreview"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/quote_bg_incoming"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/tvReplySender"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/maroon_600"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                    <View
+                        android:layout_width="3dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@color/maroon_600" />
 
-                    <TextView
-                        android:id="@+id/tvReplyText"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textColor="@color/ink_soft"
-                        android:textSize="12sp" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvReplySender"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/maroon_600"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvReplyText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@color/ink_soft"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/btnCancelReply"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center_vertical"
+                        android:contentDescription="Cancel reply"
+                        android:src="@drawable/ic_close"
+                        app:tint="@color/muted" />
                 </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/btnCancelReply"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="center_vertical"
-                    android:contentDescription="Cancel reply"
-                    android:src="@drawable/ic_close"
-                    app:tint="@color/muted" />
-            </LinearLayout>
-
-            <!-- Input row -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="bottom"
-                android:orientation="horizontal">
-
-                <ImageButton
-                    android:id="@+id/btnAttach"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Attach"
-                    android:padding="9dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_image_placeholder"
-                    app:tint="@color/maroon_700" />
-
-                <EditText
-                    android:id="@+id/etMessage"
-                    android:layout_width="0dp"
+                <!-- Input row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/input_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:hint="Message..."
-                    android:importantForAutofill="no"
-                    android:inputType="textCapSentences|textMultiLine"
-                    android:maxLines="4"
-                    android:minHeight="46dp"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="11dp"
-                    android:textColor="@color/ink"
-                    android:textColorHint="@color/muted"
-                    android:textSize="14sp" />
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
 
-                <ImageButton
-                    android:id="@+id/btnSend"
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
-                    android:layout_marginStart="10dp"
-                    android:background="@drawable/send_btn_circle_bg"
-                    android:clickable="true"
-                    android:contentDescription="Send"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:padding="11dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_send"
-                    app:tint="@color/white" />
+                    <ImageButton
+                        android:id="@+id/btnAttach"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Attach"
+                        android:padding="9dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_add"
+                        app:tint="@color/maroon_700" />
+
+                    <EditText
+                        android:id="@+id/etMessage"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/input_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:hint="Message..."
+                        android:importantForAutofill="no"
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:maxLines="4"
+                        android:minHeight="46dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="11dp"
+                        android:textColor="@color/ink"
+                        android:textColorHint="@color/muted"
+                        android:textSize="14sp" />
+
+                    <ImageButton
+                        android:id="@+id/btnSend"
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:layout_marginStart="10dp"
+                        android:background="@drawable/send_btn_circle_bg"
+                        android:clickable="true"
+                        android:contentDescription="Send"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_send"
+                        app:tint="@color/white" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
+        </eightbitlab.com.blurview.BlurView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
