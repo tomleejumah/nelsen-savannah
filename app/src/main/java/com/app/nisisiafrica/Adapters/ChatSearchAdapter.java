@@ -53,6 +53,7 @@ public class ChatSearchAdapter extends RecyclerView.Adapter<ChatSearchAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Chatroom room = items.get(position);
         String currentUserId = FirebaseAuth.getInstance().getUid();
+        if (currentUserId == null) currentUserId = "";
         holder.name.setText(room.getOtherUserName(currentUserId));
         holder.lastMsg.setText(room.getLastMessage() != null ? room.getLastMessage() : "No messages yet");
         holder.unread.setVisibility(View.GONE);

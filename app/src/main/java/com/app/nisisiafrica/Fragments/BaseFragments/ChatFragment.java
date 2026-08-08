@@ -606,7 +606,8 @@ public class ChatFragment extends Fragment {
 
                     @Override
                     public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                        java.util.List<ChatMessageEntity> selected = adapter.selectedMessages();
+                        java.util.List<ChatMessageEntity> selected =
+                                new ArrayList<>(adapter.selectedMessages());
                         if (selected.isEmpty()) return false;
                         int id = item.getItemId();
                         if (id == R.id.action_reply) {
@@ -615,13 +616,14 @@ public class ChatFragment extends Fragment {
                             return true;
                         }
                         if (id == R.id.action_forward) {
-                            forwardInApp(selected);
+                            // Finish selection UI first, then forward (selected already copied).
                             mode.finish();
+                            forwardInApp(selected);
                             return true;
                         }
                         if (id == R.id.action_share) {
-                            shareExternally(selected);
                             mode.finish();
+                            shareExternally(selected);
                             return true;
                         }
                         if (id == R.id.action_delete) {
@@ -662,54 +664,94 @@ public class ChatFragment extends Fragment {
 
     private void finishActionMode() {
         if (messageActionMode != null) {
-            messageActionMode.finish();
+            ActionMode mode = messageActionMode;
             messageActionMode = null;
+            mode.finish();
         } else if (adapter != null) {
             adapter.clearSelection();
         }
     }
 
-    /** Forward into another chat (picker). Falls back to share if no rooms. */
+    /** Forward into another chat (picker). Sends real content/type per message. */
     private void forwardInApp(java.util.List<ChatMessageEntity> selected) {
-        if (loadedRooms.isEmpty()) {
-            shareExternally(selected);
-            return;
-        }
-        StringBuilder body = new StringBuilder();
-        for (ChatMessageEntity m : selected) {
-            if (body.length() > 0) body.append("\n\n");
-            body.append(previewOf(m));
-        }
-        final String text = body.toString();
+        if (selected == null || selected.isEmpty() || binding == null) return;
+        final java.util.List<ChatMessageEntity> toForward = new ArrayList<>(selected);
+
         java.util.List<Chatroom> targets = new ArrayList<>();
+        String uid = FirebaseAuth.getInstance().getUid();
         for (Chatroom r : loadedRooms) {
+            if (r == null || r.getChatroomId() == null) continue;
+            if (r.getChatroomId().equals(currentChatId)) continue;
             String type = r.getType() != null ? r.getType() : "direct";
-            if ("direct".equals(type) && r.getChatroomId() != null
-                    && !r.getChatroomId().equals(currentChatId)) {
+            // Forward into other DMs (not system/AI rooms).
+            if ("direct".equals(type)) {
                 targets.add(r);
             }
         }
         if (targets.isEmpty()) {
-            shareExternally(selected);
+            Toast.makeText(requireContext(),
+                    "No other chats to forward to — share instead", Toast.LENGTH_SHORT).show();
+            shareExternally(toForward);
             return;
         }
+
         com.google.android.material.bottomsheet.BottomSheetDialog dialog =
                 new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
         RecyclerView rv = new RecyclerView(requireContext());
+        int pad = dp(12);
+        rv.setPadding(pad, pad, pad, pad);
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
         ChatSearchAdapter picker = new ChatSearchAdapter(room -> {
             dialog.dismiss();
-            String receiverId = room.getOtherUserId(FirebaseAuth.getInstance().getUid());
-            viewModel.sendMessage(room.getChatroomId(), text, receiverId, ok -> {
-                Toast.makeText(requireContext(),
-                        ok ? "Forwarded" : "Couldn't forward", Toast.LENGTH_SHORT).show();
-                return Unit.INSTANCE;
-            });
+            if (room == null || room.getChatroomId() == null || viewModel == null) return;
+            String me = FirebaseAuth.getInstance().getUid();
+            if (me == null) {
+                Toast.makeText(requireContext(), "Not signed in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String receiverId = room.getOtherUserId(me);
+            forwardMessagesToRoom(room.getChatroomId(), receiverId, toForward);
         });
         rv.setAdapter(picker);
         picker.submit(targets);
         dialog.setContentView(rv);
         dialog.show();
+    }
+
+    /** Sends each selected message into [roomId] preserving type (text/image/file/audio). */
+    private void forwardMessagesToRoom(
+            String roomId,
+            String receiverId,
+            java.util.List<ChatMessageEntity> messages
+    ) {
+        if (messages.isEmpty()) return;
+        final int[] remaining = {messages.size()};
+        final boolean[] anyFail = {false};
+        for (ChatMessageEntity m : messages) {
+            if (m == null || m.getDeleted()) {
+                if (--remaining[0] == 0) toastForwardResult(!anyFail[0]);
+                continue;
+            }
+            String type = m.getType() != null ? m.getType() : "text";
+            kotlin.jvm.functions.Function1<Boolean, Unit> done = ok -> {
+                if (!ok) anyFail[0] = true;
+                if (--remaining[0] == 0) toastForwardResult(!anyFail[0]);
+                return Unit.INSTANCE;
+            };
+            if ("image".equals(type)) {
+                viewModel.sendImageMessage(roomId, m.getMessage(), receiverId, done);
+            } else if ("file".equals(type) || "audio".equals(type)) {
+                viewModel.sendMediaMessage(roomId, m.getMessage(), type, receiverId, done);
+            } else {
+                viewModel.sendMessage(roomId, m.getMessage(), receiverId, done);
+            }
+        }
+    }
+
+    private void toastForwardResult(boolean ok) {
+        if (getContext() == null) return;
+        Toast.makeText(requireContext(),
+                ok ? "Forwarded" : "Couldn't forward some messages", Toast.LENGTH_SHORT).show();
     }
 
     private void shareExternally(java.util.List<ChatMessageEntity> selected) {
@@ -868,6 +910,7 @@ public class ChatFragment extends Fragment {
     /** Glass header + composer — same blur/transparency trick as the bottom nav. */
     private void setupChatGlassChrome() {
         if (binding == null || getActivity() == null) return;
+        if (binding.chatHeaderBlur == null || binding.chatComposerBlur == null) return;
         eightbitlab.com.blurview.BlurTarget target = getActivity().findViewById(R.id.blurTarget);
         int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
         try {
@@ -875,27 +918,34 @@ public class ChatFragment extends Fragment {
                 binding.chatHeaderBlur.setupWith(target).setBlurRadius(20f).setOverlayColor(overlay);
                 binding.chatComposerBlur.setupWith(target).setBlurRadius(20f).setOverlayColor(overlay);
             } else {
-                binding.chatHeaderBlur.setOverlayColor(overlay);
-                binding.chatComposerBlur.setOverlayColor(overlay);
+                binding.chatHeaderBlur.setBackgroundColor(overlay);
+                binding.chatComposerBlur.setBackgroundColor(overlay);
             }
         } catch (Exception e) {
             Log.w("ChatFragment", "Chat glass blur failed", e);
-            binding.chatHeaderBlur.setBackgroundColor(overlay);
-            binding.chatComposerBlur.setBackgroundColor(overlay);
+            try {
+                binding.chatHeaderBlur.setBackgroundColor(overlay);
+                binding.chatComposerBlur.setBackgroundColor(overlay);
+            } catch (Exception ignored) {}
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.llHeader, (v, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), bars.top + dp(10), v.getPaddingRight(), dp(12));
-            return insets;
-        });
-        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomChatBar, (v, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-            // MainActivity already pads bottom when chat is open; keep a small composer pad.
-            v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), dp(8) + Math.max(0, bars.bottom / 4));
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(binding.chatDetailContainer);
+        if (binding.llHeader != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(binding.llHeader, (v, insets) -> {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), bars.top + dp(10), v.getPaddingRight(), dp(12));
+                return insets;
+            });
+        }
+        if (binding.bottomChatBar != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(binding.bottomChatBar, (v, insets) -> {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), dp(8) + Math.max(0, bars.bottom / 4));
+                return insets;
+            });
+        }
+        if (binding.chatDetailContainer != null) {
+            ViewCompat.requestApplyInsets(binding.chatDetailContainer);
+        }
     }
 
     private int dp(int value) {
