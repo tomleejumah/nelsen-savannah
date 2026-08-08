@@ -221,6 +221,9 @@ object FirebaseRemoteDataSource {
                             .getValue(List::class.java) as? List<String> ?: listOf(),
                         bookedDates = snapshot.child("bookedDates")
                             .getValue(Set::class.java) as? Set<LocalDate> ?: setOf(),
+                        categories = (snapshot.child("categories").getValue(List::class.java)
+                                as? List<*>)?.mapNotNull { it as? String } ?: listOf(),
+                        averageRating = snapshot.child("averageRating").getValue(Double::class.java),
                     )
                     onSuccess?.invoke(mentorData)
                 } else {
@@ -446,9 +449,7 @@ object FirebaseRemoteDataSource {
                                     .getValue(String::class.java) ?: "",
                                 studentsCount = mentorSnapshot.child("studentsCount")
                                     .getValue(String::class.java),
-                                studentImages = mentorSnapshot.child("studentImages")
-                                    .getValue(Map::class.java)
-                                    ?.values?.mapNotNull { it.toString() } as? List<String>,
+                                studentImages = parseStringList(mentorSnapshot.child("studentImages")),
                                 bookedDates = mentorSnapshot.child("bookedDates")
                                     .getValue(Map::class.java)
                                     ?.values?.mapNotNull {
@@ -457,7 +458,10 @@ object FirebaseRemoteDataSource {
                                         } catch (_: Exception) {
                                             null
                                         }
-                                    }?.toSet()
+                                    }?.toSet(),
+                                categories = parseStringList(mentorSnapshot.child("categories")),
+                                averageRating = mentorSnapshot.child("averageRating")
+                                    .getValue(Double::class.java),
                             ) to key
                         }
                     }
@@ -760,15 +764,12 @@ object FirebaseRemoteDataSource {
             val allItems = mutableListOf<Event>()
 
             events.forEach { event ->
-                allItems.add(Event(
-                    eventId = event.eventId,
-                    //todo pass this in on create event
-                    title = event.getTitleForUser(uid),
-                    date = event.date,
-                    startTime = event.startTime,
-                    eventType = "event",
-                    endTime = event.endTime,
-                ))
+                allItems.add(
+                    event.copy(
+                        title = event.getTitleForUser(uid),
+                        eventType = "event",
+                    )
+                )
             }
 
             announcements.forEach { announcement ->
@@ -832,12 +833,70 @@ object FirebaseRemoteDataSource {
         db.updateChildren(updates)
             .addOnSuccessListener {
                 Log.d("FirebaseDataSource", "Event created successfully")
+                // Keep mentor mentee count / recent avatars in sync with bookings.
+                recordMentorBooking(mentorId, menteeId)
                 onComplete(true)
             }
             .addOnFailureListener { error ->
                 Log.e("FirebaseDataSource", "Event creation failed", error)
                 onComplete(false)
             }
+    }
+
+    /**
+     * Records that [menteeId] booked [mentorId]: unique mentee node, real count,
+     * and the most recent 3 mentee avatars for OverlapImageListView.
+     */
+    fun recordMentorBooking(mentorId: String, menteeId: String) {
+        if (mentorId.isEmpty() || menteeId.isEmpty()) return
+        getRemoteUserData(menteeId, onSuccess = { user ->
+            val photo = user?.photoUrl ?: ""
+            val menteeRef = db.child("mentors").child(mentorId).child("mentees").child(menteeId)
+            menteeRef.setValue(
+                mapOf(
+                    "photoUrl" to photo,
+                    "name" to listOfNotNull(user?.firstName, user?.lastName).joinToString(" ").trim(),
+                    "bookedAt" to System.currentTimeMillis()
+                )
+            ).addOnSuccessListener {
+                refreshMentorMenteeStats(mentorId)
+            }
+        }, onError = {
+            // Still create the mentee node without a photo.
+            db.child("mentors").child(mentorId).child("mentees").child(menteeId)
+                .setValue(mapOf("photoUrl" to "", "bookedAt" to System.currentTimeMillis()))
+                .addOnSuccessListener { refreshMentorMenteeStats(mentorId) }
+        })
+    }
+
+    private fun refreshMentorMenteeStats(mentorId: String) {
+        val menteesRef = db.child("mentors").child(mentorId).child("mentees")
+        menteesRef.get().addOnSuccessListener { snap ->
+            val count = snap.childrenCount
+            val recent = snap.children
+                .mapNotNull { child ->
+                    val at = child.child("bookedAt").getValue(Long::class.java) ?: 0L
+                    val photo = child.child("photoUrl").getValue(String::class.java).orEmpty()
+                    if (photo.isBlank()) null else at to photo
+                }
+                .sortedByDescending { it.first }
+                .take(3)
+                .map { it.second }
+            db.child("mentors").child(mentorId).updateChildren(
+                mapOf(
+                    "studentsCount" to count.toString(),
+                    "studentImages" to recent
+                )
+            )
+        }
+    }
+
+    private fun parseStringList(snapshot: DataSnapshot): List<String> {
+        val asList = snapshot.getValue(List::class.java)
+        if (asList != null) return asList.mapNotNull { it?.toString() }.filter { it.isNotBlank() }
+        val asMap = snapshot.getValue(Map::class.java)
+        if (asMap != null) return asMap.values.mapNotNull { it?.toString() }.filter { it.isNotBlank() }
+        return emptyList()
     }
 
     fun updateEvent(eventId: String, updates: Map<String, Any>, onComplete: (Boolean) -> Unit) {
@@ -888,7 +947,12 @@ object FirebaseRemoteDataSource {
             "description" to description,
             "mode" to mode,
             "location" to location,
-            "meetingLink" to meetingLink
+            "meetingLink" to meetingLink,
+            "participants" to participants,
+            "program" to program,
+            "seats" to seats,
+            "seatsTaken" to seatsTaken,
+            "price" to price,
         )
     }
 
