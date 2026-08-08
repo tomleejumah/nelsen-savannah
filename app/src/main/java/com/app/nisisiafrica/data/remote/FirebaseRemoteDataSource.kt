@@ -440,7 +440,7 @@ object FirebaseRemoteDataSource {
                         mentorSnapshot.key?.let { key ->
                             MentorItem(
                                 mentorId = mentorSnapshot.child("mentorId")
-                                    .getValue(String::class.java) ?: "",
+                                    .getValue(String::class.java)?.takeIf { it.isNotBlank() } ?: key,
                                 mentorImageUrl = mentorSnapshot.child("mentorImageUrl")
                                     .getValue(String::class.java) ?: "",
                                 mentorName = mentorSnapshot.child("mentorName")
