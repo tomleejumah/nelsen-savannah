@@ -12,11 +12,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -51,7 +51,6 @@ import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -61,7 +60,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.ismaeldivita.chipnavigation.ChipNavigationBar;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,6 +96,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private ImageView fabIcon;
     private View bottomBarRow;
     private View fabCard;
+    private ImageView navHomeIcon, navGroupsIcon, navChatIcon, navProfileIcon;
+    private TextView navHomeLabel, navGroupsLabel, navChatLabel, navProfileLabel;
     /** True while a conversation is open inside ChatFragment — hides the create-chat FAB. */
     private boolean chatConversationOpen = false;
 
@@ -142,26 +142,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 //TODO: show dialog fragment once everyday  new FullscreenDialogFragment(this).show();
 
         setupBlurBars();
-
-        ChipNavigationBar chipNavigationBar = findViewById(R.id.chipNavigationBar);
-        chipNavigationBar.setItemSelected(currentTabId, true);
-        updateContextualFab(currentTabId);
-
-        chipNavigationBar.setOnItemSelectedListener(i -> {
-            if (i == R.id.homeFragment) {
-                replaceFragment(homeFragment);
-            } else if (i == R.id.communitiesFragment) {
-                replaceFragment(communitiesFragment);
-            } else if (i == R.id.chatFragment) {
-                replaceFragment(chatFragment);
-            } else if (i == R.id.profileFragment) {
-                replaceFragment(profileFragment);
-            }
-            currentTabId = i;
-            updateContextualFab(i);
-        });
-
-        findViewById(R.id.fabCard).setOnClickListener(v -> onContextualFabClicked());
+        setupBottomNav();
+        selectTab(currentTabId, false);
 
         //fcm init
         initFCM();
@@ -275,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 });
     }
 
-    /** Translucent (blurred) pill + side FAB using the BlurView library. */
+    /** Translucent (blurred) bottom bar — keep blur; do not hide on scroll. */
     private void setupBlurBars() {
         bottomBarRow = findViewById(R.id.bottomBarRow);
         fabCard = findViewById(R.id.fabCard);
@@ -283,50 +265,67 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         eightbitlab.com.blurview.BlurTarget target = findViewById(R.id.blurTarget);
         eightbitlab.com.blurview.BlurView navBlur = findViewById(R.id.navBlur);
-        eightbitlab.com.blurview.BlurView fabBlur = findViewById(R.id.fabBlur);
-        // Overlay tint follows the theme so the bars stay legible in dark mode.
         int overlay = ContextCompat.getColor(this, R.color.blur_overlay);
         try {
             navBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(overlay);
-            fabBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(overlay);
         } catch (Exception e) {
             Log.w(TAG, "Blur setup failed; falling back to solid bars", e);
             int solid = ContextCompat.getColor(this, R.color.surface_card);
             navBlur.setBackgroundColor(solid);
-            fabBlur.setBackgroundColor(solid);
         }
     }
 
-    /** Sets the side FAB icon/visibility for the active tab. */
-    private void updateContextualFab(int tabId) {
-        if (fabCard == null || fabIcon == null) return;
-        boolean canCreate = isMentorOrAdmin();
-        boolean show;
-        int icon = R.drawable.ic_add;
-        if (tabId == R.id.homeFragment) {
-            show = canCreate;
-        } else if (tabId == R.id.communitiesFragment) {
-            show = canCreate;
-        } else if (tabId == R.id.chatFragment) {
-            // Same create-chat FAB as the list — hide once a conversation is open.
-            show = canCreate && !chatConversationOpen;
-            icon = R.drawable.ic_chat;
-        } else if (tabId == R.id.profileFragment) {
-            // Edit profile lives inside the profile screen; no side FAB.
-            show = false;
-        } else {
-            show = false;
+    private void setupBottomNav() {
+        navHomeIcon = findViewById(R.id.navHomeIcon);
+        navGroupsIcon = findViewById(R.id.navGroupsIcon);
+        navChatIcon = findViewById(R.id.navChatIcon);
+        navProfileIcon = findViewById(R.id.navProfileIcon);
+        navHomeLabel = findViewById(R.id.navHomeLabel);
+        navGroupsLabel = findViewById(R.id.navGroupsLabel);
+        navChatLabel = findViewById(R.id.navChatLabel);
+        navProfileLabel = findViewById(R.id.navProfileLabel);
+
+        findViewById(R.id.homeFragment).setOnClickListener(v -> selectTab(R.id.homeFragment, true));
+        findViewById(R.id.communitiesFragment).setOnClickListener(v -> selectTab(R.id.communitiesFragment, true));
+        findViewById(R.id.chatFragment).setOnClickListener(v -> selectTab(R.id.chatFragment, true));
+        findViewById(R.id.profileFragment).setOnClickListener(v -> selectTab(R.id.profileFragment, true));
+        findViewById(R.id.fabCard).setOnClickListener(v -> onContextualFabClicked());
+    }
+
+    private void selectTab(int tabId, boolean switchFragment) {
+        if (switchFragment) {
+            if (tabId == R.id.homeFragment) {
+                replaceFragment(homeFragment);
+            } else if (tabId == R.id.communitiesFragment) {
+                replaceFragment(communitiesFragment);
+            } else if (tabId == R.id.chatFragment) {
+                replaceFragment(chatFragment);
+            } else if (tabId == R.id.profileFragment) {
+                replaceFragment(profileFragment);
+            }
         }
-        fabIcon.setImageResource(icon);
-        fabCard.setVisibility(show ? View.VISIBLE : View.GONE);
+        currentTabId = tabId;
+        applyNavSelection(tabId);
+    }
+
+    private void applyNavSelection(int tabId) {
+        int active = ContextCompat.getColor(this, R.color.maroon_700);
+        int inactive = ContextCompat.getColor(this, R.color.muted);
+        tintNav(navHomeIcon, navHomeLabel, tabId == R.id.homeFragment, active, inactive);
+        tintNav(navGroupsIcon, navGroupsLabel, tabId == R.id.communitiesFragment, active, inactive);
+        tintNav(navChatIcon, navChatLabel, tabId == R.id.chatFragment, active, inactive);
+        tintNav(navProfileIcon, navProfileLabel, tabId == R.id.profileFragment, active, inactive);
+    }
+
+    private void tintNav(ImageView icon, TextView label, boolean selected, int active, int inactive) {
+        int color = selected ? active : inactive;
+        if (icon != null) icon.setColorFilter(color);
+        if (label != null) label.setTextColor(color);
     }
 
     /** Called by ChatFragment when entering/leaving a conversation. */
     public void setChatConversationOpen(boolean open) {
         chatConversationOpen = open;
-        if (currentTabId == R.id.chatFragment) {
-            updateContextualFab(currentTabId);
-        }
         if (bottomBarRow != null) {
             bottomBarRow.setVisibility(open ? View.GONE : View.VISIBLE);
         }
@@ -334,11 +333,17 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     private void onContextualFabClicked() {
         if (currentTabId == R.id.homeFragment) {
-            homeFragment.showCreateSheet();
+            if (isMentorOrAdmin()) {
+                homeFragment.showCreateSheet();
+            }
         } else if (currentTabId == R.id.communitiesFragment) {
-            startActivity(new Intent(this, CreateCommunityActivity.class));
+            if (isMentorOrAdmin()) {
+                startActivity(new Intent(this, CreateCommunityActivity.class));
+            }
         } else if (currentTabId == R.id.chatFragment) {
-            chatFragment.showNewChatPicker();
+            if (isMentorOrAdmin() && !chatConversationOpen) {
+                chatFragment.showNewChatPicker();
+            }
         } else if (currentTabId == R.id.profileFragment) {
             Intent i = new Intent(this, EditProfileActivity.class);
             i.putExtra(Constants.CURRENT_USER_ID, Util.getState(Constants.CURRENT_USER_ID, ""));
@@ -349,17 +354,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private boolean isMentorOrAdmin() {
         String role = userRole != null ? userRole : Roles.current();
         return Roles.canCreate(role);
-    }
-
-    public void hideBottomBar() {
-        if (bottomBarRow == null) return;
-        bottomBarRow.animate().translationY(bottomBarRow.getHeight() + 48f)
-                .setDuration(180).start();
-    }
-
-    public void showBottomBar() {
-        if (bottomBarRow == null) return;
-        bottomBarRow.animate().translationY(0f).setDuration(180).start();
     }
 
     private void handleFreshUserData(UserData userData) {
@@ -409,7 +403,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Util.saveState(Constants.USER_ROLE, userRole);
         userData.setUserRole(userRole);
         sharedUserViewModel1.updateUserData(userData);
-        updateContextualFab(currentTabId);
         SnackbarHandler snackbarHandler = (message, duration, type) -> {
             CustomSnackbar.show(MainActivity.this, message, duration, type);
         };
@@ -417,13 +410,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     public void navigateToHomeTab() {
-        ChipNavigationBar chipNavigationBar = findViewById(R.id.chipNavigationBar);
-        if (chipNavigationBar != null) {
-            chipNavigationBar.setItemSelected(R.id.homeFragment, true);
-        }
-        replaceFragment(homeFragment);
-        currentTabId = R.id.homeFragment;
-        updateContextualFab(R.id.homeFragment);
+        selectTab(R.id.homeFragment, true);
     }
 
     private void handleCachedUser() {
@@ -466,7 +453,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                     Util.saveState(Constants.USER_ROLE, remoteUserData.getUserRole() != null
                             ? remoteUserData.getUserRole() : "Mentee");
                     userRole = remoteUserData.getUserRole();
-                    updateContextualFab(currentTabId);
                 } else if (localUserData != null) {
                     userData = localUserData;
                     sharedUserViewModel1.setUserData(localUserData);
@@ -601,11 +587,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     @Override
     public void onParentScroll(int oldY, int newY) {
-        if ((oldY > newY)) {
-            showBottomBar();
-        } else {
-            hideBottomBar();
-        }
+        // Bottom bar stays visible; blur/transparency only — no scroll hide.
     }
 
     @Override
