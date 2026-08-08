@@ -10,12 +10,12 @@
     <item
         android:id="@+id/communitiesFragment"
         android:icon="@drawable/ic_people"
-        android:title="Communities"
+        android:title="Groups"
         app:cnb_iconColor="@color/nav_communities" />
     <item
         android:id="@+id/chatFragment"
         android:icon="@drawable/ic_chat"
-        android:title="Chats"
+        android:title="Chat"
         app:cnb_iconColor="@color/nav_chat" />
     <item
         android:id="@+id/profileFragment"
