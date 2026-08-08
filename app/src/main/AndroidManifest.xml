@@ -127,6 +127,16 @@
             android:name=".QuestionnaireActivity"
             android:exported="false" />
         <activity
+            android:name=".AllProgrammesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AllCoursesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TrackLearnActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
             android:name=".ProfileActivity"
             android:exported="false" />
         <activity
