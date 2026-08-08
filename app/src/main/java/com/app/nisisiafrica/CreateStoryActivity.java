@@ -103,7 +103,8 @@ public class CreateStoryActivity extends AppCompatActivity {
     private void publish() {
         String company = text(etCompany);
         if (company.isEmpty()) {
-            etCompany.setError("Enter a name");
+            etCompany.setError("Brand / company name is required");
+            etCompany.requestFocus();
             return;
         }
         if (selectedImage == null) {

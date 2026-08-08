@@ -4,16 +4,17 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="@color/bg"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:background="@color/bg"
         app:navigationIcon="@drawable/ic_nisisi_back"
         app:title="Create Story"
-        app:titleTextColor="?attr/colorOnSurface" />
+        app:titleTextColor="@color/ink" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -30,16 +31,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:alpha="0.6"
+                android:fontFamily="@font/font_ui"
                 android:text="Stories appear at the top of Home and expire automatically."
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/muted"
                 android:textSize="13sp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Company / brand name">
+                android:hint="Brand / company name">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etCompany"
@@ -48,14 +49,14 @@
                     android:inputType="textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Image picker -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPickImage"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="14dp"
-                app:strokeColor="#E2E8F0"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="@dimen/radius_card_md"
+                app:strokeColor="@color/line"
                 app:strokeWidth="1dp">
 
                 <FrameLayout
@@ -81,20 +82,20 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:src="@drawable/ic_image_placeholder"
-                            app:tint="#94A3B8" />
+                            app:tint="@color/muted" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
+                            android:fontFamily="@font/font_ui"
                             android:text="Tap to select an image"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted"
                             android:textSize="13sp" />
                     </LinearLayout>
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Expiry duration (spinner-style dropdown) -->
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
@@ -137,19 +138,16 @@
                     android:layout_height="wrap_content"
                     android:inputType="textUri" />
             </com.google.android.material.textfield.TextInputLayout>
-
         </LinearLayout>
     </ScrollView>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnPublishStory"
+        style="@style/Nelsen.Button.Primary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:backgroundTint="?attr/colorPrimary"
         android:paddingVertical="12dp"
         android:text="Publish Story"
-        android:textColor="#FFFFFF"
-        app:cornerRadius="14dp" />
-
+        android:textAllCaps="false" />
 </LinearLayout>
