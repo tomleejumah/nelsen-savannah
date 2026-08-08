@@ -1,0 +1,400 @@
+{
+  "tracks": [
+    {
+      "id": "track-sela",
+      "title": "Sela programme track",
+      "programSlug": "sela-programme",
+      "blurb": "Orientation → path map → first moves, with mentor-marked checkpoints.",
+      "audience": [
+        "Mentee"
+      ],
+      "moduleIds": [
+        "sela-orient",
+        "sela-map",
+        "sela-execute"
+      ]
+    },
+    {
+      "id": "track-trailblazers",
+      "title": "Trailblazers track",
+      "programSlug": "trailblazers",
+      "blurb": "Leadership presence and intentional networking.",
+      "audience": [
+        "Mentee"
+      ],
+      "moduleIds": [
+        "tb-lead",
+        "tb-network"
+      ]
+    },
+    {
+      "id": "track-scripture-safari",
+      "title": "Scripture Safari track",
+      "programSlug": "scripture-safari",
+      "blurb": "Faith-rooted purpose work and peer walk rhythms.",
+      "audience": [
+        "Mentee"
+      ],
+      "moduleIds": [
+        "ss-ground",
+        "ss-community"
+      ]
+    },
+    {
+      "id": "track-codelab",
+      "title": "Go for it Codelab track",
+      "programSlug": "go-for-it-codelab",
+      "blurb": "From tooling to a shipped mini project with mentor review.",
+      "audience": [
+        "Mentee"
+      ],
+      "moduleIds": [
+        "code-setup",
+        "code-build"
+      ]
+    },
+    {
+      "id": "track-mentor-academy",
+      "title": "Mentor Academy track",
+      "programSlug": "mentor-academy",
+      "blurb": "Required before mentors mark live mentee assignments.",
+      "audience": [
+        "Mentor",
+        "Admin"
+      ],
+      "moduleIds": [
+        "mentor-safeguard"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "id": "sela-orient",
+      "trackId": "track-sela",
+      "programSlug": "sela-programme",
+      "title": "Sela orientation",
+      "does": "Sets expectations, maps your starting point, and pairs you with a mentor pathway.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 45,
+      "lessons": [
+        {
+          "id": "sela-orient-1",
+          "title": "How Sela works",
+          "type": "video",
+          "does": "Walk through cohort rhythm, mentor sessions, and LMS checkpoints.",
+          "estimatedMinutes": 12
+        },
+        {
+          "id": "sela-orient-2",
+          "title": "Baseline self-check",
+          "type": "quiz",
+          "does": "Short quiz on goals, constraints, and preferred learning style.",
+          "hasQuiz": true,
+          "estimatedMinutes": 15
+        },
+        {
+          "id": "sela-orient-3",
+          "title": "Write your 90-day aim",
+          "type": "assignment",
+          "does": "Submit one clear outcome for mentor review.",
+          "hasAssignment": true,
+          "estimatedMinutes": 18
+        }
+      ]
+    },
+    {
+      "id": "sela-map",
+      "trackId": "track-sela",
+      "programSlug": "sela-programme",
+      "title": "Path mapping",
+      "does": "Turns interests into a shortlist of realistic next steps with mentor input.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 90,
+      "lessons": [
+        {
+          "id": "sela-map-1",
+          "title": "Strengths inventory",
+          "type": "read",
+          "does": "Guided worksheet: skills you have vs skills you need.",
+          "estimatedMinutes": 20
+        },
+        {
+          "id": "sela-map-2",
+          "title": "Option shortlist",
+          "type": "assignment",
+          "does": "Pick 3 paths; mentor marks fit and stretch.",
+          "hasAssignment": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "sela-map-3",
+          "title": "Checkpoint quiz",
+          "type": "quiz",
+          "does": "Confirm you can explain your shortlist in under a minute.",
+          "hasQuiz": true,
+          "estimatedMinutes": 15
+        }
+      ]
+    },
+    {
+      "id": "sela-execute",
+      "trackId": "track-sela",
+      "programSlug": "sela-programme",
+      "title": "First moves",
+      "does": "Converts the map into weekly actions and accountability.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 60,
+      "lessons": [
+        {
+          "id": "sela-execute-1",
+          "title": "Weekly action plan",
+          "type": "assignment",
+          "does": "Submit a 4-week plan; mentor approves or returns.",
+          "hasAssignment": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "sela-execute-2",
+          "title": "Progress log",
+          "type": "read",
+          "does": "How to log wins/blockers so % stays honest across app and web.",
+          "estimatedMinutes": 15
+        }
+      ]
+    },
+    {
+      "id": "tb-lead",
+      "trackId": "track-trailblazers",
+      "programSlug": "trailblazers",
+      "title": "Leadership stance",
+      "does": "Builds peer leadership habits: speak up, own a room, support others.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 75,
+      "lessons": [
+        {
+          "id": "tb-lead-1",
+          "title": "Presence basics",
+          "type": "video",
+          "does": "Body language, openings, and holding attention.",
+          "estimatedMinutes": 20
+        },
+        {
+          "id": "tb-lead-2",
+          "title": "Lead a 5-minute segment",
+          "type": "assignment",
+          "does": "Record or run a short peer segment; mentor marks clarity.",
+          "hasAssignment": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "tb-network",
+      "trackId": "track-trailblazers",
+      "programSlug": "trailblazers",
+      "title": "Network with intent",
+      "does": "Teaches outreach that is specific, respectful, and follow-through ready.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 50,
+      "lessons": [
+        {
+          "id": "tb-network-1",
+          "title": "Outreach templates",
+          "type": "read",
+          "does": "Copy patterns for mentors, peers, and hiring contacts.",
+          "estimatedMinutes": 15
+        },
+        {
+          "id": "tb-network-2",
+          "title": "Send three asks",
+          "type": "assignment",
+          "does": "Evidence of three outreach messages; mentor marks quality.",
+          "hasAssignment": true,
+          "estimatedMinutes": 25
+        }
+      ]
+    },
+    {
+      "id": "ss-ground",
+      "trackId": "track-scripture-safari",
+      "programSlug": "scripture-safari",
+      "title": "Grounded foundations",
+      "does": "Faith-rooted framing for purpose, pressure, and community support.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 70,
+      "lessons": [
+        {
+          "id": "ss-ground-1",
+          "title": "Purpose & pressure",
+          "type": "video",
+          "does": "Session framing identity and stress without performance.",
+          "estimatedMinutes": 25
+        },
+        {
+          "id": "ss-ground-2",
+          "title": "Reflection journal",
+          "type": "assignment",
+          "does": "Written reflection; mentor responds with guiding questions.",
+          "hasAssignment": true,
+          "estimatedMinutes": 30
+        }
+      ]
+    },
+    {
+      "id": "ss-community",
+      "trackId": "track-scripture-safari",
+      "programSlug": "scripture-safari",
+      "title": "Walk with others",
+      "does": "Practices peer support rhythms inside the Safari cohort.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 40,
+      "lessons": [
+        {
+          "id": "ss-community-1",
+          "title": "Buddy check-in ritual",
+          "type": "read",
+          "does": "How to run a 15-minute peer check-in.",
+          "estimatedMinutes": 12
+        },
+        {
+          "id": "ss-community-2",
+          "title": "Host one check-in",
+          "type": "assignment",
+          "does": "Log a hosted check-in; mentor confirms.",
+          "hasAssignment": true,
+          "estimatedMinutes": 20
+        }
+      ]
+    },
+    {
+      "id": "code-setup",
+      "trackId": "track-codelab",
+      "programSlug": "go-for-it-codelab",
+      "title": "Dev environment & first commit",
+      "does": "Gets mentees shipping — tools installed, repo ready, first PR mindset.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 90,
+      "lessons": [
+        {
+          "id": "code-setup-1",
+          "title": "Tooling setup",
+          "type": "video",
+          "does": "Install editor, git, and run a hello project.",
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "code-setup-2",
+          "title": "First commit proof",
+          "type": "assignment",
+          "does": "Submit repo link; mentor marks completeness.",
+          "hasAssignment": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "code-setup-3",
+          "title": "Git basics quiz",
+          "type": "quiz",
+          "does": "Check status / add / commit / push understanding.",
+          "hasQuiz": true,
+          "estimatedMinutes": 15
+        }
+      ]
+    },
+    {
+      "id": "code-build",
+      "trackId": "track-codelab",
+      "programSlug": "go-for-it-codelab",
+      "title": "Build a small project",
+      "does": "Ships a portfolio-ready mini project with mentor review.",
+      "audience": [
+        "Mentee"
+      ],
+      "estimatedMinutes": 180,
+      "lessons": [
+        {
+          "id": "code-build-1",
+          "title": "Project brief",
+          "type": "read",
+          "does": "Scope a project that fits 1–2 weeks.",
+          "estimatedMinutes": 20
+        },
+        {
+          "id": "code-build-2",
+          "title": "Milestone demo",
+          "type": "assignment",
+          "does": "Mid-build demo; mentor marks progress against brief.",
+          "hasAssignment": true,
+          "estimatedMinutes": 60
+        },
+        {
+          "id": "code-build-3",
+          "title": "Final ship",
+          "type": "assignment",
+          "does": "Final README + demo link; mentor final mark.",
+          "hasAssignment": true,
+          "estimatedMinutes": 90
+        }
+      ]
+    },
+    {
+      "id": "mentor-safeguard",
+      "trackId": "track-mentor-academy",
+      "programSlug": "mentor-academy",
+      "title": "Safeguarding & listening",
+      "does": "Certifies mentors on safe practice before they mark mentee work.",
+      "audience": [
+        "Mentor",
+        "Admin"
+      ],
+      "estimatedMinutes": 80,
+      "lessons": [
+        {
+          "id": "mentor-safeguard-1",
+          "title": "Safeguarding essentials",
+          "type": "read",
+          "does": "Boundaries, escalation, and documentation rules.",
+          "estimatedMinutes": 25
+        },
+        {
+          "id": "mentor-safeguard-2",
+          "title": "Listening frameworks",
+          "type": "video",
+          "does": "How to coach without taking over.",
+          "estimatedMinutes": 20
+        },
+        {
+          "id": "mentor-safeguard-3",
+          "title": "Scenario quiz",
+          "type": "quiz",
+          "does": "Pass scenarios before unlocking mentee marking.",
+          "hasQuiz": true,
+          "estimatedMinutes": 20
+        },
+        {
+          "id": "mentor-safeguard-4",
+          "title": "Practice mark",
+          "type": "assignment",
+          "does": "Mark a sample assignment; Admin reviews quality.",
+          "hasAssignment": true,
+          "estimatedMinutes": 15
+        }
+      ]
+    }
+  ]
+}

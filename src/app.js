@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import "./config/firebase.js";
 import { initLmsDb, getPrimaryEngine } from "./db/lmsDb.js";
+import { seedLmsCatalog } from "./services/lmsSeed.js";
 import notificationRoutes from "./routes/notifications.js";
 import chatRoutes from "./routes/chat.js";
 import diditRoute from "./routes/diditRoute.js";
@@ -70,6 +71,7 @@ const PORT = process.env.PORT || 5002;
 
 async function start() {
   await initLmsDb();
+  await seedLmsCatalog();
   console.log(
     `[lms] UPLOAD_DIR=${UPLOAD_DIR} PUBLIC_BASE_URL=${process.env.PUBLIC_BASE_URL || "(unset)"}`,
   );

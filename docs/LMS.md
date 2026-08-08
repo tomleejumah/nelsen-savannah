@@ -16,8 +16,14 @@
 | `LMS_DATA_DIR` | SQLite + data dir (default `./data`) |
 | `PUBLIC_BASE_URL` | Public origin for `/uploads/...` URLs |
 
-## Endpoints (M0)
+## Endpoints (M0–M1)
 
 - `GET /lms/me` — Bearer Firebase ID token → profile + role + capabilities
 - `GET /lms/health` — primary + RTDB health (no auth)
+- `GET /lms/tracks` — TrackCardDto[] (CourseItem-compatible)
+- `GET /lms/tracks/:trackId` — track + modules[]
+- `GET /lms/modules/:moduleId` — module + lessons[]
+- `GET /lms/lessons/:lessonId` — lesson detail
 - `GET /uploads/*` — static files from `UPLOAD_DIR`
+
+Catalog seed: `src/data/lmsSeed.json` (from `LMS_TRACKS` / `LMS_MODULES`) on empty DB.
