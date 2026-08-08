@@ -35,32 +35,46 @@ class ChatViewModel(private val repo: ChatRepository) : ViewModel() {
         }
     }
 
+    @JvmOverloads
     fun sendMessage(
         chatroomId: String,
         message: String,
         receiverId: String?,
+        replyTo: ChatMessageEntity? = null,
         onComplete: (Boolean) -> Unit
     ) {
-        repo.sendMessage(chatroomId, message, receiverId, onComplete)
+        repo.sendMessage(chatroomId, message, receiverId, replyTo, onComplete)
     }
 
+    @JvmOverloads
     fun sendImageMessage(
         chatroomId: String,
         imageUrl: String,
         receiverId: String?,
+        replyTo: ChatMessageEntity? = null,
         onComplete: (Boolean) -> Unit
     ) {
-        repo.sendImageMessage(chatroomId, imageUrl, receiverId, onComplete)
+        repo.sendImageMessage(chatroomId, imageUrl, receiverId, replyTo, onComplete)
     }
 
+    @JvmOverloads
     fun sendMediaMessage(
         chatroomId: String,
         url: String,
         type: String,
         receiverId: String?,
+        replyTo: ChatMessageEntity? = null,
         onComplete: (Boolean) -> Unit
     ) {
-        repo.sendMediaMessage(chatroomId, url, type, receiverId, onComplete)
+        repo.sendMediaMessage(chatroomId, url, type, receiverId, replyTo, onComplete)
+    }
+
+    fun deleteMessage(
+        chatroomId: String,
+        message: ChatMessageEntity,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.deleteMessage(chatroomId, message, onComplete)
     }
 
     fun markRead(chatroomId: String) {

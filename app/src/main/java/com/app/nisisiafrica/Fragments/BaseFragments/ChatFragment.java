@@ -1,5 +1,7 @@
 package com.app.nisisiafrica.Fragments.BaseFragments;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -60,6 +62,7 @@ import com.google.firebase.auth.FirebaseUser;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import kotlin.Unit;
@@ -236,8 +239,7 @@ public class ChatFragment extends Fragment {
         binding.overlappingPanels.openEndPanel();
         isPanelOpen = true;
         binding.etMessage.setText("");
-        replyingTo = null;
-        binding.replyPreview.setVisibility(View.GONE);
+        clearReply();
 
         updateChatHeader(chatroom, type, currentUserId);
 
@@ -343,11 +345,13 @@ public class ChatFragment extends Fragment {
         Toast.makeText(requireContext(), "Uploading...", Toast.LENGTH_SHORT).show();
         final String chatId = currentChatId;
         final String receiverId = currentReceiverId;
+        final ChatMessageEntity replyTarget = replyingTo;
+        clearReply();
         String folder = "audio".equals(type) ? "chat_audio" : "chat_files";
         StorageUploader.upload(uri, folder, (success, url) -> {
             if (binding == null || viewModel == null) return;
             if (success && url != null) {
-                viewModel.sendMediaMessage(chatId, url, type, receiverId, ok -> {
+                viewModel.sendMediaMessage(chatId, url, type, receiverId, replyTarget, ok -> {
                     if (!ok) Toast.makeText(requireContext(), "Not sent", Toast.LENGTH_SHORT).show();
                     return Unit.INSTANCE;
                 });
@@ -362,10 +366,12 @@ public class ChatFragment extends Fragment {
         Toast.makeText(requireContext(), "Uploading image...", Toast.LENGTH_SHORT).show();
         final String chatId = currentChatId;
         final String receiverId = currentReceiverId;
+        final ChatMessageEntity replyTarget = replyingTo;
+        clearReply();
         StorageUploader.upload(uri, "chat_images", (success, url) -> {
             if (binding == null || viewModel == null) return;
             if (success && url != null) {
-                viewModel.sendImageMessage(chatId, url, receiverId, ok -> {
+                viewModel.sendImageMessage(chatId, url, receiverId, replyTarget, ok -> {
                     if (!ok) Toast.makeText(requireContext(), "Image not sent", Toast.LENGTH_SHORT).show();
                     return Unit.INSTANCE;
                 });
@@ -534,6 +540,16 @@ public class ChatFragment extends Fragment {
                 }
         );
         new ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvMessages);
+
+        adapter.setOnMessageLongClick((message, isMine) -> {
+            showMessageActions(message, isMine);
+            return Unit.INSTANCE;
+        });
+        adapter.setOnQuotedClick(messageId -> {
+            scrollToMessage(messageId);
+            return Unit.INSTANCE;
+        });
+
          binding.rvMessages.setAdapter(adapter);
          binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -549,14 +565,96 @@ public class ChatFragment extends Fragment {
     private ChatMessageEntity replyingTo = null;
 
     private void triggerReply(ChatMessageEntity message) {
+        if (message.getDeleted()) return;
         replyingTo = message;
         binding.replyPreview.setVisibility(View.VISIBLE);
-        binding.tvReplyText.setText(message.getMessage());
+        binding.tvReplyText.setText(previewOf(message));
         binding.tvReplySender.setText(message.getSenderName());
-        binding.btnCancelReply.setOnClickListener(v -> {
-            replyingTo = null;
-            binding.replyPreview.setVisibility(View.GONE);
-        });
+        binding.btnCancelReply.setOnClickListener(v -> clearReply());
+        binding.etMessage.requestFocus();
+    }
+
+    private void clearReply() {
+        replyingTo = null;
+        if (binding != null) binding.replyPreview.setVisibility(View.GONE);
+    }
+
+    /** Human-readable stand-in for a message, so attachments never quote a raw URL. */
+    private String previewOf(ChatMessageEntity message) {
+        String type = message.getType();
+        if ("image".equals(type)) return "\uD83D\uDCF7 Photo";
+        if ("audio".equals(type)) return "\uD83C\uDFB5 Audio";
+        if ("file".equals(type)) return "\uD83D\uDCC4 Document";
+        return message.getMessage();
+    }
+
+    /**
+     * Long-press actions on a single message. Distinct from the long-press on a
+     * chat ROOM in the list panel, which deletes the whole conversation.
+     */
+    private void showMessageActions(ChatMessageEntity message, boolean isMine) {
+        List<String> labels = new ArrayList<>();
+        labels.add("Reply");
+        labels.add("Copy");
+        if (isMine) labels.add("Delete");
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setItems(labels.toArray(new String[0]), (dialog, which) -> {
+                    switch (labels.get(which)) {
+                        case "Reply":
+                            triggerReply(message);
+                            break;
+                        case "Copy":
+                            copyToClipboard(previewOf(message));
+                            break;
+                        case "Delete":
+                            confirmDeleteMessage(message);
+                            break;
+                    }
+                })
+                .show();
+    }
+
+    private void copyToClipboard(String text) {
+        ClipboardManager clipboard =
+                (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) return;
+        clipboard.setPrimaryClip(ClipData.newPlainText("message", text));
+        Toast.makeText(requireContext(), "Copied", Toast.LENGTH_SHORT).show();
+    }
+
+    private void confirmDeleteMessage(ChatMessageEntity message) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete message?")
+                .setMessage("It will be replaced with \"This message was deleted\" for everyone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (d, w) -> {
+                    if (currentChatId == null) return;
+                    // Drop a pending reply that points at the message being removed.
+                    if (replyingTo != null
+                            && replyingTo.getMessageId().equals(message.getMessageId())) {
+                        clearReply();
+                    }
+                    viewModel.deleteMessage(currentChatId, message, ok -> {
+                        if (!ok && binding != null) {
+                            Toast.makeText(requireContext(), "Couldn't delete", Toast.LENGTH_SHORT).show();
+                        }
+                        return Unit.INSTANCE;
+                    });
+                })
+                .show();
+    }
+
+    /** Jumps to the quoted original and flashes it; no-ops when it isn't loaded. */
+    private void scrollToMessage(String messageId) {
+        if (binding == null || adapter == null) return;
+        int position = adapter.positionOf(messageId);
+        if (position < 0) {
+            Toast.makeText(requireContext(), "Original message not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        binding.rvMessages.smoothScrollToPosition(position);
+        adapter.flashMessage(messageId);
     }
 
     private void setupSendAction(String chatId, Chatroom chatroom) {
@@ -564,13 +662,11 @@ public class ChatFragment extends Fragment {
             String msg = binding.etMessage.getText().toString().trim();
             if (!msg.isEmpty()) {
                 binding.etMessage.setText("");
-                if (replyingTo != null) {
-                    replyingTo = null;
-                    binding.replyPreview.setVisibility(View.GONE);
-                }
+                ChatMessageEntity replyTarget = replyingTo;
+                clearReply();
                 String currentUserId = FirebaseAuth.getInstance().getUid();
                 String receiverId = chatroom.getOtherUserId(currentUserId);
-                viewModel.sendMessage(chatId, msg, receiverId, success -> {
+                viewModel.sendMessage(chatId, msg, receiverId, replyTarget, success -> {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
                     }
