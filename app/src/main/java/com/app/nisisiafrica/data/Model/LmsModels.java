@@ -106,8 +106,9 @@ public final class LmsModels {
         public String tutorAvatarUrl;
         public String tutorName;
         public String courseTitle;
-        public String duration;
-        public String lessons;
+        /** API may send number or string — use [asString]. */
+        public Object duration;
+        public Object lessons;
         public String courseLink;
         public boolean isLiked;
         public String trackId;
@@ -117,6 +118,18 @@ public final class LmsModels {
         public boolean enrolled;
         public List<String> audience;
         public int moduleCount;
+
+        public String durationString() {
+            return asString(duration);
+        }
+
+        public String lessonsString() {
+            return asString(lessons);
+        }
+
+        private static String asString(Object v) {
+            return v == null ? "" : String.valueOf(v);
+        }
     }
 
     public static class TracksData {

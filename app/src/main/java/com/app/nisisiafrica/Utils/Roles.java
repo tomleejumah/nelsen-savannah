@@ -40,13 +40,15 @@ public final class Roles {
         return !isAdmin() && !isMentor();
     }
 
-    /** Mentee-only: show mentor list / Book mentor / Find a mentor. */
+    /** Mentee-only: show mentor list / Book mentor / Find a mentor.
+     * TEMP: always true so mentors see the list too — revert later. */
     public static boolean browsesMentors() {
-        return isMentee();
+        return true;
     }
 
+    /** TEMP: always true — revert to !admin && !mentor later. */
     public static boolean browsesMentors(String role) {
-        return !isAdmin(role) && !isMentor(role);
+        return true;
     }
 
     /** Whether the user may author content: stories, events, communities, announcements. */
