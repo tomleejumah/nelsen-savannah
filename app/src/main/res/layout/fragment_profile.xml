@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -19,92 +20,99 @@
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             app:titleEnabled="false">
 
-            <!-- Collapsing profile card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingTop="64dp"
-                android:paddingBottom="14dp"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="72dp"
+                android:paddingBottom="8dp"
                 app:layout_collapseMode="parallax">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                <FrameLayout
+                    android:layout_width="96dp"
+                    android:layout_height="96dp">
 
                     <de.hdodenhof.circleimageview.CircleImageView
                         android:id="@+id/profileAvatar"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:src="@drawable/ic_person"
-                        app:civ_border_color="@color/line"
-                        app:civ_border_width="1dp" />
+                        app:civ_border_width="0dp" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/profileAvatarInitial"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:fontFamily="@font/font_display"
+                        android:gravity="center"
+                        android:textColor="@color/white"
+                        android:textSize="36sp"
+                        android:textStyle="bold"
+                        android:visibility="gone"
+                        tools:text="E"
+                        tools:visibility="visible" />
+                </FrameLayout>
 
-                        <TextView
-                            android:id="@+id/profileName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:ellipsize="end"
-                            android:fontFamily="@font/font_display"
-                            android:maxLines="1"
-                            android:text="Your Name"
-                            android:textColor="@color/ink"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/profileName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/font_display"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:text="Your Name"
+                    android:textColor="@color/maroon_900"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
-                        <TextView
-                            android:id="@+id/profileRole"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/bg_tag_maroon"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="2dp"
-                            android:text="Mentee"
-                            android:textColor="@color/maroon_600"
-                            android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/profileRole"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_tag_maroon"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="3dp"
+                    android:text="Mentee"
+                    android:textColor="@color/maroon_700"
+                    android:textSize="12sp" />
 
-                        <TextView
-                            android:id="@+id/profileEmail"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:alpha="0.6"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/profileEmail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/font_ui"
+                    android:maxLines="1"
+                    android:textColor="@color/muted"
+                    android:textSize="13sp"
+                    tools:text="edenpulp@gmail.com" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnEditProfile"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="Edit Profile"
-                    android:textColor="?attr/colorOnSurface"
+                    android:minWidth="160dp"
+                    android:text="Edit profile"
+                    android:textAllCaps="false"
+                    android:textColor="@color/maroon_700"
                     app:cornerRadius="12dp"
-                    app:strokeColor="@color/line" />
+                    app:strokeColor="@color/maroon_700"
+                    app:strokeWidth="1.5dp" />
             </LinearLayout>
 
-            <!-- Pinned top bar (title + notifications) -->
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/profileToolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorSurface"
+                android:background="@color/bg"
                 app:layout_collapseMode="pin">
 
                 <LinearLayout
@@ -112,16 +120,16 @@
                     android:layout_height="match_parent"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="16dp">
+                    android:paddingEnd="8dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:fontFamily="@font/semibold"
+                        android:fontFamily="@font/font_display"
                         android:text="Profile"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="20sp"
+                        android:textColor="@color/ink"
+                        android:textSize="22sp"
                         android:textStyle="bold" />
 
                     <FrameLayout
@@ -137,7 +145,8 @@
                             android:layout_height="26dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_notifications"
-                            app:tint="?attr/colorPrimary" />
+                            app:tint="@color/accent_gold"
+                            tools:ignore="ContentDescription" />
 
                         <TextView
                             android:id="@+id/profileNotifCount"
