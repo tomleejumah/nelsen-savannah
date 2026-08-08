@@ -176,7 +176,7 @@
                 android:padding="11dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_send"
-                android:tint="@color/white" />
+                app:tint="@color/white" />
         </LinearLayout>
     </LinearLayout>
 
