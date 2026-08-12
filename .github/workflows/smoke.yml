@@ -1,0 +1,18 @@
+name: LMS smoke
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Health smoke
+        run: node scripts/smoke.mjs
+        env:
+          LMS_SMOKE_BASE: https://api.tommlyjumah.dev/nisisi-africa

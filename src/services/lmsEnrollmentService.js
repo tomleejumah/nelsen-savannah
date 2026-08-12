@@ -196,6 +196,11 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
     };
   }
 
+  const { assertSeatAvailable, incrementSeatUsed } = await import(
+    "./lmsBillingService.js"
+  );
+  const schoolId = await assertSeatAvailable(profile.uid);
+
   const now = Date.now();
   const { modulesTotal, lessonsTotal } = await trackTotals(trackId);
 
@@ -206,8 +211,8 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
         `INSERT INTO enrollments (
           uid, track_id, role, status, enrolled_at, last_active_at,
           track_percent, modules_completed, modules_total,
-          lessons_completed, lessons_total, mentor_id, platform
-        ) VALUES (?, ?, ?, 'in_progress', ?, ?, 0, 0, ?, 0, ?, NULL, ?)`,
+          lessons_completed, lessons_total, mentor_id, platform, school_id
+        ) VALUES (?, ?, ?, 'in_progress', ?, ?, 0, 0, ?, 0, ?, NULL, ?, ?)`,
         [
           profile.uid,
           trackId,
@@ -217,6 +222,7 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
           modulesTotal,
           lessonsTotal,
           platform === "android" || platform === "web" ? platform : "web",
+          schoolId,
         ],
       );
       return dbGet(
@@ -228,6 +234,8 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
       await mirrorEnrollment(profile.uid, trackId, mapEnrollment(row));
     },
   });
+
+  await incrementSeatUsed(schoolId);
 
   return {
     source: getPrimaryEngine(),

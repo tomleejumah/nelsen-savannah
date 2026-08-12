@@ -378,6 +378,13 @@ async function ensureMigrations() {
   const alters = [
     "ALTER TABLE users_mirror ADD COLUMN school_id TEXT",
     "ALTER TABLE submissions ADD COLUMN assignment_id TEXT",
+    "ALTER TABLE tracks ADD COLUMN school_id TEXT",
+    "ALTER TABLE enrollments ADD COLUMN school_id TEXT",
+    "ALTER TABLE schools ADD COLUMN logo_url TEXT",
+    "ALTER TABLE schools ADD COLUMN accent_color TEXT",
+    "ALTER TABLE schools ADD COLUMN seats_total INTEGER",
+    "ALTER TABLE schools ADD COLUMN seats_used INTEGER",
+    "ALTER TABLE schools ADD COLUMN branding_json TEXT",
   ];
   for (const sql of alters) {
     try {
@@ -385,6 +392,22 @@ async function ensureMigrations() {
     } catch {
       /* column already exists */
     }
+  }
+  try {
+    await dbRun(`CREATE TABLE IF NOT EXISTS payments (
+      payment_id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL,
+      method TEXT NOT NULL,
+      seats INTEGER NOT NULL,
+      amount_kes INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      phone TEXT,
+      checkout_ref TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`);
+  } catch {
+    /* ignore */
   }
   const now = Date.now();
   const existing = await dbGet(
@@ -396,6 +419,22 @@ async function ensureMigrations() {
       "INSERT INTO schools (school_id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
       ["nelsen-digital", "Nelsen Digital School", now, now],
     );
+  }
+  try {
+    await dbRun(
+      `UPDATE schools SET seats_total = COALESCE(seats_total, 100),
+       seats_used = COALESCE(seats_used, 0) WHERE school_id = ?`,
+      ["nelsen-digital"],
+    );
+  } catch {
+    /* ignore */
+  }
+  try {
+    await dbRun(
+      `UPDATE tracks SET school_id = 'nelsen-digital' WHERE school_id IS NULL OR school_id = ''`,
+    );
+  } catch {
+    /* ignore */
   }
 }
 

@@ -335,3 +335,146 @@ export async function patchSchoolMemberRole(actorUid, schoolId, targetUid, body 
     data: { uid: targetUid, userRole: nextRole, schoolId },
   };
 }
+
+export async function updateSchoolBranding(actorUid, schoolId, body = {}) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const school = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
+    schoolId,
+  ]);
+  if (!school) {
+    const err = new Error("School not found");
+    err.status = 404;
+    throw err;
+  }
+  const name = body.name != null ? String(body.name).trim() : school.name;
+  const logoUrl = body.logoUrl != null ? String(body.logoUrl) : school.logo_url;
+  const accentColor =
+    body.accentColor != null ? String(body.accentColor) : school.accent_color;
+  const brandingJson =
+    body.branding != null
+      ? JSON.stringify(body.branding)
+      : school.branding_json;
+  await dbRun(
+    `UPDATE schools SET name = ?, logo_url = ?, accent_color = ?,
+     branding_json = ?, updated_at = ? WHERE school_id = ?`,
+    [name, logoUrl || null, accentColor || null, brandingJson || null, Date.now(), schoolId],
+  );
+  const row = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
+    schoolId,
+  ]);
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      school: {
+        ...mapSchool(row),
+        logoUrl: row.logo_url || null,
+        accentColor: row.accent_color || null,
+      },
+    },
+  };
+}
+
+/** CSV: uid,email,displayName,role per line (header optional). */
+export async function importSchoolRoster(actorUid, schoolId, body = {}) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const csv = String(body.csv || body.text || "");
+  const lines = csv
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lines.length) {
+    const err = new Error("csv required");
+    err.status = 400;
+    throw err;
+  }
+  let start = 0;
+  if (/uid|email/i.test(lines[0])) start = 1;
+  const imported = [];
+  const errors = [];
+  for (let i = start; i < lines.length; i++) {
+    const parts = lines[i].split(",").map((p) => p.trim().replace(/^"|"$/g, ""));
+    const [uid, email, displayName, roleRaw] = parts;
+    if (!uid) {
+      errors.push({ line: i + 1, error: "uid missing" });
+      continue;
+    }
+    try {
+      await ensureUserRow({ uid, email: email || "", displayName: displayName || "" });
+      const role =
+        normalizeRole(roleRaw || ROLES.Mentee) === ROLES.Mentor
+          ? ROLES.Mentor
+          : ROLES.Mentee;
+      await setMemberSchoolAndRole(uid, schoolId, role);
+      imported.push({ uid, userRole: role });
+    } catch (err) {
+      errors.push({ line: i + 1, error: err.message });
+    }
+  }
+  return {
+    source: getPrimaryEngine(),
+    data: { imported: imported.length, members: imported, errors },
+  };
+}
+
+export async function schoolDashboard(actorUid, schoolId) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const members = await dbAll(
+    `SELECT u.uid, u.display_name, u.email, r.role
+     FROM users_mirror u
+     LEFT JOIN roles r ON r.uid = u.uid
+     WHERE u.school_id = ?`,
+    [schoolId],
+  );
+  const enrollments = await dbAll(
+    `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at, u.display_name
+     FROM enrollments e
+     JOIN users_mirror u ON u.uid = e.uid
+     WHERE COALESCE(u.school_id, 'nelsen-digital') = ?`,
+    [schoolId],
+  );
+  const rosterCount = members.length;
+  const avgCompletion =
+    enrollments.length === 0
+      ? 0
+      : Math.round(
+          enrollments.reduce((s, e) => s + Number(e.track_percent || 0), 0) /
+            enrollments.length,
+        );
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const atRisk = enrollments
+    .filter(
+      (e) =>
+        Number(e.track_percent || 0) < 40 &&
+        Number(e.last_active_at || 0) < weekAgo,
+    )
+    .map((e) => ({
+      uid: e.uid,
+      displayName: e.display_name || "",
+      trackId: e.track_id,
+      trackPercent: Number(e.track_percent || 0),
+      lastActiveAt: Number(e.last_active_at || 0),
+    }));
+  const school = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
+    schoolId,
+  ]);
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      schoolId,
+      schoolName: school?.name || "",
+      rosterCount,
+      mentors: members.filter((m) => normalizeRole(m.role) === ROLES.Mentor)
+        .length,
+      mentees: members.filter((m) => normalizeRole(m.role) === ROLES.Mentee)
+        .length,
+      enrollments: enrollments.length,
+      avgCompletion,
+      atRisk,
+      seatsTotal: Number(school?.seats_total || 0),
+      seatsUsed: Number(school?.seats_used || 0),
+      logoUrl: school?.logo_url || null,
+      accentColor: school?.accent_color || null,
+    },
+  };
+}
+
