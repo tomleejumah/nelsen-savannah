@@ -534,28 +534,8 @@ export type SchoolDashboardDto = {
     trackPercent: number;
     lastActiveAt: number;
   }[];
-  seatsTotal: number;
-  seatsUsed: number;
   logoUrl: string | null;
   accentColor: string | null;
-};
-
-export type BillingDto = {
-  schoolId: string;
-  seatsTotal: number;
-  seatsUsed: number;
-  seatsAvailable: number;
-  seatPriceKes: number;
-  payments: {
-    id: string;
-    method: string;
-    seats: number;
-    amountKes: number;
-    status: string;
-    phone: string | null;
-    checkoutRef: string | null;
-    createdAt: number;
-  }[];
 };
 
 export async function fetchAdminStats(idToken: string) {
@@ -648,52 +628,6 @@ export async function patchSchoolBranding(
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    },
-  );
-}
-
-export async function fetchSchoolBilling(idToken: string, schoolId: string) {
-  return lmsFetch<BillingDto>(
-    `/lms/schools/${encodeURIComponent(schoolId)}/billing`,
-    idToken,
-  );
-}
-
-export async function billingCheckout(
-  idToken: string,
-  body: {
-    schoolId: string;
-    seats: number;
-    method: "mpesa" | "card";
-    phone?: string;
-  },
-) {
-  return lmsFetch<{
-    payment: {
-      id: string;
-      status: string;
-      amountKes: number;
-      webhookHint: string | null;
-    };
-    seatsTotal: number;
-  }>("/lms/billing/checkout", idToken, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
-
-export async function billingWebhookComplete(
-  idToken: string,
-  paymentId: string,
-) {
-  return lmsFetch<{ paymentId: string; status: string }>(
-    "/lms/billing/webhook",
-    idToken,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentId, status: "paid" }),
     },
   );
 }

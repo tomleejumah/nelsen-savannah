@@ -5,9 +5,6 @@ import type { User } from "firebase/auth";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
-  billingCheckout,
-  billingWebhookComplete,
-  fetchSchoolBilling,
   fetchSchoolDashboard,
   fetchSchoolMembers,
   importSchoolRoster,
@@ -15,7 +12,6 @@ import {
   patchSchoolMemberRole,
   registerSchoolMentee,
   registerSchoolMentor,
-  type BillingDto,
   type MeDto,
   type SchoolDashboardDto,
   type SchoolMemberDto,
@@ -27,7 +23,7 @@ export const Route = createFileRoute("/school")({
       { title: "School admin — Nelsen Savannah LMS" },
       {
         name: "description",
-        content: "School admin — roster, catalog, dashboard, and seats.",
+        content: "School admin — roster, catalog, and dashboard.",
       },
     ],
   }),
@@ -39,7 +35,7 @@ function SchoolPage() {
     <RoleShellPage
       shell="school"
       title="School admin"
-      blurb="People, catalog, dashboard, and seat licenses for your school wing."
+      blurb="People, catalog, and dashboard for your school wing."
     >
       {({ user, me }) => <SchoolConsole user={user} me={me} />}
     </RoleShellPage>
@@ -50,7 +46,6 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const schoolId = me.schoolId || "nelsen-digital";
   const [members, setMembers] = useState<SchoolMemberDto[]>([]);
   const [dash, setDash] = useState<SchoolDashboardDto | null>(null);
-  const [billing, setBilling] = useState<BillingDto | null>(null);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -63,24 +58,19 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [csv, setCsv] = useState("uid,email,displayName,role\n");
   const [accent, setAccent] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [seats, setSeats] = useState(10);
-  const [phone, setPhone] = useState("");
-  const [pendingPayId, setPendingPayId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
     try {
       const token = await user.getIdToken();
-      const [m, d, b] = await Promise.all([
+      const [m, d] = await Promise.all([
         fetchSchoolMembers(token, schoolId),
         fetchSchoolDashboard(token, schoolId),
-        fetchSchoolBilling(token, schoolId),
       ]);
       if (!m.ok) setError(m.error || "Could not load roster");
       setMembers(m.data?.members || []);
       setDash(d.data || null);
-      setBilling(b.data || null);
       if (d.data?.accentColor) setAccent(d.data.accentColor);
       if (d.data?.logoUrl) setLogoUrl(d.data.logoUrl);
     } catch (err) {
@@ -162,38 +152,6 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     setMsg(result.ok ? "Branding saved." : result.error || "Failed");
   }
 
-  async function buySeats(method: "card" | "mpesa") {
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await billingCheckout(token, {
-      schoolId,
-      seats,
-      method,
-      phone: method === "mpesa" ? phone.trim() : undefined,
-    });
-    if (!result.ok) {
-      setMsg(result.error || "Checkout failed");
-      return;
-    }
-    if (result.data?.payment.status === "pending") {
-      setPendingPayId(result.data.payment.id);
-      setMsg(`M-Pesa pending ${result.data.payment.id} — confirm webhook when paid.`);
-    } else {
-      setMsg(`Paid — seats now ${result.data?.seatsTotal}`);
-      setPendingPayId(null);
-    }
-    await load();
-  }
-
-  async function confirmMpesa() {
-    if (!pendingPayId) return;
-    const token = await user.getIdToken();
-    const result = await billingWebhookComplete(token, pendingPayId);
-    setMsg(result.ok ? "M-Pesa marked paid; seats added." : result.error || "Failed");
-    setPendingPayId(null);
-    await load();
-  }
-
   return (
     <div className="space-y-12">
       <p className="text-sm text-muted-foreground">
@@ -217,8 +175,8 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
               {dash.mentees} · Enrollments {dash.enrollments}
             </p>
             <p>
-              Avg completion <span className="font-semibold text-ember">{dash.avgCompletion}%</span>{" "}
-              · Seats {dash.seatsUsed}/{dash.seatsTotal}
+              Avg completion{" "}
+              <span className="font-semibold text-ember">{dash.avgCompletion}%</span>
             </p>
             {dash.atRisk.length > 0 ? (
               <ul className="rounded-2xl border border-border/70 bg-card px-4 py-3">
@@ -329,51 +287,6 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
           Save branding
         </button>
       </form>
-
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Seats / billing</h2>
-        <p className="text-sm text-muted-foreground">
-          Available {billing?.seatsAvailable ?? "—"} · {billing?.seatPriceKes ?? 500} KES/seat
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <input
-            type="number"
-            min={1}
-            value={seats}
-            onChange={(e) => setSeats(Number(e.target.value) || 1)}
-            className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="M-Pesa phone 254…"
-            className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <button
-            type="button"
-            onClick={() => void buySeats("card")}
-            className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
-          >
-            Pay card (demo)
-          </button>
-          <button
-            type="button"
-            onClick={() => void buySeats("mpesa")}
-            className="rounded-full border border-border px-4 py-2 text-sm"
-          >
-            M-Pesa STK (demo)
-          </button>
-          {pendingPayId ? (
-            <button
-              type="button"
-              onClick={() => void confirmMpesa()}
-              className="rounded-full border border-border px-4 py-2 text-sm"
-            >
-              Confirm M-Pesa webhook
-            </button>
-          ) : null}
-        </div>
-      </section>
 
       <section>
         <h2 className="font-display text-xl font-semibold">Roster</h2>
