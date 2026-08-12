@@ -185,6 +185,27 @@ CREATE TABLE IF NOT EXISTS track_likes (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (uid, track_id)
 );
+
+CREATE TABLE IF NOT EXISTS schools (
+  school_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS assignments (
+  assignment_id TEXT PRIMARY KEY,
+  school_id TEXT,
+  track_id TEXT,
+  lesson_id TEXT,
+  title TEXT NOT NULL,
+  prompt TEXT,
+  assigned_by TEXT NOT NULL,
+  assignee_uid TEXT,
+  cohort TEXT,
+  due_at INTEGER,
+  created_at INTEGER NOT NULL
+);
 `;
 
 const PG_SCHEMA = `
@@ -329,12 +350,60 @@ CREATE TABLE IF NOT EXISTS track_likes (
   updated_at BIGINT NOT NULL,
   PRIMARY KEY (uid, track_id)
 );
+
+CREATE TABLE IF NOT EXISTS schools (
+  school_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS assignments (
+  assignment_id TEXT PRIMARY KEY,
+  school_id TEXT,
+  track_id TEXT,
+  lesson_id TEXT,
+  title TEXT NOT NULL,
+  prompt TEXT,
+  assigned_by TEXT NOT NULL,
+  assignee_uid TEXT,
+  cohort TEXT,
+  due_at BIGINT,
+  created_at BIGINT NOT NULL
+);
 `;
+
+/** Additive columns for existing DBs (CREATE TABLE IF NOT EXISTS won't alter). */
+async function ensureMigrations() {
+  const alters = [
+    "ALTER TABLE users_mirror ADD COLUMN school_id TEXT",
+    "ALTER TABLE submissions ADD COLUMN assignment_id TEXT",
+  ];
+  for (const sql of alters) {
+    try {
+      await dbRun(sql);
+    } catch {
+      /* column already exists */
+    }
+  }
+  const now = Date.now();
+  const existing = await dbGet(
+    "SELECT school_id FROM schools WHERE school_id = ?",
+    ["nelsen-digital"],
+  );
+  if (!existing) {
+    await dbRun(
+      "INSERT INTO schools (school_id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
+      ["nelsen-digital", "Nelsen Digital School", now, now],
+    );
+  }
+}
 
 async function initPostgres(databaseUrl) {
   pgPool = new pg.Pool({ connectionString: databaseUrl });
   await pgPool.query(PG_SCHEMA);
   engine = "postgres";
+  await ensureMigrations();
 }
 
 async function initSqlite() {
@@ -355,6 +424,7 @@ async function initSqlite() {
   sqlite.exec(SQLITE_SCHEMA);
   persistSqlite();
   engine = "sqlite";
+  await ensureMigrations();
 }
 
 /**

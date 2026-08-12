@@ -36,6 +36,7 @@ function mapSubmission(row, extras = {}) {
     score: row.score == null ? null : Number(row.score),
     feedback: row.feedback || null,
     mentorId: row.mentor_id || null,
+    assignmentId: row.assignment_id || null,
     submittedAt: Number(row.submitted_at),
     markedAt: row.marked_at ? Number(row.marked_at) : null,
     ...extras,
@@ -76,6 +77,7 @@ export async function createSubmission(profile, body = {}) {
   const now = Date.now();
   const submissionId = newSubmissionId();
   const text = body.text || body.body || "";
+  const assignmentId = body.assignmentId || null;
   const mediaUrls = JSON.stringify(
     [body.fileUrl, body.linkUrl].filter(Boolean),
   );
@@ -87,8 +89,8 @@ export async function createSubmission(profile, body = {}) {
         `INSERT INTO submissions (
           submission_id, uid, lesson_id, track_id, module_id, body,
           media_urls_json, status, score, feedback, mentor_id,
-          submitted_at, marked_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', NULL, NULL, NULL, ?, NULL)`,
+          submitted_at, marked_at, assignment_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', NULL, NULL, NULL, ?, NULL, ?)`,
         [
           submissionId,
           profile.uid,
@@ -98,6 +100,7 @@ export async function createSubmission(profile, body = {}) {
           text,
           mediaUrls,
           now,
+          assignmentId,
         ],
       );
       return dbGet("SELECT * FROM submissions WHERE submission_id = ?", [

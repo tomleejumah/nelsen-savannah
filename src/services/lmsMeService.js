@@ -151,7 +151,7 @@ export async function getMe(profile) {
       await upsertUserFromToken(profile);
       const user = await dbGet(
         `SELECT u.uid, u.email, u.display_name, u.first_name, u.last_name, u.photo_url,
-                r.role
+                u.school_id, r.role
          FROM users_mirror u
          LEFT JOIN roles r ON r.uid = u.uid
          WHERE u.uid = ?`,
@@ -171,6 +171,18 @@ export async function getMe(profile) {
         /* ignore RTDB role peek */
       }
 
+      const schoolId = user?.school_id || DEFAULT_SCHOOL_ID;
+      let schoolName = DEFAULT_SCHOOL_NAME;
+      try {
+        const school = await dbGet(
+          "SELECT name FROM schools WHERE school_id = ?",
+          [schoolId],
+        );
+        if (school?.name) schoolName = school.name;
+      } catch {
+        /* schools table optional during migrate */
+      }
+
       return mePayload(
         profile,
         {
@@ -179,7 +191,8 @@ export async function getMe(profile) {
           first_name: user?.first_name,
           last_name: user?.last_name,
           photo_url: user?.photo_url,
-          school_id: DEFAULT_SCHOOL_ID,
+          school_id: schoolId,
+          schoolName,
         },
         role,
         getPrimaryEngine(),

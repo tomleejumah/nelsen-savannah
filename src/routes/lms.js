@@ -93,6 +93,63 @@ router.get(
 );
 
 router.post(
+  "/assignments",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.postAssignment,
+);
+router.get("/assignments/me", authenticateUser, lmsController.getMyAssignments);
+router.get(
+  "/assignments/assigned",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.getAssignedOutbox,
+);
+
+router.get(
+  "/schools",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.listSchools,
+);
+router.post(
+  "/schools",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.createSchool,
+);
+router.patch(
+  "/schools/:id/admins",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.patchSchoolAdmins,
+);
+router.get(
+  "/schools/:id/members",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.listSchoolMembers,
+);
+router.post(
+  "/schools/:id/mentors",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.postSchoolMentor,
+);
+router.post(
+  "/schools/:id/mentees",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.postSchoolMentee,
+);
+router.patch(
+  "/schools/:id/members/:uid/role",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.patchSchoolMemberRole,
+);
+
+router.post(
   "/admin/tracks",
   authenticateUser,
   requireRoles("Admin"),
