@@ -510,3 +510,190 @@ export async function patchSchoolMemberRole(
     },
   );
 }
+
+export type AdminStatsDto = {
+  enrollmentsTotal: number;
+  avgTrackPercent: number;
+  completions30d: number;
+  byTrack: { trackId: string; enrolled: number; avgPercent: number }[];
+  schoolId?: string | null;
+};
+
+export type SchoolDashboardDto = {
+  schoolId: string;
+  schoolName: string;
+  rosterCount: number;
+  mentors: number;
+  mentees: number;
+  enrollments: number;
+  avgCompletion: number;
+  atRisk: {
+    uid: string;
+    displayName: string;
+    trackId: string;
+    trackPercent: number;
+    lastActiveAt: number;
+  }[];
+  seatsTotal: number;
+  seatsUsed: number;
+  logoUrl: string | null;
+  accentColor: string | null;
+};
+
+export type BillingDto = {
+  schoolId: string;
+  seatsTotal: number;
+  seatsUsed: number;
+  seatsAvailable: number;
+  seatPriceKes: number;
+  payments: {
+    id: string;
+    method: string;
+    seats: number;
+    amountKes: number;
+    status: string;
+    phone: string | null;
+    checkoutRef: string | null;
+    createdAt: number;
+  }[];
+};
+
+export async function fetchAdminStats(idToken: string) {
+  return lmsFetch<AdminStatsDto>("/lms/admin/stats", idToken);
+}
+
+export async function adminCreateTrack(
+  idToken: string,
+  body: {
+    trackId: string;
+    title: string;
+    blurb?: string;
+    schoolId?: string;
+    published?: boolean;
+  },
+) {
+  return lmsFetch<{ track: { trackId: string; schoolId?: string } }>(
+    "/lms/admin/tracks",
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function adminCreateModule(
+  idToken: string,
+  body: { moduleId: string; trackId: string; title: string; does?: string },
+) {
+  return lmsFetch<{ module: { moduleId: string } }>("/lms/admin/modules", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function adminCreateLesson(
+  idToken: string,
+  body: {
+    lessonId: string;
+    moduleId: string;
+    trackId: string;
+    title: string;
+    type?: string;
+    hasQuiz?: boolean;
+    hasAssignment?: boolean;
+  },
+) {
+  return lmsFetch<{ lesson: { lessonId: string } }>("/lms/admin/lessons", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function fetchSchoolDashboard(idToken: string, schoolId: string) {
+  return lmsFetch<SchoolDashboardDto>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/dashboard`,
+    idToken,
+  );
+}
+
+export async function importSchoolRoster(
+  idToken: string,
+  schoolId: string,
+  csv: string,
+) {
+  return lmsFetch<{ imported: number; errors: { line: number; error: string }[] }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/roster`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ csv }),
+    },
+  );
+}
+
+export async function patchSchoolBranding(
+  idToken: string,
+  schoolId: string,
+  body: { name?: string; logoUrl?: string; accentColor?: string },
+) {
+  return lmsFetch<{ school: SchoolDto }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}`,
+    idToken,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function fetchSchoolBilling(idToken: string, schoolId: string) {
+  return lmsFetch<BillingDto>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/billing`,
+    idToken,
+  );
+}
+
+export async function billingCheckout(
+  idToken: string,
+  body: {
+    schoolId: string;
+    seats: number;
+    method: "mpesa" | "card";
+    phone?: string;
+  },
+) {
+  return lmsFetch<{
+    payment: {
+      id: string;
+      status: string;
+      amountKes: number;
+      webhookHint: string | null;
+    };
+    seatsTotal: number;
+  }>("/lms/billing/checkout", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function billingWebhookComplete(
+  idToken: string,
+  paymentId: string,
+) {
+  return lmsFetch<{ paymentId: string; status: string }>(
+    "/lms/billing/webhook",
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentId, status: "paid" }),
+    },
+  );
+}
