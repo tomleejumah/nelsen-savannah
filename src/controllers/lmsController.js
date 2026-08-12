@@ -456,38 +456,13 @@ export const getSchoolDashboard = handle(
   },
 );
 
-export const getSchoolBilling = handle(
-  "[GET /lms/schools/:id/billing]",
-  async (req) => {
-    const svc = await import("../services/lmsBillingService.js");
-    return svc.getSchoolBilling(req.user.uid, req.params.id);
-  },
-);
-
-export const postBillingCheckout = handle(
-  "[POST /lms/billing/checkout]",
-  async (req) => {
-    const svc = await import("../services/lmsBillingService.js");
-    const result = await svc.startCheckout(req.user.uid, req.body || {});
-    return { ...result, status: 201 };
-  },
-);
-
-export const postBillingWebhook = handle(
-  "[POST /lms/billing/webhook]",
-  async (req) => {
-    const svc = await import("../services/lmsBillingService.js");
-    return svc.billingWebhook(req.body || {});
-  },
-);
-
 export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   const { seedLmsCatalog } = await import("../services/lmsSeed.js");
   const result = await seedLmsCatalog({ force: true });
   return { source: result.engine, data: result };
 });
 
-/** L8 — events deferred; live sessions stay out of core LMS until after seats/catalog. */
+/** L8 — events deferred; live sessions stay out of core LMS for now. */
 export function eventsTodo(_req, res) {
   return res.status(501).json({
     ok: false,
@@ -495,7 +470,7 @@ export function eventsTodo(_req, res) {
     data: {
       decision: "defer",
       reason:
-        "Events/reservations deferred post-L7. Use school dashboard + catalog until then.",
+        "Events/reservations deferred. Use school dashboard + catalog until then.",
     },
     error: "Events API deferred (L8 decision: defer)",
   });

@@ -196,10 +196,12 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
     };
   }
 
-  const { assertSeatAvailable, incrementSeatUsed } = await import(
-    "./lmsBillingService.js"
-  );
-  const schoolId = await assertSeatAvailable(profile.uid);
+  const schoolId =
+    (
+      await dbGet("SELECT school_id FROM users_mirror WHERE uid = ?", [
+        profile.uid,
+      ])
+    )?.school_id || "nelsen-digital";
 
   const now = Date.now();
   const { modulesTotal, lessonsTotal } = await trackTotals(trackId);
@@ -234,8 +236,6 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
       await mirrorEnrollment(profile.uid, trackId, mapEnrollment(row));
     },
   });
-
-  await incrementSeatUsed(schoolId);
 
   return {
     source: getPrimaryEngine(),

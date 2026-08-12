@@ -470,8 +470,6 @@ export async function schoolDashboard(actorUid, schoolId) {
       enrollments: enrollments.length,
       avgCompletion,
       atRisk,
-      seatsTotal: Number(school?.seats_total || 0),
-      seatsUsed: Number(school?.seats_used || 0),
       logoUrl: school?.logo_url || null,
       accentColor: school?.accent_color || null,
     },

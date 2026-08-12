@@ -166,20 +166,6 @@ router.get(
   requireRoles("SchoolAdmin", "Admin"),
   lmsController.getSchoolDashboard,
 );
-router.get(
-  "/schools/:id/billing",
-  authenticateUser,
-  requireRoles("SchoolAdmin", "Admin"),
-  lmsController.getSchoolBilling,
-);
-router.post(
-  "/billing/checkout",
-  authenticateUser,
-  requireRoles("SchoolAdmin", "Admin"),
-  lmsController.postBillingCheckout,
-);
-router.post("/billing/webhook", lmsController.postBillingWebhook);
-
 router.post(
   "/admin/tracks",
   authenticateUser,

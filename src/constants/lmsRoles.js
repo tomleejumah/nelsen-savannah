@@ -37,7 +37,6 @@ const SUPER_ADMIN_CAPS = Object.freeze({
   moderateContent: true,
   viewOrgDashboards: true,
   manageSchools: true,
-  viewBilling: true,
 });
 
 export const ROLE_CAPABILITIES = Object.freeze({
@@ -56,7 +55,6 @@ export const ROLE_CAPABILITIES = Object.freeze({
     manageUsers: false,
     publishTracks: false,
     manageSchools: false,
-    viewBilling: false,
   },
   Mentor: {
     browseCatalog: true,
@@ -73,7 +71,6 @@ export const ROLE_CAPABILITIES = Object.freeze({
     manageUsers: false,
     publishTracks: false,
     manageSchools: false,
-    viewBilling: false,
   },
   SchoolAdmin: {
     browseCatalog: true,
@@ -90,7 +87,6 @@ export const ROLE_CAPABILITIES = Object.freeze({
     manageUsers: false,
     publishTracks: true,
     manageSchools: false,
-    viewBilling: true,
   },
   SuperAdmin: SUPER_ADMIN_CAPS,
   /** @deprecated legacy alias — same as SuperAdmin */
