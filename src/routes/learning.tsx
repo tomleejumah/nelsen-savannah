@@ -192,7 +192,22 @@ function LearningPage() {
               >
                 <LogIn className="h-4 w-4" /> Sign in
               </Link>
-            ) : null}
+            ) : (
+              <>
+                <Link
+                  to="/learning/coursework"
+                  className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
+                >
+                  My coursework
+                </Link>
+                <Link
+                  to="/learning/certificates"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                >
+                  Certificates
+                </Link>
+              </>
+            )}
             <Link
               to="/programs"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"

@@ -20,6 +20,8 @@ import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as TeachRouteImport } from './routes/teach'
 import { Route as LearningTrackIdRouteImport } from './routes/learning.$trackId'
+import { Route as LearningCertificatesRouteImport } from './routes/learning.certificates'
+import { Route as LearningCourseworkRouteImport } from './routes/learning.coursework'
 import { Route as LearningTrackIdLessonLessonIdRouteImport } from './routes/learning.$trackId.lesson.$lessonId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +79,16 @@ const LearningTrackIdRoute = LearningTrackIdRouteImport.update({
   path: '/$trackId',
   getParentRoute: () => LearningRoute,
 } as any)
+const LearningCertificatesRoute = LearningCertificatesRouteImport.update({
+  id: '/certificates',
+  path: '/certificates',
+  getParentRoute: () => LearningRoute,
+} as any)
+const LearningCourseworkRoute = LearningCourseworkRouteImport.update({
+  id: '/coursework',
+  path: '/coursework',
+  getParentRoute: () => LearningRoute,
+} as any)
 const LearningTrackIdLessonLessonIdRoute =
   LearningTrackIdLessonLessonIdRouteImport.update({
     id: '/lesson/$lessonId',
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
+  '/learning/certificates': typeof LearningCertificatesRoute
+  '/learning/coursework': typeof LearningCourseworkRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRoutesByTo {
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
+  '/learning/certificates': typeof LearningCertificatesRoute
+  '/learning/coursework': typeof LearningCourseworkRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRoutesById {
@@ -125,6 +141,8 @@ export interface FileRoutesById {
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
+  '/learning/certificates': typeof LearningCertificatesRoute
+  '/learning/coursework': typeof LearningCourseworkRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRouteTypes {
@@ -141,6 +159,8 @@ export interface FileRouteTypes {
     | '/school'
     | '/teach'
     | '/learning/$trackId'
+    | '/learning/certificates'
+    | '/learning/coursework'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,6 +175,8 @@ export interface FileRouteTypes {
     | '/school'
     | '/teach'
     | '/learning/$trackId'
+    | '/learning/certificates'
+    | '/learning/coursework'
     | '/learning/$trackId/lesson/$lessonId'
   id:
     | '__root__'
@@ -169,6 +191,8 @@ export interface FileRouteTypes {
     | '/school'
     | '/teach'
     | '/learning/$trackId'
+    | '/learning/certificates'
+    | '/learning/coursework'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesById: FileRoutesById
 }
@@ -264,6 +288,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearningTrackIdRouteImport
       parentRoute: typeof LearningRoute
     }
+    '/learning/certificates': {
+      id: '/learning/certificates'
+      path: '/certificates'
+      fullPath: '/learning/certificates'
+      preLoaderRoute: typeof LearningCertificatesRouteImport
+      parentRoute: typeof LearningRoute
+    }
+    '/learning/coursework': {
+      id: '/learning/coursework'
+      path: '/coursework'
+      fullPath: '/learning/coursework'
+      preLoaderRoute: typeof LearningCourseworkRouteImport
+      parentRoute: typeof LearningRoute
+    }
     '/learning/$trackId/lesson/$lessonId': {
       id: '/learning/$trackId/lesson/$lessonId'
       path: '/lesson/$lessonId'
@@ -288,10 +326,14 @@ const LearningTrackIdRouteWithChildren = LearningTrackIdRoute._addFileChildren(
 
 interface LearningRouteChildren {
   LearningTrackIdRoute: typeof LearningTrackIdRouteWithChildren
+  LearningCertificatesRoute: typeof LearningCertificatesRoute
+  LearningCourseworkRoute: typeof LearningCourseworkRoute
 }
 
 const LearningRouteChildren: LearningRouteChildren = {
   LearningTrackIdRoute: LearningTrackIdRouteWithChildren,
+  LearningCertificatesRoute: LearningCertificatesRoute,
+  LearningCourseworkRoute: LearningCourseworkRoute,
 }
 
 const LearningRouteWithChildren = LearningRoute._addFileChildren(
