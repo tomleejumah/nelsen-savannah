@@ -142,7 +142,7 @@ export async function listMySubmissions(uid, { trackId, status } = {}) {
 
 export async function listSubmissionQueue(mentorUid) {
   const role = await loadUserRole(mentorUid);
-  if (role !== "Mentor" && role !== "Admin") {
+  if (role !== "Mentor" && role !== "SuperAdmin" && role !== "SchoolAdmin" && role !== "Admin") {
     const err = new Error("Mentor or Admin required");
     err.status = 403;
     throw err;
@@ -177,7 +177,7 @@ export async function listSubmissionQueue(mentorUid) {
 
 export async function markSubmission(mentorProfile, submissionId, body = {}) {
   const role = await loadUserRole(mentorProfile.uid);
-  if (role !== "Mentor" && role !== "Admin") {
+  if (role !== "Mentor" && role !== "SuperAdmin" && role !== "SchoolAdmin" && role !== "Admin") {
     const err = new Error("Mentor or Admin required");
     err.status = 403;
     throw err;

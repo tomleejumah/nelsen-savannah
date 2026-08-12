@@ -65,7 +65,7 @@ export function verifyMediaPlayToken(mediaId, uid, token) {
 
 function canUpload(role) {
   const r = normalizeRole(role);
-  return r === "Mentor" || r === "Admin";
+  return r === "Mentor" || r === "SuperAdmin" || r === "SchoolAdmin" || r === "Admin";
 }
 
 async function resolveRole(uid) {
@@ -242,5 +242,5 @@ export async function userMayPlayMedia(uid, mediaId) {
   );
   if (enroll) return true;
   const role = await resolveRole(uid);
-  return role === "Admin" || role === "Mentor";
+  return role === "SuperAdmin" || role === "Admin" || role === "Mentor" || role === "SchoolAdmin";
 }
