@@ -20,6 +20,26 @@ export const SHELLS = Object.freeze({
   admin: "admin",
 });
 
+const SUPER_ADMIN_CAPS = Object.freeze({
+  browseCatalog: true,
+  enroll: true,
+  learn: true,
+  submitAssignments: true,
+  viewOwnProgress: true,
+  viewOwnCertificates: true,
+  chatWithMentor: true,
+  createCourses: true,
+  markAssignments: true,
+  viewMenteeProgress: true,
+  manageSchoolUsers: true,
+  manageUsers: true,
+  publishTracks: true,
+  moderateContent: true,
+  viewOrgDashboards: true,
+  manageSchools: true,
+  viewBilling: true,
+});
+
 export const ROLE_CAPABILITIES = Object.freeze({
   Mentee: {
     browseCatalog: true,
@@ -72,29 +92,10 @@ export const ROLE_CAPABILITIES = Object.freeze({
     manageSchools: false,
     viewBilling: true,
   },
-  SuperAdmin: {
-    browseCatalog: true,
-    enroll: true,
-    learn: true,
-    submitAssignments: true,
-    viewOwnProgress: true,
-    viewOwnCertificates: true,
-    chatWithMentor: true,
-    createCourses: true,
-    markAssignments: true,
-    viewMenteeProgress: true,
-    manageSchoolUsers: true,
-    manageUsers: true,
-    publishTracks: true,
-    moderateContent: true,
-    viewOrgDashboards: true,
-    manageSchools: true,
-    viewBilling: true,
-  },
+  SuperAdmin: SUPER_ADMIN_CAPS,
+  /** @deprecated legacy alias — same as SuperAdmin */
+  Admin: SUPER_ADMIN_CAPS,
 });
-
-/** Legacy Admin capability map kept for any code still keyed on "Admin". */
-ROLE_CAPABILITIES.Admin = ROLE_CAPABILITIES.SuperAdmin;
 
 export function normalizeRole(role) {
   if (role === ROLES.Mentor) return ROLES.Mentor;
