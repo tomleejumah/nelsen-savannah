@@ -6,7 +6,7 @@ export const ORG = {
   phone: "+254 102 849 247",
   phoneAlt: "+254 742 437 625",
   whatsapp: "254102849247",
-  location: "Dagoretti, Nairobi, Kenya",
+  location: "Nairobi, Kenya",
   websiteLegacy: "https://www.nisisi.africa",
 };
 
@@ -96,9 +96,9 @@ export const ROADMAP = [
 
 export const STATS = [
   { value: "4", label: "Core programmes" },
-  { value: "2", label: "WhatsApp lines" },
-  { value: "Dagoretti", label: "Home base, Nairobi" },
-  { value: "App + web", label: "Where learning lives" },
+  { value: "Nairobi", label: "Home base" },
+  { value: "App + web", label: "Learn anywhere" },
+  { value: "1 login", label: "Progress follows you" },
 ];
 
 export const REVIEWS = [

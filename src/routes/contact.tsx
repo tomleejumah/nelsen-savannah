@@ -11,7 +11,7 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact Us — Join a Cohort or Mentor | Nelsen Savannah" },
       {
         name: "description",
-        content: `Reach Nelsen Savannah in Dagoretti, Nairobi — ${ORG.phone} or ${ORG.email}.`,
+        content: `Reach Nelsen Savannah in Nairobi — ${ORG.phone} or ${ORG.email}.`,
       },
       { property: "og:title", content: "Contact Nelsen Savannah" },
     ],
