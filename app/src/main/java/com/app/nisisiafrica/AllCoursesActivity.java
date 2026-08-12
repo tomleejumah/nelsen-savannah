@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.bumptech.glide.Glide;
@@ -67,6 +68,20 @@ public class AllCoursesActivity extends AppCompatActivity {
         btnClearSearch = findViewById(R.id.btnClearSearch);
         tvResultCount = findViewById(R.id.tvResultCount);
         emptyState = findViewById(R.id.emptyState);
+
+        TextView tvTitle = findViewById(R.id.tvScreenTitle);
+        TextView tvSubtitle = findViewById(R.id.tvScreenSubtitle);
+        if (tvTitle != null) {
+            String shell = Roles.lmsShell();
+            if (Roles.SHELL_STUDENT.equals(shell)) {
+                tvTitle.setText("All Courses");
+            } else {
+                tvTitle.setText(Roles.lmsShellLabel() + " · Courses");
+            }
+        }
+        if (tvSubtitle != null && !Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
+            tvSubtitle.setText("Catalog · full teach/school tools ship in later LMS milestones");
+        }
 
         RecyclerView rv = findViewById(R.id.rvCourses);
         rv.setLayoutManager(new LinearLayoutManager(this));
