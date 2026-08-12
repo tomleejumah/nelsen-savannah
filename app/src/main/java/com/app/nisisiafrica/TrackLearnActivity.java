@@ -1,11 +1,14 @@
 package com.app.nisisiafrica;
 
+import android.app.AlertDialog;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -332,6 +335,14 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     private void openLesson(LmsModels.LessonDto lesson) {
         if (lesson == null) return;
+        if (lesson.hasQuiz) {
+            promptQuiz(lesson);
+            return;
+        }
+        if (lesson.hasAssignment) {
+            promptAssignment(lesson);
+            return;
+        }
         if (!TextUtils.isEmpty(lesson.playbackUrl)) {
             playUrl(lesson.playbackUrl);
             reportProgress(lesson.lessonId, true, 1f, 0f);
@@ -344,10 +355,20 @@ public class TrackLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.LessonDetailEnvelope> response) {
                         LmsModels.LessonDetailEnvelope body = response.body();
                         if (response.isSuccessful() && body != null && body.ok
-                                && body.data != null && body.data.lesson != null
-                                && !TextUtils.isEmpty(body.data.lesson.playbackUrl)) {
-                            playUrl(body.data.lesson.playbackUrl);
-                            reportProgress(lesson.lessonId, true, 1f, 0f);
+                                && body.data != null && body.data.lesson != null) {
+                            LmsModels.LessonDto full = body.data.lesson;
+                            if (full.hasQuiz) {
+                                promptQuiz(full);
+                            } else if (full.hasAssignment) {
+                                promptAssignment(full);
+                            } else if (!TextUtils.isEmpty(full.playbackUrl)) {
+                                playUrl(full.playbackUrl);
+                                reportProgress(lesson.lessonId, true, 1f, 0f);
+                            } else {
+                                reportProgress(lesson.lessonId, true, 1f, 0f);
+                                Toast.makeText(TrackLearnActivity.this,
+                                        "Marked opened — no media URL", Toast.LENGTH_SHORT).show();
+                            }
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
                                     "Lesson not ready yet", Toast.LENGTH_SHORT).show();
@@ -358,6 +379,108 @@ public class TrackLearnActivity extends AppCompatActivity {
                     public void onFailure(Call<LmsModels.LessonDetailEnvelope> call, Throwable t) {
                         Toast.makeText(TrackLearnActivity.this,
                                 "Could not load lesson", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+    }
+
+    private void promptQuiz(LmsModels.LessonDto lesson) {
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setHint("Score 0–100");
+        input.setText("85");
+        new AlertDialog.Builder(this)
+                .setTitle(lesson.title != null ? lesson.title : "Quiz")
+                .setMessage(lesson.does != null && !lesson.does.isEmpty()
+                        ? lesson.does
+                        : "Enter your quiz score (pass ≥ 80).")
+                .setView(input)
+                .setPositiveButton("Submit pass", (d, w) -> {
+                    int score = parseScore(input.getText().toString(), 85);
+                    submitQuiz(lesson.lessonId, Math.max(score, 80), true);
+                })
+                .setNeutralButton("Save score", (d, w) -> {
+                    int score = parseScore(input.getText().toString(), 70);
+                    submitQuiz(lesson.lessonId, score, score >= 80);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void promptAssignment(LmsModels.LessonDto lesson) {
+        final EditText input = new EditText(this);
+        input.setMinLines(4);
+        input.setHint("Your assignment response");
+        new AlertDialog.Builder(this)
+                .setTitle(lesson.title != null ? lesson.title : "Assignment")
+                .setMessage(lesson.does != null && !lesson.does.isEmpty()
+                        ? lesson.does
+                        : "Write your response for mentor review.")
+                .setView(input)
+                .setPositiveButton("Submit", (d, w) -> {
+                    String text = input.getText() != null ? input.getText().toString().trim() : "";
+                    if (text.length() < 8) {
+                        Toast.makeText(this, "Write a bit more", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    submitAssignment(lesson.lessonId, text);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private static int parseScore(String raw, int fallback) {
+        try {
+            return Math.max(0, Math.min(100, Integer.parseInt(raw.trim())));
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private void submitQuiz(String lessonId, int score, boolean passed) {
+        withBearer(bearer -> ApiClient.getLmsService()
+                .submitQuiz(bearer, lessonId, new LmsModels.QuizBody(score, passed))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.QuizEnvelope> call,
+                                           Response<LmsModels.QuizEnvelope> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Quiz saved (" + score + "%)", Toast.LENGTH_SHORT).show();
+                            loadTrack();
+                        } else {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Quiz submit failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.QuizEnvelope> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Quiz network error", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+    }
+
+    private void submitAssignment(String lessonId, String text) {
+        withBearer(bearer -> ApiClient.getLmsService()
+                .submitAssignment(bearer, new LmsModels.SubmissionBody(lessonId, text))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
+                                           Response<LmsModels.SubmissionEnvelope> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Assignment submitted", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Submit failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Submit network error", Toast.LENGTH_SHORT).show();
                     }
                 }));
     }
