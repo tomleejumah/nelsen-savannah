@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
 
+import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
   createSchool,
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/admin")({
       { title: "Super admin — Nelsen Savannah LMS" },
       {
         name: "description",
-        content: "Platform super admin — schools, global catalog, billing.",
+        content: "Platform super admin — schools, catalog CMS, stats.",
       },
     ],
   }),
@@ -29,7 +30,7 @@ function AdminPage() {
     <RoleShellPage
       shell="admin"
       title="Super admin"
-      blurb="Create schools and appoint school admins. Catalog CMS and billing come later."
+      blurb="Create schools, appoint school admins, and publish the global catalog."
     >
       {({ user, me }) => <AdminConsole user={user} me={me} />}
     </RoleShellPage>
@@ -114,6 +115,8 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
         </p>
       ) : null}
       {msg ? <p className="text-sm text-ember">{msg}</p> : null}
+
+      <CatalogCmsPanel user={user} />
 
       <section>
         <h2 className="font-display text-xl font-semibold">Schools</h2>
