@@ -308,24 +308,24 @@ export const submitQuiz = handle("[POST /lms/lessons/:lessonId/quiz]", async (re
 
 export const adminCreateTrack = handle("[POST /lms/admin/tracks]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
-  const result = await svc.adminCreateTrack(req.body || {});
+  const result = await svc.adminCreateTrack(req.user.uid, req.body || {});
   return { ...result, status: 201 };
 });
 
 export const adminUpdateTrack = handle("[PUT /lms/admin/tracks/:trackId]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
-  return svc.adminUpdateTrack(req.params.trackId, req.body || {});
+  return svc.adminUpdateTrack(req.user.uid, req.params.trackId, req.body || {});
 });
 
 export const adminCreateModule = handle("[POST /lms/admin/modules]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
-  const result = await svc.adminCreateModule(req.body || {});
+  const result = await svc.adminCreateModule(req.user.uid, req.body || {});
   return { ...result, status: 201 };
 });
 
 export const adminCreateLesson = handle("[POST /lms/admin/lessons]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
-  const result = await svc.adminCreateLesson(req.body || {});
+  const result = await svc.adminCreateLesson(req.user.uid, req.body || {});
   return { ...result, status: 201 };
 });
 
@@ -334,9 +334,9 @@ export const adminSetRole = handle("[PATCH /lms/admin/users/:uid/role]", async (
   return svc.adminSetRole(req.user.uid, req.params.uid, req.body?.userRole);
 });
 
-export const adminStats = handle("[GET /lms/admin/stats]", async () => {
+export const adminStats = handle("[GET /lms/admin/stats]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
-  return svc.adminStats();
+  return svc.adminStats(req.user.uid);
 });
 
 export const adminMenteeProgress = handle(
@@ -432,19 +432,71 @@ export const patchSchoolMemberRole = handle(
   },
 );
 
+export const patchSchoolBranding = handle(
+  "[PATCH /lms/schools/:id]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.updateSchoolBranding(req.user.uid, req.params.id, req.body || {});
+  },
+);
+
+export const postSchoolRoster = handle(
+  "[POST /lms/schools/:id/roster]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.importSchoolRoster(req.user.uid, req.params.id, req.body || {});
+  },
+);
+
+export const getSchoolDashboard = handle(
+  "[GET /lms/schools/:id/dashboard]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.schoolDashboard(req.user.uid, req.params.id);
+  },
+);
+
+export const getSchoolBilling = handle(
+  "[GET /lms/schools/:id/billing]",
+  async (req) => {
+    const svc = await import("../services/lmsBillingService.js");
+    return svc.getSchoolBilling(req.user.uid, req.params.id);
+  },
+);
+
+export const postBillingCheckout = handle(
+  "[POST /lms/billing/checkout]",
+  async (req) => {
+    const svc = await import("../services/lmsBillingService.js");
+    const result = await svc.startCheckout(req.user.uid, req.body || {});
+    return { ...result, status: 201 };
+  },
+);
+
+export const postBillingWebhook = handle(
+  "[POST /lms/billing/webhook]",
+  async (req) => {
+    const svc = await import("../services/lmsBillingService.js");
+    return svc.billingWebhook(req.body || {});
+  },
+);
+
 export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   const { seedLmsCatalog } = await import("../services/lmsSeed.js");
   const result = await seedLmsCatalog({ force: true });
   return { source: result.engine, data: result };
 });
 
-/** M6 placeholder — events not implemented yet */
+/** L8 — events deferred; live sessions stay out of core LMS until after seats/catalog. */
 export function eventsTodo(_req, res) {
   return res.status(501).json({
     ok: false,
     source: getPrimaryEngine() || "sqlite",
-    data: null,
-    error:
-      "TODO M6: Events API (list/reserve/seats) — see docs/LMS.md. Not implemented.",
+    data: {
+      decision: "defer",
+      reason:
+        "Events/reservations deferred post-L7. Use school dashboard + catalog until then.",
+    },
+    error: "Events API deferred (L8 decision: defer)",
   });
 }

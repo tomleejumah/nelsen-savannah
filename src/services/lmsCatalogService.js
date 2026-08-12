@@ -50,6 +50,7 @@ function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false
     moduleCount: Number(
       moduleCount ?? row.module_count ?? row.moduleCount ?? 0,
     ),
+    schoolId: row.school_id || row.schoolId || "nelsen-digital",
   };
 }
 
@@ -128,8 +129,19 @@ async function moduleCountByTrack() {
 }
 
 async function listTracksFromPrimary(uid, { audience, enrolled } = {}) {
+  const user = await dbGet(
+    "SELECT school_id FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  const schoolId = user?.school_id || "nelsen-digital";
   const rows = await dbAll(
-    `SELECT * FROM tracks WHERE published = 1 ORDER BY sort_order ASC, track_id ASC`,
+    `SELECT * FROM tracks WHERE published = 1
+     AND (
+       school_id IS NULL OR school_id = '' OR school_id = 'nelsen-digital'
+       OR school_id = ?
+     )
+     ORDER BY sort_order ASC, track_id ASC`,
+    [schoolId],
   );
   const [likes, enrollMap, lessonCounts, moduleCounts] = await Promise.all([
     likesFor(uid),

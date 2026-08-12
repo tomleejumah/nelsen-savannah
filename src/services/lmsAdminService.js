@@ -11,19 +11,42 @@ import {
   mirrorRole,
 } from "./lmsMirror.js";
 import { setUserRole } from "./lmsMeService.js";
-import { normalizeRole } from "../constants/lmsRoles.js";
+import { normalizeRole, isSuperAdmin } from "../constants/lmsRoles.js";
 import { patchLessonProgress } from "./lmsEnrollmentService.js";
 import { maybeIssueCertificate } from "./lmsCertificateService.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
 import { getActorSchoolId } from "./lmsSchoolService.js";
 
-export async function adminCreateTrack(body = {}) {
+async function assertCanEditTrack(actorUid, trackId) {
+  const role = await loadUserRole(actorUid);
+  if (isSuperAdmin(role)) return;
+  const track = await dbGet("SELECT school_id FROM tracks WHERE track_id = ?", [
+    trackId,
+  ]);
+  if (!track) {
+    const err = new Error("Track not found");
+    err.status = 404;
+    throw err;
+  }
+  const schoolId = await getActorSchoolId(actorUid);
+  if ((track.school_id || "nelsen-digital") !== schoolId) {
+    const err = new Error("Cannot edit another school’s track");
+    err.status = 403;
+    throw err;
+  }
+}
+
+export async function adminCreateTrack(actorUid, body = {}) {
   const trackId = body.trackId;
   if (!trackId || !body.title) {
     const err = new Error("trackId and title required");
     err.status = 400;
     throw err;
   }
+  const role = await loadUserRole(actorUid);
+  const actorSchool = await getActorSchoolId(actorUid);
+  let schoolId = body.schoolId || actorSchool;
+  if (!isSuperAdmin(role)) schoolId = actorSchool;
   const now = Date.now();
   const audienceJson = JSON.stringify(body.audience || ["Mentee"]);
   await dualWrite({
@@ -41,8 +64,8 @@ export async function adminCreateTrack(body = {}) {
         `INSERT INTO tracks (
           track_id, program_slug, title, does, course_image_url,
           tutor_id, tutor_name, tutor_avatar_url, duration, audience_json,
-          sort_order, published, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sort_order, published, created_at, updated_at, school_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           trackId,
           body.programSlug || "",
@@ -58,6 +81,7 @@ export async function adminCreateTrack(body = {}) {
           body.published === false ? 0 : 1,
           now,
           now,
+          schoolId,
         ],
       );
       return dbGet("SELECT * FROM tracks WHERE track_id = ?", [trackId]);
@@ -69,6 +93,7 @@ export async function adminCreateTrack(body = {}) {
         does: row.does,
         programSlug: row.program_slug,
         published: Boolean(row.published),
+        schoolId,
       });
     },
   });
@@ -82,12 +107,14 @@ export async function adminCreateTrack(body = {}) {
         does: body.blurb || "",
         programSlug: body.programSlug || "",
         audience: body.audience || ["Mentee"],
+        schoolId,
       },
     },
   };
 }
 
-export async function adminUpdateTrack(trackId, body = {}) {
+export async function adminUpdateTrack(actorUid, trackId, body = {}) {
+  await assertCanEditTrack(actorUid, trackId);
   const row = await dbGet("SELECT * FROM tracks WHERE track_id = ?", [trackId]);
   if (!row) {
     const err = new Error("Track not found");
@@ -132,13 +159,14 @@ export async function adminUpdateTrack(trackId, body = {}) {
   };
 }
 
-export async function adminCreateModule(body = {}) {
+export async function adminCreateModule(actorUid, body = {}) {
   const { moduleId, trackId, title } = body;
   if (!moduleId || !trackId || !title) {
     const err = new Error("moduleId, trackId, title required");
     err.status = 400;
     throw err;
   }
+  await assertCanEditTrack(actorUid, trackId);
   const now = Date.now();
   await dualWrite({
     label: `admin-mod:${moduleId}`,
@@ -177,13 +205,14 @@ export async function adminCreateModule(body = {}) {
   };
 }
 
-export async function adminCreateLesson(body = {}) {
+export async function adminCreateLesson(actorUid, body = {}) {
   const { lessonId, moduleId, trackId, title, type } = body;
   if (!lessonId || !moduleId || !trackId || !title) {
     const err = new Error("lessonId, moduleId, trackId, title required");
     err.status = 400;
     throw err;
   }
+  await assertCanEditTrack(actorUid, trackId);
   const now = Date.now();
   const hasQuiz = body.hasQuiz || type === "quiz" ? 1 : 0;
   const hasAssignment = body.hasAssignment || type === "assignment" ? 1 : 0;
@@ -244,32 +273,60 @@ export async function adminSetRole(actorUid, targetUid, userRole) {
   };
 }
 
-export async function adminStats() {
+export async function adminStats(actorUid) {
+  const role = await loadUserRole(actorUid);
+  const schoolId = await getActorSchoolId(actorUid);
+  const schoolFilter = isSuperAdmin(role)
+    ? ""
+    : " AND COALESCE(u.school_id, 'nelsen-digital') = ?";
+  const params = isSuperAdmin(role) ? [] : [schoolId];
+
   const enrollmentsTotal = Number(
-    (await dbGet("SELECT COUNT(*) AS c FROM enrollments"))?.c || 0,
+    (
+      await dbGet(
+        `SELECT COUNT(*) AS c FROM enrollments e
+         JOIN users_mirror u ON u.uid = e.uid
+         WHERE 1=1${schoolFilter}`,
+        params,
+      )
+    )?.c || 0,
   );
   const avgRow = await dbGet(
-    "SELECT AVG(track_percent) AS a FROM enrollments",
+    `SELECT AVG(e.track_percent) AS a FROM enrollments e
+     JOIN users_mirror u ON u.uid = e.uid
+     WHERE 1=1${schoolFilter}`,
+    params,
   );
   const avgTrackPercent = Math.round(Number(avgRow?.a || 0));
   const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const completions30d = Number(
     (
       await dbGet(
-        `SELECT COUNT(*) AS c FROM enrollments
-         WHERE track_percent >= 80 AND last_active_at >= ?`,
-        [since],
+        `SELECT COUNT(*) AS c FROM enrollments e
+         JOIN users_mirror u ON u.uid = e.uid
+         WHERE e.track_percent >= 80 AND e.last_active_at >= ?${schoolFilter}`,
+        [since, ...params],
       )
     )?.c || 0,
   );
   const byTrack = await dbAll(
-    `SELECT track_id AS trackId, COUNT(*) AS enrolled,
-            ROUND(AVG(track_percent)) AS avgPercent
-     FROM enrollments GROUP BY track_id`,
+    `SELECT e.track_id AS trackId, COUNT(*) AS enrolled,
+            ROUND(AVG(e.track_percent)) AS avgPercent
+     FROM enrollments e
+     JOIN users_mirror u ON u.uid = e.uid
+     WHERE 1=1${schoolFilter}
+     GROUP BY e.track_id`,
+    params,
   );
   return {
     source: getPrimaryEngine(),
-    data: { enrollmentsTotal, avgTrackPercent, completions30d, byTrack },
+    data: {
+      enrollmentsTotal,
+      avgTrackPercent,
+      completions30d,
+      byTrack,
+      schoolId: isSuperAdmin(role) ? null : schoolId,
+    },
   };
 }
 

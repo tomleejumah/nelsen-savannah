@@ -148,29 +148,60 @@ router.patch(
   requireRoles("SchoolAdmin", "Admin"),
   lmsController.patchSchoolMemberRole,
 );
+router.patch(
+  "/schools/:id",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.patchSchoolBranding,
+);
+router.post(
+  "/schools/:id/roster",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.postSchoolRoster,
+);
+router.get(
+  "/schools/:id/dashboard",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.getSchoolDashboard,
+);
+router.get(
+  "/schools/:id/billing",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.getSchoolBilling,
+);
+router.post(
+  "/billing/checkout",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.postBillingCheckout,
+);
+router.post("/billing/webhook", lmsController.postBillingWebhook);
 
 router.post(
   "/admin/tracks",
   authenticateUser,
-  requireRoles("Admin"),
+  requireRoles("Admin", "SchoolAdmin"),
   lmsController.adminCreateTrack,
 );
 router.put(
   "/admin/tracks/:trackId",
   authenticateUser,
-  requireRoles("Admin"),
+  requireRoles("Admin", "SchoolAdmin"),
   lmsController.adminUpdateTrack,
 );
 router.post(
   "/admin/modules",
   authenticateUser,
-  requireRoles("Admin"),
+  requireRoles("Admin", "SchoolAdmin"),
   lmsController.adminCreateModule,
 );
 router.post(
   "/admin/lessons",
   authenticateUser,
-  requireRoles("Admin"),
+  requireRoles("Admin", "SchoolAdmin"),
   lmsController.adminCreateLesson,
 );
 router.patch(
@@ -182,7 +213,7 @@ router.patch(
 router.get(
   "/admin/stats",
   authenticateUser,
-  requireRoles("Admin"),
+  requireRoles("Admin", "SchoolAdmin"),
   lmsController.adminStats,
 );
 router.get(
