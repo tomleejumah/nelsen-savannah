@@ -350,6 +350,9 @@ export async function getLessonById(uid, lessonId) {
         playbackUrl = row.content_url;
       }
 
+      const hasQuiz = Boolean(lesson.hasQuiz);
+      const hasAssignment = Boolean(lesson.hasAssignment);
+
       return {
         source: getPrimaryEngine(),
         data: {
@@ -359,8 +362,18 @@ export async function getLessonById(uid, lessonId) {
             playbackUrl,
             playbackExpiresAt,
             bodyHtml: null,
-            quiz: null,
-            assignmentPrompt: null,
+            quiz: hasQuiz
+              ? {
+                  mode: "self_score",
+                  prompt:
+                    lesson.does ||
+                    "Answer the lesson questions, then record your score (0–100).",
+                }
+              : null,
+            assignmentPrompt: hasAssignment
+              ? lesson.does ||
+                "Write your response below and submit for mentor review."
+              : null,
           },
         },
       };
