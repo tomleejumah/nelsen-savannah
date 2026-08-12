@@ -23,7 +23,7 @@ export const Route = createFileRoute("/school")({
       { title: "School admin — Nelsen Savannah LMS" },
       {
         name: "description",
-        content: "School admin — roster, catalog, and dashboard.",
+        content: "School admin — roster, catalog, dashboard, and payments UI.",
       },
     ],
   }),
@@ -35,7 +35,7 @@ function SchoolPage() {
     <RoleShellPage
       shell="school"
       title="School admin"
-      blurb="People, catalog, and dashboard for your school wing."
+      blurb="People, catalog, dashboard, and seat payments for your school wing."
     >
       {({ user, me }) => <SchoolConsole user={user} me={me} />}
     </RoleShellPage>
@@ -58,6 +58,10 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [csv, setCsv] = useState("uid,email,displayName,role\n");
   const [accent, setAccent] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [seats, setSeats] = useState(10);
+  const [phone, setPhone] = useState("");
+  const [payMethod, setPayMethod] = useState<"card" | "mpesa">("card");
+  const [payMsg, setPayMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -287,6 +291,70 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
           Save branding
         </button>
       </form>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-xl font-semibold">Seats / payments</h2>
+        <p className="text-sm text-muted-foreground">
+          Buy seat licenses for your school. Checkout stays off until you pick a
+          payment rail — UI is ready.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <label className="text-xs text-muted-foreground">
+            Seats
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={seats}
+              onChange={(e) => setSeats(Number(e.target.value) || 1)}
+              className="ml-2 w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+          </label>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="M-Pesa phone 254…"
+            className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPayMethod("card");
+              setPayMsg(
+                `Card checkout UI ready (${seats} seats). Provider not wired yet — tell us which card rail to use.`,
+              );
+            }}
+            className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
+          >
+            Pay with card
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPayMethod("mpesa");
+              if (!phone.trim()) {
+                setPayMsg("Enter an M-Pesa phone (254…) first.");
+                return;
+              }
+              setPayMsg(
+                `M-Pesa STK UI ready for ${phone.trim()} · ${seats} seats. Provider not wired yet.`,
+              );
+            }}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium"
+          >
+            Pay with M-Pesa
+          </button>
+        </div>
+        {payMsg ? (
+          <p className="rounded-xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
+            <span className="font-medium text-ember">{payMethod === "mpesa" ? "M-Pesa" : "Card"}</span>
+            {" — "}
+            {payMsg}
+          </p>
+        ) : null}
+      </section>
 
       <section>
         <h2 className="font-display text-xl font-semibold">Roster</h2>
