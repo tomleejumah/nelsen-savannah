@@ -16,6 +16,8 @@ import { Route as LearningRouteImport } from './routes/learning'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ProgramsRouteImport } from './routes/programs'
+import { Route as LearningTrackIdRouteImport } from './routes/learning.$trackId'
+import { Route as LearningTrackIdLessonLessonIdRouteImport } from './routes/learning.$trackId.lesson.$lessonId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,34 +54,51 @@ const ProgramsRoute = ProgramsRouteImport.update({
   path: '/programs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearningTrackIdRoute = LearningTrackIdRouteImport.update({
+  id: '/$trackId',
+  path: '/$trackId',
+  getParentRoute: () => LearningRoute,
+} as any)
+const LearningTrackIdLessonLessonIdRoute =
+  LearningTrackIdLessonLessonIdRouteImport.update({
+    id: '/lesson/$lessonId',
+    path: '/lesson/$lessonId',
+    getParentRoute: () => LearningTrackIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/learning': typeof LearningRoute
+  '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
+  '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
+  '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/learning': typeof LearningRoute
+  '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
+  '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
+  '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/learning': typeof LearningRoute
+  '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
+  '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
+  '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +110,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/media'
     | '/programs'
+    | '/learning/$trackId'
+    | '/learning/$trackId/lesson/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +121,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/media'
     | '/programs'
+    | '/learning/$trackId'
+    | '/learning/$trackId/lesson/$lessonId'
   id:
     | '__root__'
     | '/'
@@ -109,13 +132,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/media'
     | '/programs'
+    | '/learning/$trackId'
+    | '/learning/$trackId/lesson/$lessonId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
-  LearningRoute: typeof LearningRoute
+  LearningRoute: typeof LearningRouteWithChildren
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
   ProgramsRoute: typeof ProgramsRoute
@@ -172,14 +197,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/learning/$trackId': {
+      id: '/learning/$trackId'
+      path: '/$trackId'
+      fullPath: '/learning/$trackId'
+      preLoaderRoute: typeof LearningTrackIdRouteImport
+      parentRoute: typeof LearningRoute
+    }
+    '/learning/$trackId/lesson/$lessonId': {
+      id: '/learning/$trackId/lesson/$lessonId'
+      path: '/lesson/$lessonId'
+      fullPath: '/learning/$trackId/lesson/$lessonId'
+      preLoaderRoute: typeof LearningTrackIdLessonLessonIdRouteImport
+      parentRoute: typeof LearningTrackIdRoute
+    }
   }
 }
+
+interface LearningTrackIdRouteChildren {
+  LearningTrackIdLessonLessonIdRoute: typeof LearningTrackIdLessonLessonIdRoute
+}
+
+const LearningTrackIdRouteChildren: LearningTrackIdRouteChildren = {
+  LearningTrackIdLessonLessonIdRoute: LearningTrackIdLessonLessonIdRoute,
+}
+
+const LearningTrackIdRouteWithChildren = LearningTrackIdRoute._addFileChildren(
+  LearningTrackIdRouteChildren,
+)
+
+interface LearningRouteChildren {
+  LearningTrackIdRoute: typeof LearningTrackIdRouteWithChildren
+}
+
+const LearningRouteChildren: LearningRouteChildren = {
+  LearningTrackIdRoute: LearningTrackIdRouteWithChildren,
+}
+
+const LearningRouteWithChildren = LearningRoute._addFileChildren(
+  LearningRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
-  LearningRoute: LearningRoute,
+  LearningRoute: LearningRouteWithChildren,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
   ProgramsRoute: ProgramsRoute,

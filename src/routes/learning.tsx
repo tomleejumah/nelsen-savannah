@@ -7,22 +7,22 @@ import {
   GraduationCap,
   Layers,
   LogIn,
-  Sparkles,
+  Search,
 } from "lucide-react";
 
 import { LMS_FEATURES } from "@/data/site";
-import { LMS_MILESTONES, LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
+import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { fetchLmsTracks, enrollInTrack, type TrackCardDto } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/learning")({
   head: () => ({
     meta: [
-      { title: "Learning — Tracks & The Nelsen LMS | Nelsen Savannah" },
+      { title: "Learning — Tracks | Nelsen Savannah" },
       {
         name: "description",
         content:
-          "LMS tracks for Sela, Trailblazers, Scripture Safari, Codelab and Mentor Academy — same catalog Android will consume.",
+          "Browse and enroll in Nelsen Savannah learning tracks — Sela, Trailblazers, Scripture Safari, Codelab and more.",
       },
       { property: "og:title", content: "Learning | Nelsen Savannah" },
     ],
@@ -59,11 +59,16 @@ type DisplayTrack = {
   enrolled: boolean;
 };
 
+type CatalogFilter = "all" | "enrolled";
+
 function LearningPage() {
   const [user, setUser] = useState<User | null>(null);
   const [apiTracks, setApiTracks] = useState<TrackCardDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<CatalogFilter>("all");
+  const [busyTrack, setBusyTrack] = useState<string | null>(null);
 
   const previewTracks = useMemo<DisplayTrack[]>(
     () =>
@@ -110,11 +115,12 @@ function LearningPage() {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       setUser(next);
       if (next) void loadTracks(next);
-      else setApiTracks([]);
+      else {
+        setApiTracks([]);
+        setFilter("all");
+      }
     });
   }, [loadTracks]);
-
-  const [busyTrack, setBusyTrack] = useState<string | null>(null);
 
   const liveTracks: DisplayTrack[] = apiTracks.map((t) => ({
     id: t.trackId,
@@ -147,8 +153,21 @@ function LearningPage() {
   }
 
   const showingLive = Boolean(user && liveTracks.length > 0 && !error);
-  const tracks = showingLive ? liveTracks : previewTracks;
-  const nextMilestone = LMS_MILESTONES.find((m) => m.status === "planned");
+  const catalog = showingLive ? liveTracks : previewTracks;
+  const enrolledTracks = catalog.filter((t) => t.enrolled);
+
+  const filteredTracks = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return catalog.filter((track) => {
+      if (filter === "enrolled" && !track.enrolled) return false;
+      if (!q) return true;
+      return (
+        track.title.toLowerCase().includes(q) ||
+        track.blurb.toLowerCase().includes(q) ||
+        track.audience.some((a) => a.toLowerCase().includes(q))
+      );
+    });
+  }, [catalog, filter, query]);
 
   return (
     <div className="pb-24">
@@ -163,9 +182,7 @@ function LearningPage() {
             Mentorship you attend. Learning you keep.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Browse the tracks below. Sign in with the{" "}
-            <span className="text-foreground">same Google email as the Android app</span> so your
-            progress % stays in sync.
+            Browse the tracks, enroll, and pick up where you left off.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             {!user ? (
@@ -175,15 +192,7 @@ function LearningPage() {
               >
                 <LogIn className="h-4 w-4" /> Sign in
               </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void loadTracks(user)}
-                className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
-              >
-                Refresh catalog <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
+            ) : null}
             <Link
               to="/programs"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
@@ -195,38 +204,84 @@ function LearningPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="eyebrow text-ember">Tracks</p>
             <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
-              {loading ? "Loading tracks…" : `${tracks.length} learning tracks`}
+              {loading
+                ? "Loading tracks…"
+                : filter === "enrolled"
+                  ? `${filteredTracks.length} enrolled`
+                  : `${filteredTracks.length} learning tracks`}
             </h2>
           </div>
-          {!user && (
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-              Preview of the catalog. Sign in with your app email to enroll and track progress.
-            </p>
-          )}
-          {user && showingLive && (
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-              Live catalog for {user.email}
-            </p>
-          )}
+
+          <div className="flex w-full flex-col gap-3 sm:max-w-md">
+            <label className="relative block">
+              <span className="sr-only">Search tracks</span>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search tracks…"
+                className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground outline-none ring-ember/40 placeholder:text-muted-foreground focus:ring-2"
+              />
+            </label>
+            {showingLive && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilter("all")}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                    filter === "all"
+                      ? "bg-maroon text-maroon-foreground"
+                      : "border border-border bg-card text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("enrolled")}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                    filter === "enrolled"
+                      ? "bg-maroon text-maroon-foreground"
+                      : "border border-border bg-card text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  Enrolled ({enrolledTracks.length})
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {error && user && (
           <p className="mt-6 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error} — showing catalog preview until the API responds.
+            {error}
+          </p>
+        )}
+
+        {showingLive && filter === "enrolled" && enrolledTracks.length === 0 && !query && (
+          <p className="mt-10 text-sm text-muted-foreground">
+            You haven’t enrolled in any tracks yet. Switch to All and pick one to start.
+          </p>
+        )}
+
+        {filteredTracks.length === 0 && (query || filter === "all") && !loading && (
+          <p className="mt-10 text-sm text-muted-foreground">
+            No tracks match “{query || "your filters"}”.
           </p>
         )}
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {tracks.map((track) => {
+          {filteredTracks.map((track) => {
             const tone = trackTone(track.audience);
             return (
               <article
                 key={track.id}
-                className="flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
+                className="relative flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
               >
                 <span
                   className={`self-start rounded-full px-3 py-1 text-xs font-semibold ${toneClass[tone]}`}
@@ -252,20 +307,41 @@ function LearningPage() {
                       {track.enrolled ? `${track.trackPercent}% complete` : "Not enrolled"}
                     </span>
                     {track.enrolled ? (
-                      <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand-soft">
-                        Enrolled
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={busyTrack === track.id}
-                        onClick={() => void onEnroll(track.id)}
-                        className="rounded-full bg-maroon/10 px-3 py-1.5 text-xs font-semibold text-maroon hover:bg-maroon/20 disabled:opacity-50"
+                      <Link
+                        to="/learning/$trackId"
+                        params={{ trackId: track.id }}
+                        className="rounded-full bg-ember-gradient px-4 py-1.5 text-xs font-semibold text-maroon-foreground shadow-ember-glow"
                       >
-                        {busyTrack === track.id ? "…" : "Enroll"}
-                      </button>
+                        Continue
+                      </Link>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to="/learning/$trackId"
+                          params={{ trackId: track.id }}
+                          className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent"
+                        >
+                          View
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={busyTrack === track.id}
+                          onClick={() => void onEnroll(track.id)}
+                          className="rounded-full bg-maroon/10 px-3 py-1.5 text-xs font-semibold text-maroon hover:bg-maroon/20 disabled:opacity-50"
+                        >
+                          {busyTrack === track.id ? "…" : "Enroll"}
+                        </button>
+                      </div>
                     )}
                   </div>
+                )}
+                {showingLive && track.enrolled && (
+                  <Link
+                    to="/learning/$trackId"
+                    params={{ trackId: track.id }}
+                    className="absolute inset-0 rounded-3xl"
+                    aria-label={`Continue ${track.title}`}
+                  />
                 )}
               </article>
             );
@@ -275,20 +351,11 @@ function LearningPage() {
 
       <section className="mx-auto mt-24 max-w-7xl px-5 sm:px-8">
         <div className="rounded-3xl border border-border/70 bg-secondary/40 p-8 sm:p-12">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-maroon/10 px-3 py-1 text-xs font-semibold text-maroon">
-              <Sparkles className="h-3.5 w-3.5" /> Building
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Next: {nextMilestone?.phase} — {nextMilestone?.title}
-            </span>
-          </div>
-          <h2 className="mt-5 max-w-3xl text-3xl font-bold sm:text-4xl">
-            One account. Progress on app and web.
+          <h2 className="max-w-3xl text-3xl font-bold sm:text-4xl">
+            One account. Progress that follows you.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Use the same Google email in the Android app and on this site. Enrollments, lesson %, and
-            certificates stay with that account across both.
+            Enrollments and lesson progress stay with your signed-in account.
           </p>
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

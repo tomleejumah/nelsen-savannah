@@ -1,5 +1,6 @@
 export const LMS_API_BASE =
-  import.meta.env.VITE_LMS_API_BASE ?? "http://localhost:5002";
+  import.meta.env.VITE_LMS_API_BASE ??
+  "https://api.tommlyjumah.dev/nisisi-africa";
 
 export type MeDto = {
   uid: string;
@@ -47,6 +48,50 @@ export type EnrollmentDto = {
   courseTitle?: string;
   courseImageUrl?: string;
   nextLessonId?: string | null;
+};
+
+export type ModuleDto = {
+  moduleId: string;
+  trackId: string;
+  title: string;
+  does: string;
+  estimatedMinutes: number;
+  lessonCount: number;
+  modulePercent?: number;
+  status?: string;
+};
+
+export type LessonDto = {
+  lessonId: string;
+  moduleId: string;
+  trackId: string;
+  title: string;
+  does: string;
+  type: string;
+  estimatedMinutes: number;
+  hasQuiz: boolean;
+  hasAssignment: boolean;
+  lessonPercent: number;
+  status: string;
+  contentUrl?: string | null;
+  playbackUrl?: string | null;
+  playbackExpiresAt?: number | null;
+  bodyHtml?: string | null;
+};
+
+export type TrackDetailDto = {
+  track: TrackCardDto;
+  modules: ModuleDto[];
+  enrollment: {
+    trackId: string;
+    trackPercent: number;
+    status: string;
+  } | null;
+};
+
+export type ModuleDetailDto = {
+  module: ModuleDto;
+  lessons: LessonDto[];
 };
 
 export type ProgressMapDto = {
@@ -105,6 +150,27 @@ export async function fetchLmsMe(idToken: string) {
 
 export async function fetchLmsTracks(idToken: string) {
   return lmsFetch<{ tracks: TrackCardDto[] }>("/lms/tracks", idToken);
+}
+
+export async function fetchLmsTrack(idToken: string, trackId: string) {
+  return lmsFetch<TrackDetailDto>(
+    `/lms/tracks/${encodeURIComponent(trackId)}`,
+    idToken,
+  );
+}
+
+export async function fetchLmsModule(idToken: string, moduleId: string) {
+  return lmsFetch<ModuleDetailDto>(
+    `/lms/modules/${encodeURIComponent(moduleId)}`,
+    idToken,
+  );
+}
+
+export async function fetchLmsLesson(idToken: string, lessonId: string) {
+  return lmsFetch<{ lesson: LessonDto }>(
+    `/lms/lessons/${encodeURIComponent(lessonId)}`,
+    idToken,
+  );
 }
 
 export async function enrollInTrack(idToken: string, trackId: string) {

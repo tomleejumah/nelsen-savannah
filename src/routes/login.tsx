@@ -10,16 +10,15 @@ import { LogIn, LogOut, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 import { getFirebaseAuth, googleProvider } from "@/lib/firebase";
-import { fetchLmsMe, LMS_API_BASE, type MeDto } from "@/lib/lmsApi";
+import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Nelsen Savannah LMS" },
+      { title: "Sign in — Nelsen Savannah" },
       {
         name: "description",
-        content:
-          "Google sign-in with the same Firebase project as the Android app. Calls GET /lms/me with a Bearer ID token.",
+        content: "Sign in to Nelsen Savannah to access learning tracks and your progress.",
       },
     ],
   }),
@@ -29,7 +28,6 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
-  const [source, setSource] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,12 +39,10 @@ function LoginPage() {
       const envelope = await fetchLmsMe(token);
       if (!envelope.ok || !envelope.data) {
         setMe(null);
-        setSource(envelope.source);
-        setError(envelope.error || "Failed to load /lms/me");
+        setError(envelope.error || "Could not load your profile");
         return;
       }
       setMe(envelope.data);
-      setSource(envelope.source);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
       setMe(null);
@@ -63,7 +59,6 @@ function LoginPage() {
         void loadMe(next);
       } else {
         setMe(null);
-        setSource(null);
       }
     });
   }, [loadMe]);
@@ -94,14 +89,12 @@ function LoginPage() {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -top-20 h-64 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.12),transparent_60%)]"
         />
-        <p className="eyebrow text-ember">LMS access</p>
+        <p className="eyebrow text-ember">Account</p>
         <h1 className="mt-4 font-display text-4xl font-bold text-foreground sm:text-5xl">
           Sign in
         </h1>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Same Google / Firebase identity as the Android app. After sign-in we call{" "}
-          <code className="text-sm text-foreground">GET {LMS_API_BASE}/lms/me</code>{" "}
-          with your Bearer ID token.
+          Sign in with Google to enroll in tracks and keep your learning progress.
         </p>
 
         <div className="mt-10 space-y-4">
@@ -131,63 +124,31 @@ function LoginPage() {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="font-display font-semibold text-foreground">
-                    {user.displayName || "Signed in"}
+                    {me?.displayName || user.displayName || "Signed in"}
                   </p>
                   <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+                  {me?.userRole && (
+                    <p className="mt-1 text-xs font-medium text-ember">{me.userRole}</p>
+                  )}
                 </div>
               </div>
 
               {busy && (
-                <p className="text-sm text-muted-foreground">Loading /lms/me…</p>
+                <p className="text-sm text-muted-foreground">Loading your profile…</p>
               )}
               {error && (
                 <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   {error}
                 </p>
               )}
-              {me && (
-                <dl className="grid gap-2 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Role</dt>
-                    <dd className="font-medium text-foreground">{me.userRole}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Source</dt>
-                    <dd className="font-medium text-foreground">{source}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">UID</dt>
-                    <dd className="truncate font-mono text-xs text-foreground">
-                      {me.uid}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 text-muted-foreground">Capabilities</dt>
-                    <dd className="flex flex-wrap gap-1.5">
-                      {Object.entries(me.capabilities)
-                        .filter(([, v]) => v)
-                        .map(([k]) => (
-                          <span
-                            key={k}
-                            className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand-soft"
-                          >
-                            {k}
-                          </span>
-                        ))}
-                    </dd>
-                  </div>
-                </dl>
-              )}
 
               <div className="flex flex-wrap gap-2 pt-2">
-                <button
-                  type="button"
-                  disabled={busy || !user}
-                  onClick={() => user && void loadMe(user)}
-                  className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-accent/60"
+                <Link
+                  to="/learning"
+                  className="rounded-full bg-maroon/10 px-4 py-2 text-sm font-medium text-maroon hover:bg-maroon/20"
                 >
-                  Refresh /lms/me
-                </button>
+                  Go to learning
+                </Link>
                 <button
                   type="button"
                   onClick={() => void onSignOut()}
@@ -196,12 +157,6 @@ function LoginPage() {
                   <LogOut className="h-3.5 w-3.5" />
                   Sign out
                 </button>
-                <Link
-                  to="/learning"
-                  className="rounded-full bg-maroon/10 px-4 py-2 text-sm font-medium text-maroon hover:bg-maroon/20"
-                >
-                  Learning
-                </Link>
               </div>
             </div>
           )}

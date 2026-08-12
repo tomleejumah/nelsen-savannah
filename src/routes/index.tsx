@@ -67,13 +67,13 @@ function Index() {
               </Link>
             </div>
 
-            <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
+            <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 sm:gap-8">
               {STATS.map((s) => (
-                <div key={s.label}>
-                  <dt className="font-display text-2xl font-bold text-foreground sm:text-3xl">
-                    {s.value}
+                <div key={s.label} className="flex min-w-0 flex-col">
+                  <dt className="font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
+                    <span className="whitespace-nowrap">{s.value}</span>
                   </dt>
-                  <dd className="mt-1 text-xs text-muted-foreground">{s.label}</dd>
+                  <dd className="mt-2 text-xs leading-snug text-muted-foreground">{s.label}</dd>
                 </div>
               ))}
             </dl>
@@ -91,9 +91,9 @@ function Index() {
             <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
               <p className="text-xs text-muted-foreground">
                 <span className="font-display font-semibold text-foreground">
-                  Based in Dagoretti
+                  Based in Nairobi
                 </span>{" "}
-                — mentorship, faith programmes, and coding labs for Nairobi youth.
+                — mentorship, faith programmes, and coding labs for Kenyan youth.
               </p>
             </div>
           </div>
