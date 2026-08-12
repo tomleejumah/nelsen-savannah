@@ -343,7 +343,92 @@ export const adminMenteeProgress = handle(
   "[GET /lms/admin/mentees/:mentorId/progress]",
   async (req) => {
     const svc = await import("../services/lmsAdminService.js");
-    return svc.adminMenteeProgress(req.params.mentorId);
+    return svc.adminMenteeProgress(req.params.mentorId, req.user.uid);
+  },
+);
+
+export const postAssignment = handle("[POST /lms/assignments]", async (req) => {
+  const svc = await import("../services/lmsAssignmentService.js");
+  const result = await svc.createAssignment(profileFromReq(req), req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const getMyAssignments = handle("[GET /lms/assignments/me]", async (req) => {
+  const svc = await import("../services/lmsAssignmentService.js");
+  return svc.listMyAssignments(req.user.uid);
+});
+
+export const getAssignedOutbox = handle(
+  "[GET /lms/assignments/assigned]",
+  async (req) => {
+    const svc = await import("../services/lmsAssignmentService.js");
+    return svc.listAssignedByMe(req.user.uid);
+  },
+);
+
+export const listSchools = handle("[GET /lms/schools]", async (req) => {
+  const svc = await import("../services/lmsSchoolService.js");
+  return svc.listSchools(req.user.uid);
+});
+
+export const createSchool = handle("[POST /lms/schools]", async (req) => {
+  const svc = await import("../services/lmsSchoolService.js");
+  const result = await svc.createSchool(req.user.uid, req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const patchSchoolAdmins = handle(
+  "[PATCH /lms/schools/:id/admins]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.appointSchoolAdmins(req.user.uid, req.params.id, req.body || {});
+  },
+);
+
+export const listSchoolMembers = handle(
+  "[GET /lms/schools/:id/members]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.listSchoolMembers(req.user.uid, req.params.id);
+  },
+);
+
+export const postSchoolMentor = handle(
+  "[POST /lms/schools/:id/mentors]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    const result = await svc.registerSchoolMentor(
+      req.user.uid,
+      req.params.id,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const postSchoolMentee = handle(
+  "[POST /lms/schools/:id/mentees]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    const result = await svc.registerSchoolMentee(
+      req.user.uid,
+      req.params.id,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const patchSchoolMemberRole = handle(
+  "[PATCH /lms/schools/:id/members/:uid/role]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.patchSchoolMemberRole(
+      req.user.uid,
+      req.params.id,
+      req.params.uid,
+      req.body || {},
+    );
   },
 );
 

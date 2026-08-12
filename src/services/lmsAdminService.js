@@ -14,6 +14,8 @@ import { setUserRole } from "./lmsMeService.js";
 import { normalizeRole } from "../constants/lmsRoles.js";
 import { patchLessonProgress } from "./lmsEnrollmentService.js";
 import { maybeIssueCertificate } from "./lmsCertificateService.js";
+import { loadUserRole } from "../middleware/lmsRoles.js";
+import { getActorSchoolId } from "./lmsSchoolService.js";
 
 export async function adminCreateTrack(body = {}) {
   const trackId = body.trackId;
@@ -271,19 +273,38 @@ export async function adminStats() {
   };
 }
 
-export async function adminMenteeProgress(_mentorId) {
-  const all = await dbAll(
-    `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at,
-            u.display_name, u.photo_url
-     FROM enrollments e
-     JOIN users_mirror u ON u.uid = e.uid
-     ORDER BY e.last_active_at DESC
-     LIMIT 100`,
-  );
+export async function adminMenteeProgress(mentorId, actorUid) {
+  const viewer = actorUid || mentorId;
+  const role = await loadUserRole(viewer);
+  let rows;
+  if (role === "Mentor") {
+    rows = await dbAll(
+      `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at,
+              u.display_name, u.photo_url
+       FROM enrollments e
+       JOIN users_mirror u ON u.uid = e.uid
+       WHERE e.mentor_id = ? OR e.mentor_id IS NULL
+       ORDER BY e.last_active_at DESC
+       LIMIT 100`,
+      [viewer],
+    );
+  } else {
+    const schoolId = await getActorSchoolId(viewer);
+    rows = await dbAll(
+      `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at,
+              u.display_name, u.photo_url
+       FROM enrollments e
+       JOIN users_mirror u ON u.uid = e.uid
+       WHERE COALESCE(u.school_id, 'nelsen-digital') = ?
+       ORDER BY e.last_active_at DESC
+       LIMIT 100`,
+      [schoolId],
+    );
+  }
   return {
     source: getPrimaryEngine(),
     data: {
-      mentees: all.map((r) => ({
+      mentees: rows.map((r) => ({
         uid: r.uid,
         displayName: r.display_name || "",
         photoUrl: r.photo_url || "",
