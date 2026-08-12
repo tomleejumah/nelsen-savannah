@@ -1,7 +1,10 @@
 import {
   capabilitiesFor,
+  DEFAULT_SCHOOL_ID,
+  DEFAULT_SCHOOL_NAME,
   normalizeRole,
   ROLES,
+  shellFor,
 } from "../constants/lmsRoles.js";
 import {
   checkPrimaryHealth,
@@ -23,6 +26,28 @@ function splitName(displayName = "") {
   return {
     firstName: parts[0] || "",
     lastName: parts.slice(1).join(" ") || "",
+  };
+}
+
+function mePayload(profile, user, role, source) {
+  return {
+    source,
+    data: {
+      uid: profile.uid,
+      email: user?.email || profile.email || "",
+      displayName:
+        user?.displayName || user?.display_name || profile.displayName || "",
+      firstName: user?.firstName || user?.first_name || "",
+      lastName: user?.lastName || user?.last_name || "",
+      photoUrl: user?.photoUrl || user?.photo_url || profile.photoUrl || "",
+      userRole: role,
+      /** @deprecated use userRole — kept for older clients */
+      role,
+      schoolId: user?.schoolId || user?.school_id || DEFAULT_SCHOOL_ID,
+      schoolName: user?.schoolName || DEFAULT_SCHOOL_NAME,
+      shell: shellFor(role),
+      capabilities: capabilitiesFor(role),
+    },
   };
 }
 
@@ -134,7 +159,6 @@ export async function getMe(profile) {
       );
 
       let role = normalizeRole(user?.role);
-      // Prefer live RTDB role if present (Android writes roles/{uid} directly)
       try {
         const rtdbRole = await readRoleFromRtdb(profile.uid);
         if (rtdbRole) {
@@ -147,25 +171,24 @@ export async function getMe(profile) {
         /* ignore RTDB role peek */
       }
 
-      return {
-        source: getPrimaryEngine(),
-        data: {
-          uid: profile.uid,
-          email: user?.email || profile.email || "",
-          displayName: user?.display_name || profile.displayName || "",
-          firstName: user?.first_name || "",
-          lastName: user?.last_name || "",
-          photoUrl: user?.photo_url || profile.photoUrl || "",
-          userRole: role,
-          capabilities: capabilitiesFor(role),
+      return mePayload(
+        profile,
+        {
+          email: user?.email,
+          display_name: user?.display_name,
+          first_name: user?.first_name,
+          last_name: user?.last_name,
+          photo_url: user?.photo_url,
+          school_id: DEFAULT_SCHOOL_ID,
         },
-      };
+        role,
+        getPrimaryEngine(),
+      );
     } catch (err) {
       console.error("[lms-me] primary read failed, trying RTDB:", err.message);
     }
   }
 
-  // Failover: RTDB
   const [rtdbUser, rtdbRole] = await Promise.all([
     readUserFromRtdb(profile.uid),
     readRoleFromRtdb(profile.uid),
@@ -175,19 +198,19 @@ export async function getMe(profile) {
     rtdbUser?.displayName || profile.displayName,
   );
 
-  return {
-    source: "rtdb",
-    data: {
-      uid: profile.uid,
-      email: rtdbUser?.email || profile.email || "",
-      displayName: rtdbUser?.displayName || profile.displayName || "",
+  return mePayload(
+    profile,
+    {
+      email: rtdbUser?.email,
+      displayName: rtdbUser?.displayName,
       firstName: rtdbUser?.firstName || firstName,
       lastName: rtdbUser?.lastName || lastName,
-      photoUrl: rtdbUser?.photoUrl || profile.photoUrl || "",
-      userRole: role,
-      capabilities: capabilitiesFor(role),
+      photoUrl: rtdbUser?.photoUrl,
+      schoolId: DEFAULT_SCHOOL_ID,
     },
-  };
+    role,
+    "rtdb",
+  );
 }
 
 export async function getStoreHealth() {
@@ -202,9 +225,6 @@ export async function getStoreHealth() {
   };
 }
 
-/**
- * Role upsert that works on both SQLite and Postgres.
- */
 export async function setUserRole(uid, role) {
   const now = Date.now();
   const normalized = normalizeRole(role);

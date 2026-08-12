@@ -64,7 +64,7 @@ router.get("/progress/me", authenticateUser, lmsController.getProgressMe);
 router.post(
   "/media/upload",
   authenticateUser,
-  requireRoles("Mentor", "Admin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   upload.single("file"),
   lmsController.uploadMedia,
 );
@@ -76,13 +76,13 @@ router.get("/submissions/me", authenticateUser, lmsController.getMySubmissions);
 router.get(
   "/submissions/queue",
   authenticateUser,
-  requireRoles("Mentor", "Admin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.getSubmissionQueue,
 );
 router.patch(
   "/submissions/:id/mark",
   authenticateUser,
-  requireRoles("Mentor", "Admin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.markSubmission,
 );
 
@@ -131,7 +131,7 @@ router.get(
 router.get(
   "/admin/mentees/:mentorId/progress",
   authenticateUser,
-  requireRoles("Mentor", "Admin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminMenteeProgress,
 );
 router.post(

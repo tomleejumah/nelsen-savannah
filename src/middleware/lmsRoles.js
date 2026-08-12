@@ -1,7 +1,7 @@
 /** Role gate for LMS admin/mentor routes */
 
 import { dbGet } from "../db/lmsDb.js";
-import { normalizeRole } from "../constants/lmsRoles.js";
+import { expandAllowedRoles, normalizeRole } from "../constants/lmsRoles.js";
 import { lmsErr } from "../utils/lmsResponse.js";
 import { getPrimaryEngine } from "../db/lmsDb.js";
 
@@ -15,7 +15,8 @@ export function requireRoles(...allowed) {
     try {
       const role = await loadUserRole(req.user.uid);
       req.user.role = role;
-      if (!allowed.includes(role)) {
+      const allowedSet = expandAllowedRoles(allowed);
+      if (!allowedSet.has(role)) {
         return lmsErr(
           res,
           `Requires role: ${allowed.join("|")}`,
