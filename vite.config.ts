@@ -7,11 +7,14 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  // VPS (server-remote) runs Node behind nginx — not Cloudflare Workers.
-  nitro: { preset: "node-server" },
+  // Pure SPA for nginx — no Nitro/Node runtime. Shell is prerendered to index.html.
+  nitro: false,
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+    spa: {
+      enabled: true,
+      prerender: {
+        outputPath: "/index.html",
+      },
+    },
   },
 });
