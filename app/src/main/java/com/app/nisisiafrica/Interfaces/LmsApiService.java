@@ -67,4 +67,24 @@ public interface LmsApiService {
     Call<LmsModels.ProgressMapEnvelope> myProgress(
             @Header("Authorization") String bearer,
             @Query("trackId") String trackId);
+
+    @POST("lms/lessons/{lessonId}/quiz")
+    Call<LmsModels.QuizEnvelope> submitQuiz(
+            @Header("Authorization") String bearer,
+            @Path("lessonId") String lessonId,
+            @Body LmsModels.QuizBody body);
+
+    @POST("lms/submissions")
+    Call<LmsModels.SubmissionEnvelope> submitAssignment(
+            @Header("Authorization") String bearer,
+            @Body LmsModels.SubmissionBody body);
+
+    @GET("lms/submissions/me")
+    Call<LmsModels.SubmissionListEnvelope> mySubmissions(
+            @Header("Authorization") String bearer,
+            @Query("trackId") String trackId);
+
+    @GET("lms/certificates/me")
+    Call<LmsModels.CertificatesEnvelope> myCertificates(
+            @Header("Authorization") String bearer);
 }

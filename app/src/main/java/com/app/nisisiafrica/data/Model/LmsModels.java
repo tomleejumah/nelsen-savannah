@@ -229,4 +229,86 @@ public final class LmsModels {
             this.quizPct = quizPct;
         }
     }
+
+    public static class QuizBody {
+        public Integer score;
+        public Boolean passed;
+        public String lastPlatform = "android";
+        public QuizBody(int score, boolean passed) {
+            this.score = score;
+            this.passed = passed;
+        }
+    }
+
+    public static class QuizData {
+        public String lessonId;
+        public float quizPct;
+        public Float lessonPercent;
+        public Float trackPercent;
+    }
+
+    public static class QuizEnvelope {
+        public boolean ok;
+        public QuizData data;
+        public String error;
+    }
+
+    public static class SubmissionBody {
+        public String lessonId;
+        public String text;
+        public String platform = "android";
+        public SubmissionBody(String lessonId, String text) {
+            this.lessonId = lessonId;
+            this.text = text;
+        }
+    }
+
+    public static class SubmissionDto {
+        public String id;
+        public String lessonId;
+        public String trackId;
+        public String status;
+        public String text;
+        public Float score;
+        public String feedback;
+        public long submittedAt;
+    }
+
+    public static class SubmissionData {
+        public SubmissionDto submission;
+    }
+
+    public static class SubmissionEnvelope {
+        public boolean ok;
+        public SubmissionData data;
+        public String error;
+    }
+
+    public static class SubmissionListData {
+        public java.util.List<SubmissionDto> submissions;
+    }
+
+    public static class SubmissionListEnvelope {
+        public boolean ok;
+        public SubmissionListData data;
+        public String error;
+    }
+
+    public static class CertificateDto {
+        public String trackId;
+        public String courseTitle;
+        public long issuedAt;
+        public String verifyUrl;
+        public float trackPercent;
+    }
+
+    public static class CertificatesData {
+        public java.util.List<CertificateDto> certificates;
+    }
+
+    public static class CertificatesEnvelope {
+        public boolean ok;
+        public CertificatesData data;
+        public String error;
+    }
 }
