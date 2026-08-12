@@ -9,7 +9,10 @@ export type MeDto = {
   firstName: string;
   lastName: string;
   photoUrl: string;
-  userRole: "Mentee" | "Mentor" | "Admin";
+  userRole: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
+  schoolId?: string;
+  schoolName?: string;
+  shell?: "student" | "mentor" | "school" | "admin";
   capabilities: Record<string, boolean>;
 };
 
