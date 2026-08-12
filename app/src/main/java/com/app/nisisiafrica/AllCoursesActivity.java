@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -13,6 +14,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -30,13 +32,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
+import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import kotlin.Unit;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Full course catalog with MentUI cards + search.
@@ -80,7 +89,12 @@ public class AllCoursesActivity extends AppCompatActivity {
             }
         }
         if (tvSubtitle != null && !Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
-            tvSubtitle.setText("Catalog · full teach/school tools ship in later LMS milestones");
+            tvSubtitle.setText("Tap here for teach board (queue · mark · assign)");
+            tvSubtitle.setOnClickListener(v ->
+                    startActivity(new Intent(this, MentorBoardActivity.class)));
+        } else if (tvSubtitle != null) {
+            tvSubtitle.setText("Tap for assigned coursework inbox");
+            tvSubtitle.setOnClickListener(v -> showAssignmentsInbox());
         }
 
         RecyclerView rv = findViewById(R.id.rvCourses);
@@ -268,5 +282,46 @@ public class AllCoursesActivity extends AppCompatActivity {
             return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase(Locale.getDefault());
         }
         return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase(Locale.getDefault());
+    }
+
+    private void showAssignmentsInbox() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Sign in required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        user.getIdToken(false).addOnSuccessListener(r ->
+                ApiClient.getLmsService()
+                        .myAssignments("Bearer " + r.getToken())
+                        .enqueue(new Callback<>() {
+                            @Override
+                            public void onResponse(Call<LmsModels.AssignmentsEnvelope> call,
+                                                   Response<LmsModels.AssignmentsEnvelope> response) {
+                                LmsModels.AssignmentsEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok
+                                        || body.data == null || body.data.assignments == null
+                                        || body.data.assignments.isEmpty()) {
+                                    Toast.makeText(AllCoursesActivity.this,
+                                            "No assigned work", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                CharSequence[] lines = new CharSequence[body.data.assignments.size()];
+                                for (int i = 0; i < body.data.assignments.size(); i++) {
+                                    LmsModels.AssignmentDto a = body.data.assignments.get(i);
+                                    lines[i] = a.title + (a.trackId != null ? " · " + a.trackId : "");
+                                }
+                                new AlertDialog.Builder(AllCoursesActivity.this)
+                                        .setTitle("Assigned to you")
+                                        .setItems(lines, null)
+                                        .setPositiveButton("OK", null)
+                                        .show();
+                            }
+
+                            @Override
+                            public void onFailure(Call<LmsModels.AssignmentsEnvelope> call, Throwable t) {
+                                Toast.makeText(AllCoursesActivity.this,
+                                        "Could not load assignments", Toast.LENGTH_SHORT).show();
+                            }
+                        }));
     }
 }

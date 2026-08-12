@@ -87,4 +87,27 @@ public interface LmsApiService {
     @GET("lms/certificates/me")
     Call<LmsModels.CertificatesEnvelope> myCertificates(
             @Header("Authorization") String bearer);
+
+    @GET("lms/submissions/queue")
+    Call<LmsModels.QueueEnvelope> submissionQueue(@Header("Authorization") String bearer);
+
+    @PATCH("lms/submissions/{id}/mark")
+    Call<LmsModels.MarkEnvelope> markSubmission(
+            @Header("Authorization") String bearer,
+            @Path("id") String submissionId,
+            @Body LmsModels.MarkBody body);
+
+    @GET("lms/admin/mentees/{mentorId}/progress")
+    Call<LmsModels.MenteesEnvelope> menteeProgress(
+            @Header("Authorization") String bearer,
+            @Path("mentorId") String mentorId);
+
+    @GET("lms/assignments/me")
+    Call<LmsModels.AssignmentsEnvelope> myAssignments(
+            @Header("Authorization") String bearer);
+
+    @POST("lms/assignments")
+    Call<LmsModels.AssignmentEnvelope> createAssignment(
+            @Header("Authorization") String bearer,
+            @Body LmsModels.AssignmentBody body);
 }

@@ -311,4 +311,102 @@ public final class LmsModels {
         public CertificatesData data;
         public String error;
     }
+
+    public static class QueueItemDto {
+        public String id;
+        public String lessonId;
+        public String lessonTitle;
+        public String trackId;
+        public String menteeId;
+        public String menteeName;
+        public String text;
+        public long submittedAt;
+    }
+
+    public static class QueueData {
+        public java.util.List<QueueItemDto> queue;
+    }
+
+    public static class QueueEnvelope {
+        public boolean ok;
+        public QueueData data;
+        public String error;
+    }
+
+    public static class MarkBody {
+        public int score;
+        public Boolean passed;
+        public String feedback;
+        public MarkBody(int score, boolean passed, String feedback) {
+            this.score = score;
+            this.passed = passed;
+            this.feedback = feedback;
+        }
+    }
+
+    public static class MarkEnvelope {
+        public boolean ok;
+        public String error;
+    }
+
+    public static class MenteeProgressDto {
+        public String uid;
+        public String displayName;
+        public String trackId;
+        public float trackPercent;
+        public long lastActiveAt;
+    }
+
+    public static class MenteesData {
+        public java.util.List<MenteeProgressDto> mentees;
+    }
+
+    public static class MenteesEnvelope {
+        public boolean ok;
+        public MenteesData data;
+        public String error;
+    }
+
+    public static class AssignmentDto {
+        public String id;
+        public String title;
+        public String prompt;
+        public String trackId;
+        public String lessonId;
+        public String assigneeUid;
+        public long createdAt;
+    }
+
+    public static class AssignmentBody {
+        public String title;
+        public String prompt;
+        public String trackId;
+        public String assigneeUid;
+        public AssignmentBody(String title, String prompt, String trackId, String assigneeUid) {
+            this.title = title;
+            this.prompt = prompt;
+            this.trackId = trackId;
+            this.assigneeUid = assigneeUid;
+        }
+    }
+
+    public static class AssignmentsData {
+        public java.util.List<AssignmentDto> assignments;
+    }
+
+    public static class AssignmentsEnvelope {
+        public boolean ok;
+        public AssignmentsData data;
+        public String error;
+    }
+
+    public static class AssignmentData {
+        public AssignmentDto assignment;
+    }
+
+    public static class AssignmentEnvelope {
+        public boolean ok;
+        public AssignmentData data;
+        public String error;
+    }
 }
