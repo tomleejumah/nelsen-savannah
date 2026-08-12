@@ -15,7 +15,7 @@ type Props = {
   shell: LmsShell;
   title: string;
   blurb: string;
-  children?: ReactNode;
+  children?: ReactNode | ((ctx: { user: User; me: MeDto }) => ReactNode);
 };
 
 export function RoleShellPage({ shell, title, blurb, children }: Props) {
@@ -111,17 +111,16 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5">
               <p className="text-sm text-muted-foreground">
                 Signed in as{" "}
-                <span className="font-medium text-foreground">{me.displayName || me.email}</span>
+                <span className="font-medium text-foreground">
+                  {me.displayName || me.email}
+                </span>
               </p>
               <p className="mt-1 text-xs font-medium text-ember">
                 {me.userRole}
                 {me.schoolName ? ` · ${me.schoolName}` : ""}
               </p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Shell stub for L0 — full tools land in later milestones.
-              </p>
             </div>
-            {children}
+            {typeof children === "function" ? children({ user, me }) : children}
           </div>
         )}
       </div>

@@ -94,8 +94,60 @@ export type SubmissionDto = {
   text: string;
   score: number | null;
   feedback: string | null;
+  assignmentId?: string | null;
   submittedAt: number;
   markedAt: number | null;
+};
+
+export type QueueItemDto = {
+  id: string;
+  lessonId: string;
+  lessonTitle: string;
+  trackId: string;
+  menteeId: string;
+  menteeName: string;
+  menteeAvatar: string;
+  text: string;
+  submittedAt: number;
+};
+
+export type MenteeProgressDto = {
+  uid: string;
+  displayName: string;
+  photoUrl: string;
+  trackId: string;
+  trackPercent: number;
+  lastActiveAt: number;
+};
+
+export type AssignmentDto = {
+  id: string;
+  schoolId: string | null;
+  trackId: string | null;
+  lessonId: string | null;
+  title: string;
+  prompt: string;
+  assignedBy: string;
+  assigneeUid: string | null;
+  cohort: string | null;
+  dueAt: number | null;
+  createdAt: number;
+};
+
+export type SchoolDto = {
+  schoolId: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type SchoolMemberDto = {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoUrl: string;
+  userRole: string;
+  schoolId: string;
 };
 
 export type CertificateDto = {
@@ -266,7 +318,12 @@ export async function submitLessonQuiz(
 
 export async function submitAssignment(
   idToken: string,
-  body: { lessonId: string; text: string; platform?: string },
+  body: {
+    lessonId: string;
+    text: string;
+    platform?: string;
+    assignmentId?: string;
+  },
 ) {
   return lmsFetch<{ submission: SubmissionDto }>("/lms/submissions", idToken, {
     method: "POST",
@@ -275,6 +332,7 @@ export async function submitAssignment(
       lessonId: body.lessonId,
       text: body.text,
       platform: body.platform || "web",
+      assignmentId: body.assignmentId,
     }),
   });
 }
@@ -291,5 +349,164 @@ export async function fetchMyCertificates(idToken: string) {
   return lmsFetch<{ certificates: CertificateDto[] }>(
     "/lms/certificates/me",
     idToken,
+  );
+}
+
+export async function fetchSubmissionQueue(idToken: string) {
+  return lmsFetch<{ queue: QueueItemDto[] }>("/lms/submissions/queue", idToken);
+}
+
+export async function markSubmission(
+  idToken: string,
+  submissionId: string,
+  body: { score: number; passed?: boolean; feedback?: string },
+) {
+  return lmsFetch<{
+    submission: {
+      id: string;
+      status: string;
+      score: number;
+      feedback: string;
+      assignmentPct: number;
+      lessonPercent: number | null;
+      trackPercent: number | null;
+    };
+  }>(`/lms/submissions/${encodeURIComponent(submissionId)}/mark`, idToken, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function fetchMenteeProgress(idToken: string, mentorId: string) {
+  return lmsFetch<{ mentees: MenteeProgressDto[] }>(
+    `/lms/admin/mentees/${encodeURIComponent(mentorId)}/progress`,
+    idToken,
+  );
+}
+
+export async function createAssignment(
+  idToken: string,
+  body: {
+    title: string;
+    prompt?: string;
+    trackId?: string;
+    lessonId?: string;
+    assigneeUid?: string;
+    cohort?: string;
+    dueAt?: number;
+  },
+) {
+  return lmsFetch<{ assignment: AssignmentDto }>("/lms/assignments", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function fetchMyAssignments(idToken: string) {
+  return lmsFetch<{ assignments: AssignmentDto[] }>(
+    "/lms/assignments/me",
+    idToken,
+  );
+}
+
+export async function fetchAssignedOutbox(idToken: string) {
+  return lmsFetch<{ assignments: AssignmentDto[] }>(
+    "/lms/assignments/assigned",
+    idToken,
+  );
+}
+
+export async function fetchSchools(idToken: string) {
+  return lmsFetch<{ schools: SchoolDto[] }>("/lms/schools", idToken);
+}
+
+export async function createSchool(
+  idToken: string,
+  body: {
+    name: string;
+    schoolId?: string;
+    adminUid?: string;
+    adminEmail?: string;
+    adminDisplayName?: string;
+  },
+) {
+  return lmsFetch<{ school: SchoolDto }>("/lms/schools", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function patchSchoolAdmins(
+  idToken: string,
+  schoolId: string,
+  body: { adminUid?: string; adminUids?: string[]; email?: string; displayName?: string },
+) {
+  return lmsFetch<{ schoolId: string; adminUids: string[] }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/admins`,
+    idToken,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function fetchSchoolMembers(idToken: string, schoolId: string) {
+  return lmsFetch<{ members: SchoolMemberDto[] }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/members`,
+    idToken,
+  );
+}
+
+export async function registerSchoolMentor(
+  idToken: string,
+  schoolId: string,
+  body: { uid: string; email?: string; displayName?: string },
+) {
+  return lmsFetch<{ member: SchoolMemberDto }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/mentors`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function registerSchoolMentee(
+  idToken: string,
+  schoolId: string,
+  body: { uid: string; email?: string; displayName?: string },
+) {
+  return lmsFetch<{ member: SchoolMemberDto }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/mentees`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function patchSchoolMemberRole(
+  idToken: string,
+  schoolId: string,
+  uid: string,
+  userRole: string,
+) {
+  return lmsFetch<{ uid: string; userRole: string; schoolId: string }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/members/${encodeURIComponent(uid)}/role`,
+    idToken,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userRole }),
+    },
   );
 }
