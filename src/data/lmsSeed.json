@@ -439,19 +439,40 @@
       "trackId": "track-ui-demo",
       "programSlug": "ui-demo",
       "title": "Demo module",
-      "does": "One video-style lesson, one quiz, one assignment for end-to-end UI.",
+      "does": "Three videos, one read, quiz, and assignment for end-to-end UI.",
       "audience": [
         "Mentee",
         "Mentor",
         "Admin"
       ],
-      "estimatedMinutes": 30,
+      "estimatedMinutes": 45,
       "lessons": [
         {
           "id": "ui-demo-1",
           "title": "Welcome (video)",
           "type": "video",
-          "does": "Play the demo MP4; open and mark content progress.",
+          "does": "Play demo MP4 #1; open and mark content progress.",
+          "estimatedMinutes": 5
+        },
+        {
+          "id": "ui-demo-v2",
+          "title": "Second clip (video)",
+          "type": "video",
+          "does": "Play demo MP4 #2 — list/player UI with multiple videos.",
+          "estimatedMinutes": 4
+        },
+        {
+          "id": "ui-demo-v3",
+          "title": "Third clip (video)",
+          "type": "video",
+          "does": "Play demo MP4 #3 — short clip for scrub/seek UI.",
+          "estimatedMinutes": 3
+        },
+        {
+          "id": "ui-demo-read",
+          "title": "Read: how progress works",
+          "type": "read",
+          "does": "Open lesson; mark content complete without media.",
           "estimatedMinutes": 5
         },
         {
