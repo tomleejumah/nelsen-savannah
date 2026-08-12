@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { getFirebaseAuth, googleProvider } from "@/lib/firebase";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
+import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -144,10 +145,12 @@ function LoginPage() {
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Link
-                  to="/learning"
+                  to={shellHomePath(shellFromMe(me))}
                   className="rounded-full bg-maroon/10 px-4 py-2 text-sm font-medium text-maroon hover:bg-maroon/20"
                 >
-                  Go to learning
+                  {me
+                    ? `Go to ${shellFromMe(me) === "student" ? "learning" : shellFromMe(me)}`
+                    : "Go to learning"}
                 </Link>
                 <button
                   type="button"

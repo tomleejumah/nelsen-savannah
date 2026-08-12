@@ -15,7 +15,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 
-const themeScript = `(function(){try{var t=localStorage.getItem("ns-theme");if(t!=="light"){document.documentElement.classList.add("dark")}}catch(e){document.documentElement.classList.add("dark")}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("ns-theme");if(t==="dark"){document.documentElement.classList.add("dark")}}catch(e){}})();`;
 
 function NotFoundComponent() {
   return (
@@ -120,7 +120,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

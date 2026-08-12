@@ -10,18 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as LearningRouteImport } from './routes/learning'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ProgramsRouteImport } from './routes/programs'
+import { Route as SchoolRouteImport } from './routes/school'
+import { Route as TeachRouteImport } from './routes/teach'
 import { Route as LearningTrackIdRouteImport } from './routes/learning.$trackId'
 import { Route as LearningTrackIdLessonLessonIdRouteImport } from './routes/learning.$trackId.lesson.$lessonId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -54,6 +62,16 @@ const ProgramsRoute = ProgramsRouteImport.update({
   path: '/programs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SchoolRoute = SchoolRouteImport.update({
+  id: '/school',
+  path: '/school',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeachRoute = TeachRouteImport.update({
+  id: '/teach',
+  path: '/teach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LearningTrackIdRoute = LearningTrackIdRouteImport.update({
   id: '/$trackId',
   path: '/$trackId',
@@ -68,35 +86,44 @@ const LearningTrackIdLessonLessonIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
+  '/school': typeof SchoolRoute
+  '/teach': typeof TeachRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
+  '/school': typeof SchoolRoute
+  '/teach': typeof TeachRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
+  '/school': typeof SchoolRoute
+  '/teach': typeof TeachRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -104,46 +131,58 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/contact'
     | '/events'
     | '/learning'
     | '/login'
     | '/media'
     | '/programs'
+    | '/school'
+    | '/teach'
     | '/learning/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/contact'
     | '/events'
     | '/learning'
     | '/login'
     | '/media'
     | '/programs'
+    | '/school'
+    | '/teach'
     | '/learning/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/contact'
     | '/events'
     | '/learning'
     | '/login'
     | '/media'
     | '/programs'
+    | '/school'
+    | '/teach'
     | '/learning/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
   LearningRoute: typeof LearningRouteWithChildren
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
   ProgramsRoute: typeof ProgramsRoute
+  SchoolRoute: typeof SchoolRoute
+  TeachRoute: typeof TeachRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -153,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -195,6 +241,20 @@ declare module '@tanstack/react-router' {
       path: '/programs'
       fullPath: '/programs'
       preLoaderRoute: typeof ProgramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/school': {
+      id: '/school'
+      path: '/school'
+      fullPath: '/school'
+      preLoaderRoute: typeof SchoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teach': {
+      id: '/teach'
+      path: '/teach'
+      fullPath: '/teach'
+      preLoaderRoute: typeof TeachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/learning/$trackId': {
@@ -240,12 +300,15 @@ const LearningRouteWithChildren = LearningRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
   LearningRoute: LearningRouteWithChildren,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
   ProgramsRoute: ProgramsRoute,
+  SchoolRoute: SchoolRoute,
+  TeachRoute: TeachRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
