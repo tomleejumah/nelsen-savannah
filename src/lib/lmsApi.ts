@@ -80,6 +80,31 @@ export type LessonDto = {
   playbackUrl?: string | null;
   playbackExpiresAt?: number | null;
   bodyHtml?: string | null;
+  quiz?: { mode: string; prompt: string } | null;
+  assignmentPrompt?: string | null;
+};
+
+export type SubmissionDto = {
+  id: string;
+  lessonId: string;
+  trackId: string;
+  moduleId: string;
+  uid: string;
+  status: string;
+  text: string;
+  score: number | null;
+  feedback: string | null;
+  submittedAt: number;
+  markedAt: number | null;
+};
+
+export type CertificateDto = {
+  trackId: string;
+  courseTitle: string;
+  issuedAt: number;
+  verifyUrl: string;
+  pdfUrl: string | null;
+  trackPercent: number;
 };
 
 export type TrackDetailDto = {
@@ -220,4 +245,51 @@ export async function patchLessonProgress(
 export async function fetchMyProgress(idToken: string, trackId?: string) {
   const q = trackId ? `?trackId=${encodeURIComponent(trackId)}` : "";
   return lmsFetch<ProgressMapDto>(`/lms/progress/me${q}`, idToken);
+}
+
+export async function submitLessonQuiz(
+  idToken: string,
+  lessonId: string,
+  body: { score?: number; passed?: boolean; lastPlatform?: "web" | "android" },
+) {
+  return lmsFetch<{
+    lessonId: string;
+    quizPct: number;
+    lessonPercent?: number;
+    trackPercent?: number;
+  }>(`/lms/lessons/${encodeURIComponent(lessonId)}/quiz`, idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, lastPlatform: body.lastPlatform || "web" }),
+  });
+}
+
+export async function submitAssignment(
+  idToken: string,
+  body: { lessonId: string; text: string; platform?: string },
+) {
+  return lmsFetch<{ submission: SubmissionDto }>("/lms/submissions", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      lessonId: body.lessonId,
+      text: body.text,
+      platform: body.platform || "web",
+    }),
+  });
+}
+
+export async function fetchMySubmissions(idToken: string, trackId?: string) {
+  const q = trackId ? `?trackId=${encodeURIComponent(trackId)}` : "";
+  return lmsFetch<{ submissions: SubmissionDto[] }>(
+    `/lms/submissions/me${q}`,
+    idToken,
+  );
+}
+
+export async function fetchMyCertificates(idToken: string) {
+  return lmsFetch<{ certificates: CertificateDto[] }>(
+    "/lms/certificates/me",
+    idToken,
+  );
 }
