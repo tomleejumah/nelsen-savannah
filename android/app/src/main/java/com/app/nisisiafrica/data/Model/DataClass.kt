@@ -1,0 +1,330 @@
+package com.app.nisisiafrica.data.Model
+
+import android.os.Parcel
+import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.Timestamp
+import com.google.firebase.database.IgnoreExtraProperties
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+
+data class DataClass(
+    var userData: UserData
+)
+
+enum class QuestionType { RADIO, CHECKBOX, TEXT ,DOCUMENT_UPLOAD, VIDEO_UPLOAD}
+
+data class Question(
+    val id: String,
+    val text: String,
+    val type: QuestionType,
+    val options: List<String> = emptyList()
+)
+
+data class Booking(
+    val id: Int,
+    val mentorId: String = "",
+    val studentId: String = "",
+    val date: String = "",
+    val time: String = ""
+) {
+    fun toLocalDateTime(): LocalDateTime {
+        val localDate = LocalDate.parse(date)
+        val localTime = LocalTime.parse(time)
+        return LocalDateTime.of(localDate, localTime)
+    }
+}
+
+data class Section(
+    val id: String,
+    val title: String,
+    val questions: List<Question>
+)
+
+@IgnoreExtraProperties
+data class UserMedia(
+    var postID: String,
+    var publisherID: String,
+    var mediaUrl: String,
+    var description: String,
+    var fileType: String,
+    var fileName: String,
+    var timestamp: Long,
+    var thumbnailUrl: String
+) {
+    constructor() : this(
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        0L,
+        ""
+    )
+}
+
+data class CourseItem(
+    val courseId: String = "",
+    val tutorId: String = "",
+    val courseImageUrl: String = "",
+    val tutorAvatarUrl: String = "",
+    val tutorName: String = "",
+    val courseTitle: String = "",
+    val duration: String = "",
+    val lessons: String = "",
+    val courseLink: String = "",
+    val isLiked: Boolean = false
+)
+
+data class MentorItem(
+    val mentorId: String = "",
+    val mentorImageUrl: String = "",
+    val mentorName: String = "",
+    val mentorDescription: String = "",
+    val studentsCount: String? = null,
+    val studentImages: List<String>? = null,
+    val bookedDates: Set<LocalDate>? = null,
+    /** Specialty tags used to pair questionnaire answers to mentors. */
+    val categories: List<String>? = null,
+    val averageRating: Double? = null,
+)
+
+/** Firestore wire format for a chat message. */
+data class ChatMessage(
+    val messageId: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val message: String = "",
+    val timestamp: Timestamp? = null,
+    val type: String = "text",
+    val replyToId: String = "",
+    val replyToSender: String = "",
+    val replyToSnippet: String = "",
+    val deleted: Boolean = false
+)
+
+/**
+ * Local cache of a chat message.
+ *
+ * The quoted-reply fields are denormalised on purpose: storing the snippet
+ * alongside the reply means a quote still renders when the original is
+ * deleted or has scrolled out of the synced window.
+ *
+ * [deleted] marks a tombstone. The body is cleared on both Firestore and here,
+ * but the row survives so replies pointing at it stay coherent.
+ */
+@Entity(tableName = "messages")
+data class ChatMessageEntity(
+    @PrimaryKey val messageId: String,
+    val chatroomId: String,
+    val senderId: String,
+    val senderName: String,
+    val message: String,
+    val timestamp: Long,
+    val type: String = "text",
+    val status: String = "sent",
+    val replyToId: String = "",
+    val replyToSender: String = "",
+    val replyToSnippet: String = "",
+    val deleted: Boolean = false
+) {
+    val isReply: Boolean get() = replyToId.isNotEmpty()
+}
+
+data class Chatroom(
+    val chatroomId: String = "",
+    val userIds: List<String> = emptyList(),
+    val userNames: Map<String, String> = emptyMap(),
+    val lastMessage: String = "",
+    val lastMessageTimestamp: Timestamp? = null,
+    val lastMessageSenderId: String = "",
+    val unreadCount: Map<String, Int> = emptyMap(),
+    val type: String = "direct"
+) {
+    /**
+     * Get the other user's name (not the current user)
+     */
+    fun getOtherUserName(currentUserId: String): String {
+        // Find the other user's ID (the one that's not current user)
+        val otherUserId = userIds.firstOrNull { it != currentUserId }
+
+        // Get their name from the map
+        return if (otherUserId != null) {
+            userNames[otherUserId] ?: "Unknown User"
+        } else {
+            "Unknown User"
+        }
+    }
+
+    /**
+     * Get the other user's ID
+     */
+    fun getOtherUserId(currentUserId: String): String? {
+        return userIds.firstOrNull { it != currentUserId }
+    }
+
+    /**
+     * Check if this is the announcements room
+     */
+    fun isAnnouncementRoom(): Boolean {
+        return chatroomId == "announcements"
+    }
+
+    /**
+     * Get display name for the chatroom
+     */
+    fun getDisplayName(currentUserId: String): String {
+        return if (isAnnouncementRoom()) {
+            "Announcements"
+        } else {
+            getOtherUserName(currentUserId)
+        }
+    }
+}
+
+data class Message(
+    val messageId: String,
+    private var message: String? = null,
+    var senderId: String? = null,
+    var timestamp: Timestamp
+)
+
+data class LikeNotificationRequest(
+    var coursePublisher: String,
+    var postID: String,
+    var text: String
+)
+
+data class NotificationResponse(
+    var success: Boolean,
+    var message: String,
+    var notificationId: String,
+    var fcmSent: Boolean
+)
+
+data class CommentNotificationRequest(
+    var coursePublisher: String,
+    var postID: String,
+    var text: String,
+    var commentText: String
+)
+
+data class EventNotificationRequest(
+    var recipientId: String,
+    var eventId: String,
+    var eventTitle: String,
+    var text: String
+)
+
+data class NotificationListResponse(
+    val notifications: List<NotificationData> = emptyList()
+)
+
+data class NotificationData(
+    var id: String = "",
+    var senderId: String = "",
+    var text: String = "",
+    var courseID: String = "",
+    var type: String = "",
+    var timestamp: Long = 0L,
+    var read: Boolean = false,
+
+    @Transient var senderName: String? = null,
+    @Transient var senderAvatar: String? = null,
+    @Transient var courseName: String? = null,
+    @Transient var courseImage: String? = null
+)
+
+data class Event(
+    val eventId: String = "",
+//    val userId: String = "",
+    val title: String = "",
+    val date: Long = 0L,
+    val startTime: String = "",
+    val endTime: String = "",
+    val eventType: String = "",
+    val mentorId: String = "",      // Change from String? to String
+    val menteeId: String = "",      // Add this field
+    val mentorName: String = "",
+    val menteeName: String = "",
+    val status: Int = 0,
+    val description: String? = null,
+    val mode: String = "physical",   // "physical" | "online"
+    val location: String = "",       // physical venue / address
+    val meetingLink: String = "",    // online meeting (e.g. Google Meet) url
+//    val participants: Map<String, Boolean>? = null
+    val participants: List<String>? = null,
+    /** Linked programme name (shared with web AppEvent.program). */
+    val program: String = "",
+    /** Capacity; seats left = seats - seatsTaken. */
+    val seats: Int = 0,
+    val seatsTaken: Int = 0,
+    /** e.g. "Free" or "KES 500" */
+    val price: String = "",
+)
+
+data class Announcement(
+    val id: String = "",
+    val title: String = "",
+    val description: String = "",
+    val date: Long = 0L,
+    val targetAudience: String = "all"  // "all", "mentors", "mentees"
+)
+
+@Entity(tableName = "user_data")
+data class UserData(
+    @PrimaryKey var id: String,
+    var email: String,
+    var userRole: String? = null,
+    var displayName: String? = null,
+    var firstName: String,
+    var lastName: String,
+    var photoUrl: String? = null,
+    var bio: String? = null,
+    var lastLogin: Long? = null
+)
+
+    : Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readLong()
+
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(id)
+        parcel.writeString(email)
+        parcel.writeString(userRole)
+        parcel.writeString(displayName)
+        parcel.writeString(firstName)
+        parcel.writeString(lastName)
+        parcel.writeString(photoUrl)
+        parcel.writeString(bio)
+        parcel.writeLong(lastLogin ?: 0)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<UserData> {
+        override fun createFromParcel(parcel: Parcel): UserData {
+            return UserData(parcel)
+        }
+
+        override fun newArray(size: Int): Array<UserData?> {
+            return arrayOfNulls(size)
+        }
+    }
+}
+

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/motionLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    app:layoutDescription="@xml/tools_operate_scene_01">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/btnStopExecutor"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:padding="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_home_search_clear"
+        app:tint="@color/colorEtTint" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/operateProgressTv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:fontFamily="@font/semibold"
+        android:maxLines="1"
+        android:text="0"
+        android:textColor="@color/black"
+        android:textSize="70sp"
+        app:layout_constraintBottom_toTopOf="@+id/operateDescTv"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/operatePercent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/semibold"
+        android:maxLines="1"
+        android:text="@string/percent_sign"
+        android:textColor="@color/black"
+        android:textSize="35sp"
+        app:layout_constraintBaseline_toBaselineOf="@+id/operateProgressTv"
+        app:layout_constraintStart_toEndOf="@+id/operateProgressTv"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/operateDescTv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/semibold"
+        android:includeFontPadding="false"
+        android:textColor="@color/colorSolidText"
+        android:textSize="28sp"
+        android:text="Uploading..."
+        app:layout_constraintBottom_toTopOf="@+id/progressbar"
+        app:layout_constraintStart_toStartOf="@+id/operateProgressTv"
+        app:layout_constraintTop_toBottomOf="@+id/operateProgressTv" />
+
+    <ProgressBar
+        android:id="@+id/progressbar"
+        style="@style/SoundProgressBarVertical"
+        android:layout_width="0dp"
+        android:layout_height="10dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="40dp"
+        android:progress="0"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/operateDescTv" />
+</androidx.constraintlayout.motion.widget.MotionLayout>

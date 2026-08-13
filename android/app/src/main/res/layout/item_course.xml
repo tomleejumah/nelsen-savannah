@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?><!--<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    android:layout_width="160dp"-->
+<!--    android:layout_height="220dp"-->
+<!--    android:layout_marginEnd="4dp"-->
+<!--    android:layout_marginStart="8dp"-->
+<!--    android:layout_marginVertical="4dp"-->
+<!--    app:cardCornerRadius="16dp"-->
+<!--    app:cardElevation="4dp"-->
+<!--    android:foreground="?attr/selectableItemBackground"-->
+<!--    android:clickable="true"-->
+<!--    android:focusable="true">-->
+
+
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/eventCard"
+    android:layout_width="160dp"
+    android:layout_height="220dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="@dimen/radius_card_md"
+    app:cardBackgroundColor="@color/surface"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/line"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Course Image -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="120dp">
+
+            <ImageView
+                android:id="@+id/iv_course_image"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                app:layout_constraintDimensionRatio="1:1"
+                android:src="@drawable/login" />
+
+            <!-- Online Status Indicator -->
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/likeBtn"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_margin="8dp"
+                android:padding="8dp"
+                android:background="@drawable/circle"
+                android:src="@drawable/ic_like"
+                android:elevation="4dp"
+                app:civ_border_width="0dp" />
+        </RelativeLayout>
+
+        <!-- Main Content -->
+        <LinearLayout
+            android:id="@+id/courseBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Profile Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/iv_tutor_avatar"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/donation" />
+
+                <TextView
+                    android:gravity="center_vertical"
+                    android:drawableEnd="@drawable/ic_badge_verified"
+                    android:fontFamily="@font/poppins_bold"
+                    android:id="@+id/tv_tutor_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Joseph Grover"
+                    android:textSize="16sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+            <!-- Course Title -->
+            <TextView
+                android:gravity="start"
+                android:fontFamily="@font/poppins_regular"
+                android:id="@+id/tv_course_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Biotechnology"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Course Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_clock" />
+
+                <TextView
+                    android:id="@+id/tv_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="8h"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="•"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tv_lessons"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="25 Lesson"
+                    android:textSize="10sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+                <!--                <ImageView-->
+                <!--                    android:layout_width="12dp"-->
+                <!--                    android:layout_height="12dp"-->
+                <!--                    android:contentDescription="TODO"-->
+                <!--                    android:src="@drawable/ic_star_filled"/>-->
+
+                <!--                <TextView-->
+                <!--                    android:id="@+id/tv_rating"-->
+                <!--                    android:layout_width="wrap_content"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginStart="2dp"-->
+                <!--                    android:text="4.9"-->
+                <!--                    android:textSize="11sp"-->
+                <!--                    android:textStyle="bold" />-->
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

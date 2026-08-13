@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- bottom_menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_home"
+        android:title="Home"
+        app:cnb_iconColor="@color/nav_home" />
+    <item
+        android:id="@+id/communitiesFragment"
+        android:icon="@drawable/ic_people"
+        android:title="Groups"
+        app:cnb_iconColor="@color/nav_communities" />
+    <item
+        android:id="@+id/chatFragment"
+        android:icon="@drawable/ic_chat"
+        android:title="Chat"
+        app:cnb_iconColor="@color/nav_chat" />
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@drawable/ic_person"
+        android:title="Profile"
+        app:cnb_iconColor="@color/nav_profile" />
+</menu>

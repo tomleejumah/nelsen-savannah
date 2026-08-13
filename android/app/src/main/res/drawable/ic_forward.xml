@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Curved forward arrow (Telegram / WhatsApp style) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,8.5V5l7,7 -7,7v-3.5c-5,0 -8.5,1.5 -11,5 1,-5 4,-10 11,-12.5z" />
+</vector>

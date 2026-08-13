@@ -1,0 +1,20 @@
+<!-- custom_progress_indicator.xml -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background for the progress -->
+    <item android:id="@android:id/background">
+        <shape>
+            <solid android:color="@color/dark_grey" /> <!-- Background color of the progress bar -->
+            <corners android:radius="16dp" /> <!-- Rounded corners, adjust as needed -->
+        </shape>
+    </item>
+
+    <!-- Progress drawable -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <solid android:color="@color/sea_green" /> <!-- Color of the progress indicator -->
+                <corners android:radius="16dp" /> <!-- Rounded corners, adjust as needed -->
+            </shape>
+        </clip>
+    </item>
+</layer-list>

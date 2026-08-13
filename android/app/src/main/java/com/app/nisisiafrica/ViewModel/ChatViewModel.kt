@@ -1,0 +1,90 @@
+package com.app.nisisiafrica.ViewModel
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.app.nisisiafrica.data.Model.ChatMessageEntity
+import com.app.nisisiafrica.data.Repository.ChatRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+
+class ChatViewModel(private val repo: ChatRepository) : ViewModel() {
+    private var messagesJob: Job? = null
+    private val _messages = MutableLiveData<List<ChatMessageEntity>>()
+    val messages: LiveData<List<ChatMessageEntity>> = _messages
+
+//    fun loadMessages(chatroomId: String) {
+//        // 1. Observe Room immediately
+//        viewModelScope.launch {
+//            repo.getMessages(chatroomId).collect { _messages.postValue(it) }
+//        }
+//        // 2. Sync from Firestore in background
+//        repo.syncMessages(chatroomId)
+//    }
+
+    fun loadMessages(chatroomId: String) {
+
+        messagesJob?.cancel()
+
+        messagesJob = viewModelScope.launch {
+            repo.getMessages(chatroomId).collect {
+                _messages.postValue(it)
+            }
+        }
+    }
+
+    @JvmOverloads
+    fun sendMessage(
+        chatroomId: String,
+        message: String,
+        receiverId: String?,
+        replyTo: ChatMessageEntity? = null,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.sendMessage(chatroomId, message, receiverId, replyTo, onComplete)
+    }
+
+    @JvmOverloads
+    fun sendImageMessage(
+        chatroomId: String,
+        imageUrl: String,
+        receiverId: String?,
+        replyTo: ChatMessageEntity? = null,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.sendImageMessage(chatroomId, imageUrl, receiverId, replyTo, onComplete)
+    }
+
+    @JvmOverloads
+    fun sendMediaMessage(
+        chatroomId: String,
+        url: String,
+        type: String,
+        receiverId: String?,
+        replyTo: ChatMessageEntity? = null,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.sendMediaMessage(chatroomId, url, type, receiverId, replyTo, onComplete)
+    }
+
+    fun deleteMessage(
+        chatroomId: String,
+        message: ChatMessageEntity,
+        onComplete: (Boolean) -> Unit
+    ) {
+        repo.deleteMessage(chatroomId, message, onComplete)
+    }
+
+    fun markRead(chatroomId: String) {
+        repo.markRoomRead(chatroomId)
+    }
+
+    class Factory(private val repo: ChatRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            return ChatViewModel(repo) as T
+        }
+    }
+}
