@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Nelsen Savannah</string>
+    <string name="terms">I have read and understood the terms of service, privacy policy and community guidelines</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="todo">TODO</string>
+    <string name="percent_sign" translatable="false">%</string>
+</resources>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:layout_gravity="center_vertical"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:paddingHorizontal="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="450dp"
+        android:src="@drawable/yt_emp"
+        />
+
+    <TextView
+        android:id="@+id/titleText"
+        android:fontFamily="@font/poppins_bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Youth Empowerment"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="16dp" />
+
+    <TextView
+        android:id="@+id/descriptionText"
+        android:fontFamily="@font/poppins_regular"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="We believe in nurturing the potential within every young person — helping them grow, find direction, and build the confidence to shape their own future."
+        android:textSize="16sp"
+        android:layout_gravity="center_horizontal"
+        android:padding="16dp"
+        android:lineSpacingExtra="4dp"
+        android:gravity="center" />
+
+
+</LinearLayout>

@@ -1,0 +1,40 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+      Dark theme. Colour values come from the semantic tokens in
+      values-night/colors.xml, so this file mirrors values/themes.xml
+      one-for-one and only the token values differ.
+    -->
+    <style name="Base.Theme.NisisiAfrica" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/action_primary</item>
+        <item name="colorOnPrimary">@color/text_on_action</item>
+        <item name="colorPrimaryContainer">@color/surface_muted</item>
+        <item name="colorOnPrimaryContainer">@color/text_strong</item>
+
+        <item name="colorSecondary">@color/action_accent</item>
+        <item name="colorOnSecondary">@color/text_on_action</item>
+
+        <item name="colorAccent">@color/action_accent</item>
+
+        <item name="colorSurface">@color/surface_card</item>
+        <item name="colorSurfaceVariant">@color/surface_muted</item>
+        <item name="colorOnSurface">@color/text_strong</item>
+        <item name="colorOnSurfaceVariant">@color/text_muted</item>
+        <item name="colorOutline">@color/outline_soft</item>
+        <item name="android:colorBackground">@color/surface_app</item>
+
+        <item name="android:textColorPrimary">@color/text_strong</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="colorControlNormal">@color/maroon_500</item>
+        <item name="colorControlActivated">@color/maroon_500</item>
+
+        <item name="android:fontFamily">@font/font_ui</item>
+        <item name="android:windowBackground">@color/bg</item>
+
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeBackground">@color/maroon_700</item>
+        <item name="actionModeSplitBackground">@color/maroon_700</item>
+        <item name="android:actionModeBackground">@color/maroon_700</item>
+        <item name="actionModeStyle">@style/Widget.Nelsen.ActionMode</item>
+    </style>
+</resources>

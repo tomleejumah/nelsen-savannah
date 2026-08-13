@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+   android:gravity="center_vertical"
+    android:weightSum="12">
+
+
+        <TextView
+            android:fontFamily="@font/poppins_bold"
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:paddingTop="16dp"
+            android:text="Talent &amp; Tech"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/descriptionText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:padding="16dp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="From art and music to coding and design — we help children unlock their gifts, blend creativity with technology, and reimagine possibilities"
+            android:textSize="16sp" />
+        <ImageView
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="450dp"
+            android:src="@drawable/img3" />
+</LinearLayout>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main1"
+    android:orientation="vertical"
+    android:layout_weight="12"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="10" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:layout_weight="2">
+
+        <CheckBox
+            android:visibility="gone"
+            android:id="@+id/check_box"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:buttonTint="#D32727"
+            android:layout_marginStart="16dp"
+            android:textStyle="bold"
+            android:layout_marginEnd="16dp"
+            android:text="I have read and understood the terms of service, privacy policy and community guidelines"/>
+
+
+        <RelativeLayout
+            android:id="@+id/lay"
+            android:layout_marginHorizontal="30dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:visibility="invisible"
+                android:layout_marginEnd="20dp"
+                android:id="@+id/btn_prev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Prev"
+                android:textSize="22sp"
+                android:textStyle="bold"/>
+            <com.tbuonomo.viewpagerdotsindicator.DotsIndicator
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:layout_marginTop="10dp"
+                android:id="@+id/dots_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="15dp"
+                app:dotsCornerRadius="8dp"
+                app:dotsSize="12dp"
+                app:dotsSpacing="4dp"
+                app:dotsColor="@color/black"
+                app:dotsWidthFactor="2.5"
+                app:selectedDotColor="@color/action_accent"
+                app:progressMode="true"
+                />
+            <TextView
+                android:layout_alignParentEnd="true"
+                android:id="@+id/btn_next"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Next"
+                android:layout_gravity="bottom|end"
+                android:textSize="22sp"
+                android:textStyle="bold"/>
+
+        </RelativeLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_width="120dp"
+            android:backgroundTint="@color/action_primary"
+            android:layout_height="wrap_content"
+            android:text="Start now"
+            android:layout_marginTop="10dp"
+            android:textAllCaps="false"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/bg_card"
+            android:id="@+id/startNow"/>
+
+
+    </LinearLayout>
+
+</LinearLayout>

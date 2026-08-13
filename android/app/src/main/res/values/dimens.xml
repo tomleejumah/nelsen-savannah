@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MentUI shape -->
+    <dimen name="radius_card_lg">22dp</dimen>
+    <dimen name="radius_card_md">16dp</dimen>
+    <dimen name="radius_input">12dp</dimen>
+    <dimen name="radius_chip">10dp</dimen>
+    <dimen name="radius_pill">999dp</dimen>
+
+    <dimen name="elevation_card">4dp</dimen>
+    <dimen name="elevation_fab">8dp</dimen>
+
+    <dimen name="step_bar_width">3dp</dimen>
+    <dimen name="step_bar_gap">2dp</dimen>
+    <dimen name="step_bar_h1">5dp</dimen>
+    <dimen name="step_bar_h2">9dp</dimen>
+    <dimen name="step_bar_h3">14dp</dimen>
+</resources>
