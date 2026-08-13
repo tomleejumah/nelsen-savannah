@@ -1,0 +1,24 @@
+{
+  "name": "nelsen-savannah-api",
+  "version": "1.0.0",
+  "description": "Nelsen Savannah LMS API (public path still /nisisi-africa until nginx cutover)",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "firebase-admin": "^12.7.0",
+    "multer": "^2.2.0",
+    "pg": "^8.22.0",
+    "sql.js": "^1.14.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
