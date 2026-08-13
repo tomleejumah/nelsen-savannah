@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowLeft, CheckCircle2, LogIn } from "lucide-react";
@@ -7,11 +7,104 @@ import { toast } from "sonner";
 import { getFirebaseAuth } from "@/lib/firebase";
 import {
   fetchLmsLesson,
+  fetchMediaPlaybackUrl,
   patchLessonProgress,
   submitAssignment,
   submitLessonQuiz,
   type LessonDto,
 } from "@/lib/lmsApi";
+
+/** Re-sign this many seconds before the current URL dies. */
+const RESIGN_LEAD_SECONDS = 60;
+
+/**
+ * Playback URLs are deliberately short-lived, so the player has to be able to
+ * swap in a fresh signature without losing the viewer's position. Seeking issues
+ * new range requests against the same signature, which is why an expired URL
+ * shows up as a media error rather than a stall.
+ */
+function SignedMediaPlayer({
+  user,
+  lesson,
+}: {
+  user: User | null;
+  lesson: LessonDto;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [url, setUrl] = useState(lesson.playbackUrl || lesson.contentUrl || "");
+  const [expiresAt, setExpiresAt] = useState(lesson.playbackExpiresAt ?? null);
+  const [refreshing, setRefreshing] = useState(false);
+  const mediaId = lesson.mediaId ?? null;
+
+  useEffect(() => {
+    setUrl(lesson.playbackUrl || lesson.contentUrl || "");
+    setExpiresAt(lesson.playbackExpiresAt ?? null);
+  }, [lesson.playbackUrl, lesson.contentUrl, lesson.playbackExpiresAt]);
+
+  const resign = useCallback(async () => {
+    if (!user || !mediaId || refreshing) return;
+    setRefreshing(true);
+    try {
+      const token = await user.getIdToken();
+      const envelope = await fetchMediaPlaybackUrl(token, mediaId);
+      if (!envelope.ok || !envelope.data) return;
+      const video = videoRef.current;
+      const resumeAt = video?.currentTime ?? 0;
+      const wasPlaying = video ? !video.paused && !video.ended : false;
+      setUrl(envelope.data.url);
+      setExpiresAt(envelope.data.expiresAt);
+      if (video) {
+        const restore = () => {
+          video.currentTime = resumeAt;
+          if (wasPlaying) void video.play();
+          video.removeEventListener("loadedmetadata", restore);
+        };
+        video.addEventListener("loadedmetadata", restore);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user, mediaId, refreshing]);
+
+  useEffect(() => {
+    if (!expiresAt || !mediaId) return;
+    const msLeft = (expiresAt - RESIGN_LEAD_SECONDS) * 1000 - Date.now();
+    const timer = setTimeout(() => void resign(), Math.max(msLeft, 1000));
+    return () => clearTimeout(timer);
+  }, [expiresAt, mediaId, resign]);
+
+  const playable =
+    /\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/");
+
+  return (
+    <div className="space-y-3">
+      {playable ? (
+        <video
+          ref={videoRef}
+          className="w-full rounded-xl bg-black"
+          controls
+          src={url || undefined}
+          onError={() => void resign()}
+        />
+      ) : null}
+      <a
+        href={url || "#"}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex text-sm font-semibold text-ember hover:underline"
+      >
+        Open lesson media
+      </a>
+      {expiresAt ? (
+        <p className="text-xs text-muted-foreground">
+          {refreshing
+            ? "Refreshing secure link…"
+            : "This link is time-limited and refreshes automatically while you watch."}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/learning/$trackId/lesson/$lessonId")({
   head: ({ params }) => ({
@@ -219,24 +312,7 @@ function LessonPage() {
                 />
               ) : null}
               {lesson.playbackUrl || lesson.contentUrl ? (
-                <div className="space-y-3">
-                  {(lesson.playbackUrl || "").match(/\.(mp4|webm|ogg)(\?|$)/i) ||
-                  (lesson.playbackUrl || "").includes("/lms/media/") ? (
-                    <video
-                      className="w-full rounded-xl bg-black"
-                      controls
-                      src={lesson.playbackUrl || lesson.contentUrl || undefined}
-                    />
-                  ) : null}
-                  <a
-                    href={lesson.playbackUrl || lesson.contentUrl || "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex text-sm font-semibold text-ember hover:underline"
-                  >
-                    Open lesson media
-                  </a>
-                </div>
+                <SignedMediaPlayer user={user} lesson={lesson} />
               ) : null}
             </div>
 

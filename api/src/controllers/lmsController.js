@@ -215,6 +215,137 @@ export async function getMedia(req, res) {
   }
 }
 
+export async function postMediaUploadUrl(req, res) {
+  try {
+    const { createUploadTicket } = await import(
+      "../services/lmsMediaService.js"
+    );
+    const body = req.body || {};
+    const result = await createUploadTicket({
+      uid: req.user.uid,
+      role: req.user.role,
+      filename: body.filename,
+      contentType: body.contentType,
+      sizeBytes: body.sizeBytes,
+      scope: body.scope || (body.lessonId ? "lesson" : "misc"),
+      scopeId: body.scopeId || body.lessonId || null,
+      schoolId: body.schoolId,
+      durationSeconds: body.durationSeconds,
+    });
+    return lmsOk(res, result.data, result.source, 201);
+  } catch (err) {
+    console.error("[POST /lms/media/upload-url]", err);
+    return lmsErr(
+      res,
+      err.message || "Could not create upload URL",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+export async function postMediaFinalize(req, res) {
+  try {
+    const { finalizeUpload } = await import("../services/lmsMediaService.js");
+    const result = await finalizeUpload({
+      uid: req.user.uid,
+      role: req.user.role,
+      mediaId: req.params.mediaId,
+      durationSeconds: req.body?.durationSeconds,
+    });
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[POST /lms/media/:id/finalize]", err);
+    return lmsErr(
+      res,
+      err.message || "Finalize failed",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+export async function getMediaPlaybackUrl(req, res) {
+  try {
+    const { resolvePlaybackUrl } = await import(
+      "../services/lmsMediaService.js"
+    );
+    const result = await resolvePlaybackUrl(req.params.mediaId, req.user.uid);
+    return lmsOk(res, result, getPrimaryEngine());
+  } catch (err) {
+    if (!err.status || err.status >= 500) {
+      console.error("[GET /lms/media/:id/url]", err);
+    }
+    return lmsErr(
+      res,
+      err.message || "Could not sign playback URL",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
+
+/**
+ * Disk-driver blob endpoint. Stands in for the bucket when driver=local: the
+ * signature in the query string is what makes the URL time-limited, exactly as
+ * a presigned S3 URL would be. Not mounted behind Bearer auth so <video> and
+ * ExoPlayer can issue Range requests directly.
+ */
+export async function mediaBlob(req, res) {
+  try {
+    const { verifyLocalBlobSignature, resolveLocalPath } = await import(
+      "../services/storage/localDriver.js"
+    );
+    const { key, mode, exp, sig } = req.query;
+    const method = req.method === "PUT" ? "put" : "get";
+    if (mode !== method) {
+      return res.status(403).json({ error: "Signature mode mismatch" });
+    }
+    if (!verifyLocalBlobSignature({ objectKey: key, mode, exp, sig })) {
+      return res.status(403).json({ error: "Invalid or expired signature" });
+    }
+    const abs = resolveLocalPath(key);
+
+    if (method === "put") {
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      const sink = fs.createWriteStream(abs);
+      req.pipe(sink);
+      sink.on("finish", () => res.status(200).json({ ok: true }));
+      sink.on("error", (err) => {
+        console.error("[PUT /lms/media/blob]", err);
+        res.status(500).json({ error: "Write failed" });
+      });
+      return undefined;
+    }
+
+    if (!fs.existsSync(abs)) {
+      return res.status(404).json({ error: "Object not found" });
+    }
+    return res.sendFile(abs);
+  } catch (err) {
+    console.error("[/lms/media/blob]", err);
+    return res
+      .status(err.status || 500)
+      .json({ error: err.message || "Blob request failed" });
+  }
+}
+
+export async function postMediaReap(req, res) {
+  try {
+    const { reapOrphanedMedia } = await import(
+      "../services/lmsMediaReaper.js"
+    );
+    const summary = await reapOrphanedMedia({
+      pruneOrphanFiles:
+        req.body?.pruneOrphanFiles === true ? true : undefined,
+    });
+    return lmsOk(res, summary, getPrimaryEngine());
+  } catch (err) {
+    console.error("[POST /lms/admin/media/reap]", err);
+    return lmsErr(res, err.message || "Reap failed", 500, getPrimaryEngine());
+  }
+}
+
 /** Signed play — query uid+token (no Bearer) so <video>/ExoPlayer can load. */
 export async function playMedia(req, res) {
   try {

@@ -167,13 +167,22 @@ CREATE TABLE IF NOT EXISTS certificates (
 CREATE TABLE IF NOT EXISTS media_assets (
   media_id TEXT PRIMARY KEY,
   uid TEXT,
+  school_id TEXT,
+  scope TEXT,
+  scope_id TEXT,
+  track_id TEXT,
   filename TEXT,
   mime_type TEXT,
   size_bytes INTEGER,
+  storage_driver TEXT,
+  bucket TEXT,
+  object_key TEXT,
   storage_path TEXT,
   public_url TEXT,
+  checksum TEXT,
   status TEXT NOT NULL,
   duration_sec INTEGER,
+  finalized_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
@@ -332,13 +341,22 @@ CREATE TABLE IF NOT EXISTS certificates (
 CREATE TABLE IF NOT EXISTS media_assets (
   media_id TEXT PRIMARY KEY,
   uid TEXT,
+  school_id TEXT,
+  scope TEXT,
+  scope_id TEXT,
+  track_id TEXT,
   filename TEXT,
   mime_type TEXT,
   size_bytes BIGINT,
+  storage_driver TEXT,
+  bucket TEXT,
+  object_key TEXT,
   storage_path TEXT,
   public_url TEXT,
+  checksum TEXT,
   status TEXT NOT NULL,
   duration_sec INTEGER,
+  finalized_at BIGINT,
   created_at BIGINT NOT NULL,
   updated_at BIGINT NOT NULL
 );
@@ -383,6 +401,17 @@ async function ensureMigrations() {
     "ALTER TABLE schools ADD COLUMN logo_url TEXT",
     "ALTER TABLE schools ADD COLUMN accent_color TEXT",
     "ALTER TABLE schools ADD COLUMN branding_json TEXT",
+    "ALTER TABLE media_assets ADD COLUMN school_id TEXT",
+    "ALTER TABLE media_assets ADD COLUMN scope TEXT",
+    "ALTER TABLE media_assets ADD COLUMN scope_id TEXT",
+    "ALTER TABLE media_assets ADD COLUMN track_id TEXT",
+    "ALTER TABLE media_assets ADD COLUMN storage_driver TEXT",
+    "ALTER TABLE media_assets ADD COLUMN bucket TEXT",
+    "ALTER TABLE media_assets ADD COLUMN object_key TEXT",
+    "ALTER TABLE media_assets ADD COLUMN checksum TEXT",
+    engine === "postgres"
+      ? "ALTER TABLE media_assets ADD COLUMN finalized_at BIGINT"
+      : "ALTER TABLE media_assets ADD COLUMN finalized_at INTEGER",
   ];
   for (const sql of alters) {
     try {
@@ -390,6 +419,32 @@ async function ensureMigrations() {
     } catch {
       /* column already exists */
     }
+  }
+
+  const indexes = [
+    "CREATE INDEX IF NOT EXISTS idx_media_assets_school ON media_assets(school_id)",
+    "CREATE INDEX IF NOT EXISTS idx_media_assets_scope ON media_assets(scope, scope_id)",
+    "CREATE INDEX IF NOT EXISTS idx_media_assets_status_created ON media_assets(status, created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_media_assets_object_key ON media_assets(object_key)",
+    "CREATE INDEX IF NOT EXISTS idx_lessons_media ON lessons(media_id)",
+  ];
+  for (const sql of indexes) {
+    try {
+      await dbRun(sql);
+    } catch (err) {
+      console.warn(`[lms-db] index skipped: ${err.message}`);
+    }
+  }
+
+  try {
+    await dbRun(
+      `UPDATE media_assets SET storage_driver = 'local' WHERE storage_driver IS NULL OR storage_driver = ''`,
+    );
+    await dbRun(
+      `UPDATE media_assets SET scope = 'misc' WHERE scope IS NULL OR scope = ''`,
+    );
+  } catch {
+    /* fresh DB */
   }
   const now = Date.now();
   const existing = await dbGet(

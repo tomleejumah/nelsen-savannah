@@ -84,6 +84,7 @@ function mapLesson(row, { lessonPercent = 0, status = "available" } = {}) {
     lessonPercent: Number(lessonPercent) || 0,
     status,
     contentUrl: row.content_url || row.contentUrl || null,
+    mediaId: row.media_id || row.mediaId || null,
     playbackUrl: row.playbackUrl || null,
     playbackExpiresAt: row.playbackExpiresAt || null,
   };
@@ -352,12 +353,18 @@ export async function getLessonById(uid, lessonId) {
         "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
         [uid, row.track_id],
       );
-      if (enrolled && row.media_id) {
-        const { playbackUrlFor } = await import("./lmsMediaService.js");
-        const play = playbackUrlFor(row.media_id, uid);
-        playbackUrl = play.playbackUrl;
-        playbackExpiresAt = play.playbackExpiresAt;
-      } else if (enrolled && row.content_url && !row.media_id) {
+      if (row.media_id) {
+        const { resolvePlaybackUrl } = await import("./lmsMediaService.js");
+        try {
+          const play = await resolvePlaybackUrl(row.media_id, uid);
+          playbackUrl = play.url;
+          playbackExpiresAt = play.expiresAt;
+        } catch (err) {
+          if (!err.status || err.status >= 500) {
+            console.error("[lms-lesson] playback sign failed:", err.message);
+          }
+        }
+      } else if (enrolled && row.content_url) {
         // legacy/external URL only when enrolled
         playbackUrl = row.content_url;
       }

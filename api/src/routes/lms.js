@@ -68,7 +68,26 @@ router.post(
   upload.single("file"),
   lmsController.uploadMedia,
 );
+router.post(
+  "/media/upload-url",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.postMediaUploadUrl,
+);
+router.get("/media/blob", lmsController.mediaBlob);
+router.put("/media/blob", lmsController.mediaBlob);
 router.get("/media/:mediaId", authenticateUser, lmsController.getMedia);
+router.get(
+  "/media/:mediaId/url",
+  authenticateUser,
+  lmsController.getMediaPlaybackUrl,
+);
+router.post(
+  "/media/:mediaId/finalize",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.postMediaFinalize,
+);
 router.get("/media/:mediaId/play", lmsController.playMedia);
 
 router.post("/submissions", authenticateUser, lmsController.postSubmission);
@@ -213,6 +232,12 @@ router.post(
   authenticateUser,
   requireRoles("Admin"),
   lmsController.adminForceSeed,
+);
+router.post(
+  "/admin/media/reap",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.postMediaReap,
 );
 
 // M6 TODO — events (501 until scheduled)
