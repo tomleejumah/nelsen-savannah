@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import "./config/firebase.js";
 import { initLmsDb, getPrimaryEngine } from "./db/lmsDb.js";
 import { seedLmsCatalog } from "./services/lmsSeed.js";
+import { startMediaReaper } from "./services/lmsMediaReaper.js";
+import { configuredDriverName } from "./services/storage/index.js";
 import notificationRoutes from "./routes/notifications.js";
 import chatRoutes from "./routes/chat.js";
 import diditRoute from "./routes/diditRoute.js";
@@ -41,14 +43,21 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Serve lesson/media uploads from disk (metadata lives in DB + RTDB)
-app.use(
-  "/uploads",
-  express.static(UPLOAD_DIR, {
-    fallthrough: true,
-    maxAge: "1d",
-  }),
-);
+// Media is private by default: bytes are only reachable through a time-limited
+// signed URL (/lms/media/:id/url). Set MEDIA_PUBLIC_UPLOADS=1 to restore the
+// old unauthenticated /uploads mount.
+if (process.env.MEDIA_PUBLIC_UPLOADS === "1") {
+  console.warn(
+    "[media] MEDIA_PUBLIC_UPLOADS=1 — /uploads is world-readable, presigned expiry does not apply",
+  );
+  app.use(
+    "/uploads",
+    express.static(UPLOAD_DIR, {
+      fallthrough: true,
+      maxAge: "1d",
+    }),
+  );
+}
 
 // Routes
 app.use("/notifications", notificationRoutes);
@@ -73,8 +82,9 @@ async function start() {
   await initLmsDb();
   await seedLmsCatalog({ force: process.env.LMS_SEED_FORCE === "1" });
   console.log(
-    `[lms] UPLOAD_DIR=${UPLOAD_DIR} PUBLIC_BASE_URL=${process.env.PUBLIC_BASE_URL || "(unset)"}`,
+    `[lms] UPLOAD_DIR=${UPLOAD_DIR} PUBLIC_BASE_URL=${process.env.PUBLIC_BASE_URL || "(unset)"} mediaDriver=${configuredDriverName()}`,
   );
+  startMediaReaper();
   app.listen(PORT, () => {
     console.log(`Nisisi Africa service running on port ${PORT}`);
   });

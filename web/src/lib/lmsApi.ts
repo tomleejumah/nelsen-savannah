@@ -77,6 +77,7 @@ export type LessonDto = {
   lessonPercent: number;
   status: string;
   contentUrl?: string | null;
+  mediaId?: string | null;
   playbackUrl?: string | null;
   playbackExpiresAt?: number | null;
   bodyHtml?: string | null;
@@ -591,6 +592,134 @@ export async function adminCreateLesson(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+export type MediaUploadTicketDto = {
+  mediaId: string;
+  status: string;
+  driver: string;
+  bucket: string | null;
+  objectKey: string;
+  schoolId: string;
+  scope: string;
+  scopeId: string | null;
+  uploadUrl: string;
+  method: string;
+  headers: Record<string, string>;
+  expiresAt: number;
+  ttlSeconds: number;
+};
+
+export type MediaPlaybackDto = {
+  url: string;
+  expiresAt: number;
+  driver: string;
+  ttlSeconds: number;
+  mimeType?: string | null;
+  durationSec?: number | null;
+};
+
+export async function requestMediaUploadUrl(
+  idToken: string,
+  body: {
+    filename: string;
+    contentType: string;
+    sizeBytes?: number;
+    scope?: "track" | "module" | "lesson" | "branding" | "misc";
+    scopeId?: string;
+    lessonId?: string;
+    schoolId?: string;
+    durationSeconds?: number;
+  },
+) {
+  return lmsFetch<MediaUploadTicketDto>("/lms/media/upload-url", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function finalizeMediaUpload(
+  idToken: string,
+  mediaId: string,
+  body: { durationSeconds?: number } = {},
+) {
+  return lmsFetch<{
+    mediaId: string;
+    status: string;
+    driver: string;
+    sizeBytes: number;
+    mimeType: string | null;
+    durationSec: number | null;
+    lessonId: string | null;
+  }>(`/lms/media/${encodeURIComponent(mediaId)}/finalize`, idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function fetchMediaPlaybackUrl(idToken: string, mediaId: string) {
+  return lmsFetch<MediaPlaybackDto>(
+    `/lms/media/${encodeURIComponent(mediaId)}/url`,
+    idToken,
+  );
+}
+
+/**
+ * Raw PUT straight to the presigned target — the bytes never touch the LMS API.
+ * XHR rather than fetch because large lesson video needs a progress signal.
+ */
+export function putToPresignedUrl(
+  ticket: Pick<MediaUploadTicketDto, "uploadUrl" | "method" | "headers">,
+  file: Blob,
+  onProgress?: (percent: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(ticket.method || "PUT", ticket.uploadUrl, true);
+    for (const [key, value] of Object.entries(ticket.headers || {})) {
+      xhr.setRequestHeader(key, value);
+    }
+    xhr.upload.onprogress = (event) => {
+      if (onProgress && event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(`Storage rejected upload (HTTP ${xhr.status})`));
+    xhr.onerror = () =>
+      reject(
+        new Error(
+          "Upload failed to reach storage — check the bucket CORS policy allows PUT from this origin",
+        ),
+      );
+    xhr.send(file);
+  });
+}
+
+export async function uploadLessonMedia(
+  idToken: string,
+  params: { lessonId: string; file: File; onProgress?: (pct: number) => void },
+) {
+  const ticket = await requestMediaUploadUrl(idToken, {
+    filename: params.file.name,
+    contentType: params.file.type || "application/octet-stream",
+    sizeBytes: params.file.size,
+    scope: "lesson",
+    scopeId: params.lessonId,
+  });
+  if (!ticket.ok || !ticket.data) {
+    throw new Error(ticket.error || "Could not get an upload URL");
+  }
+  await putToPresignedUrl(ticket.data, params.file, params.onProgress);
+  const finalized = await finalizeMediaUpload(idToken, ticket.data.mediaId);
+  if (!finalized.ok || !finalized.data) {
+    throw new Error(finalized.error || "Upload could not be finalized");
+  }
+  return finalized.data;
 }
 
 export async function fetchSchoolDashboard(idToken: string, schoolId: string) {

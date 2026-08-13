@@ -9,6 +9,7 @@ import {
   adminCreateModule,
   adminCreateTrack,
   fetchAdminStats,
+  uploadLessonMedia,
   type AdminStatsDto,
 } from "@/lib/lmsApi";
 
@@ -31,6 +32,10 @@ export function CatalogCmsPanel({
   const [lessonTrackId, setLessonTrackId] = useState("");
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonType, setLessonType] = useState("read");
+  const [mediaLessonId, setMediaLessonId] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null);
 
   async function loadStats() {
     const token = await user.getIdToken();
@@ -85,6 +90,30 @@ export function CatalogCmsPanel({
       hasAssignment: lessonType === "assignment",
     });
     setMsg(result.ok ? `Lesson ${lessonId} created` : result.error || "Failed");
+    if (result.ok && lessonType === "video") setMediaLessonId(lessonId.trim());
+  }
+
+  async function uploadMedia(e: React.FormEvent) {
+    e.preventDefault();
+    if (!mediaFile) return;
+    setUploadMsg(null);
+    setUploadPct(0);
+    try {
+      const token = await user.getIdToken();
+      const media = await uploadLessonMedia(token, {
+        lessonId: mediaLessonId.trim(),
+        file: mediaFile,
+        onProgress: setUploadPct,
+      });
+      setUploadMsg(
+        `Attached ${media.mediaId} to ${mediaLessonId.trim()} (${Math.round(media.sizeBytes / 1024 / 1024)} MB)`,
+      );
+      setMediaFile(null);
+    } catch (err) {
+      setUploadMsg(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadPct(null);
+    }
   }
 
   return (
@@ -208,6 +237,46 @@ export function CatalogCmsPanel({
             Add lesson
           </button>
         </div>
+      </form>
+
+      <form onSubmit={(e) => void uploadMedia(e)} className="space-y-2">
+        <h3 className="font-medium">Lesson media</h3>
+        <p className="text-sm text-muted-foreground">
+          The file goes straight to private storage. Learners only ever receive a
+          short-lived signed link.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            required
+            value={mediaLessonId}
+            onChange={(e) => setMediaLessonId(e.target.value)}
+            placeholder="lessonId"
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <input
+            required
+            type="file"
+            accept="video/*,audio/*,application/pdf"
+            onChange={(e) => setMediaFile(e.target.files?.[0] ?? null)}
+            className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={uploadPct !== null || !mediaFile}
+            className="rounded-full border border-border px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {uploadPct !== null ? `Uploading ${uploadPct}%` : "Upload media"}
+          </button>
+        </div>
+        {uploadPct !== null ? (
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+            <div
+              className="h-full bg-ember transition-all"
+              style={{ width: `${uploadPct}%` }}
+            />
+          </div>
+        ) : null}
+        {uploadMsg ? <p className="text-sm">{uploadMsg}</p> : null}
       </form>
     </div>
   );
