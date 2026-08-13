@@ -4,7 +4,7 @@
       values-night/colors.xml, so this file mirrors values/themes.xml
       one-for-one and only the token values differ.
     -->
-    <style name="Base.Theme.NisisiAfrica" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.NelsenSavannah" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/action_primary</item>
         <item name="colorOnPrimary">@color/text_on_action</item>
         <item name="colorPrimaryContainer">@color/surface_muted</item>

@@ -1,8 +1,8 @@
 /**
  * Nelsen LMS roadmap — shared contract for Android + website.
  *
- * API home (no new service): /home/tommlyjumah/web101/nisisi-africa-webhook
- *   Deployed as PM2 `nisisi-africa` on server-remote → /home/server/WebHooks/Nisisi-Africa/
+ * API home (no new service): monorepo `api/`
+ *   Deployed as PM2 `nelsen-savannah` on server-remote → /home/server/WebHooks/Nisisi-Africa/
  *   Auth today: Bearer Firebase ID token (`middleware/auth.js` → admin.auth().verifyIdToken)
  *   Android already: Google Sign-In → FirebaseAuth (GoogleAuthHelper.kt) → same ID token
  *   Website: same Firebase Google login; call API with Authorization: Bearer <idToken>
@@ -19,12 +19,12 @@
 
 /** @typedef {"not_started" | "in_progress" | "completed" | "certified"} EnrollmentStatus */
 
-// ─── API surface (extend nisisi-africa-webhook) ───────────────────────────────
+// ─── API surface (monorepo `api/`) ────────────────────────────────────────────
 
 export const API = {
-  repo: "/home/tommlyjumah/web101/nisisi-africa-webhook",
+  repo: "api/",
   remotePath: "/home/server/WebHooks/Nisisi-Africa/",
-  pm2: "nisisi-africa",
+  pm2: "nelsen-savannah",
   health: "/health",
   existingMounts: ["/notifications", "/chat", "/didit"],
   /** New LMS mounts under the same Express app */
@@ -329,7 +329,7 @@ export const LMS_MILESTONES = [
     status: "planned",
     ownerRoles: ["Admin"],
     delivers: [
-      "Extend nisisi-africa-webhook: /lms router, reuse authenticateUser + firebase-service-account.json",
+      "Extend the Nelsen Savannah API: /lms router, reuse authenticateUser + firebase-service-account.json",
       "Postgres schema on server-remote; dual-write helper (Postgres → RTDB mirror)",
       "GET /lms/me + role from DB with RTDB failover",
       "Website Google login (same Firebase project) → Bearer token to API",

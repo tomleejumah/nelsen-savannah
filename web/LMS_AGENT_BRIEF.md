@@ -14,10 +14,10 @@ Build the **Nelsen LMS** by extending the existing Express API (no new microserv
 
 | Piece | Path |
 |--------|------|
-| API (extend this) | `/home/tommlyjumah/web101/nisisi-africa-webhook` |
-| Deployed on | `server-remote` → `/home/server/WebHooks/Nisisi-Africa/` · PM2 `nisisi-africa` · `/health` OK |
-| Website | `/home/tommlyjumah/web101/nelsen-savanna` |
-| Android | `/home/tommlyjumah/StudioProjects/NisisiAfrica` |
+| API (extend this) | `api/` |
+| Deployed on | `server-remote` → `/home/server/WebHooks/Nisisi-Africa/` · PM2 `nelsen-savannah` · `/health` OK |
+| Website | `web/` |
+| Android | `android/` |
 | Roadmap source | `nelsen-savanna/src/data/lms-roadmap.js` |
 | Full request/response DTOs | `nelsen-savanna/src/data/lms-api-contract.js` |
 | Track/module seed data | `LMS_TRACKS` / `LMS_MODULES` in `lms-roadmap.js` |
@@ -32,7 +32,7 @@ Roles (mirror Android RTDB `roles/{uid}`): `Mentee` | `Mentor` | `Admin`.
 
 ## Architecture rules
 
-1. **One API** — add `/lms` router inside `nisisi-africa-webhook` (`app.js`).
+1. **One API** — add `/lms` router inside the Nelsen Savannah API (`api/src/app.js`).
 2. **Dual store** — primary DB on server + Firebase RTDB mirror.
    - Write: primary first, then mirror metadata to RTDB.
    - Read: prefer primary; on failure fall back to RTDB; set `source: "postgres"|"sqlite"|"rtdb"` on responses.
@@ -122,12 +122,12 @@ Full JSON shapes: read `nelsen-savanna/src/data/lms-api-contract.js`.
 ## SSH / deploy
 
 - Host alias: `server-remote` (user `server`)
-- Deploy: GitHub Action on webhook `master` → rsync to `/home/server/WebHooks/Nisisi-Africa/` → `pm2 restart nisisi-africa`
+- Deploy: GitHub Action on `main` → rsync to `/home/server/WebHooks/Nisisi-Africa/` → `pm2 restart nelsen-savannah`
 - Do not commit secrets (`.env`, `firebase-service-account.json`)
 
 ## First command for the agent
 
-1. Open `/home/tommlyjumah/web101/nisisi-africa-webhook`
+1. Open `api/`
 2. Implement **M0 only**
 3. Commit: `feat(lms): M0 ground — /lms router, DB schema, /lms/me, server uploads dir`
 4. Stop and report acceptance checklist before M1

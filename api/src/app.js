@@ -37,7 +37,7 @@ app.use(express.json());
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
-    service: "nisisi-africa",
+    service: "nelsen-savannah",
     lmsPrimary: getPrimaryEngine(),
     timestamp: new Date().toISOString(),
   });
@@ -86,7 +86,7 @@ async function start() {
   );
   startMediaReaper();
   app.listen(PORT, () => {
-    console.log(`Nisisi Africa service running on port ${PORT}`);
+    console.log(`Nelsen Savannah service running on port ${PORT}`);
   });
 }
 

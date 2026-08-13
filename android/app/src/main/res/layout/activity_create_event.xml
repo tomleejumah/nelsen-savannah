@@ -11,7 +11,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/ic_nisisi_back"
+        app:navigationIcon="@drawable/ic_nelsen_savannah_back"
         app:title="Create Event"
         app:titleTextColor="?attr/colorOnSurface" />
 

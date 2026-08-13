@@ -1,6 +1,6 @@
 /**
  * Nelsen LMS API contract — wire Android + web against this.
- * Base: nisisi-africa-webhook (same host as today). Auth: Authorization: Bearer <Firebase ID token>
+ * Base: Nelsen Savannah API (same host as today). Auth: Authorization: Bearer <Firebase ID token>
  *
  * Android today (CoursesAdapter / CourseItem) needs on a catalog card:
  *   courseId, courseImageUrl, tutorId, tutorAvatarUrl, tutorName,
@@ -11,7 +11,7 @@
  */
 
 export const API_BASE_NOTE =
-  "Replace host with your deployed nisisi-africa URL. All /lms/* except media webhook require Bearer token.";
+  "Replace host with your deployed Nelsen Savannah API URL. All /lms/* except media webhook require Bearer token.";
 
 /** Envelope every JSON response uses */
 export const envelope = {

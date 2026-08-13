@@ -1,4 +1,4 @@
-name: Deploy Nisisi-Africa
+name: API Deploy
 
 on:
   push:
@@ -16,8 +16,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy API
+        env:
+          PM2: /usr/local/bin/pm2
+          # Deploy directory keeps its legacy name on purpose: renaming it is a
+          # live-server move that would orphan uploads/ and data/. Do not "fix".
+          APP_DIR: /home/server/WebHooks/Nisisi-Africa
         run: |
-          /usr/local/bin/pm2 stop nisisi-africa || true
+          # Both names would bind PORT 5002, so the old process must be deleted,
+          # not stopped — a stopped process returns on `pm2 resurrect`.
+          "$PM2" delete nisisi-africa || true
+          "$PM2" stop nelsen-savannah || true
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
@@ -25,9 +33,10 @@ jobs:
             --exclude '.github' \
             --exclude 'uploads/' \
             --exclude 'data/' \
-            "${GITHUB_WORKSPACE}/api/" /home/server/WebHooks/Nisisi-Africa/
-          cd /home/server/WebHooks/Nisisi-Africa/
+            "${GITHUB_WORKSPACE}/api/" "$APP_DIR/"
+          cd "$APP_DIR"
           rm -rf node_modules
           npm install --production
           mkdir -p data uploads uploads/_tmp
-          /usr/local/bin/pm2 start src/app.js --name nisisi-africa || /usr/local/bin/pm2 restart nisisi-africa
+          "$PM2" start src/app.js --name nelsen-savannah || "$PM2" restart nelsen-savannah
+          "$PM2" save
