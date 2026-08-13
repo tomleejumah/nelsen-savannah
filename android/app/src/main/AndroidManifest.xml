@@ -33,7 +33,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NisisiAfrica"
+        android:theme="@style/Theme.NelsenSavannah"
         tools:replace="android:label"
         tools:targetApi="31">
         <activity
@@ -103,7 +103,7 @@
         <activity
             android:name=".StoryViewerActivity"
             android:exported="false"
-            android:theme="@style/Theme.NisisiAfrica" />
+            android:theme="@style/Theme.NelsenSavannah" />
         <activity
             android:name=".CommunityDetailActivity"
             android:exported="false" />
@@ -150,7 +150,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.Nisisi.Splash">
+            android:theme="@style/Theme.NelsenSavannah.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

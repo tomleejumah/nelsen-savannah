@@ -3,7 +3,7 @@
       Light theme. Mirrors values-night/themes.xml attribute-for-attribute;
       only the token values in values(-night)/colors.xml differ.
     -->
-    <style name="Base.Theme.NisisiAfrica" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.NelsenSavannah" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/action_primary</item>
         <item name="colorOnPrimary">@color/text_on_action</item>
         <item name="colorPrimaryContainer">@color/surface_muted</item>
@@ -48,12 +48,12 @@
         <item name="android:textColor">@color/text_on_action</item>
     </style>
 
-    <style name="Theme.Nisisi.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.NelsenSavannah.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_branding_inset</item>
-        <item name="postSplashScreenTheme">@style/Base.Theme.NisisiAfrica</item>
+        <item name="postSplashScreenTheme">@style/Base.Theme.NelsenSavannah</item>
         <item name="android:fontFamily">@font/poppins_regular</item>
     </style>
 
-    <style name="Theme.NisisiAfrica" parent="Base.Theme.NisisiAfrica" />
+    <style name="Theme.NelsenSavannah" parent="Base.Theme.NelsenSavannah" />
 </resources>

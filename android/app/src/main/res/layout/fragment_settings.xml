@@ -202,7 +202,7 @@
                 android:drawablePadding="19dp"
                 android:id="@+id/lockApp"
                 android:textSize="16sp"
-                android:drawableLeft="@drawable/ic_lock_nisisi"
+                android:drawableLeft="@drawable/ic_lock_nelsen_savannah"
                 android:text="Lock app" />
 
             <!-- Admin-only; hidden for everyone else in SettingsFragment. -->

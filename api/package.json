@@ -1,7 +1,7 @@
 {
   "name": "nelsen-savannah-api",
   "version": "1.0.0",
-  "description": "Nelsen Savannah LMS API (public path still /nisisi-africa until nginx cutover)",
+  "description": "Nelsen Savannah LMS API",
   "type": "module",
   "main": "src/app.js",
   "scripts": {

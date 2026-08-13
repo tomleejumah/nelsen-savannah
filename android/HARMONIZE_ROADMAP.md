@@ -1,15 +1,15 @@
 # Cross-repo harmonize roadmap (Android catch-up)
 
 Sibling folders keep **separate git roots** — no mono-repo / no git restructuring.
-Source of truth for courses = API (`nisisi-africa-webhook`). Mentors = Firebase RTDB. UI labels = MentUI screenshots.
+Source of truth for courses = the Nelsen Savannah API (`api/`). Mentors = Firebase RTDB. UI labels = MentUI screenshots.
 
 Mark status: `pending` → `in_progress` → `done`. Say **“do Hn”** or **“next”**.
 
 | Repo | Role |
 |------|------|
-| `nisisi-africa-webhook` | LMS API — courses/tracks only so far |
-| `nelsen-savanna-web` | Web Learning UI (tracks naming) |
-| `nelsen-savannah-android` | Mobile — close UI + data gaps |
+| `api/` | LMS API — courses/tracks only so far |
+| `web/` | Web Learning UI (tracks naming) |
+| `android/` | Mobile — close UI + data gaps |
 
 ---
 

@@ -85,7 +85,7 @@ Say **“do Ln”** or **“next”**. Status: `pending` → `in_progress` → `
 
 ### Platform polish
 
-- API still branded `nisisi-africa` on URL/PM2 (rename pending)
+- API public URL still `/nisisi-africa` until the nginx `/nelsen-savannah` alias is live (PM2 already renamed)
 - Web has no mentor/admin shells
 - Android Learning is course-list oriented, not a full “Learning mode” with role home
 

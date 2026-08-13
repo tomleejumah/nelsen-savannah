@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# server-cleanup.sh — reclaim disk on the Nisisi-Africa deployment host.
+# server-cleanup.sh — reclaim disk on the Nelsen Savannah deployment host.
 #
 # Runs DRY-RUN by default: prints every candidate and the bytes it would
 # reclaim, and changes nothing. Pass --apply to actually delete.
@@ -24,7 +24,8 @@
 #
 set -euo pipefail
 
-APP_DIR="${NISISI_APP_DIR:-/home/server/WebHooks/Nisisi-Africa}"
+# Path keeps the legacy directory name — the live app still deploys there.
+APP_DIR="${NELSEN_APP_DIR:-/home/server/WebHooks/Nisisi-Africa}"
 PM2_HOME="${PM2_HOME:-$HOME/.pm2}"
 NPM_CACHE="${NPM_CONFIG_CACHE:-$HOME/.npm}"
 
@@ -90,7 +91,7 @@ consider() {
 # Preflight: refuse to run if this doesn't look like the deployment host.
 # ---------------------------------------------------------------------------
 if [ ! -d "$APP_DIR" ]; then
-  echo "ERROR: $APP_DIR not found — this does not look like the Nisisi-Africa" >&2
+  echo "ERROR: $APP_DIR not found — this does not look like the Nelsen Savannah" >&2
   echo "       deployment host. Refusing to run." >&2
   exit 1
 fi

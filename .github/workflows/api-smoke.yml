@@ -1,4 +1,4 @@
-name: LMS smoke
+name: API CI
 
 on:
   push:
@@ -27,4 +27,6 @@ jobs:
       - name: Health smoke
         run: node scripts/smoke.mjs
         env:
+          # Still the legacy prefix: nginx has no /nelsen-savannah block yet.
+          # Flip once that location is live and returning 200.
           LMS_SMOKE_BASE: https://api.tommlyjumah.dev/nisisi-africa
