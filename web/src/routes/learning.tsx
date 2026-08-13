@@ -1,19 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import {
   ArrowRight,
   BookOpen,
   GraduationCap,
   Layers,
   LogIn,
+  LogOut,
   Search,
 } from "lucide-react";
 
+import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { LMS_FEATURES } from "@/data/site";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { fetchLmsTracks, enrollInTrack, type TrackCardDto } from "@/lib/lmsApi";
+import {
+  enrollInTrack,
+  fetchLmsMe,
+  fetchLmsTracks,
+  type MeDto,
+  type TrackCardDto,
+} from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/learning")({
   head: () => ({
@@ -63,6 +71,7 @@ type CatalogFilter = "all" | "enrolled";
 
 function LearningPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [me, setMe] = useState<MeDto | null>(null);
   const [apiTracks, setApiTracks] = useState<TrackCardDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,9 +123,20 @@ function LearningPage() {
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       setUser(next);
-      if (next) void loadTracks(next);
-      else {
+      if (next) {
+        void loadTracks(next);
+        void (async () => {
+          try {
+            const token = await next.getIdToken();
+            const envelope = await fetchLmsMe(token);
+            setMe(envelope.ok && envelope.data ? envelope.data : null);
+          } catch {
+            setMe(null);
+          }
+        })();
+      } else {
         setApiTracks([]);
+        setMe(null);
         setFilter("all");
       }
     });
@@ -194,6 +214,13 @@ function LearningPage() {
               </Link>
             ) : (
               <>
+                <button
+                  type="button"
+                  onClick={() => void signOut(getFirebaseAuth())}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                >
+                  <LogOut className="h-4 w-4" /> Log out
+                </button>
                 <Link
                   to="/learning/coursework"
                   className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
@@ -215,6 +242,14 @@ function LearningPage() {
               See the programs
             </Link>
           </div>
+          {user && me ? (
+            <CapabilitiesBoard
+              me={me}
+              activeShell="student"
+              variant="compact"
+              className="mx-auto mt-8 max-w-2xl"
+            />
+          ) : null}
         </div>
       </section>
 

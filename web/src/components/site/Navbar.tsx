@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { ChevronDown, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { primaryWorkspacePath } from "@/lib/lmsCapabilities";
+import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
@@ -23,12 +27,33 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [me, setMe] = useState<MeDto | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    return onAuthStateChanged(getFirebaseAuth(), (next) => {
+      setUser(next);
+      if (!next) {
+        setMe(null);
+        return;
+      }
+      void (async () => {
+        try {
+          const token = await next.getIdToken();
+          const envelope = await fetchLmsMe(token);
+          setMe(envelope.ok && envelope.data ? envelope.data : null);
+        } catch {
+          setMe(null);
+        }
+      })();
+    });
   }, []);
 
   return (
@@ -86,12 +111,21 @@ export function Navbar() {
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
-          <Link
-            to="/contact"
-            className="hidden rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
-          >
-            Join a cohort
-          </Link>
+          {user ? (
+            <Link
+              to={primaryWorkspacePath(me)}
+              className="hidden rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+            >
+              Workspace
+            </Link>
+          ) : (
+            <Link
+              to="/contact"
+              className="hidden rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+            >
+              Join a cohort
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -162,6 +196,23 @@ export function Navbar() {
                 {link.label}
               </Link>
             ),
+          )}
+          {user ? (
+            <Link
+              to={primaryWorkspacePath(me)}
+              onClick={() => setOpen(false)}
+              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+            >
+              Workspace
+            </Link>
+          ) : (
+            <Link
+              to="/contact"
+              onClick={() => setOpen(false)}
+              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+            >
+              Join a cohort
+            </Link>
           )}
         </div>
       )}

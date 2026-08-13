@@ -132,7 +132,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         </p>
       ) : null}
 
-      <section>
+      <section id="queue">
         <h2 className="font-display text-xl font-semibold">Marking queue</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Pending assignment submissions. Marking updates student progress %.
@@ -198,7 +198,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         )}
       </section>
 
-      <section>
+      <section id="students">
         <h2 className="font-display text-xl font-semibold">Students</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Recent enrollments and track progress.
@@ -221,7 +221,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         )}
       </section>
 
-      <section>
+      <section id="assign">
         <h2 className="font-display text-xl font-semibold">Assign work</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Target a student uid and/or a track (all enrolled students).
