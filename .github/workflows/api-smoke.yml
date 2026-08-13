@@ -1,12 +1,24 @@
 name: LMS smoke
+
 on:
   push:
-    branches: [master]
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/api-smoke.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/api-smoke.yml"
   workflow_dispatch:
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

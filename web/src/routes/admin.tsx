@@ -116,9 +116,11 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
       ) : null}
       {msg ? <p className="text-sm text-ember">{msg}</p> : null}
 
-      <CatalogCmsPanel user={user} />
+      <section id="cms">
+        <CatalogCmsPanel user={user} />
+      </section>
 
-      <section>
+      <section id="schools">
         <h2 className="font-display text-xl font-semibold">Schools</h2>
         {busy ? (
           <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
@@ -139,7 +141,7 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
         )}
       </section>
 
-      <form onSubmit={(e) => void onCreate(e)} className="space-y-3">
+      <form id="create-school" onSubmit={(e) => void onCreate(e)} className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Create school</h2>
         <input
           required
@@ -168,7 +170,7 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
         </button>
       </form>
 
-      <form onSubmit={(e) => void onAppoint(e)} className="space-y-3">
+      <form id="appoint" onSubmit={(e) => void onAppoint(e)} className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Appoint school admin</h2>
         <input
           required

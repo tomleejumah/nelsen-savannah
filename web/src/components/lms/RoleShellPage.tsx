@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
+import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import {
@@ -107,7 +108,7 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
         )}
 
         {user && me && allowed && (
-          <div className="mt-10 space-y-4">
+          <div className="mt-10 space-y-8">
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5">
               <p className="text-sm text-muted-foreground">
                 Signed in as{" "}
@@ -120,6 +121,7 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
                 {me.schoolName ? ` · ${me.schoolName}` : ""}
               </p>
             </div>
+            <CapabilitiesBoard me={me} activeShell={shell} />
             {typeof children === "function" ? children({ user, me }) : children}
           </div>
         )}

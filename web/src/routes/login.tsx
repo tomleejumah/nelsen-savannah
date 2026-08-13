@@ -10,6 +10,7 @@ import { LogIn, LogOut, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 import { getFirebaseAuth, googleProvider } from "@/lib/firebase";
+import { workspacesForMe } from "@/lib/lmsCapabilities";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 
@@ -143,15 +144,29 @@ function LoginPage() {
                 </p>
               )}
 
+              {me ? (
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Your workspaces
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {workspacesForMe(me).map((w) => (
+                      <Link
+                        key={w.shell}
+                        to={w.to}
+                        className={
+                          w.to === shellHomePath(shellFromMe(me))
+                            ? "rounded-full bg-ember-gradient px-4 py-2 text-sm font-medium text-maroon-foreground"
+                            : "rounded-full bg-maroon/10 px-4 py-2 text-sm font-medium text-maroon hover:bg-maroon/20"
+                        }
+                      >
+                        {w.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2 pt-2">
-                <Link
-                  to={shellHomePath(shellFromMe(me))}
-                  className="rounded-full bg-maroon/10 px-4 py-2 text-sm font-medium text-maroon hover:bg-maroon/20"
-                >
-                  {me
-                    ? `Go to ${shellFromMe(me) === "student" ? "learning" : shellFromMe(me)}`
-                    : "Go to learning"}
-                </Link>
                 <button
                   type="button"
                   onClick={() => void onSignOut()}

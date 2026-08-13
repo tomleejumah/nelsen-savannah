@@ -168,7 +168,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       ) : null}
       {msg ? <p className="text-sm text-ember">{msg}</p> : null}
 
-      <section>
+      <section id="dashboard">
         <h2 className="font-display text-xl font-semibold">Dashboard</h2>
         {busy && !dash ? (
           <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
@@ -198,9 +198,11 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         ) : null}
       </section>
 
-      <CatalogCmsPanel user={user} schoolId={schoolId} />
+      <section id="cms">
+        <CatalogCmsPanel user={user} schoolId={schoolId} />
+      </section>
 
-      <section className="grid gap-8 sm:grid-cols-2">
+      <section id="people" className="grid gap-8 sm:grid-cols-2">
         <form onSubmit={(e) => void addMentor(e)} className="space-y-3">
           <h2 className="font-display text-lg font-semibold">Register mentor</h2>
           <input
@@ -260,7 +262,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         </form>
       </section>
 
-      <form onSubmit={(e) => void onRoster(e)} className="space-y-3">
+      <form id="roster" onSubmit={(e) => void onRoster(e)} className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Roster CSV import</h2>
         <textarea
           value={csv}
@@ -273,7 +275,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         </button>
       </form>
 
-      <form onSubmit={(e) => void onBrand(e)} className="space-y-3">
+      <form id="branding" onSubmit={(e) => void onBrand(e)} className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Branding</h2>
         <input
           value={logoUrl}
@@ -292,7 +294,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         </button>
       </form>
 
-      <section className="space-y-3">
+      <section id="payments" className="space-y-3">
         <h2 className="font-display text-xl font-semibold">Seats / payments</h2>
         <p className="text-sm text-muted-foreground">
           Buy seat licenses for your school. Checkout stays off until you pick a
