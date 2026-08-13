@@ -23,6 +23,8 @@ jobs:
             --exclude '.env' \
             --exclude 'firebase-service-account.json' \
             --exclude '.github' \
+            --exclude 'uploads/' \
+            --exclude 'data/' \
             "${GITHUB_WORKSPACE}/api/" /home/server/WebHooks/Nisisi-Africa/
           cd /home/server/WebHooks/Nisisi-Africa/
           rm -rf node_modules
