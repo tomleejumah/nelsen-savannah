@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
@@ -16,6 +16,28 @@ import {
   type MeDto,
   type TrackCardDto,
 } from "@/lib/lmsApi";
+
+export const Route = createFileRoute("/learning")({
+  head: () => ({
+    meta: [
+      { title: "Learning — Tracks | Nelsen Savannah" },
+      {
+        name: "description",
+        content:
+          "Browse and enroll in Nelsen Savannah learning tracks — Sela, Trailblazers, Scripture Safari, Codelab and more.",
+      },
+      { property: "og:title", content: "Learning | Nelsen Savannah" },
+    ],
+  }),
+  component: LearningLayout,
+});
+
+/** Parent of /learning/$trackId, /coursework, /certificates — must render Outlet. */
+function LearningLayout() {
+  const childMatches = useChildMatches();
+  if (childMatches.length > 0) return <Outlet />;
+  return <LearningPage />;
+}
 
 function LearningLmsPitch() {
   return (
@@ -52,21 +74,6 @@ function LearningLmsPitch() {
     </section>
   );
 }
-
-export const Route = createFileRoute("/learning")({
-  head: () => ({
-    meta: [
-      { title: "Learning — Tracks | Nelsen Savannah" },
-      {
-        name: "description",
-        content:
-          "Browse and enroll in Nelsen Savannah learning tracks — Sela, Trailblazers, Scripture Safari, Codelab and more.",
-      },
-      { property: "og:title", content: "Learning | Nelsen Savannah" },
-    ],
-  }),
-  component: LearningPage,
-});
 
 const toneByAudience = {
   Mentee: "brand",

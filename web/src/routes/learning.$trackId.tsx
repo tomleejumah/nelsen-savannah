@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useChildMatches,
+} from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   ArrowLeft,
@@ -27,8 +32,15 @@ export const Route = createFileRoute("/learning/$trackId")({
       },
     ],
   }),
-  component: TrackDetailPage,
+  component: TrackLayout,
 });
+
+/** Parent of /learning/$trackId/lesson/$lessonId — must render Outlet for lessons. */
+function TrackLayout() {
+  const childMatches = useChildMatches();
+  if (childMatches.length > 0) return <Outlet />;
+  return <TrackDetailPage />;
+}
 
 type ModuleWithLessons = {
   moduleId: string;
