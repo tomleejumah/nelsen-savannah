@@ -334,41 +334,35 @@ function LearningPage() {
               ) : null}
             </div>
           ) : null}
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={onLogout}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              <LogOut className="h-4 w-4" /> Log out
-            </button>
-            <Link
-              to="/learning/coursework"
-              className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
-            >
-              My coursework
-            </Link>
-            <Link
-              to="/learning/certificates"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              Certificates
-            </Link>
-            <Link
-              to="/profile"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              Profile
-            </Link>
+          <div className="mx-auto mt-9 max-w-xl space-y-6">
+            {me ? (
+              <CapabilitiesBoard
+                me={me}
+                activeShell="student"
+                variant="compact"
+              />
+            ) : null}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Account
+              </p>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                <Link
+                  to="/profile"
+                  className="rounded-full border border-border/70 bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Log out
+                </button>
+              </div>
+            </div>
           </div>
-          {me ? (
-            <CapabilitiesBoard
-              me={me}
-              activeShell="student"
-              variant="compact"
-              className="mx-auto mt-8 max-w-2xl"
-            />
-          ) : null}
         </div>
       </section>
 
