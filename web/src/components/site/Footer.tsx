@@ -38,8 +38,10 @@ export function Footer() {
           <ul className="mt-4 space-y-2">
             {[
               { to: "/learning", label: "Learning" },
+              { to: "/invest", label: "Invest" },
+              { to: "/tourism", label: "Tourism" },
               { to: "/events", label: "Events" },
-              { to: "/media", label: "Media" },
+              { to: "/blogs", label: "Blogs" },
               { to: "/contact", label: "Contact us" },
             ].map((l) => (
               <li key={l.to}>
@@ -62,7 +64,7 @@ export function Footer() {
                 href={`mailto:${ORG.email}`}
                 className="flex items-center gap-2 transition-colors hover:text-maroon"
               >
-                <Mail className="h-4 w-4 shrink-0 text-ember" /> {ORG.email}
+                <Mail className="h-4 w-4 shrink-0 text-brand-soft" /> {ORG.email}
               </a>
             </li>
             <li>
@@ -72,11 +74,11 @@ export function Footer() {
                 rel="noreferrer"
                 className="flex items-center gap-2 transition-colors hover:text-maroon"
               >
-                <Phone className="h-4 w-4 shrink-0 text-ember" /> {ORG.phone}
+                <Phone className="h-4 w-4 shrink-0 text-brand-soft" /> {ORG.phone}
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 shrink-0 text-ember" /> {ORG.location}
+              <MapPin className="h-4 w-4 shrink-0 text-brand-soft" /> {ORG.location}
             </li>
           </ul>
         </div>

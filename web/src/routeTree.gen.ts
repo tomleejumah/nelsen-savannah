@@ -11,14 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EventsRouteImport } from './routes/events'
+import { Route as InvestRouteImport } from './routes/invest'
 import { Route as LearningRouteImport } from './routes/learning'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as TeachRouteImport } from './routes/teach'
+import { Route as TourismRouteImport } from './routes/tourism'
 import { Route as LearningTrackIdRouteImport } from './routes/learning.$trackId'
 import { Route as LearningCertificatesRouteImport } from './routes/learning.certificates'
 import { Route as LearningCourseworkRouteImport } from './routes/learning.coursework'
@@ -34,6 +37,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogsRoute = BlogsRouteImport.update({
+  id: '/blogs',
+  path: '/blogs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -42,6 +50,11 @@ const ContactRoute = ContactRouteImport.update({
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestRoute = InvestRouteImport.update({
+  id: '/invest',
+  path: '/invest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LearningRoute = LearningRouteImport.update({
@@ -74,6 +87,11 @@ const TeachRoute = TeachRouteImport.update({
   path: '/teach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TourismRoute = TourismRouteImport.update({
+  id: '/tourism',
+  path: '/tourism',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LearningTrackIdRoute = LearningTrackIdRouteImport.update({
   id: '/$trackId',
   path: '/$trackId',
@@ -99,14 +117,17 @@ const LearningTrackIdLessonLessonIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/invest': typeof InvestRoute
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
+  '/tourism': typeof TourismRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
@@ -115,14 +136,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/invest': typeof InvestRoute
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
+  '/tourism': typeof TourismRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
@@ -132,14 +156,17 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/blogs': typeof BlogsRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/invest': typeof InvestRoute
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
   '/programs': typeof ProgramsRoute
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
+  '/tourism': typeof TourismRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
@@ -150,14 +177,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/blogs'
     | '/contact'
     | '/events'
+    | '/invest'
     | '/learning'
     | '/login'
     | '/media'
     | '/programs'
     | '/school'
     | '/teach'
+    | '/tourism'
     | '/learning/$trackId'
     | '/learning/certificates'
     | '/learning/coursework'
@@ -166,14 +196,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/blogs'
     | '/contact'
     | '/events'
+    | '/invest'
     | '/learning'
     | '/login'
     | '/media'
     | '/programs'
     | '/school'
     | '/teach'
+    | '/tourism'
     | '/learning/$trackId'
     | '/learning/certificates'
     | '/learning/coursework'
@@ -182,14 +215,17 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/blogs'
     | '/contact'
     | '/events'
+    | '/invest'
     | '/learning'
     | '/login'
     | '/media'
     | '/programs'
     | '/school'
     | '/teach'
+    | '/tourism'
     | '/learning/$trackId'
     | '/learning/certificates'
     | '/learning/coursework'
@@ -199,14 +235,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  BlogsRoute: typeof BlogsRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
+  InvestRoute: typeof InvestRoute
   LearningRoute: typeof LearningRouteWithChildren
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
   ProgramsRoute: typeof ProgramsRoute
   SchoolRoute: typeof SchoolRoute
   TeachRoute: typeof TeachRoute
+  TourismRoute: typeof TourismRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -225,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blogs': {
+      id: '/blogs'
+      path: '/blogs'
+      fullPath: '/blogs'
+      preLoaderRoute: typeof BlogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -237,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/events'
       fullPath: '/events'
       preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invest': {
+      id: '/invest'
+      path: '/invest'
+      fullPath: '/invest'
+      preLoaderRoute: typeof InvestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/learning': {
@@ -279,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/teach'
       fullPath: '/teach'
       preLoaderRoute: typeof TeachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tourism': {
+      id: '/tourism'
+      path: '/tourism'
+      fullPath: '/tourism'
+      preLoaderRoute: typeof TourismRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/learning/$trackId': {
@@ -343,14 +403,17 @@ const LearningRouteWithChildren = LearningRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  BlogsRoute: BlogsRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
+  InvestRoute: InvestRoute,
   LearningRoute: LearningRouteWithChildren,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
   ProgramsRoute: ProgramsRoute,
   SchoolRoute: SchoolRoute,
   TeachRoute: TeachRoute,
+  TourismRoute: TourismRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

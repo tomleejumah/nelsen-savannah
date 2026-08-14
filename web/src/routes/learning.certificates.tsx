@@ -102,7 +102,7 @@ function CertificatesPage() {
                 key={`${c.trackId}-${c.issuedAt}`}
                 className="flex gap-4 rounded-2xl border border-border/70 bg-card px-5 py-4"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ember/15 text-ember">
+                <span className="icon-chip">
                   <Award className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">

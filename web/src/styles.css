@@ -222,6 +222,31 @@
   backdrop-filter: blur(18px) saturate(160%);
 }
 
+/* Feature icons — pale brand circle + slate-blue stroke (site-wide) */
+@utility icon-chip {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--brand) 10%, transparent);
+  color: var(--brand-soft);
+}
+
+@utility icon-chip-lg {
+  display: inline-flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--brand) 10%, transparent);
+  color: var(--brand-soft);
+}
+
 @utility glass-dark {
   background: oklch(1 0 0 / 0.08);
   border: 1px solid oklch(1 0 0 / 0.14);

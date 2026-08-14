@@ -68,11 +68,19 @@ function Index() {
             </div>
 
             <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 sm:gap-8">
-              {STATS.map((s) => (
+              {STATS.map((s, index) => (
                 <div key={s.label} className="flex min-w-0 flex-col">
-                  <dt className="font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
-                    <span className="whitespace-nowrap">{s.value}</span>
+                  <dt className="h-[58px] font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
+                    {index === 2 ? (
+                      <>
+                        App
+                        <br />& web
+                      </>
+                    ) : (
+                      <span className="whitespace-nowrap">{s.value}</span>
+                    )}
                   </dt>
+
                   <dd className="mt-2 text-xs leading-snug text-muted-foreground">{s.label}</dd>
                 </div>
               ))}
@@ -90,9 +98,7 @@ function Index() {
             />
             <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
               <p className="text-xs text-muted-foreground">
-                <span className="font-display font-semibold text-foreground">
-                  Based in Nairobi
-                </span>{" "}
+                <span className="font-display font-semibold text-foreground">Based in Nairobi</span>{" "}
                 — mentorship, faith programmes, and coding labs for Kenyan youth.
               </p>
             </div>
@@ -104,9 +110,7 @@ function Index() {
       <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <div className="max-w-2xl">
           <p className="eyebrow text-ember">How it works</p>
-          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
-            Two groups, one deliberate bridge
-          </h2>
+          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Two groups, one deliberate bridge</h2>
         </div>
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
           {[
@@ -131,7 +135,7 @@ function Index() {
               className="rounded-3xl border border-border/70 bg-card p-8 transition-shadow hover:shadow-elevated"
             >
               <div className="flex items-center justify-between">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                <span className="icon-chip-lg">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="font-display text-sm text-muted-foreground/50">0{i + 1}</span>
@@ -145,14 +149,14 @@ function Index() {
 
       {/* Programs */}
       {/* Hiring partners */}
-      <section className="border-y border-border/60 bg-hero-gradient py-24">
+      <section className="border-y border-border/60 bg-background py-24 dark:bg-hero-gradient">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <p className="eyebrow text-ember">Beyond mentorship</p>
-            <h2 className="mt-4 text-3xl font-bold text-on-dark sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl dark:text-on-dark">
               We have partnered with hiring agents — and we link our people to them
             </h2>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-on-dark/70">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground dark:text-on-dark/70">
               Mentorship is where it starts, not where it ends. We work with recruitment agents and
               employers, and when a mentee is ready we put their name in front of them. Guidance,
               then a real door to walk through.
@@ -166,13 +170,20 @@ function Index() {
           </div>
           <div className="grid gap-4">
             {PARTNERS.map((p) => (
-              <article key={p.name} className="glass-dark flex gap-4 rounded-3xl p-6">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-ember/15 text-ember">
+              <article
+                key={p.name}
+                className="flex gap-4 rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:bg-transparent dark:glass-dark"
+              >
+                <span className="icon-chip-lg">
                   <Briefcase className="h-5 w-5" />
                 </span>
                 <div>
-                  <h3 className="font-display text-base font-semibold text-on-dark">{p.name}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-on-dark/70">{p.detail}</p>
+                  <h3 className="font-display text-base font-semibold text-foreground dark:text-on-dark">
+                    {p.name}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+                    {p.detail}
+                  </p>
                 </div>
               </article>
             ))}
@@ -252,26 +263,31 @@ function Index() {
       </section>
 
       {/* Reviews */}
-      <section className="border-t border-border/60 bg-hero-gradient py-24">
+      <section className="border-t border-border/60 bg-background py-24 dark:bg-hero-gradient">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-2xl">
             <p className="eyebrow text-ember">Voices</p>
-            <h2 className="mt-4 text-3xl font-bold text-on-dark sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl dark:text-on-dark">
               What we hear in cohorts
             </h2>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {REVIEWS.map((r) => (
-              <figure key={r.name} className="glass-dark rounded-3xl p-7">
+              <figure
+                key={r.name}
+                className="rounded-3xl border border-border/70 bg-card p-7 dark:border-transparent dark:bg-transparent dark:glass-dark"
+              >
                 <Quote className="h-6 w-6 text-ember" />
-                <blockquote className="mt-4 text-sm leading-relaxed text-on-dark/85">
+                <blockquote className="mt-4 text-sm leading-relaxed text-foreground/85 dark:text-on-dark/85">
                   {r.quote}
                 </blockquote>
-                <figcaption className="mt-6 border-t border-white/10 pt-4">
-                  <span className="block font-display text-sm font-semibold text-on-dark">
+                <figcaption className="mt-6 border-t border-border pt-4 dark:border-white/10">
+                  <span className="block font-display text-sm font-semibold text-foreground dark:text-on-dark">
                     {r.name}
                   </span>
-                  <span className="block text-xs text-on-dark/60">{r.role}</span>
+                  <span className="block text-xs text-muted-foreground dark:text-on-dark/60">
+                    {r.role}
+                  </span>
                 </figcaption>
               </figure>
             ))}
