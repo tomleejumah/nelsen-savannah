@@ -232,6 +232,19 @@ Events decision (**defer**), Postgres-ready schema, media signed-only (play requ
 
 **Accept:** one partner-shaped school completes the loop on web; deploy green; video OK on local storage for internal tests.
 
+### L10 — School hierarchy & custom permissions (backlog)
+**Status:** `pending`  
+Today roles are flat per school: `Mentee` · `Mentor` · `SchoolAdmin` (+ platform `SuperAdmin`).  
+**Not built:** school-defined org chart (campus → department → cohort), custom roles, or “SchoolAdmin picks what a role can do” toggles.
+
+**Target:**
+1. School can define sub-units (e.g. campus / department) under their tenant  
+2. School can create custom staff roles with capability checkboxes (invite, mark, CMS, money view, …)  
+3. Assign people to unit + role; UI and API enforce those caps  
+4. Keep platform SuperAdmin above all schools  
+
+**Accept:** a SchoolAdmin creates a custom “Lead mentor” role with mark+assign only, assigns a user, and that user cannot open money/CMS.
+
 ---
 
 ## 7. Suggested build order for client pitch
