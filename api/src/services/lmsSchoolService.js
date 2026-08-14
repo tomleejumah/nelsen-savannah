@@ -171,6 +171,8 @@ export async function createSchool(actorUid, body = {}) {
     "INSERT INTO schools (school_id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
     [schoolId, name, now, now],
   );
+  // New school is institution-ready: roster, CMS, money ledger, tutor payouts
+  // all key off schoolId — no extra enable flags.
   if (body.adminUid) {
     await ensureUserRow({
       uid: body.adminUid,
@@ -178,13 +180,36 @@ export async function createSchool(actorUid, body = {}) {
       displayName: body.adminDisplayName || "",
     });
     await setMemberSchoolAndRole(body.adminUid, schoolId, ROLES.SchoolAdmin);
+    try {
+      const { inviteMenteeByEmail } = await import("./lmsMembershipService.js");
+      // Ensure admin also has an active membership row for multi-school switcher
+      if (body.adminEmail) {
+        await inviteMenteeByEmail(schoolId, {
+          email: body.adminEmail,
+          displayName: body.adminDisplayName,
+          uid: body.adminUid,
+        });
+      }
+    } catch {
+      /* membership optional */
+    }
   }
   const row = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
   return {
     source: getPrimaryEngine(),
-    data: { school: mapSchool(row) },
+    data: {
+      school: mapSchool(row),
+      ready: [
+        "roster / invite mentees",
+        "register mentors",
+        "school catalog CMS",
+        "dashboard",
+        "school money ledger (stub)",
+        "tutor payouts (stub)",
+      ],
+    },
   };
 }
 
@@ -272,9 +297,32 @@ export async function registerSchoolMentor(actorUid, schoolId, body = {}) {
 
 export async function registerSchoolMentee(actorUid, schoolId, body = {}) {
   await assertCanManageSchool(actorUid, schoolId);
+  const email = String(body.email || "").trim();
   const uid = String(body.uid || "").trim();
+  // Prefer Door A email invite; uid still accepted for legacy demos
+  if (email) {
+    const { inviteMenteeByEmail } = await import("./lmsMembershipService.js");
+    const invited = await inviteMenteeByEmail(schoolId, {
+      email,
+      displayName: body.displayName,
+      uid: uid || undefined,
+    });
+    return {
+      source: invited.source,
+      data: {
+        member: {
+          uid: invited.data.membership.uid || "",
+          userRole: ROLES.Mentee,
+          schoolId,
+          email: invited.data.membership.email,
+          displayName: body.displayName || "",
+          status: invited.data.membership.status,
+        },
+      },
+    };
+  }
   if (!uid) {
-    const err = new Error("uid required (Firebase uid of the mentee)");
+    const err = new Error("email required (or Firebase uid for legacy)");
     err.status = 400;
     throw err;
   }
@@ -284,6 +332,14 @@ export async function registerSchoolMentee(actorUid, schoolId, body = {}) {
     displayName: body.displayName || "",
   });
   await setMemberSchoolAndRole(uid, schoolId, ROLES.Mentee);
+  const { inviteMenteeByEmail } = await import("./lmsMembershipService.js");
+  if (body.email) {
+    await inviteMenteeByEmail(schoolId, {
+      email: body.email,
+      displayName: body.displayName,
+      uid,
+    });
+  }
   return {
     source: getPrimaryEngine(),
     data: {
@@ -293,6 +349,7 @@ export async function registerSchoolMentee(actorUid, schoolId, body = {}) {
         schoolId,
         email: body.email || "",
         displayName: body.displayName || "",
+        status: "active",
       },
     },
   };

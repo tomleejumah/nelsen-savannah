@@ -11,6 +11,7 @@ import {
   enrollInTrack,
   fetchLmsMe,
   fetchLmsTracks,
+  setActiveSchool,
   type MeDto,
   type TrackCardDto,
 } from "@/lib/lmsApi";
@@ -194,8 +195,57 @@ function LearningPage() {
             Learning you keep.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Browse the tracks, enroll, and pick up where you left off.
+            {user && me
+              ? me.unaffiliated
+                ? "Browse courses — when you enroll, you join that school’s wing."
+                : `Learning at ${me.schoolName || "your school"}. Switch schools anytime if you belong to more than one.`
+              : "Browse the tracks, enroll, and pick up where you left off."}
           </p>
+          {user && me ? (
+            <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {me.unaffiliated ? "Marketplace" : "Your school"}
+              </p>
+              <p className="mt-1 font-display text-lg font-semibold">
+                {me.schoolName || me.activeSchoolId || "Nelsen Digital School"}
+              </p>
+              {(me.memberships || []).filter((m) => m.status === "active").length >
+              1 ? (
+                <label className="mt-3 block text-sm text-muted-foreground">
+                  Switch school
+                  <select
+                    className="mt-1.5 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+                    value={me.activeSchoolId || me.schoolId || ""}
+                    onChange={(e) => {
+                      void (async () => {
+                        if (!user) return;
+                        const token = await user.getIdToken();
+                        const result = await setActiveSchool(token, e.target.value);
+                        if (result.ok) {
+                          const refreshed = await fetchLmsMe(token);
+                          if (refreshed.ok && refreshed.data) setMe(refreshed.data);
+                          await loadTracks(user);
+                        }
+                      })();
+                    }}
+                  >
+                    {(me.memberships || [])
+                      .filter((m) => m.status === "active")
+                      .map((m) => (
+                        <option key={m.schoolId} value={m.schoolId}>
+                          {m.schoolName || m.schoolId}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              ) : null}
+              {(me.memberships || []).some((m) => m.status === "invited") ? (
+                <p className="mt-2 text-xs text-ember">
+                  Pending school invite will activate when your email matches.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             {!user ? (
               <Link

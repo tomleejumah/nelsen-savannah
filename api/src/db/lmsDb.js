@@ -395,6 +395,7 @@ CREATE TABLE IF NOT EXISTS assignments (
 async function ensureMigrations() {
   const alters = [
     "ALTER TABLE users_mirror ADD COLUMN school_id TEXT",
+    "ALTER TABLE users_mirror ADD COLUMN active_school_id TEXT",
     "ALTER TABLE submissions ADD COLUMN assignment_id TEXT",
     "ALTER TABLE tracks ADD COLUMN school_id TEXT",
     "ALTER TABLE enrollments ADD COLUMN school_id TEXT",
@@ -421,12 +422,32 @@ async function ensureMigrations() {
     }
   }
 
+  try {
+    await dbRun(`
+CREATE TABLE IF NOT EXISTS school_memberships (
+  id TEXT PRIMARY KEY,
+  school_id TEXT NOT NULL,
+  uid TEXT,
+  email TEXT,
+  role TEXT NOT NULL,
+  status TEXT NOT NULL,
+  display_name TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`);
+  } catch (err) {
+    console.warn(`[lms-db] school_memberships: ${err.message}`);
+  }
+
   const indexes = [
     "CREATE INDEX IF NOT EXISTS idx_media_assets_school ON media_assets(school_id)",
     "CREATE INDEX IF NOT EXISTS idx_media_assets_scope ON media_assets(scope, scope_id)",
     "CREATE INDEX IF NOT EXISTS idx_media_assets_status_created ON media_assets(status, created_at)",
     "CREATE INDEX IF NOT EXISTS idx_media_assets_object_key ON media_assets(object_key)",
     "CREATE INDEX IF NOT EXISTS idx_lessons_media ON lessons(media_id)",
+    "CREATE INDEX IF NOT EXISTS idx_school_memberships_uid ON school_memberships(uid)",
+    "CREATE INDEX IF NOT EXISTS idx_school_memberships_email ON school_memberships(email)",
+    "CREATE INDEX IF NOT EXISTS idx_school_memberships_school ON school_memberships(school_id)",
   ];
   for (const sql of indexes) {
     try {

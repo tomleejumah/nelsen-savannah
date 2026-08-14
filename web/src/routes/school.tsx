@@ -7,6 +7,8 @@ import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
   fetchSchoolDashboard,
   fetchSchoolMembers,
+  fetchSchoolMoney,
+  fetchSchoolTutorPayouts,
   importSchoolRoster,
   patchSchoolBranding,
   patchSchoolMemberRole,
@@ -62,21 +64,33 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [phone, setPhone] = useState("");
   const [payMethod, setPayMethod] = useState<"card" | "mpesa">("card");
   const [payMsg, setPayMsg] = useState<string | null>(null);
+  const [moneyNote, setMoneyNote] = useState<string | null>(null);
+  const [payoutNote, setPayoutNote] = useState<string | null>(null);
+  const [balance, setBalance] = useState(0);
+  const [cutBps, setCutBps] = useState(1000);
 
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
     try {
       const token = await user.getIdToken();
-      const [m, d] = await Promise.all([
+      const [m, d, money, payouts] = await Promise.all([
         fetchSchoolMembers(token, schoolId),
         fetchSchoolDashboard(token, schoolId),
+        fetchSchoolMoney(token, schoolId),
+        fetchSchoolTutorPayouts(token, schoolId),
       ]);
       if (!m.ok) setError(m.error || "Could not load roster");
       setMembers(m.data?.members || []);
       setDash(d.data || null);
       if (d.data?.accentColor) setAccent(d.data.accentColor);
       if (d.data?.logoUrl) setLogoUrl(d.data.logoUrl);
+      if (money.ok && money.data) {
+        setBalance(money.data.balance);
+        setCutBps(money.data.platformCutBps);
+        setMoneyNote(money.data.note);
+      }
+      if (payouts.ok && payouts.data) setPayoutNote(payouts.data.note);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
@@ -111,11 +125,17 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     setMsg(null);
     const token = await user.getIdToken();
     const result = await registerSchoolMentee(token, schoolId, {
-      uid: menteeUid.trim(),
-      email: menteeEmail.trim() || undefined,
+      email: menteeEmail.trim(),
       displayName: menteeName.trim() || undefined,
+      uid: menteeUid.trim() || undefined,
     });
-    setMsg(result.ok ? "Mentee registered." : result.error || "Failed");
+    setMsg(
+      result.ok
+        ? result.data?.member?.status === "invited"
+          ? "Invite saved — they join this school when they sign in with that email."
+          : "Mentee attached to this school."
+        : result.error || "Failed",
+    );
     if (result.ok) {
       setMenteeUid("");
       setMenteeEmail("");
@@ -198,6 +218,28 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         ) : null}
       </section>
 
+      <section id="money" className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-5">
+        <h2 className="font-display text-xl font-semibold">School money</h2>
+        <p className="text-sm text-muted-foreground">
+          This school is its own institution — tuition and seats land here. Platform cut{" "}
+          <span className="font-semibold text-foreground">{(cutBps / 100).toFixed(1)}%</span>{" "}
+          (TBD). Balance:{" "}
+          <span className="font-semibold text-ember">
+            KES {balance.toLocaleString()}
+          </span>
+        </p>
+        {moneyNote ? <p className="text-xs text-muted-foreground">{moneyNote}</p> : null}
+      </section>
+
+      <section id="tutor-payouts" className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-5">
+        <h2 className="font-display text-xl font-semibold">Tutor payouts</h2>
+        <p className="text-sm text-muted-foreground">
+          Mentors/tutors are paid from <em>this school’s</em> balance — not a shared platform pot.
+        </p>
+        {payoutNote ? <p className="text-xs text-muted-foreground">{payoutNote}</p> : null}
+        <p className="text-sm text-muted-foreground">No payout rows yet (prototype stub).</p>
+      </section>
+
       <section id="cms">
         <CatalogCmsPanel user={user} schoolId={schoolId} />
       </section>
@@ -233,18 +275,16 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         </form>
 
         <form onSubmit={(e) => void addMentee(e)} className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">Create mentee</h2>
+          <h2 className="font-display text-lg font-semibold">Invite mentee (Door A)</h2>
+          <p className="text-xs text-muted-foreground">
+            Add their email — when they sign in with it, they land in this school.
+          </p>
           <input
             required
-            value={menteeUid}
-            onChange={(e) => setMenteeUid(e.target.value)}
-            placeholder="Firebase uid"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
+            type="email"
             value={menteeEmail}
             onChange={(e) => setMenteeEmail(e.target.value)}
-            placeholder="Email (optional)"
+            placeholder="student@email.com"
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <input
@@ -253,11 +293,17 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
             placeholder="Display name"
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
+          <input
+            value={menteeUid}
+            onChange={(e) => setMenteeUid(e.target.value)}
+            placeholder="Firebase uid (optional, legacy)"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
           <button
             type="submit"
             className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
           >
-            Add mentee
+            Invite by email
           </button>
         </form>
       </section>
@@ -295,7 +341,10 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       </form>
 
       <section id="payments" className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Seats / payments</h2>
+        <h2 className="font-display text-xl font-semibold">Buy seats (prototype)</h2>
+        <p className="text-sm text-muted-foreground">
+          Checkout stub — funds will credit <strong>this school’s</strong> ledger after the cut.
+        </p>
         <p className="text-sm text-muted-foreground">
           Buy seat licenses for your school. Checkout stays off until you pick a
           payment rail — UI is ready.
