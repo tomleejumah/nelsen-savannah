@@ -149,7 +149,7 @@ export function Navbar() {
                   setUser(null);
                   void signOutFully();
                 }}
-                className="hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground sm:inline-flex"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Log out
