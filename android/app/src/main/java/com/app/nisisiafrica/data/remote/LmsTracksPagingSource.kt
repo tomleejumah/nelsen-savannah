@@ -1,8 +1,10 @@
 package com.app.nisisiafrica.data.remote
 
+import android.content.Context
 import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.app.nisisiafrica.Utils.PathAgeFilter
 import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.google.firebase.auth.FirebaseAuth
@@ -12,10 +14,12 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 /**
- * Prefer LMS GET /lms/tracks; if empty or unreachable, list Firebase RTDB `courses/`.
- * Mentors stay on Firebase via [FirebaseRemoteDataSource.getMentorsPagingSource].
+ * Personalized course feed from GET /lms/enrollments/me.
+ * The full catalog remains available through Find My Path / Learning.
  */
-class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
+class LmsTracksPagingSource(
+    private val appContext: Context? = null,
+) : PagingSource<Int, CourseItem>() {
 
     companion object {
         private const val TAG = "LmsTracks"
@@ -23,16 +27,19 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CourseItem> {
         val lms = loadFromLms()
-        if (lms is LoadResult.Page && lms.data.isNotEmpty()) {
-            Log.i(TAG, "LMS has ${lms.data.size} tracks — using API (not Firebase)")
+        if (lms is LoadResult.Page) {
+            Log.i(TAG, "LMS has ${lms.data.size} enrolled tracks")
             return lms
         }
-        if (lms is LoadResult.Page) {
-            Log.w(TAG, "LMS empty (0 tracks) — falling back to Firebase courses/")
-        } else if (lms is LoadResult.Error) {
-            Log.w(TAG, "LMS error: ${lms.throwable.message} — falling back to Firebase courses/")
-        }
-        return loadFromFirebase()
+        return lms
+    }
+
+    private fun ageFilter(items: List<CourseItem>): List<CourseItem> {
+        val ctx = appContext ?: return items
+        if (!PathAgeFilter.isActive(ctx)) return items
+        val filtered = items.filter { PathAgeFilter.matches(ctx, it.programSlug) }
+        Log.i(TAG, "age filter ${items.size} → ${filtered.size}")
+        return if (filtered.isEmpty()) items else filtered
     }
 
     private suspend fun loadFromLms(): LoadResult<Int, CourseItem> = withContext(Dispatchers.IO) {
@@ -48,35 +55,36 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
                 return@withContext LoadResult.Page(emptyList(), null, null)
             }
             val response = ApiClient.getLmsService()
-                .tracks("Bearer $token")
+                .myEnrollments("Bearer $token")
                 .execute()
             if (!response.isSuccessful) {
                 val err = response.errorBody()?.string()?.take(240)
                 Log.w(TAG, "LMS HTTP ${response.code()} $err")
                 return@withContext LoadResult.Page(emptyList(), null, null)
             }
-            val body: LmsModels.TracksEnvelope? = response.body()
+            val body: LmsModels.EnrollmentListEnvelope? = response.body()
             if (body == null) {
                 Log.w(TAG, "LMS body null after Gson (check duration/lessons types)")
                 return@withContext LoadResult.Page(emptyList(), null, null)
             }
-            if (!body.ok || body.data?.tracks == null) {
+            if (!body.ok || body.data?.enrollments == null) {
                 Log.w(TAG, "LMS ok=${body.ok} error=${body.error}")
                 return@withContext LoadResult.Page(emptyList(), null, null)
             }
-            Log.i(TAG, "LMS ok source=${body.source} trackCount=${body.data.tracks.size}")
-            val items = body.data.tracks.map { card ->
+            Log.i(TAG, "LMS ok source=${body.source} enrollmentCount=${body.data.enrollments.size}")
+            val items = body.data.enrollments.map { enrollment ->
                 CourseItem(
-                    courseId = card.courseId ?: card.trackId ?: "",
-                    tutorId = card.tutorId ?: "",
-                    courseImageUrl = card.courseImageUrl ?: "",
-                    tutorAvatarUrl = card.tutorAvatarUrl ?: "",
-                    tutorName = card.tutorName ?: "",
-                    courseTitle = card.courseTitle ?: "",
-                    duration = card.durationString(),
-                    lessons = card.lessonsString(),
-                    courseLink = card.courseLink ?: "",
-                    isLiked = card.isLiked,
+                    courseId = enrollment.trackId ?: "",
+                    tutorId = enrollment.mentorId ?: "",
+                    courseImageUrl = enrollment.courseImageUrl ?: "",
+                    tutorAvatarUrl = "",
+                    tutorName = "",
+                    courseTitle = enrollment.courseTitle ?: enrollment.trackId ?: "",
+                    duration = "",
+                    lessons = "${enrollment.lessonsCompleted}/${enrollment.lessonsTotal} lessons",
+                    courseLink = "",
+                    isLiked = false,
+                    programSlug = "",
                 )
             }.filter { it.courseId.isNotBlank() }
             LoadResult.Page(items, prevKey = null, nextKey = null)
@@ -109,10 +117,11 @@ class LmsTracksPagingSource : PagingSource<Int, CourseItem>() {
                     lessons = courseSnapshot.child("courseLessons").getValue(String::class.java) ?: "",
                     courseLink = courseSnapshot.child("courseLink").getValue(String::class.java) ?: "",
                     isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java) ?: false,
+                    programSlug = courseSnapshot.child("programSlug").getValue(String::class.java) ?: "",
                 )
             }
             Log.i(TAG, "Firebase courses/ count=${items.size}")
-            LoadResult.Page(items, prevKey = null, nextKey = null)
+            LoadResult.Page(ageFilter(items), prevKey = null, nextKey = null)
         } catch (e: Exception) {
             Log.e(TAG, "Firebase courses failed", e)
             LoadResult.Error(e)
