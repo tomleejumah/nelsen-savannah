@@ -147,11 +147,19 @@ public class QuestionnaireActivity extends AppCompatActivity {
                     .getReference("users").child(uid)
                     .child("questionnaireCompleted")
                     .setValue(true);
+            int age = prefs.getInt("user_age", -1);
+            if (age > 0) {
+                com.google.firebase.database.FirebaseDatabase.getInstance()
+                        .getReference("users").child(uid)
+                        .child("pathAge")
+                        .setValue(age);
+            }
         }
         Toast.makeText(this,
-                "Matched you with mentors in: " + android.text.TextUtils.join(", ", categories),
+                "Paths matched for your age — opening courses",
                 Toast.LENGTH_LONG).show();
-        android.content.Intent intent = new android.content.Intent(this, AllMentorsActivity.class);
+        // Courses UI filters by age (PathAgeFilter); mentors still get categories for pairing later.
+        android.content.Intent intent = new android.content.Intent(this, AllCoursesActivity.class);
         intent.putStringArrayListExtra(AllMentorsActivity.EXTRA_CATEGORIES,
                 new java.util.ArrayList<>(categories));
         startActivity(intent);

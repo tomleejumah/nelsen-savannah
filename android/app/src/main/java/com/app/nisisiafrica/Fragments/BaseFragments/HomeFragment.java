@@ -65,9 +65,11 @@ import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.Event;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.Repository.EventRepository;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -77,6 +79,8 @@ import com.github.vipulasri.timelineview.TimelineView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.common.reflect.TypeToken;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -101,6 +105,9 @@ import java.util.stream.Collectors;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import kotlin.Unit;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeFragment extends Fragment implements FirebaseCallback {
     private static final String TAG = "HomeFragment";
@@ -123,6 +130,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private TextView txtDateInfo;
     private TextView notifCounter;
     private ImageView imgNotification;
+    private TextView tvFindMyPathBlurb;
     private Button btnBookMentor;
     private EventViewModel eventViewModel;
     private RecyclerView rvUpcomingEvents;
@@ -480,11 +488,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         notifCounter = view.findViewById(R.id.notifCounter);
         imgNotification = view.findViewById(R.id.imgNotification);
+        tvFindMyPathBlurb = view.findViewById(R.id.tvFindMyPathBlurb);
 
-        view.findViewById(R.id.btnRecMe).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
-            startActivity(intent);
-        });
+        view.findViewById(R.id.cardFindMyPath).setOnClickListener(v ->
+                startActivity(new Intent(getActivity(), QuestionnaireActivity.class)));
 
         view.findViewById(R.id.btnDonate).setOnClickListener(v -> {
 
@@ -499,8 +506,90 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             startActivity(intent);
         });
 
+        loadFindMyPathFromLms();
 
         return view;
+    }
+
+    /**
+     * Same LMS feed as web /learning: GET /lms/me + enrollments for a live blurb;
+     * card opens AllCoursesActivity (GET /lms/tracks).
+     */
+    private void loadFindMyPathFromLms() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || tvFindMyPathBlurb == null) return;
+        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            String bearer = "Bearer " + tokenResult.getToken();
+            ApiClient.getLmsService().myEnrollments(bearer).enqueue(new Callback<>() {
+                @Override
+                public void onResponse(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                       @NonNull Response<LmsModels.EnrollmentListEnvelope> response) {
+                    if (!isAdded() || tvFindMyPathBlurb == null) return;
+                    LmsModels.EnrollmentListEnvelope body = response.body();
+                    int n = 0;
+                    if (response.isSuccessful() && body != null && body.ok
+                            && body.data != null && body.data.enrollments != null) {
+                        n = body.data.enrollments.size();
+                    }
+                    if (n > 0) {
+                        tvFindMyPathBlurb.setText(n == 1
+                                ? "1 track in progress — continue where you left off."
+                                : n + " tracks in progress — continue where you left off.");
+                    } else {
+                        refreshFindMyPathCatalogHint(bearer);
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                      @NonNull Throwable t) {
+                    if (!isAdded() || tvFindMyPathBlurb == null) return;
+                    refreshFindMyPathCatalogHint(bearer);
+                }
+            });
+        });
+    }
+
+    private void refreshFindMyPathCatalogHint(String bearer) {
+        ApiClient.getLmsService().tracks(bearer).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<LmsModels.TracksEnvelope> call,
+                                   @NonNull Response<LmsModels.TracksEnvelope> response) {
+                if (!isAdded() || tvFindMyPathBlurb == null) return;
+                LmsModels.TracksEnvelope body = response.body();
+                int n = 0;
+                if (response.isSuccessful() && body != null && body.ok
+                        && body.data != null && body.data.tracks != null) {
+                    n = body.data.tracks.size();
+                }
+                if (n > 0) {
+                    tvFindMyPathBlurb.setText(n + " learning tracks ready — pick a path that fits your goals.");
+                }
+                // else keep layout default copy
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call, @NonNull Throwable t) {
+                // keep default blurb
+            }
+        });
+
+        ApiClient.getLmsService().me(bearer).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
+                                   @NonNull Response<LmsModels.MeEnvelope> response) {
+                // Warm /lms/me like web; role/capabilities live on envelope for later shells.
+                LmsModels.MeEnvelope body = response.body();
+                if (body != null && body.ok && body.data != null) {
+                    Log.d(TAG, "lms/me ok keys=" + body.data.keySet());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call, @NonNull Throwable t) {
+                Log.w(TAG, "lms/me failed", t);
+            }
+        });
     }
 
     private void setupAutoScroll() {
@@ -610,6 +699,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     public void onResume() {
         super.onResume();
         setupNotificationCounter();
+        if (coursesAdapter != null) {
+            coursesAdapter.refresh();
+        }
     }
 
     @Override
@@ -920,7 +1012,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                         .collect(Collectors.toList());
 
                 eventAdapter.submitList(upcoming);
-                view.findViewById(R.id.tvSeeMore).setVisibility(events.size() <= 3 ? View.GONE : View.VISIBLE);
+                // Home shows next 3 only — no See more / View all.
+                view.findViewById(R.id.tvSeeMore).setVisibility(View.GONE);
             }
         });
 

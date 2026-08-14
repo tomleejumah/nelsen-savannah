@@ -76,7 +76,9 @@ data class CourseItem(
     val duration: String = "",
     val lessons: String = "",
     val courseLink: String = "",
-    val isLiked: Boolean = false
+    val isLiked: Boolean = false,
+    /** LMS program slug — used to age-filter after Find My Path questionnaire. */
+    val programSlug: String = "",
 )
 
 data class MentorItem(
