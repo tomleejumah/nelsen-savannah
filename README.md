@@ -63,6 +63,7 @@ Appoint SuperAdmin by email from `/admin` (target must have signed in with Fireb
 - Each user has a `schoolId` (and optionally memberships / `activeSchoolId`).
 - **SchoolAdmin** can only manage members and catalog for **their** school.
 - **SuperAdmin** is not school-locked; they create partner schools and appoint principals (`SchoolAdmin`).
+- Adding people: school admin invites **by email** (mentor or mentee). No Firebase uid needed. When that person signs in with the same email, membership activates; mentors get role `Mentor` automatically.
 
 ### Learning product flow
 

@@ -39,12 +39,13 @@ function mapSchool(row) {
 
 function mapMember(row) {
   return {
-    uid: row.uid,
+    uid: row.uid || "",
     email: row.email || "",
     displayName: row.display_name || "",
     photoUrl: row.photo_url || "",
     userRole: normalizeRole(row.role || ROLES.Mentee),
     schoolId: row.school_id || DEFAULT_SCHOOL_ID,
+    status: row.status || "active",
   };
 }
 
@@ -253,7 +254,8 @@ export async function appointSchoolAdmins(actorUid, schoolId, body = {}) {
 export async function listSchoolMembers(actorUid, schoolId) {
   await assertCanManageSchool(actorUid, schoolId);
   const rows = await dbAll(
-    `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role
+    `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,
+            'active' AS status
      FROM users_mirror u
      LEFT JOIN roles r ON r.uid = u.uid
      WHERE u.school_id = ?
@@ -261,17 +263,65 @@ export async function listSchoolMembers(actorUid, schoolId) {
      LIMIT 500`,
     [schoolId],
   );
+  const pending = await dbAll(
+    `SELECT uid, email, display_name, NULL AS photo_url, school_id, role, status
+     FROM school_memberships
+     WHERE school_id = ? AND status = 'invited'
+     ORDER BY created_at DESC
+     LIMIT 200`,
+    [schoolId],
+  );
+  const byKey = new Map();
+  for (const row of rows) {
+    byKey.set(row.uid || `email:${String(row.email || "").toLowerCase()}`, mapMember(row));
+  }
+  for (const row of pending) {
+    const key = row.uid || `email:${String(row.email || "").toLowerCase()}`;
+    if (byKey.has(key)) continue;
+    byKey.set(
+      key,
+      mapMember({
+        ...row,
+        display_name: row.display_name,
+        photo_url: "",
+      }),
+    );
+  }
   return {
     source: getPrimaryEngine(),
-    data: { members: rows.map(mapMember) },
+    data: { members: [...byKey.values()] },
   };
 }
 
 export async function registerSchoolMentor(actorUid, schoolId, body = {}) {
   await assertCanManageSchool(actorUid, schoolId);
+  const email = String(body.email || "").trim();
   const uid = String(body.uid || "").trim();
+  // Door A: invite by email (school admin never needs Firebase uid)
+  if (email) {
+    const { inviteMemberByEmail } = await import("./lmsMembershipService.js");
+    const invited = await inviteMemberByEmail(schoolId, {
+      email,
+      displayName: body.displayName,
+      uid: uid || undefined,
+      role: ROLES.Mentor,
+    });
+    return {
+      source: invited.source,
+      data: {
+        member: {
+          uid: invited.data.membership.uid || "",
+          userRole: ROLES.Mentor,
+          schoolId,
+          email: invited.data.membership.email,
+          displayName: body.displayName || "",
+          status: invited.data.membership.status,
+        },
+      },
+    };
+  }
   if (!uid) {
-    const err = new Error("uid required (Firebase uid of the mentor)");
+    const err = new Error("email required (or Firebase uid for legacy)");
     err.status = 400;
     throw err;
   }
@@ -290,6 +340,7 @@ export async function registerSchoolMentor(actorUid, schoolId, body = {}) {
         schoolId,
         email: body.email || "",
         displayName: body.displayName || "",
+        status: "active",
       },
     },
   };

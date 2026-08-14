@@ -22,9 +22,12 @@ import crypto from "crypto";
 import {
   DEFAULT_SCHOOL_ID,
   DEFAULT_SCHOOL_NAME,
+  isSuperAdmin,
+  normalizeRole,
   ROLES,
 } from "../constants/lmsRoles.js";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
+import { loadUserRole } from "../middleware/lmsRoles.js";
 
 const STATUSES = {
   invited: "invited",
@@ -102,11 +105,22 @@ export async function claimInvitesForUser(uid, email) {
       [uid, STATUSES.active, now, row.id],
     );
     claimed.push(row.school_id);
-    // Keep legacy single school_id in sync with first claim / latest
     await dbRun(
       `UPDATE users_mirror SET school_id = ?, updated_at = ? WHERE uid = ?`,
       [row.school_id, now, uid],
     );
+    // Apply invited staff role (Mentor / SchoolAdmin) — never demote SuperAdmin.
+    const inviteRole = normalizeRole(row.role);
+    if (
+      inviteRole === ROLES.Mentor ||
+      inviteRole === ROLES.SchoolAdmin
+    ) {
+      const current = await loadUserRole(uid);
+      if (!isSuperAdmin(current)) {
+        const { setUserRole } = await import("./lmsMeService.js");
+        await setUserRole(uid, inviteRole);
+      }
+    }
   }
   return claimed;
 }
@@ -177,8 +191,8 @@ export async function setActiveSchool(uid, schoolId) {
   };
 }
 
-/** Door A — admin invites by email (uid optional until they sign in). */
-export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
+/** Door A — school admin invites by email (uid optional until they sign in). */
+export async function inviteMemberByEmail(actorSchoolId, body = {}) {
   const email = String(body.email || "")
     .trim()
     .toLowerCase();
@@ -188,7 +202,13 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
     throw err;
   }
   const displayName = String(body.displayName || "").trim();
-  const uid = String(body.uid || "").trim() || null;
+  let uid = String(body.uid || "").trim() || null;
+  const role = normalizeRole(body.role || body.userRole || ROLES.Mentee);
+  if (role === ROLES.SuperAdmin || role === ROLES.Admin) {
+    const err = new Error("Cannot invite SuperAdmin by email roster");
+    err.status = 400;
+    throw err;
+  }
   const now = Date.now();
 
   const existing = await dbGet(
@@ -197,19 +217,48 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
     [actorSchoolId, email],
   );
   if (existing) {
-    if (uid && !existing.uid) {
+    const nextUid = uid || existing.uid || null;
+    await dbRun(
+      `UPDATE school_memberships SET
+        uid = COALESCE(?, uid),
+        role = ?,
+        display_name = COALESCE(NULLIF(?, ''), display_name),
+        status = CASE WHEN COALESCE(?, uid) IS NOT NULL AND COALESCE(?, uid) != ''
+          THEN ? ELSE status END,
+        updated_at = ?
+       WHERE id = ?`,
+      [
+        nextUid,
+        role,
+        displayName,
+        nextUid,
+        nextUid,
+        STATUSES.active,
+        now,
+        existing.id,
+      ],
+    );
+    if (nextUid && (role === ROLES.Mentor || role === ROLES.SchoolAdmin)) {
+      const current = await loadUserRole(nextUid);
+      if (!isSuperAdmin(current)) {
+        const { setUserRole } = await import("./lmsMeService.js");
+        await setUserRole(nextUid, role);
+      }
       await dbRun(
-        `UPDATE school_memberships SET uid = ?, status = ?, updated_at = ? WHERE id = ?`,
-        [uid, STATUSES.active, now, existing.id],
+        `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
+        [actorSchoolId, actorSchoolId, now, nextUid],
       );
     }
+    const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [
+      existing.id,
+    ]);
     return {
       source: getPrimaryEngine(),
-      data: { membership: mapMembership({ ...existing, email }) },
+      data: { membership: mapMembership(row) },
     };
   }
 
-  // If uid already known user with this email, activate immediately
+  // Resolve uid: explicit → users_mirror → Firebase Auth by email
   let bindUid = uid;
   if (!bindUid) {
     const user = await dbGet(
@@ -217,6 +266,15 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
       [email],
     );
     bindUid = user?.uid || null;
+  }
+  if (!bindUid) {
+    try {
+      const { default: admin } = await import("../config/firebase.js");
+      const fb = await admin.auth().getUserByEmail(email);
+      bindUid = fb.uid || null;
+    } catch {
+      /* not signed up yet — leave invited */
+    }
   }
 
   const id = `sm-${crypto.randomBytes(6).toString("hex")}`;
@@ -230,7 +288,7 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
       actorSchoolId,
       bindUid,
       email,
-      ROLES.Mentee,
+      role,
       status,
       displayName || null,
       now,
@@ -238,16 +296,42 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
     ],
   );
   if (bindUid) {
+    const exists = await dbGet("SELECT uid FROM users_mirror WHERE uid = ?", [
+      bindUid,
+    ]);
+    if (!exists) {
+      await dbRun(
+        `INSERT INTO users_mirror
+          (uid, email, display_name, first_name, last_name, photo_url, created_at, updated_at)
+         VALUES (?, ?, ?, '', '', '', ?, ?)`,
+        [bindUid, email, displayName || email, now, now],
+      );
+    }
     await dbRun(
       `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
       [actorSchoolId, actorSchoolId, now, bindUid],
     );
+    if (role === ROLES.Mentor || role === ROLES.SchoolAdmin) {
+      const current = await loadUserRole(bindUid);
+      if (!isSuperAdmin(current)) {
+        const { setUserRole } = await import("./lmsMeService.js");
+        await setUserRole(bindUid, role);
+      }
+    }
   }
   const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [id]);
   return {
     source: getPrimaryEngine(),
     data: { membership: mapMembership(row) },
   };
+}
+
+/** @deprecated alias — use inviteMemberByEmail */
+export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
+  return inviteMemberByEmail(actorSchoolId, {
+    ...body,
+    role: ROLES.Mentee,
+  });
 }
 
 /** Door B — attach (or apply) when enrolling in a school's track. */
