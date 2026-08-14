@@ -465,6 +465,18 @@ export const adminSetRole = handle("[PATCH /lms/admin/users/:uid/role]", async (
   return svc.adminSetRole(req.user.uid, req.params.uid, req.body?.userRole);
 });
 
+export const adminSetRoleByEmail = handle(
+  "[POST /lms/admin/users/role-by-email]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminSetRoleByEmail(
+      req.user.uid,
+      req.body?.email,
+      req.body?.userRole,
+    );
+  },
+);
+
 export const adminStats = handle("[GET /lms/admin/stats]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
   return svc.adminStats(req.user.uid);
