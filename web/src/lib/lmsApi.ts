@@ -143,6 +143,8 @@ export type AssignmentDto = {
   lessonId: string | null;
   title: string;
   prompt: string;
+  /** Mentor-only; omitted from student inbox. */
+  modelAnswer?: string;
   assignedBy: string;
   assigneeUid: string | null;
   cohort: string | null;
@@ -346,7 +348,7 @@ export async function submitLessonQuiz(
 export async function submitAssignment(
   idToken: string,
   body: {
-    lessonId: string;
+    lessonId?: string;
     text: string;
     platform?: string;
     assignmentId?: string;
@@ -417,6 +419,7 @@ export async function createAssignment(
   body: {
     title: string;
     prompt?: string;
+    modelAnswer?: string;
     trackId?: string;
     lessonId?: string;
     assigneeUid?: string;

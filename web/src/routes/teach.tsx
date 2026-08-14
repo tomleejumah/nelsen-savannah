@@ -51,7 +51,9 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [feedback, setFeedback] = useState("");
   const [assignTitle, setAssignTitle] = useState("");
   const [assignPrompt, setAssignPrompt] = useState("");
+  const [assignModelAnswer, setAssignModelAnswer] = useState("");
   const [assignTrackId, setAssignTrackId] = useState("");
+  const [assignLessonId, setAssignLessonId] = useState("");
   const [assignUid, setAssignUid] = useState("");
   const [assignMsg, setAssignMsg] = useState<string | null>(null);
 
@@ -107,7 +109,9 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
     const result = await createAssignment(token, {
       title: assignTitle.trim(),
       prompt: assignPrompt.trim() || undefined,
+      modelAnswer: assignModelAnswer.trim() || undefined,
       trackId: assignTrackId.trim() || undefined,
+      lessonId: assignLessonId.trim() || undefined,
       assigneeUid: assignUid.trim() || undefined,
     });
     if (!result.ok) {
@@ -116,6 +120,8 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
     }
     setAssignTitle("");
     setAssignPrompt("");
+    setAssignModelAnswer("");
+    setAssignLessonId("");
     setAssignMsg("Assigned.");
     await load();
   }
@@ -224,7 +230,8 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="assign">
         <h2 className="font-display text-xl font-semibold">Assign work</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Target a student uid and/or a track (all enrolled students).
+          Students open & answer in Coursework. Include a model answer for marking
+          reference; attach a lesson when you can so submit always has a target.
         </p>
         <form onSubmit={(e) => void onAssign(e)} className="mt-4 space-y-3">
           <input
@@ -237,7 +244,14 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
           <textarea
             value={assignPrompt}
             onChange={(e) => setAssignPrompt(e.target.value)}
-            placeholder="Prompt / instructions"
+            placeholder="Prompt / instructions for the student"
+            rows={3}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <textarea
+            value={assignModelAnswer}
+            onChange={(e) => setAssignModelAnswer(e.target.value)}
+            placeholder="Model / expected answer (mentors only — not shown to students)"
             rows={3}
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
@@ -246,6 +260,12 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
               value={assignTrackId}
               onChange={(e) => setAssignTrackId(e.target.value)}
               placeholder="trackId (optional)"
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              value={assignLessonId}
+              onChange={(e) => setAssignLessonId(e.target.value)}
+              placeholder="lessonId (optional, recommended)"
               className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
             <input
@@ -271,7 +291,9 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
               <li key={a.id} className="text-muted-foreground">
                 <span className="font-medium text-foreground">{a.title}</span>
                 {a.trackId ? ` · ${a.trackId}` : ""}
+                {a.lessonId ? ` · lesson ${a.lessonId}` : ""}
                 {a.assigneeUid ? ` · ${a.assigneeUid}` : ""}
+                {a.modelAnswer ? " · has model answer" : ""}
               </li>
             ))}
           </ul>

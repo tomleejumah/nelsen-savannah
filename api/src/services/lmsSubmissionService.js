@@ -45,12 +45,37 @@ function mapSubmission(row, extras = {}) {
 
 export async function createSubmission(profile, body = {}) {
   await upsertUserFromToken(profile);
-  const lessonId = body.lessonId;
+  let lessonId = body.lessonId || null;
+  let assignmentId = body.assignmentId || null;
+  let assignment = null;
+
+  if (assignmentId) {
+    const { getAssignmentForSubmit } = await import("./lmsAssignmentService.js");
+    assignment = await getAssignmentForSubmit(assignmentId, profile.uid);
+    if (!assignment) {
+      const err = new Error("Assignment not found or not assigned to you");
+      err.status = 404;
+      throw err;
+    }
+    lessonId = lessonId || assignment.lesson_id || null;
+    if (!lessonId && assignment.track_id) {
+      const first = await dbGet(
+        `SELECT lesson_id FROM lessons WHERE track_id = ?
+         ORDER BY module_id ASC, lesson_id ASC LIMIT 1`,
+        [assignment.track_id],
+      );
+      lessonId = first?.lesson_id || null;
+    }
+  }
+
   if (!lessonId) {
-    const err = new Error("lessonId required");
+    const err = new Error(
+      "lessonId required — attach a lesson when assigning, or use a track that has lessons",
+    );
     err.status = 400;
     throw err;
   }
+
   const lesson = await dbGet("SELECT * FROM lessons WHERE lesson_id = ?", [
     lessonId,
   ]);
@@ -59,25 +84,35 @@ export async function createSubmission(profile, body = {}) {
     err.status = 404;
     throw err;
   }
-  if (!lesson.has_assignment) {
+
+  // Mentor-created assignments can target any lesson; lesson.has_assignment is for catalog lessons.
+  if (!assignmentId && !lesson.has_assignment) {
     const err = new Error("Lesson has no assignment");
     err.status = 400;
     throw err;
   }
+
   const enroll = await dbGet(
     "SELECT * FROM enrollments WHERE uid = ? AND track_id = ?",
     [profile.uid, lesson.track_id],
   );
   if (!enroll) {
-    const err = new Error("Not enrolled");
-    err.status = 403;
-    throw err;
+    if (assignmentId) {
+      const { enrollUser } = await import("./lmsEnrollmentService.js");
+      await enrollUser(profile, {
+        trackId: lesson.track_id,
+        platform: body.platform || "web",
+      });
+    } else {
+      const err = new Error("Not enrolled");
+      err.status = 403;
+      throw err;
+    }
   }
 
   const now = Date.now();
   const submissionId = newSubmissionId();
   const text = body.text || body.body || "";
-  const assignmentId = body.assignmentId || null;
   const mediaUrls = JSON.stringify(
     [body.fileUrl, body.linkUrl].filter(Boolean),
   );
