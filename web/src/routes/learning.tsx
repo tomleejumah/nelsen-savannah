@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
+import { BookOpen, Layers, LogIn, LogOut, Search } from "lucide-react";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
-import { LMS_FEATURES } from "@/data/site";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
@@ -66,6 +65,7 @@ type CatalogFilter = "all" | "enrolled";
 function LearningPage() {
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [apiTracks, setApiTracks] = useState<TrackCardDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,8 +77,8 @@ function LearningPage() {
     () =>
       LMS_TRACKS.map((track) => {
         const modules = modulesForTrack(track.id);
-        const minutes = modules.reduce((a, m) => a + m.estimatedMinutes, 0);
-        const lessons = modules.reduce((a, m) => a + m.lessons.length, 0);
+        const minutes = modules.reduce((a: number, m: { estimatedMinutes: number }) => a + m.estimatedMinutes, 0);
+        const lessons = modules.reduce((a: number, m: { lessons: unknown[] }) => a + m.lessons.length, 0);
         return {
           id: track.id,
           title: track.title,
@@ -118,6 +118,7 @@ function LearningPage() {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       const gen = bumpAuthGeneration();
       setUser(next);
+      setAuthReady(true);
       if (next) {
         void loadTracks(next);
         void (async () => {
@@ -170,9 +171,9 @@ function LearningPage() {
     }
   }
 
-  const showingLive = Boolean(user && liveTracks.length > 0 && !error);
-  const catalog = showingLive ? liveTracks : previewTracks;
+  const catalog = liveTracks.length > 0 ? liveTracks : previewTracks;
   const enrolledTracks = catalog.filter((t) => t.enrolled);
+  const showingLive = Boolean(user && liveTracks.length > 0 && !error);
 
   const filteredTracks = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -187,6 +188,49 @@ function LearningPage() {
     });
   }, [catalog, filter, query]);
 
+  function onLogout() {
+    setMe(null);
+    setUser(null);
+    setApiTracks([]);
+    void signOutFully();
+  }
+
+  if (!authReady) {
+    return (
+      <div className="pb-24 pt-40">
+        <p className="text-center text-sm text-muted-foreground">Checking your session…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="pb-24">
+        <section className="relative overflow-hidden bg-background px-5 pb-16 pt-36 sm:px-8 sm:pt-44">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
+          />
+          <div className="relative mx-auto max-w-lg text-center">
+            <p className="eyebrow text-ember">Learning</p>
+            <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-5xl">
+              Sign in to learn
+            </h1>
+            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
+              Courses, progress, and school wings need an account. Sign in to continue.
+            </p>
+            <Link
+              to="/login"
+              className="mt-10 inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
+            >
+              <LogIn className="h-4 w-4" /> Sign in
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="pb-24">
       <section className="relative overflow-hidden bg-background px-5 pb-16 pt-36 sm:px-8 sm:pt-44">
@@ -195,18 +239,27 @@ function LearningPage() {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
         />
         <div className="relative mx-auto max-w-4xl text-center">
-          <p className="eyebrow text-ember">Learning</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <p className="eyebrow text-ember">Learning</p>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Log out
+            </button>
+          </div>
           <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-6xl">
             Learning you keep.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            {user && me
+            {me
               ? me.unaffiliated
                 ? "Browse courses — when you enroll, you join that school’s wing."
                 : `Learning at ${me.schoolName || "your school"}. Switch schools anytime if you belong to more than one.`
               : "Browse the tracks, enroll, and pick up where you left off."}
           </p>
-          {user && me ? (
+          {me ? (
             <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-left">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {me.unaffiliated ? "Marketplace" : "Your school"}
@@ -214,8 +267,7 @@ function LearningPage() {
               <p className="mt-1 font-display text-lg font-semibold">
                 {me.schoolName || me.activeSchoolId || "Nelsen Digital School"}
               </p>
-              {(me.memberships || []).filter((m) => m.status === "active").length >
-              1 ? (
+              {(me.memberships || []).filter((m) => m.status === "active").length > 1 ? (
                 <label className="mt-3 block text-sm text-muted-foreground">
                   Switch school
                   <select
@@ -223,7 +275,6 @@ function LearningPage() {
                     value={me.activeSchoolId || me.schoolId || ""}
                     onChange={(e) => {
                       void (async () => {
-                        if (!user) return;
                         const token = await user.getIdToken();
                         const result = await setActiveSchool(token, e.target.value);
                         if (result.ok) {
@@ -244,57 +295,30 @@ function LearningPage() {
                   </select>
                 </label>
               ) : null}
-              {(me.memberships || []).some((m) => m.status === "invited") ? (
-                <p className="mt-2 text-xs text-ember">
-                  Pending school invite will activate when your email matches.
-                </p>
-              ) : null}
             </div>
           ) : null}
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            {!user ? (
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
-              >
-                <LogIn className="h-4 w-4" /> Sign in
-              </Link>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMe(null);
-                    setUser(null);
-                    setApiTracks([]);
-                    void signOutFully();
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                >
-                  <LogOut className="h-4 w-4" /> Log out
-                </button>
-                <Link
-                  to="/learning/coursework"
-                  className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
-                >
-                  My coursework
-                </Link>
-                <Link
-                  to="/learning/certificates"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                >
-                  Certificates
-                </Link>
-              </>
-            )}
-            <Link
-              to="/programs"
+            <button
+              type="button"
+              onClick={onLogout}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
             >
-              See the programs
+              <LogOut className="h-4 w-4" /> Log out
+            </button>
+            <Link
+              to="/learning/coursework"
+              className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
+            >
+              My coursework
+            </Link>
+            <Link
+              to="/learning/certificates"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            >
+              Certificates
             </Link>
           </div>
-          {user && me ? (
+          {me ? (
             <CapabilitiesBoard
               me={me}
               activeShell="student"
@@ -305,7 +329,7 @@ function LearningPage() {
         </div>
       </section>
 
-      {/* <section className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="eyebrow text-ember">Tracks</p>
@@ -330,7 +354,7 @@ function LearningPage() {
                 className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground outline-none ring-ember/40 placeholder:text-muted-foreground focus:ring-2"
               />
             </label>
-            {showingLive && (
+            {showingLive ? (
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -355,27 +379,21 @@ function LearningPage() {
                   Enrolled ({enrolledTracks.length})
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {error && user && (
+        {error ? (
           <p className="mt-6 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </p>
-        )}
+        ) : null}
 
-        {showingLive && filter === "enrolled" && enrolledTracks.length === 0 && !query && (
+        {showingLive && filter === "enrolled" && enrolledTracks.length === 0 && !query ? (
           <p className="mt-10 text-sm text-muted-foreground">
             You haven’t enrolled in any tracks yet. Switch to All and pick one to start.
           </p>
-        )}
-
-        {filteredTracks.length === 0 && (query || filter === "all") && !loading && (
-          <p className="mt-10 text-sm text-muted-foreground">
-            No tracks match “{query || "your filters"}”.
-          </p>
-        )}
+        ) : null}
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
           {filteredTracks.map((track) => {
@@ -403,7 +421,7 @@ function LearningPage() {
                     {track.lessons} lessons
                   </span>
                 </div>
-                {showingLive && (
+                {showingLive ? (
                   <div className="mt-4 flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-foreground">
                       {track.enrolled ? `${track.trackPercent}% complete` : "Not enrolled"}
@@ -436,46 +454,10 @@ function LearningPage() {
                       </div>
                     )}
                   </div>
-                )}
-                {showingLive && track.enrolled && (
-                  <Link
-                    to="/learning/$trackId"
-                    params={{ trackId: track.id }}
-                    className="absolute inset-0 rounded-3xl"
-                    aria-label={`Continue ${track.title}`}
-                  />
-                )}
+                ) : null}
               </article>
             );
           })}
-        </div>
-      </section> */}
-
-      <section className="mx-auto mt-24 max-w-7xl px-5 sm:px-8">
-        <div className="rounded-3xl border border-border/70 bg-secondary/40 p-8 sm:p-12">
-          <h2 className="max-w-3xl text-3xl font-bold sm:text-4xl">
-            One account. Progress that follows you.
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Enrollments and lesson progress stay with your signed-in account.
-          </p>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {LMS_FEATURES.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border/60 bg-card p-6">
-                <GraduationCap className="h-5 w-5 text-ember" />
-                <h3 className="mt-4 font-display text-base font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.detail}</p>
-              </div>
-            ))}
-          </div>
-
-          <Link
-            to="/contact"
-            className="mt-10 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-ember"
-          >
-            Talk to us about a track <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
     </div>
