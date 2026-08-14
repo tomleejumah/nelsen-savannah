@@ -459,7 +459,7 @@ export async function createSchool(
     adminDisplayName?: string;
   },
 ) {
-  return lmsFetch<{ school: SchoolDto }>("/lms/schools", idToken, {
+  return lmsFetch<{ school: SchoolDto; ready?: string[] }>("/lms/schools", idToken, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
