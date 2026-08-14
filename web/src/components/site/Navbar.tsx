@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
-import {
-  bumpAuthGeneration,
-  getAuthGeneration,
-  signOutFully,
-} from "@/lib/lmsAuth";
+import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
 import { primaryWorkspacePath } from "@/lib/lmsCapabilities";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { cn } from "@/lib/utils";
@@ -35,13 +31,29 @@ function pathIsActive(pathname: string, to: string) {
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
-export function Navbar() {
+/** Shared SPA shell is prerendered at `/` — defer active styles until mount so Home does not stick. */
+function useNavPathname() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setReady(true);
+  }, []);
+  return ready ? pathname : null;
+}
+
+function navActiveOptions(to: string) {
+  return { exact: to === "/", includeSearch: false } as const;
+}
+
+export function Navbar() {
+  const pathname = useNavPathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
+
+  const linkActive = (to: string) => pathname != null && pathIsActive(pathname, to);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -83,7 +95,13 @@ export function Navbar() {
             : "max-w-7xl rounded-3xl border border-transparent px-2 py-3 sm:px-4",
         )}
       >
-        <Link to="/" className="flex min-w-0 items-center" aria-label="Nelsen Savannah — home">
+        <Link
+          to="/"
+          activeOptions={navActiveOptions("/")}
+          activeProps={{ className: "" }}
+          className="flex min-w-0 items-center"
+          aria-label="Nelsen Savannah — home"
+        >
           <BrandMark />
         </Link>
 
@@ -93,10 +111,12 @@ export function Navbar() {
               <div key={link.to} className="group relative">
                 <Link
                   to={link.to}
+                  activeOptions={navActiveOptions(link.to)}
+                  activeProps={{ className: "" }}
                   className={cn(
                     navLinkClass,
                     "flex items-center gap-1",
-                    pathIsActive(pathname, link.to) && "text-maroon",
+                    linkActive(link.to) && "text-maroon",
                   )}
                 >
                   {link.label}
@@ -124,7 +144,9 @@ export function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={cn(navLinkClass, pathIsActive(pathname, link.to) && "text-maroon")}
+                activeOptions={navActiveOptions(link.to)}
+                activeProps={{ className: "" }}
+                className={cn(navLinkClass, linkActive(link.to) && "text-maroon")}
               >
                 {link.label}
               </Link>
@@ -135,26 +157,12 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
           {user ? (
-            <>
-              <Link
-                to={primaryWorkspacePath(me)}
-                className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
-              >
-                Workspace
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  setMe(null);
-                  setUser(null);
-                  void signOutFully();
-                }}
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                Log out
-              </button>
-            </>
+            <Link
+              to={primaryWorkspacePath(me)}
+              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+            >
+              Workspace
+            </Link>
           ) : (
             <Link
               to="/contact"
@@ -183,9 +191,11 @@ export function Navbar() {
                   <Link
                     to={link.to}
                     onClick={() => setOpen(false)}
+                    activeOptions={navActiveOptions(link.to)}
+                    activeProps={{ className: "" }}
                     className={cn(
                       "min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
-                      pathIsActive(pathname, link.to) && "text-maroon",
+                      linkActive(link.to) && "text-maroon",
                     )}
                   >
                     {link.label}
@@ -231,9 +241,11 @@ export function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setOpen(false)}
+                activeOptions={navActiveOptions(link.to)}
+                activeProps={{ className: "" }}
                 className={cn(
                   "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
-                  pathIsActive(pathname, link.to) && "text-maroon",
+                  linkActive(link.to) && "text-maroon",
                 )}
               >
                 {link.label}
@@ -241,28 +253,13 @@ export function Navbar() {
             ),
           )}
           {user ? (
-            <>
-              <Link
-                to={primaryWorkspacePath(me)}
-                onClick={() => setOpen(false)}
-                className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
-              >
-                Workspace
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  setMe(null);
-                  setUser(null);
-                  void signOutFully();
-                }}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 px-3 py-2.5 text-sm font-medium text-foreground"
-              >
-                <LogOut className="h-4 w-4" />
-                Log out
-              </button>
-            </>
+            <Link
+              to={primaryWorkspacePath(me)}
+              onClick={() => setOpen(false)}
+              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+            >
+              Workspace
+            </Link>
           ) : (
             <Link
               to="/contact"
