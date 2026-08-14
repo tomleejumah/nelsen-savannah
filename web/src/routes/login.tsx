@@ -5,7 +5,6 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
-  signOut,
   updateProfile,
   type User,
 } from "firebase/auth";
@@ -13,6 +12,7 @@ import { LogIn, LogOut, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 import { getFirebaseAuth, googleProvider } from "@/lib/firebase";
+import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import { workspacesForMe } from "@/lib/lmsCapabilities";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
@@ -64,12 +64,14 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
 
-  const loadMe = useCallback(async (u: User) => {
+  const loadMe = useCallback(async (u: User, gen: number) => {
     setBusy(true);
     setError(null);
     try {
       const token = await u.getIdToken();
+      if (gen !== getAuthGeneration()) return;
       const envelope = await fetchLmsMe(token);
+      if (gen !== getAuthGeneration()) return;
       if (!envelope.ok || !envelope.data) {
         setMe(null);
         setError(envelope.error || "Could not load your profile");
@@ -77,21 +79,24 @@ function LoginPage() {
       }
       setMe(envelope.data);
     } catch (err) {
+      if (gen !== getAuthGeneration()) return;
       setError(err instanceof Error ? err.message : "Network error");
       setMe(null);
     } finally {
-      setBusy(false);
+      if (gen === getAuthGeneration()) setBusy(false);
     }
   }, []);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
     return onAuthStateChanged(auth, (next) => {
+      const gen = bumpAuthGeneration();
       setUser(next);
       if (next) {
-        void loadMe(next);
+        void loadMe(next, gen);
       } else {
         setMe(null);
+        setBusy(false);
       }
     });
   }, [loadMe]);
@@ -140,7 +145,9 @@ function LoginPage() {
   }
 
   async function onSignOut() {
-    await signOut(getFirebaseAuth());
+    setMe(null);
+    setUser(null);
+    await signOutFully();
     toast.message("Signed out");
   }
 

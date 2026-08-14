@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { LMS_FEATURES } from "@/data/site";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { getFirebaseAuth } from "@/lib/firebase";
+import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import {
   enrollInTrack,
   fetchLmsMe,
@@ -115,15 +116,19 @@ function LearningPage() {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
+      const gen = bumpAuthGeneration();
       setUser(next);
       if (next) {
         void loadTracks(next);
         void (async () => {
           try {
             const token = await next.getIdToken();
+            if (gen !== getAuthGeneration()) return;
             const envelope = await fetchLmsMe(token);
+            if (gen !== getAuthGeneration()) return;
             setMe(envelope.ok && envelope.data ? envelope.data : null);
           } catch {
+            if (gen !== getAuthGeneration()) return;
             setMe(null);
           }
         })();
@@ -258,7 +263,12 @@ function LearningPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => void signOut(getFirebaseAuth())}
+                  onClick={() => {
+                    setMe(null);
+                    setUser(null);
+                    setApiTracks([]);
+                    void signOutFully();
+                  }}
                   className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
                 >
                   <LogOut className="h-4 w-4" /> Log out

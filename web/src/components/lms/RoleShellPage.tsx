@@ -4,6 +4,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { getFirebaseAuth } from "@/lib/firebase";
+import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import {
   canAccessShell,
@@ -25,12 +26,14 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadMe = useCallback(async (u: User) => {
+  const loadMe = useCallback(async (u: User, gen: number) => {
     setBusy(true);
     setError(null);
     try {
       const token = await u.getIdToken();
+      if (gen !== getAuthGeneration()) return;
       const envelope = await fetchLmsMe(token);
+      if (gen !== getAuthGeneration()) return;
       if (!envelope.ok || !envelope.data) {
         setMe(null);
         setError(envelope.error || "Could not load your profile");
@@ -38,18 +41,20 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
       }
       setMe(envelope.data);
     } catch (err) {
+      if (gen !== getAuthGeneration()) return;
       setMe(null);
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
-      setBusy(false);
+      if (gen === getAuthGeneration()) setBusy(false);
     }
   }, []);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
     return onAuthStateChanged(auth, (next) => {
+      const gen = bumpAuthGeneration();
       setUser(next);
-      if (next) void loadMe(next);
+      if (next) void loadMe(next, gen);
       else {
         setMe(null);
         setBusy(false);
