@@ -105,11 +105,17 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     setMsg(null);
     const token = await user.getIdToken();
     const result = await registerSchoolMentor(token, schoolId, {
-      uid: mentorUid.trim(),
-      email: mentorEmail.trim() || undefined,
+      email: mentorEmail.trim(),
       displayName: mentorName.trim() || undefined,
+      uid: mentorUid.trim() || undefined,
     });
-    setMsg(result.ok ? "Mentor registered." : result.error || "Failed");
+    setMsg(
+      result.ok
+        ? result.data?.member?.status === "invited"
+          ? "Invite saved — they become a mentor when they sign in with that email."
+          : "Mentor attached to this school."
+        : result.error || "Failed",
+    );
     if (result.ok) {
       setMentorUid("");
       setMentorEmail("");
@@ -242,18 +248,17 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
 
       <section id="people" className="grid gap-8 sm:grid-cols-2">
         <form onSubmit={(e) => void addMentor(e)} className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">Register mentor</h2>
+          <h2 className="font-display text-lg font-semibold">Invite mentor</h2>
+          <p className="text-xs text-muted-foreground">
+            Add their email — when they sign in with it, they join this school as a
+            Mentor (no Firebase uid needed).
+          </p>
           <input
             required
-            value={mentorUid}
-            onChange={(e) => setMentorUid(e.target.value)}
-            placeholder="Firebase uid"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
+            type="email"
             value={mentorEmail}
             onChange={(e) => setMentorEmail(e.target.value)}
-            placeholder="Email (optional)"
+            placeholder="teacher@email.com"
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <input
@@ -262,11 +267,17 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
             placeholder="Display name"
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
+          <input
+            value={mentorUid}
+            onChange={(e) => setMentorUid(e.target.value)}
+            placeholder="Firebase uid (optional, legacy)"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
           <button
             type="submit"
             className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
           >
-            Add mentor
+            Invite mentor
           </button>
         </form>
 
@@ -413,15 +424,18 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
           <ul className="mt-4 divide-y divide-border/60 rounded-2xl border border-border/70 bg-card">
             {members.map((m) => (
               <li
-                key={m.uid}
+                key={m.uid || m.email}
                 className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
               >
                 <div>
                   <p className="font-medium">{m.displayName || m.email || m.uid}</p>
-                  <p className="text-xs text-muted-foreground">{m.uid}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {m.email || m.uid}
+                    {m.status === "invited" ? " · pending invite" : ""}
+                  </p>
                 </div>
                 <span className="text-ember">{m.userRole}</span>
-                {m.userRole === "Mentee" ? (
+                {m.userRole === "Mentee" && m.uid ? (
                   <button
                     type="button"
                     onClick={() => void escalate(m.uid)}

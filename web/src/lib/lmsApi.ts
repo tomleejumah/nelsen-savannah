@@ -166,6 +166,7 @@ export type SchoolMemberDto = {
   photoUrl: string;
   userRole: string;
   schoolId: string;
+  status?: string;
 };
 
 export type CertificateDto = {
@@ -510,7 +511,7 @@ export async function fetchSchoolMembers(idToken: string, schoolId: string) {
 export async function registerSchoolMentor(
   idToken: string,
   schoolId: string,
-  body: { uid: string; email?: string; displayName?: string },
+  body: { email?: string; uid?: string; displayName?: string },
 ) {
   return lmsFetch<{ member: SchoolMemberDto }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/mentors`,
@@ -526,7 +527,7 @@ export async function registerSchoolMentor(
 export async function registerSchoolMentee(
   idToken: string,
   schoolId: string,
-  body: { uid: string; email?: string; displayName?: string },
+  body: { email?: string; uid?: string; displayName?: string },
 ) {
   return lmsFetch<{ member: SchoolMemberDto }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/mentees`,
