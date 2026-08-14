@@ -3,9 +3,9 @@ export const ORG = {
   legal: "Nelsen Savannah Organization + Company Limited",
   tagline: "Every young person deserves a map, not a guess.",
   email: "hello@nelsensavanna.co.ke",
-  phone: "+254 102 849 247",
-  phoneAlt: "+254 742 437 625",
-  whatsapp: "254102849247",
+  phone: "+254 ",
+  phoneAlt: "+254 ",
+  whatsapp: "254 ",
   location: "Nairobi, Kenya",
   websiteLegacy: "https://www.nisisi.africa",
 };
@@ -22,14 +22,16 @@ export const PROGRAMS: Program[] = [
   {
     slug: "sela-programme",
     title: "Sela programme",
-    blurb: "Guided mentorship pathway for young people building clarity, confidence and next steps.",
+    blurb:
+      "Guided mentorship pathway for young people building clarity, confidence and next steps.",
     audience: "Mentees",
     tone: "brand",
   },
   {
     slug: "trailblazers",
     title: "Trailblazers",
-    blurb: "For young leaders ready to stretch — peer cohorts, mentor access and real-world exposure.",
+    blurb:
+      "For young leaders ready to stretch — peer cohorts, mentor access and real-world exposure.",
     audience: "Emerging leaders",
     tone: "ember",
   },
@@ -43,7 +45,8 @@ export const PROGRAMS: Program[] = [
   {
     slug: "go-for-it-codelab",
     title: "Go for it Codelab",
-    blurb: "Hands-on coding lab — projects, mentor feedback and skills you can show in a portfolio.",
+    blurb:
+      "Hands-on coding lab — projects, mentor feedback and skills you can show in a portfolio.",
     audience: "Aspiring builders",
     tone: "brand",
   },
@@ -71,7 +74,7 @@ export const ROADMAP = [
   {
     phase: "Now",
     title: "Mentorship site + companion app",
-    body: "Programs, events, media, and mentor matching on this site — with the Android app for day-to-day mentorship.",
+    body: "Programs, events, blogs, and mentor matching on this site — with the Android app for day-to-day mentorship.",
     status: "Live",
   },
   {
@@ -97,8 +100,8 @@ export const ROADMAP = [
 export const STATS = [
   { value: "4", label: "Core programmes" },
   { value: "Nairobi", label: "Home base" },
-  { value: "App + web", label: "Learn anywhere" },
-  { value: "1 login", label: "Progress follows you" },
+  { value: "App & web", label: "Learn anywhere" },
+  { value: "login", label: "Progress follows you" },
 ];
 
 export const REVIEWS = [

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
@@ -15,15 +15,23 @@ const LINKS = [
   { to: "/", label: "Home" },
   { to: "/programs", label: "Our Programs", dropdown: true },
   { to: "/learning", label: "Learning" },
-  { to: "/media", label: "Media" },
+  { to: "/invest", label: "Invest" },
+  { to: "/tourism", label: "Tourism" },
+  { to: "/blogs", label: "Blogs" },
   { to: "/events", label: "Events" },
   { to: "/contact", label: "Contact Us" },
 ] as const;
 
 const navLinkClass =
-  "rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-maroon focus-visible:text-maroon data-[status=active]:text-maroon";
+  "whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-maroon focus-visible:text-maroon";
+
+function pathIsActive(pathname: string, to: string) {
+  if (to === "/") return pathname === "/";
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
 
 export function Navbar() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
@@ -62,7 +70,7 @@ export function Navbar() {
         className={cn(
           "mx-auto flex items-center gap-3 transition-all duration-500 ease-out",
           scrolled
-            ? "glass-panel max-w-5xl rounded-full px-4 py-2 shadow-elevated sm:px-5"
+            ? "glass-panel max-w-6xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
             : "max-w-7xl rounded-3xl border border-transparent px-2 py-3 sm:px-4",
         )}
       >
@@ -74,7 +82,14 @@ export function Navbar() {
           {LINKS.map((link) =>
             "dropdown" in link && link.dropdown ? (
               <div key={link.to} className="group relative">
-                <Link to={link.to} className={cn(navLinkClass, "flex items-center gap-1")}>
+                <Link
+                  to={link.to}
+                  className={cn(
+                    navLinkClass,
+                    "flex items-center gap-1",
+                    pathIsActive(pathname, link.to) && "text-maroon",
+                  )}
+                >
                   {link.label}
                   <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
                 </Link>
@@ -100,8 +115,7 @@ export function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                activeOptions={{ exact: link.to === "/" }}
-                className={navLinkClass}
+                className={cn(navLinkClass, pathIsActive(pathname, link.to) && "text-maroon")}
               >
                 {link.label}
               </Link>
@@ -112,16 +126,26 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
           {user ? (
-            <Link
-              to={primaryWorkspacePath(me)}
-              className="hidden rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
-            >
-              Workspace
-            </Link>
+            <>
+              <Link
+                to={primaryWorkspacePath(me)}
+                className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+              >
+                Workspace
+              </Link>
+              <button
+                type="button"
+                onClick={() => void signOut(getFirebaseAuth())}
+                className="hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground sm:inline-flex"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Log out
+              </button>
+            </>
           ) : (
             <Link
               to="/contact"
-              className="hidden rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
             >
               Join a cohort
             </Link>
@@ -146,7 +170,10 @@ export function Navbar() {
                   <Link
                     to={link.to}
                     onClick={() => setOpen(false)}
-                    className="min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon data-[status=active]:text-maroon"
+                    className={cn(
+                      "min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
+                      pathIsActive(pathname, link.to) && "text-maroon",
+                    )}
                   >
                     {link.label}
                   </Link>
@@ -191,20 +218,36 @@ export function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon data-[status=active]:text-maroon"
+                className={cn(
+                  "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
+                  pathIsActive(pathname, link.to) && "text-maroon",
+                )}
               >
                 {link.label}
               </Link>
             ),
           )}
           {user ? (
-            <Link
-              to={primaryWorkspacePath(me)}
-              onClick={() => setOpen(false)}
-              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
-            >
-              Workspace
-            </Link>
+            <>
+              <Link
+                to={primaryWorkspacePath(me)}
+                onClick={() => setOpen(false)}
+                className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+              >
+                Workspace
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  void signOut(getFirebaseAuth());
+                }}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 px-3 py-2.5 text-sm font-medium text-foreground"
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </button>
+            </>
           ) : (
             <Link
               to="/contact"

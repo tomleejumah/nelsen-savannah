@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,8 +31,19 @@ function ContactPage() {
             Tell us where you are, and we will match the guidance
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Student, junior professional, or someone ready to mentor — write us. We reply within two
+            Mentorship and programs only — mentee, mentor, or learning partner. We reply within two
             working days, or message on WhatsApp for a faster hello.
+          </p>
+          <p className="mt-4 max-w-md text-sm text-muted-foreground">
+            Investing?{" "}
+            <Link to="/invest#inquire" className="font-semibold text-maroon hover:underline">
+              Investor inquiry
+            </Link>
+            . Planning a trip?{" "}
+            <Link to="/tourism#inquire" className="font-semibold text-maroon hover:underline">
+              Trip inquiry
+            </Link>
+            .
           </p>
 
           <ul className="mt-10 space-y-4 text-sm">
@@ -41,7 +52,7 @@ function ContactPage() {
                 href={`mailto:${ORG.email}`}
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                <span className="icon-chip">
                   <Mail className="h-4 w-4" />
                 </span>
                 {ORG.email}
@@ -52,7 +63,7 @@ function ContactPage() {
                 href={`tel:${ORG.phone.replace(/\s/g, "")}`}
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                <span className="icon-chip">
                   <Phone className="h-4 w-4" />
                 </span>
                 {ORG.phone}
@@ -65,14 +76,14 @@ function ContactPage() {
                 rel="noreferrer"
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+                <span className="icon-chip">
                   <Phone className="h-4 w-4" />
                 </span>
                 WhatsApp · {ORG.phone}
               </a>
             </li>
             <li className="flex items-center gap-3 text-muted-foreground">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-maroon/10 text-maroon">
+              <span className="icon-chip">
                 <MapPin className="h-4 w-4" />
               </span>
               {ORG.location}

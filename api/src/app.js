@@ -13,6 +13,7 @@ import notificationRoutes from "./routes/notifications.js";
 import chatRoutes from "./routes/chat.js";
 import diditRoute from "./routes/diditRoute.js";
 import lmsRoutes from "./routes/lms.js";
+import inquiryRoutes from "./routes/inquiries.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -64,6 +65,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/chat", chatRoutes);
 app.use("/didit", diditRoute);
 app.use("/lms", lmsRoutes);
+app.use("/inquiries", inquiryRoutes);
 
 // 404 handler
 app.use((req, res) => {
