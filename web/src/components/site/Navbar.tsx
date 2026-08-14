@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
+import {
+  bumpAuthGeneration,
+  getAuthGeneration,
+  signOutFully,
+} from "@/lib/lmsAuth";
 import { primaryWorkspacePath } from "@/lib/lmsCapabilities";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { cn } from "@/lib/utils";
@@ -47,6 +52,7 @@ export function Navbar() {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
+      const gen = bumpAuthGeneration();
       setUser(next);
       if (!next) {
         setMe(null);
@@ -55,9 +61,12 @@ export function Navbar() {
       void (async () => {
         try {
           const token = await next.getIdToken();
+          if (gen !== getAuthGeneration()) return;
           const envelope = await fetchLmsMe(token);
+          if (gen !== getAuthGeneration()) return;
           setMe(envelope.ok && envelope.data ? envelope.data : null);
         } catch {
+          if (gen !== getAuthGeneration()) return;
           setMe(null);
         }
       })();
@@ -135,7 +144,11 @@ export function Navbar() {
               </Link>
               <button
                 type="button"
-                onClick={() => void signOut(getFirebaseAuth())}
+                onClick={() => {
+                  setMe(null);
+                  setUser(null);
+                  void signOutFully();
+                }}
                 className="hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground sm:inline-flex"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -240,7 +253,9 @@ export function Navbar() {
                 type="button"
                 onClick={() => {
                   setOpen(false);
-                  void signOut(getFirebaseAuth());
+                  setMe(null);
+                  setUser(null);
+                  void signOutFully();
                 }}
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 px-3 py-2.5 text-sm font-medium text-foreground"
               >
