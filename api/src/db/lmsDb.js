@@ -413,6 +413,7 @@ async function ensureMigrations() {
     engine === "postgres"
       ? "ALTER TABLE media_assets ADD COLUMN finalized_at BIGINT"
       : "ALTER TABLE media_assets ADD COLUMN finalized_at INTEGER",
+    "ALTER TABLE assignments ADD COLUMN model_answer TEXT",
   ];
   for (const sql of alters) {
     try {

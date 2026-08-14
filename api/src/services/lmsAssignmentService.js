@@ -17,8 +17,8 @@ function newAssignmentId() {
   return `asg_${crypto.randomBytes(8).toString("hex")}`;
 }
 
-function mapAssignment(row) {
-  return {
+function mapAssignment(row, { includeModelAnswer = false } = {}) {
+  const mapped = {
     id: row.assignment_id,
     schoolId: row.school_id || null,
     trackId: row.track_id || null,
@@ -31,6 +31,10 @@ function mapAssignment(row) {
     dueAt: row.due_at ? Number(row.due_at) : null,
     createdAt: Number(row.created_at),
   };
+  if (includeModelAnswer) {
+    mapped.modelAnswer = row.model_answer || "";
+  }
+  return mapped;
 }
 
 export async function createAssignment(profile, body = {}) {
@@ -51,32 +55,35 @@ export async function createAssignment(profile, body = {}) {
     err.status = 400;
     throw err;
   }
-  if (body.lessonId) {
+  let trackId = body.trackId || null;
+  let lessonId = body.lessonId || null;
+  if (lessonId) {
     const lesson = await dbGet("SELECT * FROM lessons WHERE lesson_id = ?", [
-      body.lessonId,
+      lessonId,
     ]);
     if (!lesson) {
       const err = new Error("Lesson not found");
       err.status = 404;
       throw err;
     }
+    trackId = trackId || lesson.track_id;
   }
 
   const schoolId = (await getActorSchoolId(profile.uid)) || DEFAULT_SCHOOL_ID;
   const now = Date.now();
   const assignmentId = newAssignmentId();
-  const trackId = body.trackId || null;
-  const lessonId = body.lessonId || null;
   const prompt = body.prompt || "";
+  const modelAnswer =
+    String(body.modelAnswer || body.answer || "").trim() || null;
   const assigneeUid = body.assigneeUid || null;
   const cohort = body.cohort || null;
   const dueAt = body.dueAt ? Number(body.dueAt) : null;
 
   await dbRun(
     `INSERT INTO assignments (
-      assignment_id, school_id, track_id, lesson_id, title, prompt,
+      assignment_id, school_id, track_id, lesson_id, title, prompt, model_answer,
       assigned_by, assignee_uid, cohort, due_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       assignmentId,
       schoolId,
@@ -84,6 +91,7 @@ export async function createAssignment(profile, body = {}) {
       lessonId,
       title,
       prompt,
+      modelAnswer,
       profile.uid,
       assigneeUid,
       cohort,
@@ -97,7 +105,7 @@ export async function createAssignment(profile, body = {}) {
   ]);
   return {
     source: getPrimaryEngine(),
-    data: { assignment: mapAssignment(row) },
+    data: { assignment: mapAssignment(row, { includeModelAnswer: true }) },
   };
 }
 
@@ -117,7 +125,8 @@ export async function listMyAssignments(uid) {
   );
   const byId = new Map();
   for (const row of [...direct, ...enrolled]) {
-    byId.set(row.assignment_id, mapAssignment(row));
+    // Never expose model answers to students.
+    byId.set(row.assignment_id, mapAssignment(row, { includeModelAnswer: false }));
   }
   return {
     source: getPrimaryEngine(),
@@ -140,6 +149,28 @@ export async function listAssignedByMe(uid) {
   );
   return {
     source: getPrimaryEngine(),
-    data: { assignments: rows.map(mapAssignment) },
+    data: {
+      assignments: rows.map((row) =>
+        mapAssignment(row, { includeModelAnswer: true }),
+      ),
+    },
   };
+}
+
+export async function getAssignmentForSubmit(assignmentId, uid) {
+  const row = await dbGet("SELECT * FROM assignments WHERE assignment_id = ?", [
+    assignmentId,
+  ]);
+  if (!row) return null;
+  // Direct assignee may submit (auto-enroll happens in createSubmission).
+  if (row.assignee_uid === uid) return row;
+  if (row.assignee_uid && row.assignee_uid !== uid) return null;
+  if (row.track_id) {
+    const enrolled = await dbGet(
+      "SELECT 1 AS ok FROM enrollments WHERE uid = ? AND track_id = ?",
+      [uid, row.track_id],
+    );
+    if (!enrolled) return null;
+  }
+  return row;
 }
