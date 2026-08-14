@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { BookOpen, Layers, LogIn, LogOut, Search } from "lucide-react";
+import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
+import { LMS_FEATURES } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import {
@@ -15,6 +16,42 @@ import {
   type MeDto,
   type TrackCardDto,
 } from "@/lib/lmsApi";
+
+function LearningLmsPitch() {
+  return (
+    <section className="mx-auto mt-24 max-w-7xl px-5 sm:px-8">
+      <div className="rounded-3xl border border-border/70 bg-secondary/40 p-8 sm:p-12">
+        <h2 className="max-w-3xl text-3xl font-bold sm:text-4xl">
+          Schools, skills, and materials in one LMS.
+        </h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+          From Nelsen Digital to partner school wings — browse vast learning materials, build
+          skills module by module, and keep progress with your signed-in account.
+        </p>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {LMS_FEATURES.map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-2xl border border-border/60 bg-card p-6"
+            >
+              <GraduationCap className="h-5 w-5 text-ember" />
+              <h3 className="mt-4 font-display text-base font-semibold">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {feature.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+        <Link
+          to="/contact"
+          className="mt-10 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-ember"
+        >
+          Talk to us about your school <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 export const Route = createFileRoute("/learning")({
   head: () => ({
@@ -211,13 +248,14 @@ function LearningPage() {
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
           />
-          <div className="relative mx-auto max-w-lg text-center">
+          <div className="relative mx-auto max-w-2xl text-center">
             <p className="eyebrow text-ember">Learning</p>
             <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-5xl">
-              Sign in to learn
+              Sign in to your school wing
             </h1>
-            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-              Courses, progress, and school wings need an account. Sign in to continue.
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Browse tracks across partner schools, build skills with real learning materials, and
+              keep enrollments on one account. Sign in to open the catalog.
             </p>
             <Link
               to="/login"
@@ -227,6 +265,7 @@ function LearningPage() {
             </Link>
           </div>
         </section>
+        <LearningLmsPitch />
       </div>
     );
   }
@@ -239,16 +278,7 @@ function LearningPage() {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
         />
         <div className="relative mx-auto max-w-4xl text-center">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <p className="eyebrow text-ember">Learning</p>
-            <button
-              type="button"
-              onClick={onLogout}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              <LogOut className="h-3.5 w-3.5" /> Log out
-            </button>
-          </div>
+          <p className="eyebrow text-ember">Learning</p>
           <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-6xl">
             Learning you keep.
           </h1>
@@ -460,6 +490,8 @@ function LearningPage() {
           })}
         </div>
       </section>
+
+      <LearningLmsPitch />
     </div>
   );
 }

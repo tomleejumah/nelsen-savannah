@@ -263,27 +263,33 @@ export const LEARNING_TRACKS: LearningTrack[] = [
 
 export const LMS_FEATURES = [
   {
-    title: "Guided learning paths",
-    detail: "Each track unlocks module by module, so mentees always know the next step.",
+    title: "Many schools, one login",
+    detail:
+      "Partner schools run their own wings — catalogs, mentors, and cohorts — under one Nelsen Savannah account.",
   },
   {
-    title: "Mentor-marked assignments",
-    detail: "Rubric-based feedback from a real mentor instead of an automated score.",
+    title: "Skills you can prove",
+    detail:
+      "Tracks map to real competencies so learners, tutors, and school admins see what’s mastered vs still open.",
   },
   {
-    title: "Competency grids",
-    detail: "See exactly which skills are proven, in progress, or still untouched.",
+    title: "Vast learning materials",
+    detail:
+      "Modules, videos, readings, quizzes, and assignments across schools — not a thin course list.",
   },
   {
-    title: "Live progress dashboards",
-    detail: "Mentees, mentors and supervisors share one honest view of progress.",
+    title: "Mentor-marked coursework",
+    detail:
+      "Rubric feedback from a real mentor or tutor instead of an automated score alone.",
   },
   {
-    title: "Certificates that hold up",
-    detail: "Verifiable completion records our hiring partners can trust.",
+    title: "Progress that follows you",
+    detail:
+      "Enrollments and lesson % stay with your signed-in account when you switch schools or devices.",
   },
   {
-    title: "Accessible by design",
-    detail: "WCAG 2.2 AA targets, keyboard-first navigation and low-bandwidth mode.",
+    title: "Certificates schools trust",
+    detail:
+      "Verifiable completion records for school wings and hiring partners — not a paper printout.",
   },
 ];
