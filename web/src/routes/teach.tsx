@@ -56,6 +56,11 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [assignLessonId, setAssignLessonId] = useState("");
   const [assignUid, setAssignUid] = useState("");
   const [assignMsg, setAssignMsg] = useState<string | null>(null);
+  const [demoTrackTitle, setDemoTrackTitle] = useState("");
+  const [demoLessonTitle, setDemoLessonTitle] = useState("");
+  const [demoLessonType, setDemoLessonType] = useState("video");
+  const [demoFileName, setDemoFileName] = useState<string | null>(null);
+  const [demoMsg, setDemoMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -297,6 +302,117 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
               </li>
             ))}
           </ul>
+        ) : null}
+      </section>
+
+      <section id="materials" className="space-y-4 rounded-2xl border border-border/70 bg-card/50 p-5">
+        <h2 className="font-display text-xl font-semibold">Upload materials</h2>
+        <p className="text-sm text-muted-foreground">
+          Demo for mentors — create a track/lesson shell and attach video. Storage
+          wiring comes next; buttons here only preview the flow.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setDemoMsg(
+              demoTrackTitle.trim()
+                ? `Demo: “${demoTrackTitle.trim()}” would publish as a draft track.`
+                : "Add a track title to preview publish.",
+            );
+          }}
+          className="space-y-2"
+        >
+          <h3 className="font-medium">New track</h3>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={demoTrackTitle}
+              onChange={(e) => setDemoTrackTitle(e.target.value)}
+              placeholder="Track title (e.g. Interview skills)"
+              className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
+            >
+              Publish track
+            </button>
+          </div>
+        </form>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setDemoMsg(
+              demoLessonTitle.trim()
+                ? `Demo: lesson “${demoLessonTitle.trim()}” (${demoLessonType}) would attach to your track.`
+                : "Add a lesson title to preview.",
+            );
+          }}
+          className="space-y-2"
+        >
+          <h3 className="font-medium">Add lesson</h3>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={demoLessonTitle}
+              onChange={(e) => setDemoLessonTitle(e.target.value)}
+              placeholder="Lesson title"
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <select
+              value={demoLessonType}
+              onChange={(e) => setDemoLessonType(e.target.value)}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="video">video</option>
+              <option value="read">read</option>
+              <option value="quiz">quiz</option>
+              <option value="assignment">assignment</option>
+            </select>
+            <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+              Add lesson
+            </button>
+          </div>
+        </form>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setDemoMsg(
+              demoFileName
+                ? `Demo: “${demoFileName}” selected — upload stays off for this pitch (no bytes sent).`
+                : "Choose a video file to preview the upload step.",
+            );
+          }}
+          className="space-y-2"
+        >
+          <h3 className="font-medium">Lesson video</h3>
+          <p className="text-xs text-muted-foreground">
+            Pick a file to show the flow. Nothing is uploaded in this demo.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="file"
+              accept="video/*,audio/*,application/pdf"
+              onChange={(e) => setDemoFileName(e.target.files?.[0]?.name ?? null)}
+              className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-full border border-border px-4 py-2 text-sm"
+            >
+              Upload media
+            </button>
+          </div>
+          {demoFileName ? (
+            <p className="text-xs text-muted-foreground">Selected: {demoFileName}</p>
+          ) : null}
+        </form>
+
+        {demoMsg ? (
+          <p className="rounded-xl border border-border/60 bg-background/80 px-4 py-3 text-sm text-muted-foreground">
+            {demoMsg}
+          </p>
         ) : null}
       </section>
 
