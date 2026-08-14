@@ -18,6 +18,7 @@ import { Route as InvestRouteImport } from './routes/invest'
 import { Route as LearningRouteImport } from './routes/learning'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MediaRouteImport } from './routes/media'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as TeachRouteImport } from './routes/teach'
@@ -72,6 +73,11 @@ const MediaRoute = MediaRouteImport.update({
   path: '/media',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
+  '/profile': typeof ProfileRoute
   '/programs': typeof ProgramsRoute
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
+  '/profile': typeof ProfileRoute
   '/programs': typeof ProgramsRoute
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/learning': typeof LearningRouteWithChildren
   '/login': typeof LoginRoute
   '/media': typeof MediaRoute
+  '/profile': typeof ProfileRoute
   '/programs': typeof ProgramsRoute
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/learning'
     | '/login'
     | '/media'
+    | '/profile'
     | '/programs'
     | '/school'
     | '/teach'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/learning'
     | '/login'
     | '/media'
+    | '/profile'
     | '/programs'
     | '/school'
     | '/teach'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/learning'
     | '/login'
     | '/media'
+    | '/profile'
     | '/programs'
     | '/school'
     | '/teach'
@@ -242,6 +254,7 @@ export interface RootRouteChildren {
   LearningRoute: typeof LearningRouteWithChildren
   LoginRoute: typeof LoginRoute
   MediaRoute: typeof MediaRoute
+  ProfileRoute: typeof ProfileRoute
   ProgramsRoute: typeof ProgramsRoute
   SchoolRoute: typeof SchoolRoute
   TeachRoute: typeof TeachRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/media'
       fullPath: '/media'
       preLoaderRoute: typeof MediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/programs': {
@@ -410,6 +430,7 @@ const rootRouteChildren: RootRouteChildren = {
   LearningRoute: LearningRouteWithChildren,
   LoginRoute: LoginRoute,
   MediaRoute: MediaRoute,
+  ProfileRoute: ProfileRoute,
   ProgramsRoute: ProgramsRoute,
   SchoolRoute: SchoolRoute,
   TeachRoute: TeachRoute,
