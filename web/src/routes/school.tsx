@@ -67,7 +67,6 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [moneyNote, setMoneyNote] = useState<string | null>(null);
   const [payoutNote, setPayoutNote] = useState<string | null>(null);
   const [balance, setBalance] = useState(0);
-  const [cutBps, setCutBps] = useState(1000);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -87,7 +86,6 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       if (d.data?.logoUrl) setLogoUrl(d.data.logoUrl);
       if (money.ok && money.data) {
         setBalance(money.data.balance);
-        setCutBps(money.data.platformCutBps);
         setMoneyNote(money.data.note);
       }
       if (payouts.ok && payouts.data) setPayoutNote(payouts.data.note);
@@ -221,9 +219,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       <section id="money" className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-5">
         <h2 className="font-display text-xl font-semibold">School money</h2>
         <p className="text-sm text-muted-foreground">
-          This school is its own institution — tuition and seats land here. Platform cut{" "}
-          <span className="font-semibold text-foreground">{(cutBps / 100).toFixed(1)}%</span>{" "}
-          (TBD). Balance:{" "}
+          This school is its own institution — tuition and seats land here. Balance:{" "}
           <span className="font-semibold text-ember">
             KES {balance.toLocaleString()}
           </span>
