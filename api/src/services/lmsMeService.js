@@ -29,7 +29,7 @@ function splitName(displayName = "") {
   };
 }
 
-function mePayload(profile, user, role, source) {
+function mePayload(profile, user, role, source, extras = {}) {
   return {
     source,
     data: {
@@ -45,6 +45,15 @@ function mePayload(profile, user, role, source) {
       role,
       schoolId: user?.schoolId || user?.school_id || DEFAULT_SCHOOL_ID,
       schoolName: user?.schoolName || DEFAULT_SCHOOL_NAME,
+      activeSchoolId:
+        extras.activeSchoolId ||
+        user?.activeSchoolId ||
+        user?.active_school_id ||
+        user?.schoolId ||
+        user?.school_id ||
+        DEFAULT_SCHOOL_ID,
+      memberships: extras.memberships || [],
+      unaffiliated: Boolean(extras.unaffiliated),
       shell: shellFor(role),
       capabilities: capabilitiesFor(role),
     },
@@ -151,7 +160,7 @@ export async function getMe(profile) {
       await upsertUserFromToken(profile);
       const user = await dbGet(
         `SELECT u.uid, u.email, u.display_name, u.first_name, u.last_name, u.photo_url,
-                u.school_id, r.role
+                u.school_id, u.active_school_id, r.role
          FROM users_mirror u
          LEFT JOIN roles r ON r.uid = u.uid
          WHERE u.uid = ?`,
@@ -171,7 +180,21 @@ export async function getMe(profile) {
         /* ignore RTDB role peek */
       }
 
-      const schoolId = user?.school_id || DEFAULT_SCHOOL_ID;
+      let memberships = [];
+      let activeSchoolId = user?.active_school_id || user?.school_id || DEFAULT_SCHOOL_ID;
+      try {
+        const membership = await import("./lmsMembershipService.js");
+        await membership.claimInvitesForUser(profile.uid, user?.email || profile.email);
+        memberships = await membership.listMembershipsForUid(
+          profile.uid,
+          user?.email || profile.email,
+        );
+        activeSchoolId = await membership.ensureActiveSchool(profile.uid, memberships);
+      } catch (err) {
+        console.warn("[lms-me] memberships:", err.message);
+      }
+
+      const schoolId = activeSchoolId || user?.school_id || DEFAULT_SCHOOL_ID;
       let schoolName = DEFAULT_SCHOOL_NAME;
       try {
         const school = await dbGet(
@@ -183,6 +206,8 @@ export async function getMe(profile) {
         /* schools table optional during migrate */
       }
 
+      const activeMemberships = memberships.filter((m) => m.status === "active");
+
       return mePayload(
         profile,
         {
@@ -193,9 +218,15 @@ export async function getMe(profile) {
           photo_url: user?.photo_url,
           school_id: schoolId,
           schoolName,
+          active_school_id: activeSchoolId,
         },
         role,
         getPrimaryEngine(),
+        {
+          activeSchoolId,
+          memberships,
+          unaffiliated: activeMemberships.length === 0,
+        },
       );
     } catch (err) {
       console.error("[lms-me] primary read failed, trying RTDB:", err.message);

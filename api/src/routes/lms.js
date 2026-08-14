@@ -29,6 +29,11 @@ const upload = multer({
 const router = express.Router();
 
 router.get("/me", authenticateUser, lmsController.getLmsMe);
+router.patch(
+  "/me/active-school",
+  authenticateUser,
+  lmsController.patchActiveSchool,
+);
 router.get("/health", lmsController.getLmsHealth);
 
 router.get("/tracks", authenticateUser, lmsController.listTracks);
@@ -184,6 +189,18 @@ router.get(
   authenticateUser,
   requireRoles("SchoolAdmin", "Admin"),
   lmsController.getSchoolDashboard,
+);
+router.get(
+  "/schools/:id/money",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.getSchoolMoney,
+);
+router.get(
+  "/schools/:id/tutor-payouts",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin", "Mentor"),
+  lmsController.getSchoolTutorPayouts,
 );
 router.post(
   "/admin/tracks",

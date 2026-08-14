@@ -278,6 +278,14 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         ) : null}
       </section>
 
+      <section id="payouts" className="rounded-2xl border border-border/70 bg-card/40 p-5">
+        <h2 className="font-display text-xl font-semibold">Tutor payouts</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Paid from your school’s ledger (prototype). Full dashboard lands with payments.
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">No payout rows yet.</p>
+      </section>
+
       <Link
         to="/learning"
         className="inline-flex text-sm font-medium text-maroon hover:underline"

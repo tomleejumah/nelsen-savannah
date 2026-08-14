@@ -2,6 +2,18 @@ export const LMS_API_BASE =
   import.meta.env.VITE_LMS_API_BASE ??
   "https://api.tommlyjumah.dev/nisisi-africa";
 
+export type SchoolMembershipDto = {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  uid: string | null;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type MeDto = {
   uid: string;
   email: string;
@@ -12,6 +24,9 @@ export type MeDto = {
   userRole: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
   schoolId?: string;
   schoolName?: string;
+  activeSchoolId?: string;
+  memberships?: SchoolMembershipDto[];
+  unaffiliated?: boolean;
   shell?: "student" | "mentor" | "school" | "admin";
   capabilities: Record<string, boolean>;
 };
@@ -227,6 +242,17 @@ async function lmsFetch<T>(
 
 export async function fetchLmsMe(idToken: string) {
   return lmsFetch<MeDto>("/lms/me", idToken);
+}
+
+export async function setActiveSchool(idToken: string, schoolId: string) {
+  return lmsFetch<{ activeSchoolId: string; schoolName: string }>(
+    "/lms/me/active-school",
+    idToken,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ schoolId }),
+    },
+  );
 }
 
 export async function fetchLmsTracks(idToken: string) {
@@ -740,6 +766,23 @@ export async function uploadLessonMedia(
 export async function fetchSchoolDashboard(idToken: string, schoolId: string) {
   return lmsFetch<SchoolDashboardDto>(
     `/lms/schools/${encodeURIComponent(schoolId)}/dashboard`,
+    idToken,
+  );
+}
+
+export async function fetchSchoolMoney(idToken: string, schoolId: string) {
+  return lmsFetch<{
+    schoolId: string;
+    currency: string;
+    balance: number;
+    platformCutBps: number;
+    note: string;
+  }>(`/lms/schools/${encodeURIComponent(schoolId)}/money`, idToken);
+}
+
+export async function fetchSchoolTutorPayouts(idToken: string, schoolId: string) {
+  return lmsFetch<{ schoolId: string; tutors: unknown[]; note: string }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/tutor-payouts`,
     idToken,
   );
 }

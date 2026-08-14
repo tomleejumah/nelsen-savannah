@@ -129,20 +129,25 @@ async function moduleCountByTrack() {
   return new Map(rows.map((r) => [r.track_id, Number(r.c)]));
 }
 
-async function listTracksFromPrimary(uid, { audience, enrolled } = {}) {
+async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filterSchool } = {}) {
   const user = await dbGet(
-    "SELECT school_id FROM users_mirror WHERE uid = ?",
+    "SELECT school_id, active_school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  const schoolId = user?.school_id || "nelsen-digital";
+  const schoolId =
+    filterSchool || user?.active_school_id || user?.school_id || "nelsen-digital";
+
+  // Active school catalog: that school's tracks. Unaffiliated marketplace still
+  // sees nelsen-digital + unscoped until they enroll into a partner school.
   const rows = await dbAll(
     `SELECT * FROM tracks WHERE published = 1
      AND (
-       school_id IS NULL OR school_id = '' OR school_id = 'nelsen-digital'
-       OR school_id = ?
+       school_id = ?
+       OR school_id IS NULL OR school_id = ''
+       OR (? = 'nelsen-digital' AND school_id = 'nelsen-digital')
      )
      ORDER BY sort_order ASC, track_id ASC`,
-    [schoolId],
+    [schoolId, schoolId],
   );
   const [likes, enrollMap, lessonCounts, moduleCounts] = await Promise.all([
     likesFor(uid),

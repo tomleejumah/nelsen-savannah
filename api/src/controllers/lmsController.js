@@ -41,6 +41,48 @@ export async function getLmsMe(req, res) {
   }
 }
 
+export async function patchActiveSchool(req, res) {
+  try {
+    const {
+      setActiveSchool,
+    } = await import("../services/lmsMembershipService.js");
+    const result = await setActiveSchool(req.user.uid, req.body?.schoolId);
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[PATCH /lms/me/active-school]", err);
+    return lmsErr(
+      res,
+      err.message || "Failed to set school",
+      err.status || 500,
+      getPrimaryEngine() || "sqlite",
+    );
+  }
+}
+
+export async function getSchoolMoney(req, res) {
+  try {
+    const { schoolMoneyStub } = await import(
+      "../services/lmsMembershipService.js"
+    );
+    const data = await schoolMoneyStub(req.params.id);
+    return lmsOk(res, data, getPrimaryEngine());
+  } catch (err) {
+    return lmsErr(res, err.message || "Failed", err.status || 500);
+  }
+}
+
+export async function getSchoolTutorPayouts(req, res) {
+  try {
+    const { tutorPayoutsStub } = await import(
+      "../services/lmsMembershipService.js"
+    );
+    const data = await tutorPayoutsStub(req.params.id);
+    return lmsOk(res, data, getPrimaryEngine());
+  } catch (err) {
+    return lmsErr(res, err.message || "Failed", err.status || 500);
+  }
+}
+
 export async function getLmsHealth(_req, res) {
   try {
     const health = await getStoreHealth();

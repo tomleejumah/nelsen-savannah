@@ -197,11 +197,16 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
   }
 
   const schoolId =
-    (
-      await dbGet("SELECT school_id FROM users_mirror WHERE uid = ?", [
-        profile.uid,
-      ])
-    )?.school_id || "nelsen-digital";
+    track.school_id ||
+    track.schoolId ||
+    "nelsen-digital";
+
+  try {
+    const { attachOnEnroll } = await import("./lmsMembershipService.js");
+    await attachOnEnroll(profile.uid, profile.email || "", schoolId);
+  } catch (err) {
+    console.warn("[enroll] membership attach:", err.message);
+  }
 
   const now = Date.now();
   const { modulesTotal, lessonsTotal } = await trackTotals(trackId);

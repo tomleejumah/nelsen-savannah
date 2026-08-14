@@ -30,15 +30,15 @@ function AdminPage() {
   return (
     <RoleShellPage
       shell="admin"
-      title="Super admin"
-      blurb="Create schools, appoint school admins, and publish the global catalog."
+      title="Nelsen Savannah"
+      blurb="Platform HQ — create partner schools (each ships ready), keep your own digital school, and run the global catalog. This dashboard stays yours."
     >
       {({ user, me }) => <AdminConsole user={user} me={me} />}
     </RoleShellPage>
   );
 }
 
-function AdminConsole({ user }: { user: User; me: MeDto }) {
+function AdminConsole({ user, me }: { user: User; me: MeDto }) {
   const [schools, setSchools] = useState<SchoolDto[]>([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +89,30 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
     setName("");
     setSchoolId("");
     setAdminUid("");
-    setMsg(`Created ${result.data?.school.schoolId}`);
+    const ready = (result.data as { ready?: string[] } | undefined)?.ready;
+    setMsg(
+      `Created ${result.data?.school.schoolId} — ready: ${(ready || ["school wing"]).join(", ")}`,
+    );
+    await load();
+  }
+
+  async function createDemoSchools() {
+    setMsg(null);
+    const token = await user.getIdToken();
+    const demos = [
+      { name: "Demo Partner School A", schoolId: "demo-partner-a" },
+      { name: "Demo Partner School B", schoolId: "demo-partner-b" },
+    ];
+    const created: string[] = [];
+    for (const d of demos) {
+      const result = await createSchool(token, d);
+      if (result.ok) created.push(d.schoolId);
+    }
+    setMsg(
+      created.length
+        ? `Demo schools ready: ${created.join(", ")}. Open /school as SchoolAdmin to operate a wing.`
+        : "Demo schools may already exist — check the list.",
+    );
     await load();
   }
 
@@ -127,6 +150,8 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
     );
   }
 
+  const nelsenDigital = schools.find((s) => s.schoolId === "nelsen-digital");
+
   return (
     <div className="space-y-10">
       {error ? (
@@ -136,12 +161,57 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
       ) : null}
       {msg ? <p className="text-sm text-ember">{msg}</p> : null}
 
+      <section
+        id="platform"
+        className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-5"
+      >
+        <p className="eyebrow text-ember">Platform dashboard</p>
+        <h2 className="font-display text-xl font-semibold">Nelsen Savannah HQ</h2>
+        <p className="text-sm text-muted-foreground">
+          Signed in as {me.displayName || me.email} · {me.userRole}. Creating partner
+          schools does not replace this screen — you always keep platform control.
+        </p>
+        <ul className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
+          <li className="rounded-xl border border-border/60 px-4 py-3">
+            <p className="text-xs text-muted-foreground">Schools</p>
+            <p className="font-display text-2xl font-semibold">{schools.length}</p>
+          </li>
+          <li className="rounded-xl border border-border/60 px-4 py-3">
+            <p className="text-xs text-muted-foreground">Your digital school</p>
+            <p className="font-display text-lg font-semibold">
+              {nelsenDigital?.name || "Nelsen Digital School"}
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">nelsen-digital</p>
+          </li>
+          <li className="rounded-xl border border-border/60 px-4 py-3">
+            <p className="text-xs text-muted-foreground">Each new school gets</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Roster · mentors · CMS · dashboard · money · tutor payouts
+            </p>
+          </li>
+        </ul>
+      </section>
+
       <section id="cms">
         <CatalogCmsPanel user={user} />
       </section>
 
       <section id="schools">
-        <h2 className="font-display text-xl font-semibold">Schools</h2>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-semibold">Schools</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Partner wings you created. Use 1–2 demos for the walkthrough.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void createDemoSchools()}
+            className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
+          >
+            Create 2 demo schools
+          </button>
+        </div>
         {busy ? (
           <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
         ) : (
@@ -151,7 +221,16 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
                 key={s.schoolId}
                 className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm"
               >
-                <span className="font-medium">{s.name}</span>
+                <div>
+                  <span className="font-medium">{s.name}</span>
+                  {s.schoolId === "nelsen-digital" ? (
+                    <span className="ml-2 text-xs font-semibold text-ember">
+                      your wing
+                    </span>
+                  ) : (
+                    <span className="ml-2 text-xs text-muted-foreground">ready</span>
+                  )}
+                </div>
                 <span className="font-mono text-xs text-muted-foreground">
                   {s.schoolId}
                 </span>
@@ -163,6 +242,9 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
 
       <form id="create-school" onSubmit={(e) => void onCreate(e)} className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Create school</h2>
+        <p className="text-xs text-muted-foreground">
+          Instantly live with invite roster, mentors, CMS, money ledger, and tutor payouts.
+        </p>
         <input
           required
           value={name}
