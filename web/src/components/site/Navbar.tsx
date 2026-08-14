@@ -157,20 +157,12 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
           {user ? (
-            <>
-              <Link
-                to="/profile"
-                className="hidden whitespace-nowrap rounded-full border border-border/70 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent/60 sm:inline-flex"
-              >
-                Profile
-              </Link>
-              <Link
-                to={primaryWorkspacePath(me)}
-                className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
-              >
-                Workspace
-              </Link>
-            </>
+            <Link
+              to={primaryWorkspacePath(me)}
+              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+            >
+              Workspace
+            </Link>
           ) : (
             <Link
               to="/contact"
@@ -261,22 +253,13 @@ export function Navbar() {
             ),
           )}
           {user ? (
-            <>
-              <Link
-                to="/profile"
-                onClick={() => setOpen(false)}
-                className="mt-2 block rounded-xl border border-border/70 px-3 py-2.5 text-center text-sm font-medium text-foreground"
-              >
-                Profile
-              </Link>
-              <Link
-                to={primaryWorkspacePath(me)}
-                onClick={() => setOpen(false)}
-                className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
-              >
-                Workspace
-              </Link>
-            </>
+            <Link
+              to={primaryWorkspacePath(me)}
+              onClick={() => setOpen(false)}
+              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+            >
+              Workspace
+            </Link>
           ) : (
             <Link
               to="/contact"
