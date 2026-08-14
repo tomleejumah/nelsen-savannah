@@ -2,8 +2,8 @@
 
 **Purpose:** Pitch-ready learning platform. Same API for web + Android. Schools get their own wing; Nelsen keeps a digital school.
 
-Repos: `nelsen-savannah-api` · `nelsen-savannah-web` · `nelsen-savannah-android`  
-Roles today: `Mentee` (student) · `Mentor` · `Admin`  
+Repos: monorepo `nelsen-savannah` (`api/` · `web/` · `android/`)  
+Roles today: `Mentee` · `Mentor` · `SchoolAdmin` · `SuperAdmin` (legacy `Admin` → SuperAdmin)  
 Auth: Firebase ID token → `GET /lms/me`
 
 Say **“do Ln”** or **“next”**. Status: `pending` → `in_progress` → `done`.
@@ -22,72 +22,39 @@ Say **“do Ln”** or **“next”**. Status: `pending` → `in_progress` → `
 
 ---
 
-## 2. What it **can** do today
-
-### API (`nelsen-savannah-api` — M0–M5 mostly shipped)
+## 2. What it **can** do today (L0–L8 shipped on web)
 
 | Area | Works |
 |------|--------|
-| Auth identity | `GET /lms/me` + role + capabilities |
-| Catalog | Tracks / modules / lessons list+detail |
-| Enroll | Create / list mine / unenroll |
-| Progress | Patch lesson progress; get my progress map; server % math |
-| Media | Upload (Mentor/Admin); status; signed play |
-| Assignments API | Submit; my submissions; mentor queue; mark |
-| Quiz submit | `POST /lms/lessons/:id/quiz` |
-| Like track | `POST /lms/tracks/:id/like` |
-| Certificates list | `GET /lms/certificates/me` |
-| Admin CMS (API) | Create/update track, module, lesson; set role; stats; mentee progress; force seed |
-| Dual store | SQLite (or Postgres) primary + RTDB mirror |
-
-### Web (SPA on nginx)
-
-| Screen | Works |
-|--------|--------|
-| Login (Google) | Calls `/lms/me` |
-| `/learning` | Catalog + enroll filter + enroll CTA + % |
-| `/learning/$trackId` | Modules list, enroll, open lessons when enrolled |
-| `/learning/$trackId/lesson/$lessonId` | Lesson view + mark progress |
+| Auth / shells | Login, `/lms/me`, Workspace board, Navbar Workspace + Log out |
+| Student | Catalog, enroll, lessons, progress, quiz, coursework, certificates list |
+| Mentor | `/teach` — queue, students, assign |
+| School admin | `/school` — people, roster CSV, branding, dashboard, school CMS |
+| Super admin | `/admin` — schools, appoint school admin, **appoint SuperAdmin by email**, global CMS |
+| Tenancy | `schoolId` isolation; Nelsen default tenant `nelsen-digital` |
+| Media bytes | Presigned upload/play; **local disk** until `MEDIA_STORAGE_DRIVER=r2` |
+| Marketing | Programs, Events, **Blogs** (was Media), **Invest** (static land + tourism ) |
 
 ### Android
 
-| Screen | Works |
-|--------|--------|
-| Courses rail / All Courses | `GET /lms/tracks` (Firebase fallback) |
-| `TrackLearnActivity` | Track detail, enroll, lesson open, patch progress |
+Student Learning (tracks, enroll, lessons, progress). Staff shells thinner than web.
 
 ---
 
-## 3. What it **cannot** do yet (gaps)
+## 3. Gaps before “fully functional” for a paying school
 
-### Multi-tenant / schools — **missing entirely**
-
-- No `schoolId` / org on users, tracks, enrollments
-- No school admin vs Nelsen admin
-- No per-school branding, domains, or isolated reporting
-- No “invite school cohort” / roster import
-
-### Role-split product UI — **weak**
-
-| Role | Reality today |
-|------|----------------|
-| **Student (Mentee)** | Can browse/enroll/learn on web+Android — but no coursework inbox, no “my assignments”, thin progress dashboard |
-| **Mentor** | API for queue/mark/mentees exists — **no dedicated mentor UI** on web; Android not wired to LMS mentor flows |
-| **Admin** | API CMS exists — **no admin UI** on web/Android |
-
-### Learning depth — **partial**
-
-- Quiz: submit score only — no question-bank UI / authoring UI
-- Assignments: API yes — **no student submit UI**, **no mentor mark UI** on web/Android
-- Certificates: list API — no PDF / verify page / share card
-- Events: `/lms/events*` → **501** (not built)
-- Media hardening: public uploads gate / HLS still TODO
-
-### Platform polish
-
-- API public URL still `/nisisi-africa` until the nginx `/nelsen-savannah` alias is live (PM2 already renamed)
-- Web has no mentor/admin shells
-- Android Learning is course-list oriented, not a full “Learning mode” with role home
+| Gap | Status |
+|-----|--------|
+| R2 live + CORS + env on server | Manual — until then video stays on server disk |
+| nginx `/nelsen-savannah` + client URL flip | Manual — still `/nisisi-africa` |
+| Self-hosted Actions runner on monorepo | Manual — API Deploy queues without it |
+| Payments / seats | Deferred — provider not chosen |
+| Quiz authoring CMS | Students submit only |
+| Certificate PDF / verify | List API only |
+| HLS / DRM | Not planned yet |
+| Invite emails (no pre-existing Firebase user) | Must sign in once first |
+| Android mentor/school/admin parity | Thin |
+| Invest deal flow / CMS | Static page only |
 
 ---
 
@@ -254,6 +221,16 @@ Roster import CSV; branding.
 ### L8 — Hardening  
 **Status:** `done`  
 Events decision (**defer**), Postgres-ready schema, media signed-only (play requires token), package rename `nelsen-savannah-api` (public URL `/nisisi-africa` until nginx cutover), CI smoke.
+
+### L9 — Ops cutover + school dry-run (hard parts)  
+**Status:** `in_progress`  
+1. ~~Register Actions runner on monorepo~~ — **done** (`nelsen-server` online; API workflow green)  
+2. nginx `/nelsen-savannah/` — **optional for now**; legacy `/nisisi-africa` returns 200 and Android still uses it (not broken)  
+3. R2 — **deferred** until client demo; stay on **local disk** for testing  
+4. **School dry-run** = create one test school and walk SuperAdmin → SchoolAdmin → mentor → mentee → CMS → teach → learn on web (no guessing URLs)  
+5. Invest page: catalogue + tourism cards + destination carousel (static); listings CMS later  
+
+**Accept:** one partner-shaped school completes the loop on web; deploy green; video OK on local storage for internal tests.
 
 ---
 

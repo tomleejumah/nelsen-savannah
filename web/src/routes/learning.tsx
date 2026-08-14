@@ -1,15 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import {
-  ArrowRight,
-  BookOpen,
-  GraduationCap,
-  Layers,
-  LogIn,
-  LogOut,
-  Search,
-} from "lucide-react";
+import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { LMS_FEATURES } from "@/data/site";
@@ -199,7 +191,7 @@ function LearningPage() {
         <div className="relative mx-auto max-w-4xl text-center">
           <p className="eyebrow text-ember">Learning</p>
           <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-6xl">
-            Mentorship you attend. Learning you keep.
+            Learning you keep.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
             Browse the tracks, enroll, and pick up where you left off.
@@ -253,7 +245,7 @@ function LearningPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 sm:px-8">
+      {/* <section className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="eyebrow text-ember">Tracks</p>
@@ -397,7 +389,7 @@ function LearningPage() {
             );
           })}
         </div>
-      </section>
+      </section> */}
 
       <section className="mx-auto mt-24 max-w-7xl px-5 sm:px-8">
         <div className="rounded-3xl border border-border/70 bg-secondary/40 p-8 sm:p-12">

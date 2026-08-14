@@ -273,6 +273,52 @@ export async function adminSetRole(actorUid, targetUid, userRole) {
   };
 }
 
+/**
+ * Resolve Firebase user by email, then set LMS role.
+ * Target must already have signed in with Google at least once (Auth user exists).
+ */
+export async function adminSetRoleByEmail(actorUid, email, userRole) {
+  const actorRole = await loadUserRole(actorUid);
+  if (!isSuperAdmin(actorRole)) {
+    const err = new Error("SuperAdmin required");
+    err.status = 403;
+    throw err;
+  }
+  const trimmed = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (!trimmed || !trimmed.includes("@")) {
+    const err = new Error("Valid email required");
+    err.status = 400;
+    throw err;
+  }
+  const role = normalizeRole(userRole || "SuperAdmin");
+  const { default: admin } = await import("../config/firebase.js");
+  let user;
+  try {
+    user = await admin.auth().getUserByEmail(trimmed);
+  } catch (err) {
+    if (err?.code === "auth/user-not-found") {
+      const missing = new Error(
+        "No Firebase user with that email — they must sign in once first",
+      );
+      missing.status = 404;
+      throw missing;
+    }
+    throw err;
+  }
+  await setUserRole(user.uid, role);
+  await mirrorRole(user.uid, role);
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      uid: user.uid,
+      email: user.email || trimmed,
+      userRole: role,
+    },
+  };
+}
+
 export async function adminStats(actorUid) {
   const role = await loadUserRole(actorUid);
   const schoolId = await getActorSchoolId(actorUid);

@@ -5,6 +5,7 @@ import type { User } from "firebase/auth";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
+  appointRoleByEmail,
   createSchool,
   fetchSchools,
   patchSchoolAdmins,
@@ -47,6 +48,7 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
   const [adminUid, setAdminUid] = useState("");
   const [appointSchoolId, setAppointSchoolId] = useState("");
   const [appointUid, setAppointUid] = useState("");
+  const [superEmail, setSuperEmail] = useState("");
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -105,6 +107,24 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
     setAppointUid("");
     setMsg("School admin appointed.");
     await load();
+  }
+
+  async function onSuperByEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await appointRoleByEmail(token, {
+      email: superEmail.trim(),
+      userRole: "SuperAdmin",
+    });
+    if (!result.ok) {
+      setMsg(result.error || "Could not appoint SuperAdmin");
+      return;
+    }
+    setSuperEmail("");
+    setMsg(
+      `SuperAdmin set for ${result.data?.email || superEmail} (${result.data?.uid})`,
+    );
   }
 
   return (
@@ -191,6 +211,27 @@ function AdminConsole({ user }: { user: User; me: MeDto }) {
           className="rounded-full border border-border px-5 py-2 text-sm font-semibold"
         >
           Appoint
+        </button>
+      </form>
+
+      <form id="super-admin" onSubmit={(e) => void onSuperByEmail(e)} className="space-y-3">
+        <h2 className="font-display text-lg font-semibold">Appoint SuperAdmin by email</h2>
+        <p className="text-sm text-muted-foreground">
+          They must have signed in with Google at least once so Firebase knows the account.
+        </p>
+        <input
+          required
+          type="email"
+          value={superEmail}
+          onChange={(e) => setSuperEmail(e.target.value)}
+          placeholder="name@example.com"
+          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
+        >
+          Make SuperAdmin
         </button>
       </form>
     </div>

@@ -456,6 +456,21 @@ export async function patchSchoolAdmins(
   );
 }
 
+export async function appointRoleByEmail(
+  idToken: string,
+  body: { email: string; userRole?: MeDto["userRole"] },
+) {
+  return lmsFetch<{ uid: string; email: string; userRole: string }>(
+    "/lms/admin/users/role-by-email",
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 export async function fetchSchoolMembers(idToken: string, schoolId: string) {
   return lmsFetch<{ members: SchoolMemberDto[] }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/members`,

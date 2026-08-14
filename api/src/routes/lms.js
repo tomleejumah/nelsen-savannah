@@ -215,6 +215,12 @@ router.patch(
   requireRoles("Admin"),
   lmsController.adminSetRole,
 );
+router.post(
+  "/admin/users/role-by-email",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.adminSetRoleByEmail,
+);
 router.get(
   "/admin/stats",
   authenticateUser,
