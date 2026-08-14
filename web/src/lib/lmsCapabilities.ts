@@ -74,6 +74,13 @@ export const LMS_TOOLS: LmsTool[] = [
     shells: ["student", "mentor", "school", "admin"],
   },
   {
+    id: "profile",
+    label: "Profile",
+    blurb: "Name, email, enrollments, schools, payments",
+    to: "/profile",
+    shells: ["student", "mentor", "school", "admin"],
+  },
+  {
     id: "queue",
     label: "Marking queue",
     blurb: "Pass or fail pending submissions",

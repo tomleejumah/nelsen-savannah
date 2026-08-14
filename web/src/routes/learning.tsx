@@ -354,6 +354,12 @@ function LearningPage() {
             >
               Certificates
             </Link>
+            <Link
+              to="/profile"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            >
+              Profile
+            </Link>
           </div>
           {me ? (
             <CapabilitiesBoard
