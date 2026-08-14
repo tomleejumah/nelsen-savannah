@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -55,6 +55,7 @@ function authErrorMessage(err: unknown): string {
 }
 
 function LoginPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,6 +64,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [redirecting, setRedirecting] = useState(false);
 
   const loadMe = useCallback(async (u: User, gen: number) => {
     setBusy(true);
@@ -100,6 +102,17 @@ function LoginPage() {
       }
     });
   }, [loadMe]);
+
+  // After sign-in: send them to their role home (no manual URLs)
+  useEffect(() => {
+    if (!user || !me || busy || redirecting) return;
+    const home = shellHomePath(shellFromMe(me));
+    setRedirecting(true);
+    const t = window.setTimeout(() => {
+      void navigate({ to: home });
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [user, me, busy, redirecting, navigate]);
 
   async function onGoogleSignIn() {
     setBusy(true);
@@ -145,6 +158,7 @@ function LoginPage() {
   }
 
   async function onSignOut() {
+    setRedirecting(false);
     setMe(null);
     setUser(null);
     await signOutFully();
@@ -287,9 +301,20 @@ function LoginPage() {
               )}
 
               {me ? (
-                <div className="space-y-2 pt-2">
+                <div className="space-y-3 pt-2">
+                  {redirecting ? (
+                    <p className="text-sm text-muted-foreground">
+                      Opening your {shellFromMe(me)} workspace…
+                    </p>
+                  ) : null}
+                  <Link
+                    to={shellHomePath(shellFromMe(me))}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-ember-gradient px-4 py-3 text-sm font-semibold text-maroon-foreground"
+                  >
+                    Continue to {workspacesForMe(me).find((w) => w.to === shellHomePath(shellFromMe(me)))?.label || "workspace"}
+                  </Link>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Your workspaces
+                    Or pick a workspace
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {workspacesForMe(me).map((w) => (
@@ -298,8 +323,8 @@ function LoginPage() {
                         to={w.to}
                         className={
                           w.to === shellHomePath(shellFromMe(me))
-                            ? "rounded-full bg-ember-gradient px-4 py-2 text-sm font-medium text-maroon-foreground"
-                            : "rounded-full bg-maroon/10 px-4 py-2 text-sm font-medium text-maroon hover:bg-maroon/20"
+                            ? "rounded-full bg-maroon/15 px-4 py-2 text-sm font-medium text-maroon"
+                            : "rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
                         }
                       >
                         {w.label}
