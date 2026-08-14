@@ -297,7 +297,7 @@ export async function schoolMoneyStub(schoolId) {
     currency: "KES",
     balance: 0,
     platformCutBps: Number(process.env.PLATFORM_CUT_BPS || 1000), // 10% placeholder
-    note: "Prototype — tuition lands in school ledger; platform cut TBD; wire M-Pesa/card later.",
+    note: "Prototype — tuition lands in school ledger; wire M-Pesa/card later.",
     recent: [],
   };
 }
