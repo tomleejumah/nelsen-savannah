@@ -66,6 +66,9 @@ router.patch(
 );
 router.get("/progress/me", authenticateUser, lmsController.getProgressMe);
 
+router.post("/checkout", authenticateUser, lmsController.postCheckout);
+router.get("/purchases/me", authenticateUser, lmsController.getMyPurchases);
+
 router.post(
   "/media/upload",
   authenticateUser,
@@ -202,6 +205,48 @@ router.get(
   requireRoles("SchoolAdmin", "Admin", "Mentor"),
   lmsController.getSchoolTutorPayouts,
 );
+router.get(
+  "/schools/:id/cohorts",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.listCohorts,
+);
+router.post(
+  "/schools/:id/cohorts",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.postCohort,
+);
+router.post(
+  "/schools/:id/cohorts/:cohortId/members",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.postCohortMember,
+);
+router.post(
+  "/schools/:id/cohorts/:cohortId/runs",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.postCohortRun,
+);
+router.post(
+  "/schools/:id/cohort-runs/:runId/milestones",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.postMilestone,
+);
+router.put(
+  "/schools/:id/tracks/:trackId/pricing",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.putTrackPricing,
+);
+router.put(
+  "/schools/:id/lessons/:lessonId/quiz",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin"),
+  lmsController.putLessonQuiz,
+);
 router.post(
   "/admin/tracks",
   authenticateUser,
@@ -263,13 +308,12 @@ router.post(
   lmsController.postMediaReap,
 );
 
-// M6 TODO — events (501 until scheduled)
+// Public event seat reservations (no auth)
+router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
+router.post("/events/:eventId/reserve", lmsController.postEventReserve);
+
+// M6 TODO — authenticated events catalogue (501 until scheduled)
 router.get("/events", authenticateUser, lmsController.eventsTodo);
 router.get("/events/:eventId", authenticateUser, lmsController.eventsTodo);
-router.post(
-  "/events/:eventId/reserve",
-  authenticateUser,
-  lmsController.eventsTodo,
-);
 
 export default router;

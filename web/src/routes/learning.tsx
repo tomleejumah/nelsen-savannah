@@ -4,12 +4,16 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
+import {
+  EnrollPaywallModal,
+  formatTrackPrice,
+  useEnrollPaywall,
+} from "@/components/lms/EnrollPaywall";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { LMS_FEATURES } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import {
-  enrollInTrack,
   fetchLmsMe,
   fetchLmsTracks,
   setActiveSchool,
@@ -24,7 +28,7 @@ export const Route = createFileRoute("/learning")({
       {
         name: "description",
         content:
-          "Browse and enroll in Nelsen Savannah learning tracks — Sela, Trailblazers, Scripture Safari, Codelab and more.",
+          "Browse and enroll in Nelsen Savannah Innovation Hub learning tracks — Future Safari, Robotics, Data & AI, Creative, Software Engineering, Sauti, and Kijiji Hub.",
       },
       { property: "og:title", content: "Learning | Nelsen Savannah" },
     ],
@@ -102,6 +106,7 @@ type DisplayTrack = {
   lessons: string;
   trackPercent: number;
   enrolled: boolean;
+  price?: TrackCardDto["price"];
 };
 
 type CatalogFilter = "all" | "enrolled";
@@ -115,7 +120,6 @@ function LearningPage() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<CatalogFilter>("all");
-  const [busyTrack, setBusyTrack] = useState<string | null>(null);
 
   const previewTracks = useMemo<DisplayTrack[]>(
     () =>
@@ -158,6 +162,11 @@ function LearningPage() {
     }
   }, []);
 
+  const paywall = useEnrollPaywall(user, async () => {
+    if (user) await loadTracks(user);
+  });
+  const busyTrack = paywall.busy ? paywall.paywall?.trackId || "busy" : null;
+
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       const gen = bumpAuthGeneration();
@@ -195,24 +204,13 @@ function LearningPage() {
     lessons: t.lessons,
     trackPercent: t.trackPercent,
     enrolled: t.enrolled,
+    price: t.price,
   }));
 
-  async function onEnroll(trackId: string) {
-    if (!user) return;
-    setBusyTrack(trackId);
-    try {
-      const token = await user.getIdToken();
-      const result = await enrollInTrack(token, trackId);
-      if (!result.ok) {
-        setError(result.error || "Enroll failed");
-        return;
-      }
-      await loadTracks(user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Enroll failed");
-    } finally {
-      setBusyTrack(null);
-    }
+  async function onEnroll(trackId: string, title: string) {
+    setError(null);
+    await paywall.enroll(trackId, title);
+    if (paywall.error) setError(paywall.error);
   }
 
   const catalog = liveTracks.length > 0 ? liveTracks : previewTracks;
@@ -461,7 +459,9 @@ function LearningPage() {
                 {showingLive ? (
                   <div className="mt-4 flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-foreground">
-                      {track.enrolled ? `${track.trackPercent}% complete` : "Not enrolled"}
+                      {track.enrolled
+                        ? `${track.trackPercent}% complete`
+                        : formatTrackPrice(track.price)}
                     </span>
                     {track.enrolled ? (
                       <Link
@@ -483,7 +483,7 @@ function LearningPage() {
                         <button
                           type="button"
                           disabled={busyTrack === track.id}
-                          onClick={() => void onEnroll(track.id)}
+                          onClick={() => void onEnroll(track.id, track.title)}
                           className="rounded-full bg-maroon/10 px-3 py-1.5 text-xs font-semibold text-maroon hover:bg-maroon/20 disabled:opacity-50"
                         >
                           {busyTrack === track.id ? "…" : "Enroll"}
@@ -499,6 +499,15 @@ function LearningPage() {
       </section>
 
       <LearningLmsPitch />
+      {paywall.paywall ? (
+        <EnrollPaywallModal
+          paywall={paywall.paywall}
+          busy={paywall.busy}
+          error={paywall.error}
+          onClose={() => paywall.setPaywall(null)}
+          onPay={() => void paywall.payAndEnroll()}
+        />
+      ) : null}
     </div>
   );
 }

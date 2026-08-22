@@ -414,6 +414,10 @@ async function ensureMigrations() {
       ? "ALTER TABLE media_assets ADD COLUMN finalized_at BIGINT"
       : "ALTER TABLE media_assets ADD COLUMN finalized_at INTEGER",
     "ALTER TABLE assignments ADD COLUMN model_answer TEXT",
+    engine === "postgres"
+      ? "ALTER TABLE milestones ADD COLUMN due_at BIGINT"
+      : "ALTER TABLE milestones ADD COLUMN due_at INTEGER",
+    "ALTER TABLE milestones ADD COLUMN requires_previous_completion INTEGER NOT NULL DEFAULT 1",
   ];
   for (const sql of alters) {
     try {
@@ -421,6 +425,169 @@ async function ensureMigrations() {
     } catch {
       /* column already exists */
     }
+  }
+
+  const additiveTables = [
+    `CREATE TABLE IF NOT EXISTS cohorts (
+      cohort_id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL,
+      starts_at BIGINT,
+      ends_at BIGINT,
+      created_by TEXT NOT NULL,
+      created_at BIGINT NOT NULL,
+      updated_at BIGINT NOT NULL,
+      FOREIGN KEY (school_id) REFERENCES schools(school_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS cohort_members (
+      cohort_id TEXT NOT NULL,
+      uid TEXT NOT NULL,
+      role TEXT NOT NULL,
+      joined_at BIGINT NOT NULL,
+      PRIMARY KEY (cohort_id, uid),
+      FOREIGN KEY (cohort_id) REFERENCES cohorts(cohort_id),
+      FOREIGN KEY (uid) REFERENCES users_mirror(uid)
+    )`,
+    `CREATE TABLE IF NOT EXISTS cohort_track_runs (
+      run_id TEXT PRIMARY KEY,
+      cohort_id TEXT NOT NULL,
+      track_id TEXT NOT NULL,
+      starts_at BIGINT,
+      ends_at BIGINT,
+      created_by TEXT NOT NULL,
+      created_at BIGINT NOT NULL,
+      FOREIGN KEY (cohort_id) REFERENCES cohorts(cohort_id),
+      FOREIGN KEY (track_id) REFERENCES tracks(track_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS milestones (
+      milestone_id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      lesson_id TEXT NOT NULL,
+      title TEXT,
+      release_at BIGINT NOT NULL,
+      due_at BIGINT,
+      requires_previous_completion INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at BIGINT NOT NULL,
+      updated_at BIGINT NOT NULL,
+      FOREIGN KEY (run_id) REFERENCES cohort_track_runs(run_id),
+      FOREIGN KEY (lesson_id) REFERENCES lessons(lesson_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS quizzes (
+      quiz_id TEXT PRIMARY KEY,
+      lesson_id TEXT NOT NULL UNIQUE,
+      current_version INTEGER NOT NULL,
+      created_at BIGINT NOT NULL,
+      updated_at BIGINT NOT NULL,
+      FOREIGN KEY (lesson_id) REFERENCES lessons(lesson_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS quiz_versions (
+      quiz_id TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      prompt TEXT NOT NULL,
+      options_json TEXT NOT NULL,
+      correct_option_id TEXT NOT NULL,
+      passing_score INTEGER NOT NULL DEFAULT 80,
+      created_by TEXT NOT NULL,
+      created_at BIGINT NOT NULL,
+      PRIMARY KEY (quiz_id, version),
+      FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS quiz_attempts (
+      attempt_id TEXT PRIMARY KEY,
+      quiz_id TEXT NOT NULL,
+      quiz_version INTEGER NOT NULL,
+      lesson_id TEXT NOT NULL,
+      uid TEXT NOT NULL,
+      selected_option_id TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      passed INTEGER NOT NULL,
+      submitted_at BIGINT NOT NULL,
+      FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id),
+      FOREIGN KEY (lesson_id) REFERENCES lessons(lesson_id),
+      FOREIGN KEY (uid) REFERENCES users_mirror(uid)
+    )`,
+    `CREATE TABLE IF NOT EXISTS cohort_quiz_versions (
+      run_id TEXT NOT NULL,
+      lesson_id TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      prompt TEXT NOT NULL,
+      options_json TEXT NOT NULL,
+      correct_option_id TEXT NOT NULL,
+      passing_score INTEGER NOT NULL DEFAULT 80,
+      created_by TEXT NOT NULL,
+      created_at BIGINT NOT NULL,
+      PRIMARY KEY (run_id, lesson_id, version),
+      FOREIGN KEY (run_id) REFERENCES cohort_track_runs(run_id),
+      FOREIGN KEY (lesson_id) REFERENCES lessons(lesson_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS cohort_quiz_attempts (
+      attempt_id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      lesson_id TEXT NOT NULL,
+      quiz_version INTEGER NOT NULL,
+      uid TEXT NOT NULL,
+      selected_option_id TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      passed INTEGER NOT NULL,
+      submitted_at BIGINT NOT NULL,
+      FOREIGN KEY (run_id) REFERENCES cohort_track_runs(run_id),
+      FOREIGN KEY (lesson_id) REFERENCES lessons(lesson_id),
+      FOREIGN KEY (uid) REFERENCES users_mirror(uid)
+    )`,
+    `CREATE TABLE IF NOT EXISTS track_pricing (
+      track_id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL,
+      currency TEXT NOT NULL,
+      amount_minor BIGINT NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,
+      updated_by TEXT NOT NULL,
+      updated_at BIGINT NOT NULL,
+      FOREIGN KEY (track_id) REFERENCES tracks(track_id),
+      FOREIGN KEY (school_id) REFERENCES schools(school_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS purchases (
+      purchase_id TEXT PRIMARY KEY,
+      uid TEXT NOT NULL,
+      school_id TEXT NOT NULL,
+      track_id TEXT NOT NULL,
+      currency TEXT NOT NULL,
+      amount_minor BIGINT NOT NULL,
+      status TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      provider_reference TEXT,
+      created_at BIGINT NOT NULL,
+      paid_at BIGINT,
+      FOREIGN KEY (uid) REFERENCES users_mirror(uid),
+      FOREIGN KEY (school_id) REFERENCES schools(school_id),
+      FOREIGN KEY (track_id) REFERENCES tracks(track_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS entitlements (
+      uid TEXT NOT NULL,
+      track_id TEXT NOT NULL,
+      purchase_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      granted_at BIGINT NOT NULL,
+      expires_at BIGINT,
+      PRIMARY KEY (uid, track_id),
+      FOREIGN KEY (uid) REFERENCES users_mirror(uid),
+      FOREIGN KEY (track_id) REFERENCES tracks(track_id),
+      FOREIGN KEY (purchase_id) REFERENCES purchases(purchase_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS event_reservations (
+      reservation_id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      full_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT,
+      program TEXT,
+      created_at BIGINT NOT NULL,
+      UNIQUE(event_id, email)
+    )`,
+  ];
+  for (const sql of additiveTables) {
+    await dbRun(sql);
   }
 
   try {
@@ -449,6 +616,17 @@ CREATE TABLE IF NOT EXISTS school_memberships (
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_uid ON school_memberships(uid)",
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_email ON school_memberships(email)",
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_school ON school_memberships(school_id)",
+    "CREATE INDEX IF NOT EXISTS idx_cohorts_school ON cohorts(school_id)",
+    "CREATE INDEX IF NOT EXISTS idx_cohort_members_uid ON cohort_members(uid)",
+    "CREATE INDEX IF NOT EXISTS idx_cohort_runs_cohort_track ON cohort_track_runs(cohort_id, track_id)",
+    "CREATE INDEX IF NOT EXISTS idx_milestones_run_order ON milestones(run_id, sort_order)",
+    "CREATE INDEX IF NOT EXISTS idx_quiz_attempts_uid_lesson ON quiz_attempts(uid, lesson_id)",
+    "CREATE INDEX IF NOT EXISTS idx_cohort_quiz_versions_run_lesson ON cohort_quiz_versions(run_id, lesson_id, version)",
+    "CREATE INDEX IF NOT EXISTS idx_cohort_quiz_attempts_uid_lesson ON cohort_quiz_attempts(uid, lesson_id)",
+    "CREATE INDEX IF NOT EXISTS idx_purchases_uid ON purchases(uid, created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_entitlements_track ON entitlements(track_id, status)",
+    "CREATE INDEX IF NOT EXISTS idx_event_reservations_event ON event_reservations(event_id)",
+    "CREATE INDEX IF NOT EXISTS idx_event_reservations_email ON event_reservations(email)",
   ];
   for (const sql of indexes) {
     try {

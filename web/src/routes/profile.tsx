@@ -20,8 +20,10 @@ import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAu
 import {
   fetchLmsMe,
   fetchMyEnrollments,
+  fetchMyPurchases,
   type EnrollmentDto,
   type MeDto,
+  type PurchaseDto,
 } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/profile")({
@@ -41,6 +43,7 @@ function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseDto[]>([]);
   const [authReady, setAuthReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,9 +57,10 @@ function ProfilePage() {
     try {
       const token = await u.getIdToken();
       if (gen !== getAuthGeneration()) return;
-      const [meEnv, enrollEnv] = await Promise.all([
+      const [meEnv, enrollEnv, payEnv] = await Promise.all([
         fetchLmsMe(token),
         fetchMyEnrollments(token),
+        fetchMyPurchases(token),
       ]);
       if (gen !== getAuthGeneration()) return;
       if (!meEnv.ok || !meEnv.data) {
@@ -67,11 +71,13 @@ function ProfilePage() {
         setNameDraft(meEnv.data.displayName || u.displayName || "");
       }
       setEnrollments(enrollEnv.data?.enrollments || []);
+      setPurchases(payEnv.data?.purchases || []);
     } catch (err) {
       if (gen !== getAuthGeneration()) return;
       setError(err instanceof Error ? err.message : "Network error");
       setMe(null);
       setEnrollments([]);
+      setPurchases([]);
     } finally {
       if (gen === getAuthGeneration()) setLoading(false);
     }
@@ -86,6 +92,7 @@ function ProfilePage() {
       else {
         setMe(null);
         setEnrollments([]);
+        setPurchases([]);
         setNameDraft("");
       }
     });
@@ -297,23 +304,32 @@ function ProfilePage() {
 
         <section className="mt-8 rounded-3xl border border-border/70 bg-secondary/40 p-6 sm:p-8">
           <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-            <CreditCard className="h-5 w-5 text-ember" /> Payments
+            <CreditCard className="h-5 w-5 text-ember" /> Purchases
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Payment rails are not live yet — this is a placeholder for school fees and tutor
-            payouts.
+            Tracks you’ve paid for. Demo checkout for now — live rails later.
           </p>
-          <div className="mt-5 space-y-3">
-            <div className="rounded-2xl border border-dashed border-border bg-card/60 px-4 py-3">
-              <p className="text-sm font-medium">Balance</p>
-              <p className="mt-1 font-display text-2xl font-semibold">KES 0.00</p>
-              <p className="mt-1 text-xs text-muted-foreground">Dummy — no charges yet</p>
-            </div>
-            <div className="rounded-2xl border border-dashed border-border bg-card/60 px-4 py-3">
-              <p className="text-sm font-medium">Recent activity</p>
-              <p className="mt-2 text-sm text-muted-foreground">No transactions</p>
-            </div>
-          </div>
+          {purchases.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">No purchases yet.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {purchases.map((p) => (
+                <li
+                  key={p.purchaseId}
+                  className="rounded-2xl border border-border/60 bg-card/60 px-4 py-3 text-sm"
+                >
+                  <p className="font-medium">{p.courseTitle || p.trackId}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {p.currency} {(p.amountMinor / 100).toFixed(2)} · {p.status}
+                    {p.paidAt ? ` · ${new Date(p.paidAt).toLocaleDateString()}` : ""}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Access: paid track · {p.trackId}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <div className="mt-10 flex flex-wrap gap-3">

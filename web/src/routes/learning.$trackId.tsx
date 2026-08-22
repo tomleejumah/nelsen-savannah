@@ -16,7 +16,11 @@ import {
 
 import { getFirebaseAuth } from "@/lib/firebase";
 import {
-  enrollInTrack,
+  EnrollPaywallModal,
+  formatTrackPrice,
+  useEnrollPaywall,
+} from "@/components/lms/EnrollPaywall";
+import {
   fetchLmsModule,
   fetchLmsTrack,
   fetchMyProgress,
@@ -59,7 +63,6 @@ function TrackDetailPage() {
   const [modules, setModules] = useState<ModuleWithLessons[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [enrolling, setEnrolling] = useState(false);
 
   const load = useCallback(
     async (u: User) => {
@@ -113,6 +116,10 @@ function TrackDetailPage() {
     [trackId],
   );
 
+  const paywall = useEnrollPaywall(user, async () => {
+    if (user) await load(user);
+  });
+
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       setUser(next);
@@ -126,22 +133,7 @@ function TrackDetailPage() {
   }, [load]);
 
   async function onEnroll() {
-    if (!user) return;
-    setEnrolling(true);
-    setError(null);
-    try {
-      const token = await user.getIdToken();
-      const result = await enrollInTrack(token, trackId);
-      if (!result.ok) {
-        setError(result.error || "Enroll failed");
-        return;
-      }
-      await load(user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Enroll failed");
-    } finally {
-      setEnrolling(false);
-    }
+    await paywall.enroll(trackId, track?.courseTitle);
   }
 
   const track = detail?.track;
@@ -150,13 +142,18 @@ function TrackDetailPage() {
     detail?.enrollment?.trackPercent ?? track?.trackPercent ?? 0;
 
   const continueLessonId = useMemo(() => {
+    const locks = new Map(
+      (detail?.cohortRun?.milestones || []).map((m) => [m.lessonId, m]),
+    );
     for (const mod of modules) {
       for (const lesson of mod.lessons) {
+        const mile = locks.get(lesson.lessonId);
+        if (mile && !mile.available) continue;
         if ((lesson.lessonPercent ?? 0) < 80) return lesson.lessonId;
       }
     }
     return modules[0]?.lessons[0]?.lessonId ?? null;
-  }, [modules]);
+  }, [modules, detail]);
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
@@ -221,11 +218,15 @@ function TrackDetailPage() {
             {!enrolled ? (
               <button
                 type="button"
-                disabled={enrolling}
+                disabled={paywall.busy}
                 onClick={() => void onEnroll()}
                 className="mt-8 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
               >
-                {enrolling ? "Enrolling…" : "Enroll in this track"}
+                {paywall.busy
+                  ? "Working…"
+                  : track.price?.isPaid
+                    ? `Enroll · ${formatTrackPrice(track.price)}`
+                    : "Enroll in this track"}
               </button>
             ) : continueLessonId ? (
               <Link
@@ -235,6 +236,41 @@ function TrackDetailPage() {
               >
                 Continue learning <ArrowRight className="h-4 w-4" />
               </Link>
+            ) : null}
+
+            {detail.cohortRun?.milestones?.length ? (
+              <section className="mt-12">
+                <h2 className="text-xl font-bold">Cohort walkthrough</h2>
+                <ol className="mt-4 space-y-2">
+                  {detail.cohortRun.milestones.map((m, i) => (
+                    <li
+                      key={m.milestoneId}
+                      className="rounded-xl border border-border/70 bg-card px-4 py-3 text-sm"
+                    >
+                      <span className="font-medium">
+                        {i + 1}. {m.title || m.lessonId}
+                      </span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {m.completed
+                          ? "done"
+                          : m.available
+                            ? "open"
+                            : m.lockedReason === "release_date"
+                              ? `unlocks ${new Date(m.releaseAt).toLocaleDateString()}`
+                              : "complete the previous milestone first"}
+                      </span>
+                      {m.dueAt ? (
+                        <span
+                          className={`ml-2 text-xs ${m.overdue ? "font-semibold text-destructive" : "text-muted-foreground"}`}
+                        >
+                          · {m.overdue ? "overdue" : "due"}{" "}
+                          {new Date(m.dueAt).toLocaleDateString()}
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+              </section>
             ) : null}
 
             <section className="mt-12">
@@ -258,7 +294,10 @@ function TrackDetailPage() {
                     {mod.lessons.length > 0 ? (
                       <ul className="mt-5 space-y-2 border-t border-border/60 pt-4">
                         {mod.lessons.map((lesson, li) => {
-                          const canOpen = enrolled;
+                          const mile = detail.cohortRun?.milestones?.find(
+                            (item) => item.lessonId === lesson.lessonId,
+                          );
+                          const canOpen = enrolled && (!mile || mile.available);
                           const row = (
                             <>
                               <span className="text-xs text-muted-foreground">
@@ -323,6 +362,15 @@ function TrackDetailPage() {
           </>
         ) : null}
       </div>
+      {paywall.paywall ? (
+        <EnrollPaywallModal
+          paywall={paywall.paywall}
+          busy={paywall.busy}
+          error={paywall.error}
+          onClose={() => paywall.setPaywall(null)}
+          onPay={() => void paywall.payAndEnroll()}
+        />
+      ) : null}
     </div>
   );
 }

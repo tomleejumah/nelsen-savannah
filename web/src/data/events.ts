@@ -1,6 +1,6 @@
 /**
  * Site events — aligned with Android `Event` (Firebase `Events/{eventId}`).
- * Source of truth fields match CreateEventActivity / Event.toMap().
+ * Seat caps must match api/src/data/siteEvents.js
  */
 
 export type AppEvent = {
@@ -19,15 +19,14 @@ export type AppEvent = {
   status: number;
   description: string | null;
   mode: "physical" | "online";
-  /** Physical venue / address (Android `location`) */
   location: string;
   meetingLink: string;
   participants?: string[] | null;
-  /** Site RSVP extras (not required on Android create) */
   seats?: number;
   seatsTaken?: number;
   price?: string;
   program?: string;
+  facilitators?: string[];
 };
 
 export function eventFormat(e: AppEvent): "In person" | "Online" {
@@ -47,120 +46,141 @@ export function eventTimeRange(e: AppEvent): string {
 
 export function eventDateLabel(e: AppEvent): string {
   return new Date(e.date).toLocaleDateString("en-GB", {
+    weekday: "short",
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-/** Sample / seed events — same shape Android writes to Firebase */
 export const EVENTS: AppEvent[] = [
   {
-    eventId: "evt-sela-kickoff",
-    title: "Sela programme: Cohort Kickoff",
-    date: Date.parse("2026-09-12T09:00:00+03:00"),
+    eventId: "evt-intake-aug-2026",
+    title: "Innovation Hub — First Intake",
+    date: Date.parse("2026-08-29T09:00:00+03:00"),
     startTime: "9:00 AM",
     endTime: "4:00 PM",
     eventType: "event",
     mentorId: "",
     menteeId: "",
-    mentorName: "Nelsen Savannah",
+    mentorName: "Tomee Juma & Evans Nyairo",
     menteeName: "",
     status: 0,
     description:
-      "Meet your mentor, set goals for the season, and walk out with a clear next-step map.",
+      "Opening intake for Nelsen Savannah Innovation Hub — meet facilitators, tour the programmes, and reserve your free seat for the first cohort.",
     mode: "physical",
-    location: "Sarit Expo Centre, Westlands",
+    location: "Nairobi Innovation Hub (venue TBA)",
     meetingLink: "",
-    seats: 400,
-    seatsTaken: 318,
+    seats: 100,
     price: "Free",
-    program: "Sela programme",
+    program: "All programmes",
+    facilitators: ["Tomee Juma", "Evans Nyairo"],
   },
   {
-    eventId: "evt-trailblazers-lab",
-    title: "Trailblazers: Live Practice Lab",
-    date: Date.parse("2026-09-24T17:30:00+03:00"),
-    startTime: "5:30 PM",
-    endTime: "8:00 PM",
-    eventType: "event",
-    mentorId: "",
-    menteeId: "",
-    mentorName: "Nelsen Savannah",
-    menteeName: "",
-    status: 0,
-    description: "Peer cohorts, mentor panels, and written feedback within 48 hours.",
-    mode: "physical",
-    location: "Nelsen Savannah Hub, Kilimani",
-    meetingLink: "",
-    seats: 60,
-    seatsTaken: 51,
-    price: "KES 500",
-    program: "Trailblazers",
-  },
-  {
-    eventId: "evt-codelab-sprint",
-    title: "Go for it Codelab Sprint Day",
-    date: Date.parse("2026-10-04T10:00:00+03:00"),
-    startTime: "10:00 AM",
+    eventId: "evt-future-safari-open",
+    title: "Future Safari: Innovation Open Day",
+    date: Date.parse("2026-09-12T09:00:00+03:00"),
+    startTime: "9:00 AM",
     endTime: "1:00 PM",
     eventType: "event",
     mentorId: "",
     menteeId: "",
-    mentorName: "Nelsen Savannah",
+    mentorName: "Nelsen Savannah Innovation Hub",
     menteeName: "",
     status: 0,
-    description: "Ship a small project with mentor review — portfolio-ready by the end of the day.",
-    mode: "online",
-    location: "",
-    meetingLink: "https://meet.google.com/",
-    seats: 120,
-    seatsTaken: 44,
+    description:
+      "Digital literacy, design thinking, and emerging tech awareness — explore the innovation cycle.",
+    mode: "physical",
+    location: "Nairobi Innovation Hub (venue TBA)",
+    meetingLink: "",
+    seats: 60,
     price: "Free",
-    program: "Go for it Codelab",
+    program: "Future Safari",
   },
   {
-    eventId: "evt-scripture-safari",
-    title: "Scripture Safari Campus Gathering",
-    date: Date.parse("2026-10-18T14:00:00+03:00"),
+    eventId: "evt-robotics-lab",
+    title: "Robotics & Automation Lab: Build Session",
+    date: Date.parse("2026-09-24T17:00:00+03:00"),
+    startTime: "5:00 PM",
+    endTime: "8:00 PM",
+    eventType: "event",
+    mentorId: "",
+    menteeId: "",
+    mentorName: "Nelsen Savannah Innovation Hub",
+    menteeName: "",
+    status: 0,
+    description:
+      "Hands-on Arduino, sensors, and actuators — introductory build for new robotics cohort members.",
+    mode: "physical",
+    location: "Nairobi Innovation Hub (venue TBA)",
+    meetingLink: "",
+    seats: 40,
+    price: "Free",
+    program: "Savannah Robotics & Automation Lab",
+  },
+  {
+    eventId: "evt-data-ai-capstone",
+    title: "Data & AI Academy: Capstone Showcase",
+    date: Date.parse("2026-10-04T14:00:00+03:00"),
     startTime: "2:00 PM",
     endTime: "5:00 PM",
     eventType: "event",
     mentorId: "",
     menteeId: "",
-    mentorName: "Nelsen Savannah",
+    mentorName: "Nelsen Savannah Innovation Hub",
     menteeName: "",
     status: 0,
     description:
-      "Faith-rooted conversation on purpose, pressure, and walking with a mentor community.",
-    mode: "physical",
-    location: "Kenyatta University Main Hall",
-    meetingLink: "",
-    seats: 250,
-    seatsTaken: 96,
+      "Learners present data and AI projects — evidence-led decisions and responsible use of emerging tools.",
+    mode: "online",
+    location: "",
+    meetingLink: "https://meet.google.com/",
+    seats: 80,
     price: "Free",
-    program: "Scripture Safari",
+    program: "Savannah Data & AI Academy",
   },
   {
-    eventId: "evt-mentor-mixer",
-    title: "Nelsen Savannah Mentor Mixer",
-    date: Date.parse("2026-11-07T18:00:00+03:00"),
-    startTime: "6:00 PM",
-    endTime: "9:00 PM",
+    eventId: "evt-kijiji-demo-day",
+    title: "Kijiji Hub: Community Demo Day",
+    date: Date.parse("2026-10-18T10:00:00+03:00"),
+    startTime: "10:00 AM",
+    endTime: "4:00 PM",
     eventType: "event",
     mentorId: "",
     menteeId: "",
-    mentorName: "Nelsen Savannah",
+    mentorName: "Nelsen Savannah Innovation Hub",
     menteeName: "",
     status: 0,
     description:
-      "Curated pairing night across programs. Come with one question, leave with a mentor.",
+      "Community innovation pitches — from problem identification through MVPs, business models, and launch.",
     mode: "physical",
-    location: "The Alchemist, Westlands",
+    location: "Nairobi Innovation Hub (venue TBA)",
     meetingLink: "",
-    seats: 150,
-    seatsTaken: 143,
-    price: "KES 1,000",
-    program: "Trailblazers",
+    seats: 60,
+    price: "Free",
+    program: "Kijiji Hub",
+  },
+  {
+    eventId: "evt-creative-lab",
+    title: "Savannah Creative Lab: Portfolio Review",
+    date: Date.parse("2026-11-07T15:00:00+03:00"),
+    startTime: "3:00 PM",
+    endTime: "6:00 PM",
+    eventType: "event",
+    mentorId: "",
+    menteeId: "",
+    mentorName: "Nelsen Savannah Innovation Hub",
+    menteeName: "",
+    status: 0,
+    description:
+      "Creative outputs, storytelling, and design critique — build a portfolio that communicates your work clearly.",
+    mode: "physical",
+    location: "Nairobi Innovation Hub (venue TBA)",
+    meetingLink: "",
+    seats: 40,
+    price: "Free",
+    program: "Savannah Creative Lab",
   },
 ];
+
+export const FEATURED_EVENT = EVENTS[0]!;

@@ -84,18 +84,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       // Browser Translate: declare page language (Chrome/Edge/Safari prompt against this).
       { httpEquiv: "content-language", content: "en" },
-      { title: "Nelsen Savanna — Mentors & Mentees" },
+      { title: "Nelsen Savannah Innovation Hub" },
       {
         name: "description",
         content:
-          "Nelsen Savanna connects young people with mentors for career, communication and life guidance.",
+          "Innovation Hub programmes — technology education, creativity, communication, and practical problem-solving in Nairobi, Kenya.",
       },
-      { name: "author", content: "Nelsen Savanna" },
-      { property: "og:title", content: "Nelsen Savanna — Mentors & Mentees" },
+      { name: "author", content: "Nelsen Savannah" },
+      { property: "og:title", content: "Nelsen Savannah Innovation Hub" },
       {
         property: "og:description",
         content:
-          "Youth guidance in every aspect: careers, comms, interviews and social life.",
+          "Seven connected programmes from Future Safari to Kijiji Hub — learn, create, code, build, and launch.",
       },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "en_US" },

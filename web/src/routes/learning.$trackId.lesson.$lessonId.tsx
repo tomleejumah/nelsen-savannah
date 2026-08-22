@@ -123,6 +123,7 @@ function LessonPage() {
   const [error, setError] = useState<string | null>(null);
   const [trackPercent, setTrackPercent] = useState<number | null>(null);
   const [quizScore, setQuizScore] = useState(80);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [assignmentText, setAssignmentText] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
 
@@ -132,10 +133,6 @@ function LessonPage() {
       setError(null);
       try {
         const token = await u.getIdToken();
-        await patchLessonProgress(token, lessonId, {
-          opened: true,
-          lastPlatform: "web",
-        });
         const envelope = await fetchLmsLesson(token, lessonId);
         if (!envelope.ok || !envelope.data?.lesson) {
           setLesson(null);
@@ -143,6 +140,12 @@ function LessonPage() {
           return;
         }
         setLesson(envelope.data.lesson);
+        if (!envelope.data.lesson.milestone || envelope.data.lesson.milestone.available) {
+          await patchLessonProgress(token, lessonId, {
+            opened: true,
+            lastPlatform: "web",
+          });
+        }
       } catch (err) {
         setLesson(null);
         setError(err instanceof Error ? err.message : "Network error");
@@ -213,11 +216,19 @@ function LessonPage() {
     setError(null);
     try {
       const token = await user.getIdToken();
-      const result = await submitLessonQuiz(token, lessonId, {
-        score: passed ? Math.max(quizScore, 80) : Math.min(quizScore, 79),
-        passed,
-        lastPlatform: "web",
-      });
+      const authored = lesson?.quiz?.mode === "single_answer";
+      if (authored && !selectedOptionId) {
+        setError("Choose an answer first.");
+        setSaving(false);
+        return;
+      }
+      const result = await submitLessonQuiz(token, lessonId, authored
+        ? { selectedOptionId: selectedOptionId || undefined, lastPlatform: "web" }
+        : {
+            score: passed ? Math.max(quizScore, 80) : Math.min(quizScore, 79),
+            passed,
+            lastPlatform: "web",
+          });
       if (!result.ok || !result.data) {
         setError(result.error || "Quiz submit failed");
         return;
@@ -295,6 +306,14 @@ function LessonPage() {
           <>
             <p className="eyebrow mt-8 capitalize text-ember">{lesson.type}</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{lesson.title}</h1>
+            {lesson.milestone && !lesson.milestone.available ? (
+              <p className="mt-4 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm">
+                This milestone is locked
+                {lesson.milestone.lockedReason === "release_date"
+                  ? ` until ${new Date(lesson.milestone.releaseAt).toLocaleString()}.`
+                  : " until you complete the previous one."}
+              </p>
+            ) : null}
             {lesson.estimatedMinutes > 0 && (
               <p className="mt-2 text-sm text-muted-foreground">
                 ~{lesson.estimatedMinutes} min
@@ -316,7 +335,36 @@ function LessonPage() {
               ) : null}
             </div>
 
-            {showQuiz && (
+            {showQuiz && lesson.quiz?.mode === "single_answer" ? (
+              <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
+                <h2 className="font-display text-lg font-semibold">Quiz</h2>
+                <p className="text-sm text-muted-foreground">{lesson.quiz.prompt}</p>
+                <div className="space-y-2">
+                  {(lesson.quiz.options || []).map((option) => (
+                    <label
+                      key={option.id}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
+                    >
+                      <input
+                        type="radio"
+                        name="quiz-option"
+                        checked={selectedOptionId === option.id}
+                        onChange={() => setSelectedOptionId(option.id)}
+                      />
+                      {option.text}
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={saving || !selectedOptionId}
+                  onClick={() => void onSubmitQuiz(true)}
+                  className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
+                >
+                  Submit answer
+                </button>
+              </div>
+            ) : showQuiz ? (
               <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
                 <h2 className="font-display text-lg font-semibold">Quiz</h2>
                 <p className="text-sm text-muted-foreground">
@@ -353,7 +401,7 @@ function LessonPage() {
                   </button>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {showAssignment && (
               <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">

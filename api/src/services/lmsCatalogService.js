@@ -20,7 +20,7 @@ function parseAudience(json) {
   }
 }
 
-function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false, lessonCount, moduleCount } = {}) {
+function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false, lessonCount, moduleCount, price } = {}) {
   const trackId = row.track_id || row.trackId;
   const lessons =
     lessonCount != null
@@ -51,6 +51,7 @@ function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false
       moduleCount ?? row.module_count ?? row.moduleCount ?? 0,
     ),
     schoolId: row.school_id || row.schoolId || "nelsen-digital",
+    price: price || { isPaid: false, amountMinor: 0, currency: "USD" },
   };
 }
 
@@ -129,6 +130,22 @@ async function moduleCountByTrack() {
   return new Map(rows.map((r) => [r.track_id, Number(r.c)]));
 }
 
+async function pricingByTrack() {
+  const rows = await dbAll(
+    "SELECT track_id, currency, amount_minor, active FROM track_pricing",
+  );
+  return new Map(
+    rows.map((row) => [
+      row.track_id,
+      {
+        isPaid: Boolean(row.active) && Number(row.amount_minor) > 0,
+        amountMinor: row.active ? Number(row.amount_minor) : 0,
+        currency: row.currency || "USD",
+      },
+    ]),
+  );
+}
+
 async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filterSchool } = {}) {
   const user = await dbGet(
     "SELECT school_id, active_school_id FROM users_mirror WHERE uid = ?",
@@ -149,11 +166,12 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
      ORDER BY sort_order ASC, track_id ASC`,
     [schoolId, schoolId],
   );
-  const [likes, enrollMap, lessonCounts, moduleCounts] = await Promise.all([
+  const [likes, enrollMap, lessonCounts, moduleCounts, pricing] = await Promise.all([
     likesFor(uid),
     enrollmentsFor(uid),
     lessonCountByTrack(),
     moduleCountByTrack(),
+    pricingByTrack(),
   ]);
 
   let tracks = rows.map((row) => {
@@ -165,6 +183,7 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
       isLiked: likes.has(trackId),
       lessonCount: lessonCounts.get(trackId) || 0,
       moduleCount: moduleCounts.get(trackId) || 0,
+      price: pricing.get(trackId),
     });
   });
 
@@ -236,7 +255,7 @@ export async function getTrackById(uid, trackId) {
       if (!row) {
         return { source: getPrimaryEngine(), data: null, notFound: true };
       }
-      const [mods, likes, enrollMap, lessonCounts, moduleLessonCounts] =
+      const [mods, likes, enrollMap, lessonCounts, moduleLessonCounts, pricing] =
         await Promise.all([
           dbAll(
             "SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order ASC",
@@ -246,12 +265,14 @@ export async function getTrackById(uid, trackId) {
           enrollmentsFor(uid),
           lessonCountByTrack(),
           lessonCountByModule(),
+          pricingByTrack(),
         ]);
       const track = mapTrackCard(row, {
         enrolled: enrollMap.has(trackId),
         trackPercent: enrollMap.get(trackId) || 0,
         isLiked: likes.has(trackId),
         lessonCount: lessonCounts.get(trackId) || 0,
+        price: pricing.get(trackId),
       });
       track.moduleCount = mods.length;
       const modules = mods.map((m) =>
@@ -267,9 +288,13 @@ export async function getTrackById(uid, trackId) {
             status: "in_progress",
           }
         : null;
+      const { getTrackMilestones } = await import(
+        "./lmsLearningCommerceService.js"
+      );
+      const cohortRun = await getTrackMilestones(uid, trackId);
       return {
         source: getPrimaryEngine(),
-        data: { track, modules, enrollment },
+        data: { track, modules, enrollment, cohortRun },
       };
     } catch (err) {
       console.error("[lms-track] primary failed:", err.message);
@@ -376,6 +401,16 @@ export async function getLessonById(uid, lessonId) {
 
       const hasQuiz = Boolean(lesson.hasQuiz);
       const hasAssignment = Boolean(lesson.hasAssignment);
+      const {
+        getAuthoredQuiz,
+        getTrackMilestones,
+      } = await import("./lmsLearningCommerceService.js");
+      const [authoredQuiz, cohortRun] = await Promise.all([
+        hasQuiz ? getAuthoredQuiz(uid, lessonId, row.track_id) : null,
+        getTrackMilestones(uid, row.track_id),
+      ]);
+      const milestone =
+        cohortRun.milestones.find((item) => item.lessonId === lessonId) || null;
 
       return {
         source: getPrimaryEngine(),
@@ -387,13 +422,14 @@ export async function getLessonById(uid, lessonId) {
             playbackExpiresAt,
             bodyHtml: null,
             quiz: hasQuiz
-              ? {
+              ? authoredQuiz || {
                   mode: "self_score",
                   prompt:
                     lesson.does ||
                     "Answer the lesson questions, then record your score (0–100).",
                 }
               : null,
+            milestone,
             assignmentPrompt: hasAssignment
               ? lesson.does ||
                 "Write your response below and submit for mentor review."

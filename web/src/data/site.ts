@@ -1,133 +1,235 @@
 export const ORG = {
   name: "Nelsen Savannah",
   legal: "Nelsen Savannah Organization + Company Limited",
-  tagline: "Every young person deserves a map, not a guess.",
+  hubName: "Nelsen Savannah Innovation Hub",
+  tagline: "Learn, create, code, build — and launch what matters.",
+  vision:
+    "An accessible innovation ecosystem where people learn, communicate, create, code, build, understand emerging technologies, and transform ideas into practical solutions.",
   email: "hello@nelsensavanna.co.ke",
-  phone: "+254 ",
-  phoneAlt: "+254 ",
-  whatsapp: "254 ",
+  website: "https://nelsav.com",
   location: "Nairobi, Kenya",
   websiteLegacy: "https://www.nisisi.africa",
 };
 
+export const FACILITATORS = [
+  { name: "Tomee Juma", role: "Lead facilitator" },
+  { name: "Evans Nyairo", role: "Lead facilitator" },
+] as const;
+
+export const FIRST_INTAKE = {
+  eventId: "evt-intake-aug-2026",
+  label: "Friday 29 August 2026",
+  dateMs: Date.parse("2026-08-29T09:00:00+03:00"),
+} as const;
+
+export const CORE_VALUES = [
+  { key: "EXPLORE", detail: "Discover opportunities and emerging technologies." },
+  { key: "COMMUNICATE", detail: "Express ideas clearly and collaborate effectively." },
+  { key: "CREATE", detail: "Turn imagination into meaningful work." },
+  { key: "CODE", detail: "Use technology to solve problems." },
+  { key: "BUILD", detail: "Develop practical products, prototypes, and solutions." },
+  { key: "UNDERSTAND", detail: "Use knowledge, evidence, and data to make better decisions." },
+  {
+    key: "INNOVATE & LAUNCH",
+    detail: "Transform validated ideas into solutions, ventures, and impact.",
+  },
+] as const;
+
+export const INNOVATION_CYCLE = [
+  "Identify",
+  "Research",
+  "Ideate",
+  "Design",
+  "Build",
+  "Test",
+  "Improve",
+  "Present",
+  "Launch",
+] as const;
+
+export const LEARNING_MODEL =
+  "Programmes move learners from exposure and foundational skills toward practical projects, collaboration, innovation, and real-world application.";
+
+export const APPROACH =
+  "Participants communicate ideas, create outputs, code solutions, build practical projects, understand evidence and technology, collaborate with others, and develop solutions with measurable value.";
+
 export type Program = {
   slug: string;
   title: string;
+  subtitle: string;
   blurb: string;
   audience: string;
   tone: "brand" | "ember" | "maroon";
+  topics: string[];
 };
 
 export const PROGRAMS: Program[] = [
   {
-    slug: "sela-programme",
-    title: "Sela programme",
+    slug: "future-safari",
+    title: "Future Safari",
+    subtitle: "Future skills and innovation",
     blurb:
-      "Guided mentorship pathway for young people building clarity, confidence and next steps.",
-    audience: "Mentees",
+      "Entry pathway for digital literacy, emerging tech awareness, design thinking, and innovation challenges.",
+    audience: "Explorers",
     tone: "brand",
+    topics: [
+      "Digital literacy & AI awareness",
+      "Introduction to coding & robotics",
+      "Design thinking & innovation challenges",
+      "Future careers & entrepreneurship fundamentals",
+    ],
   },
   {
-    slug: "trailblazers",
-    title: "Trailblazers",
+    slug: "savannah-robotics-automation-lab",
+    title: "Savannah Robotics & Automation Lab",
+    subtitle: "Robotics, IoT and engineering",
     blurb:
-      "For young leaders ready to stretch — peer cohorts, mentor access and real-world exposure.",
-    audience: "Emerging leaders",
+      "Hands-on robotics, electronics, microcontrollers, sensors, and automation — from builds to competitions.",
+    audience: "Engineering",
     tone: "ember",
+    topics: [
+      "Arduino, sensors & actuators",
+      "Robotics programming & motor control",
+      "Internet of Things & embedded systems",
+      "Robot design, assembly & engineering challenges",
+    ],
   },
   {
-    slug: "scripture-safari",
-    title: "Scripture Safari",
-    blurb: "Faith-rooted guidance that walks with mentees through life, purpose and community.",
-    audience: "Faith & life",
-    tone: "maroon",
-  },
-  {
-    slug: "go-for-it-codelab",
-    title: "Go for it Codelab",
+    slug: "savannah-data-ai-academy",
+    title: "Savannah Data & AI Academy",
+    subtitle: "Data science and artificial intelligence",
     blurb:
-      "Hands-on coding lab — projects, mentor feedback and skills you can show in a portfolio.",
-    audience: "Aspiring builders",
+      "From data literacy and visualization to Python, generative AI, and responsible AI capstone projects.",
+    audience: "Data & AI",
+    tone: "maroon",
+    topics: [
+      "Excel, statistics & Power BI",
+      "Python for data analysis",
+      "Generative AI & prompt engineering",
+      "Machine learning fundamentals & data storytelling",
+    ],
+  },
+  {
+    slug: "savannah-creative-lab",
+    title: "Savannah Creative Lab",
+    subtitle: "Design, media and digital creativity",
+    blurb:
+      "Visual communication, UI/UX, photography, video, motion, and portfolio-ready creative output.",
+    audience: "Creative",
     tone: "brand",
+    topics: [
+      "Graphic design & branding",
+      "UI/UX, wireframing & prototyping",
+      "Photography & video production",
+      "Motion graphics & digital storytelling",
+    ],
+  },
+  {
+    slug: "savannah-software-engineering-lab",
+    title: "Savannah Software Engineering Lab",
+    subtitle: "Coding and software development",
+    blurb:
+      "Full-stack foundations — HTML, JavaScript, Python, databases, React, mobile, and collaborative projects.",
+    audience: "Developers",
+    tone: "ember",
+    topics: [
+      "Programming fundamentals & Git",
+      "Front-end, back-end & APIs",
+      "Databases, SQL & cloud deployment",
+      "Cybersecurity basics & AI-assisted development",
+    ],
+  },
+  {
+    slug: "savannah-sauti-academy",
+    title: "Savannah Sauti Academy",
+    subtitle: "Communication and leadership",
+    blurb:
+      "Public speaking, storytelling, negotiation, emotional intelligence, and professional communication.",
+    audience: "Leaders",
+    tone: "maroon",
+    topics: [
+      "Public speaking & presentation skills",
+      "Debate, active listening & team communication",
+      "Negotiation & conflict resolution",
+      "Interview skills, personal branding & networking",
+    ],
+  },
+  {
+    slug: "kijiji-hub",
+    title: "Kijiji Hub",
+    subtitle: "Innovation, entrepreneurship and problem-solving",
+    blurb:
+      "Community innovation from problem identification through MVPs, business models, pitches, and demo days.",
+    audience: "Entrepreneurs",
+    tone: "brand",
+    topics: [
+      "Design thinking & ideation",
+      "Prototype development & MVPs",
+      "Market research & business models",
+      "Pitch development, hackathons & demo days",
+    ],
   },
 ];
 
-export const PARTNERS = [
-  {
-    name: "Recruitment agencies",
-    detail:
-      "Vetted hiring partners across tech, finance, health, media and trades receive shortlists from our cohorts.",
-  },
-  {
-    name: "Employer talent pipelines",
-    detail:
-      "Companies use us as an early pipeline — internships, attachments and graduate roles come to the cohort first.",
-  },
-  {
-    name: "Placement follow-through",
-    detail:
-      "Your mentor stays with you through applications and the first months on the job, not just the introduction.",
-  },
+export const PRACTICAL_APPLICATION = [
+  "Robotics builds and sensor-based systems",
+  "Smart-device and automation prototypes",
+  "Technology demonstrations and team challenges",
+  "Data and AI capstone projects",
+  "Creative portfolios and software projects",
+  "Community innovation and startup pitches",
 ];
 
 export const ROADMAP = [
   {
-    phase: "Now",
-    title: "Mentorship site + companion app",
-    body: "Programs, events, blogs, and mentor matching on this site — with the Android app for day-to-day mentorship.",
+    phase: "Live",
+    title: "Innovation Hub programmes",
+    body: "Seven connected pathways — Future Safari through Kijiji Hub — with cohort intakes and facilitator-led sessions.",
+    status: "Live",
+  },
+  {
+    phase: "Live",
+    title: "Learning platform",
+    body: "Tracks, modules, lessons, progress, coursework, and school wings on web and Android with one account.",
     status: "Live",
   },
   {
     phase: "Next",
-    title: "Shared LMS API",
-    body: "Tracks, progress %, and assignments on one API so mentees learn on Android and the web with the same account.",
+    title: "Cohort milestones & quizzes",
+    body: "Scheduled releases per intake, mentor-authored quizzes, and demo checkout before live payment rails.",
     status: "Building",
   },
   {
     phase: "Later",
-    title: "Certificates & mentor marking",
-    body: "Quizzes, mentor-marked work, and certificates once a track hits the pass threshold.",
-    status: "Planned",
-  },
-  {
-    phase: "Later",
-    title: "Gallery & course library",
-    body: "Cohort photos and an on-demand library backed by live LMS data.",
+    title: "Certificates & partner schools",
+    body: "Verifiable certificates, richer analytics, and expanded partner school catalogues.",
     status: "Planned",
   },
 ];
 
 export const STATS = [
-  { value: "4", label: "Core programmes" },
-  { value: "Nairobi", label: "Home base" },
+  { value: "7", label: "Core programmes" },
+  { value: "Nairobi", label: "Innovation Hub" },
+  { value: "Explore → Launch", label: "Innovation cycle" },
   { value: "App & web", label: "Learn anywhere" },
-  { value: "login", label: "Progress follows you" },
 ];
 
-export const REVIEWS = [
+export const OUTCOMES = [
   {
-    name: "Mentee · Sela",
-    role: "Cohort note",
-    quote:
-      "Having a named mentor and a written 90-day aim made the difference — not another motivational talk.",
+    title: "Beyond passive learning",
+    body: "Learners communicate, create, code, and build — not just watch slides.",
   },
   {
-    name: "Mentee · Trailblazers",
-    role: "Cohort note",
-    quote:
-      "The peer circle forced me to send the outreach messages I kept postponing. Accountability over vibes.",
+    title: "Connected pathways",
+    body: "Enter through exploration and grow specialist technical, creative, and entrepreneurial skills.",
   },
   {
-    name: "Mentor · Codelab",
-    role: "Volunteer note",
-    quote:
-      "Structure helps: goals, sessions, and a clear way to see whether the mentee actually shipped something.",
+    title: "Real-world application",
+    body: "Projects, prototypes, portfolios, and pitches with measurable value.",
   },
   {
-    name: "Parent · Scripture Safari",
-    role: "Programme note",
-    quote:
-      "Friday Safari days mix faith, mentorship, and play — kids come home tired in the best way.",
+    title: "Evidence-led decisions",
+    body: "Data literacy and responsible AI sit alongside hands-on engineering and design.",
   },
 ];
 
@@ -150,7 +252,7 @@ export const MEDIA = [
     publisherID: "nelsen",
     title: "The four-sentence answer that wins interviews",
     description:
-      "Situation, decision, action, result. A simple structure mentees use to stop rambling under pressure.",
+      "Situation, decision, action, result. A simple structure learners use to stop rambling under pressure.",
     fileType: "article",
     fileName: "interview-answers.md",
     mediaUrl: "",
@@ -161,9 +263,9 @@ export const MEDIA = [
   {
     postID: "what-good-mentorship-looks-like",
     publisherID: "nelsen",
-    title: "What good mentorship actually looks like (it isn't advice)",
+    title: "What good facilitation actually looks like",
     description:
-      "Most mentors talk too much. The best ones ask better questions and hold their mentee to the answer.",
+      "The best programme leaders ask better questions and hold learners to the work they said they would ship.",
     fileType: "article",
     fileName: "good-mentorship.md",
     mediaUrl: "",
@@ -188,6 +290,7 @@ export const MEDIA = [
 
 /** @deprecated use MEDIA */
 export const BLOGS = MEDIA;
+
 export type LearningTrack = {
   slug: string;
   title: string;
@@ -198,98 +301,46 @@ export type LearningTrack = {
   tone: "brand" | "ember" | "maroon";
 };
 
-export const LEARNING_TRACKS: LearningTrack[] = [
-  {
-    slug: "career-foundations",
-    title: "Career Foundations",
-    blurb:
-      "Map your strengths to real professions, understand what each path demands, and build a first three-year plan.",
-    level: "Foundation",
-    modules: 8,
-    hours: 10,
-    tone: "brand",
-  },
-  {
-    slug: "communication-mastery",
-    title: "Communication Mastery",
-    blurb:
-      "Speaking, writing and presenting with control — with interview practice as one module inside the syllabus.",
-    level: "Intermediate",
-    modules: 10,
-    hours: 14,
-    tone: "ember",
-  },
-  {
-    slug: "workplace-readiness",
-    title: "Workplace Readiness",
-    blurb:
-      "Professional etiquette, feedback, email and meeting craft, and how to work well with a senior colleague.",
-    level: "Intermediate",
-    modules: 7,
-    hours: 9,
-    tone: "maroon",
-  },
-  {
-    slug: "money-and-wellbeing",
-    title: "Money & Wellbeing",
-    blurb:
-      "Budgeting a first salary, black tax, boundaries, peer pressure and looking after your mental health.",
-    level: "Foundation",
-    modules: 6,
-    hours: 8,
-    tone: "brand",
-  },
-  {
-    slug: "mentor-certification",
-    title: "Mentor Certification",
-    blurb:
-      "Listening frameworks, safeguarding, goal-setting and progress tracking for professionals giving back.",
-    level: "Advanced",
-    modules: 9,
-    hours: 12,
-    tone: "ember",
-  },
-  {
-    slug: "digital-and-portfolio",
-    title: "Digital Skills & Portfolio",
-    blurb:
-      "Practical digital tools plus a portfolio and CV you can actually send to a hiring partner.",
-    level: "Intermediate",
-    modules: 8,
-    hours: 11,
-    tone: "maroon",
-  },
-];
+/** Catalogue labels aligned to Innovation Hub programme names (LMS tracks may differ). */
+export const LEARNING_TRACKS: LearningTrack[] = PROGRAMS.map((p, i) => ({
+  slug: p.slug,
+  title: p.title,
+  blurb: p.blurb,
+  level: i === 0 || i === 6 ? "Foundation" : i >= 4 ? "Advanced" : "Intermediate",
+  modules: 6 + (i % 3),
+  hours: 8 + (i % 4) * 2,
+  tone: p.tone,
+}));
 
 export const LMS_FEATURES = [
   {
-    title: "Many schools, one login",
+    title: "Seven connected pathways",
     detail:
-      "Partner schools run their own wings — catalogs, mentors, and cohorts — under one Nelsen Savannah account.",
+      "Future Safari through Kijiji Hub — learners enter through exploration and grow specialist capabilities.",
   },
   {
     title: "Skills you can prove",
     detail:
-      "Tracks map to real competencies so learners, tutors, and school admins see what’s mastered vs still open.",
+      "Tracks map to programme competencies so learners, tutors, and school admins see what is mastered vs still open.",
   },
   {
     title: "Vast learning materials",
     detail:
-      "Modules, videos, readings, quizzes, and assignments across schools — not a thin course list.",
+      "Modules, videos, readings, quizzes, and assignments across school wings — not a thin course list.",
   },
   {
-    title: "Mentor-marked coursework",
+    title: "Facilitator-marked coursework",
     detail:
-      "Rubric feedback from a real mentor or tutor instead of an automated score alone.",
+      "Rubrics and feedback from programme facilitators instead of automated scores alone.",
   },
   {
     title: "Progress that follows you",
     detail:
-      "Enrollments and lesson % stay with your signed-in account when you switch schools or devices.",
+      "Enrollments and lesson progress stay with your signed-in account when you switch schools or devices.",
   },
   {
     title: "Certificates schools trust",
     detail:
-      "Verifiable completion records for school wings and hiring partners — not a paper printout.",
+      "Verifiable completion records for school wings and partners — not a paper printout.",
   },
 ];
