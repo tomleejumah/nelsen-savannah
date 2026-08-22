@@ -729,6 +729,33 @@ object FirebaseRemoteDataSource {
 
     private val eventsRef = db.child("Events")
 
+    suspend fun fetchUpcomingAnnouncements(): List<Event> {
+        val now = System.currentTimeMillis()
+        return try {
+            db.child("Announcements")
+                .orderByChild("date")
+                .startAt(now.toDouble())
+                .limitToFirst(5)
+                .get()
+                .await()
+                .children
+                .mapNotNull { snap ->
+                    snap.getValue(Announcement::class.java)?.let { announcement ->
+                        Event(
+                            eventId = announcement.id,
+                            title = announcement.title,
+                            date = announcement.date,
+                            eventType = "announcement",
+                            description = announcement.description,
+                        )
+                    }
+                }
+        } catch (e: Exception) {
+            Log.e("RemoteDataSource", "fetchUpcomingAnnouncements failed", e)
+            emptyList()
+        }
+    }
+
     suspend fun getNext3Items(uid: String): List<Event> {
         val now = System.currentTimeMillis()
 

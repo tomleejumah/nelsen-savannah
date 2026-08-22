@@ -110,4 +110,18 @@ public interface LmsApiService {
     Call<LmsModels.AssignmentEnvelope> createAssignment(
             @Header("Authorization") String bearer,
             @Body LmsModels.AssignmentBody body);
+
+    @GET("lms/events/public")
+    Call<LmsModels.HubEventsEnvelope> publicHubEvents();
+
+    @POST("lms/events")
+    Call<LmsModels.HubEventEnvelope> createHubEvent(
+            @Header("Authorization") String bearer,
+            @Body LmsModels.CreateHubEventBody body);
+
+    @POST("lms/events/{eventId}/reserve")
+    Call<LmsModels.ReserveEventEnvelope> reserveEvent(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId,
+            @Body LmsModels.ReserveEventBody body);
 }

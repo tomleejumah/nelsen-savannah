@@ -1030,6 +1030,35 @@ export async function patchSchoolBranding(
 
 export type EventReservationCounts = { counts: Record<string, number> };
 
+export type HubEventDto = {
+  eventId: string;
+  title: string;
+  date: number;
+  startTime: string;
+  endTime: string;
+  eventType: string;
+  mentorId: string;
+  menteeId: string;
+  mentorName: string;
+  menteeName: string;
+  status: number;
+  description: string | null;
+  mode: "physical" | "online";
+  location: string;
+  meetingLink: string;
+  participants?: string[] | null;
+  program: string;
+  seats: number;
+  seatsTaken: number;
+  price: string;
+  facilitators?: string[];
+  isPublic?: boolean;
+};
+
+export async function fetchPublicHubEvents() {
+  return lmsFetch<{ events: HubEventDto[] }>("/lms/events/public");
+}
+
 export async function fetchEventReservationCounts() {
   return lmsFetch<EventReservationCounts>("/lms/events/reservation-counts");
 }

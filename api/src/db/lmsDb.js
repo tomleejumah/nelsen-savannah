@@ -418,6 +418,7 @@ async function ensureMigrations() {
       ? "ALTER TABLE milestones ADD COLUMN due_at BIGINT"
       : "ALTER TABLE milestones ADD COLUMN due_at INTEGER",
     "ALTER TABLE milestones ADD COLUMN requires_previous_completion INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE event_reservations ADD COLUMN uid TEXT",
   ];
   for (const sql of alters) {
     try {
@@ -578,12 +579,39 @@ async function ensureMigrations() {
     `CREATE TABLE IF NOT EXISTS event_reservations (
       reservation_id TEXT PRIMARY KEY,
       event_id TEXT NOT NULL,
+      uid TEXT,
       full_name TEXT NOT NULL,
       email TEXT NOT NULL,
       phone TEXT,
       program TEXT,
       created_at BIGINT NOT NULL,
       UNIQUE(event_id, email)
+    )`,
+    `CREATE TABLE IF NOT EXISTS hub_events (
+      event_id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      date_ms BIGINT NOT NULL,
+      start_time TEXT,
+      end_time TEXT,
+      event_type TEXT NOT NULL DEFAULT 'event',
+      mentor_id TEXT,
+      mentee_id TEXT,
+      mentor_name TEXT,
+      mentee_name TEXT,
+      status INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      mode TEXT NOT NULL DEFAULT 'physical',
+      location TEXT,
+      meeting_link TEXT,
+      participants_json TEXT,
+      program TEXT,
+      seats INTEGER NOT NULL DEFAULT 0,
+      price TEXT,
+      is_public INTEGER NOT NULL DEFAULT 1,
+      facilitators_json TEXT,
+      created_by TEXT,
+      created_at BIGINT NOT NULL,
+      updated_at BIGINT NOT NULL
     )`,
   ];
   for (const sql of additiveTables) {
@@ -627,6 +655,9 @@ CREATE TABLE IF NOT EXISTS school_memberships (
     "CREATE INDEX IF NOT EXISTS idx_entitlements_track ON entitlements(track_id, status)",
     "CREATE INDEX IF NOT EXISTS idx_event_reservations_event ON event_reservations(event_id)",
     "CREATE INDEX IF NOT EXISTS idx_event_reservations_email ON event_reservations(email)",
+    "CREATE INDEX IF NOT EXISTS idx_event_reservations_uid ON event_reservations(uid)",
+    "CREATE INDEX IF NOT EXISTS idx_hub_events_date ON hub_events(date_ms)",
+    "CREATE INDEX IF NOT EXISTS idx_hub_events_public ON hub_events(is_public, date_ms)",
   ];
   for (const sql of indexes) {
     try {
