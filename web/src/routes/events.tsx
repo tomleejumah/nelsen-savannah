@@ -5,15 +5,13 @@ import { Clock, MapPin, Ticket, UserRound, Users } from "lucide-react";
 import { ReserveSeatDialog } from "@/components/site/ReserveSeatDialog";
 import { FACILITATORS } from "@/data/site";
 import {
-  EVENTS,
-  FEATURED_EVENT,
+  type AppEvent,
   eventDateLabel,
   eventFormat,
   eventTimeRange,
   eventVenue,
-  type AppEvent,
 } from "@/data/events";
-import { fetchEventReservationCounts } from "@/lib/lmsApi";
+import { loadHubEvents } from "@/lib/hubEvents";
 
 export const Route = createFileRoute("/events")({
   head: () => ({
@@ -32,7 +30,7 @@ export const Route = createFileRoute("/events")({
 
 function EventsPage() {
   const [filter, setFilter] = useState<"All" | "In person" | "Online">("All");
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [events, setEvents] = useState<AppEvent[]>([]);
   const [reservedLocal, setReservedLocal] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("ns-reserved-events") || "[]") as string[];
@@ -42,18 +40,17 @@ function EventsPage() {
   });
   const [activeEvent, setActiveEvent] = useState<AppEvent | null>(null);
 
-  const refreshCounts = useCallback(async () => {
-    const res = await fetchEventReservationCounts();
-    if (res.ok && res.data?.counts) {
-      setCounts(res.data.counts);
-    }
+  const refreshEvents = useCallback(async () => {
+    const list = await loadHubEvents();
+    setEvents(list);
   }, []);
 
   useEffect(() => {
-    void refreshCounts();
-  }, [refreshCounts]);
+    void refreshEvents();
+  }, [refreshEvents]);
 
-  const events = EVENTS.filter((e) => filter === "All" || eventFormat(e) === filter);
+  const featured = events[0];
+  const filtered = events.filter((e) => filter === "All" || eventFormat(e) === filter);
 
   const markReserved = (eventId: string) => {
     setReservedLocal((prev) => {
@@ -61,7 +58,7 @@ function EventsPage() {
       localStorage.setItem("ns-reserved-events", JSON.stringify(next));
       return next;
     });
-    void refreshCounts();
+    void refreshEvents();
   };
 
   return (
@@ -69,7 +66,8 @@ function EventsPage() {
       <header className="mx-auto max-w-7xl px-5 sm:px-8">
         <p className="eyebrow text-ember">Events</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-bold sm:text-5xl">
-          Reserve your free seat — first intake {eventDateLabel(FEATURED_EVENT)}
+          Reserve your free seat
+          {featured ? ` — ${eventDateLabel(featured)}` : ""}
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
           Opening intake with {FACILITATORS.map((f) => f.name).join(" and ")}. Fill in your details
@@ -95,9 +93,9 @@ function EventsPage() {
       </header>
 
       <section className="mx-auto mt-10 grid max-w-7xl gap-5 px-5 sm:px-8">
-        {events.map((event) => {
+        {filtered.map((event) => {
           const seats = event.seats ?? 0;
-          const taken = counts[event.eventId] ?? event.seatsTaken ?? 0;
+          const taken = event.seatsTaken ?? 0;
           const left = Math.max(0, seats - taken);
           const pct = seats ? Math.round((taken / seats) * 100) : 0;
           const isReserved = reservedLocal.includes(event.eventId);

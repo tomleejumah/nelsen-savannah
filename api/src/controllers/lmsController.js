@@ -749,6 +749,55 @@ export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   return { source: result.engine, data: result };
 });
 
+/** Public hub events — shared by web and Android. */
+export async function getPublicHubEvents(_req, res) {
+  try {
+    const svc = await import("../services/lmsHubEventService.js");
+    const result = await svc.listPublicHubEvents();
+    return lmsOk(res, { events: result.events }, result.source);
+  } catch (err) {
+    console.error("[GET /lms/events/public]", err);
+    return lmsErr(res, "Failed to load events", 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function getPublicHubEvent(req, res) {
+  try {
+    const svc = await import("../services/lmsHubEventService.js");
+    const event = await svc.getHubEvent(req.params.eventId);
+    if (!event || !event.isPublic) {
+      return lmsErr(res, "Event not found", 404, getPrimaryEngine() || "sqlite");
+    }
+    return lmsOk(res, { event }, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[GET /lms/events/public/:eventId]", err);
+    return lmsErr(res, "Failed to load event", 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function postHubEvent(req, res) {
+  try {
+    const svc = await import("../services/lmsHubEventService.js");
+    const event = await svc.createHubEvent(
+      {
+        uid: req.user.uid,
+        email: req.user.email,
+        displayName: req.user.displayName,
+      },
+      req.body || {},
+    );
+    return lmsOk(res, { event }, event ? getPrimaryEngine() || "sqlite" : "sqlite", 201);
+  } catch (err) {
+    console.error("[POST /lms/events]", err.message);
+    return lmsErr(
+      res,
+      err.message || "Create failed",
+      err.status || 500,
+      getPrimaryEngine() || "sqlite",
+    );
+  }
+}
+
 /** L8 — public event seat reservations (site + Android-aligned eventIds). */
 export async function getEventReservationCounts(req, res) {
   try {
@@ -764,7 +813,11 @@ export async function getEventReservationCounts(req, res) {
 export async function postEventReserve(req, res) {
   try {
     const svc = await import("../services/lmsEventReservationService.js");
-    const result = await svc.reserveEventSeat(req.params.eventId, req.body || {});
+    const result = await svc.reserveEventSeat(
+      req.params.eventId,
+      req.body || {},
+      req.user || null,
+    );
     return lmsOk(res, result, result.source, 201);
   } catch (err) {
     console.error("[POST /lms/events/:eventId/reserve]", err.message);

@@ -17,10 +17,9 @@ import androidx.work.WorkManager;
 
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.Worker.EventReminderWorker;
-import com.app.nisisiafrica.data.Model.Event;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.ProgrammeItem;
-import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
-import com.app.nisisiafrica.data.remote.NotificationSender;
+import com.app.nisisiafrica.data.remote.LmsEventsDataSource;
 import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
 import android.view.View;
 
@@ -33,13 +32,13 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.concurrent.Executors;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-
-import kotlin.Unit;
 
 public class CreateEventActivity extends AppCompatActivity {
 
@@ -164,7 +163,6 @@ public class CreateEventActivity extends AppCompatActivity {
             Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
             return;
         }
-        String creatorName = user != null && user.getDisplayName() != null ? user.getDisplayName() : "";
 
         long eventMillis = dateCal.getTimeInMillis();
 
@@ -194,48 +192,47 @@ public class CreateEventActivity extends AppCompatActivity {
             }
         }
 
-        // For personal/test events the mentee is the creator; a real booking flow
-        // would set a distinct menteeId, in which case that person gets notified.
-        final String menteeId = uid;
-
-        Event event = new Event(
-                "",                 // eventId (assigned by createEvent)
+        btnSave.setEnabled(false);
+        LmsModels.CreateHubEventBody body = new LmsModels.CreateHubEventBody(
                 title,
                 eventMillis,
                 startTime,
                 endTime,
-                "event",
-                uid,                // mentorId
-                menteeId,           // menteeId (self for personal/test events)
-                creatorName,
-                creatorName,
-                0,                  // status
                 description.isEmpty() ? null : description,
                 online ? "online" : "physical",
                 location,
                 meetingLink,
-                null,               // participants
                 program,
                 seats,
-                0,                  // seatsTaken
                 price
         );
 
-        btnSave.setEnabled(false);
-        FirebaseRemoteDataSource.INSTANCE.createEvent(event, uid, menteeId, success -> {
-            if (success) {
-                // Notify the participant (no-op when scheduling for yourself).
-                NotificationSender.event(menteeId, "", title, "scheduled a session with you");
-                // Schedule reminders immediately so the new event is picked up.
-                WorkManager.getInstance(getApplicationContext())
-                        .enqueue(new OneTimeWorkRequest.Builder(EventReminderWorker.class).build());
-                Toast.makeText(this, "Event created", Toast.LENGTH_SHORT).show();
-                finish();
-            } else {
-                btnSave.setEnabled(true);
-                Toast.makeText(this, "Failed to create event", Toast.LENGTH_SHORT).show();
-            }
-            return Unit.INSTANCE;
+        FirebaseUser authUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (authUser == null) {
+            btnSave.setEnabled(true);
+            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        authUser.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            String bearer = "Bearer " + tokenResult.getToken();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                boolean ok = LmsEventsDataSource.createHubEventBlocking(bearer, body);
+                runOnUiThread(() -> {
+                    if (ok) {
+                        WorkManager.getInstance(getApplicationContext())
+                                .enqueue(new OneTimeWorkRequest.Builder(EventReminderWorker.class).build());
+                        Toast.makeText(this, "Event published to Hub & site", Toast.LENGTH_SHORT).show();
+                        finish();
+                    } else {
+                        btnSave.setEnabled(true);
+                        Toast.makeText(this, "Failed to create event", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            });
+        }).addOnFailureListener(e -> {
+            btnSave.setEnabled(true);
+            Toast.makeText(this, "Auth failed", Toast.LENGTH_SHORT).show();
         });
     }
 }

@@ -409,4 +409,107 @@ public final class LmsModels {
         public AssignmentData data;
         public String error;
     }
+
+    /** Hub event — same shape as Firebase Event + seatsTaken from API. */
+    public static class HubEventDto {
+        public String eventId;
+        public String title;
+        public long date;
+        public String startTime;
+        public String endTime;
+        public String eventType;
+        public String mentorId;
+        public String menteeId;
+        public String mentorName;
+        public String menteeName;
+        public int status;
+        public String description;
+        public String mode;
+        public String location;
+        public String meetingLink;
+        public String program;
+        public int seats;
+        public int seatsTaken;
+        public String price;
+    }
+
+    public static class HubEventsData {
+        public java.util.List<HubEventDto> events;
+    }
+
+    public static class HubEventsEnvelope {
+        public boolean ok;
+        public HubEventsData data;
+        public String error;
+    }
+
+    public static class HubEventData {
+        public HubEventDto event;
+    }
+
+    public static class HubEventEnvelope {
+        public boolean ok;
+        public HubEventData data;
+        public String error;
+    }
+
+    public static class CreateHubEventBody {
+        public String title;
+        public long date;
+        public String startTime;
+        public String endTime;
+        public String description;
+        public String mode;
+        public String location;
+        public String meetingLink;
+        public String program;
+        public int seats;
+        public String price;
+
+        public CreateHubEventBody(
+                String title,
+                long date,
+                String startTime,
+                String endTime,
+                String description,
+                String mode,
+                String location,
+                String meetingLink,
+                String program,
+                int seats,
+                String price) {
+            this.title = title;
+            this.date = date;
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.description = description;
+            this.mode = mode;
+            this.location = location;
+            this.meetingLink = meetingLink;
+            this.program = program;
+            this.seats = seats;
+            this.price = price;
+        }
+    }
+
+    public static class ReserveEventBody {
+        public String fullName;
+        public String email;
+        public String phone;
+        public String program;
+    }
+
+    public static class ReserveEventData {
+        public String reservationId;
+        public String eventId;
+        public int seatsTaken;
+        public int seatsLeft;
+        public int seatsTotal;
+    }
+
+    public static class ReserveEventEnvelope {
+        public boolean ok;
+        public ReserveEventData data;
+        public String error;
+    }
 }

@@ -69,6 +69,7 @@ import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.Repository.EventRepository;
+import com.app.nisisiafrica.data.remote.LmsEventsDataSource;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
@@ -177,6 +178,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
         eventAdapter = new EventAdapter();
         eventAdapter.setOnEventClick(this::showEventActions);
+        eventAdapter.setOnReserveClick(this::reserveEventSeat);
         rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
         rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvUpcomingEvents.setAdapter(eventAdapter);
@@ -914,6 +916,35 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //            txtDateInfo.setText("• Blue Underline: Your schedules");
 //        }
 
+    }
+
+    /**
+     * Free seat reservation — same API as the public website.
+     */
+    private void reserveEventSeat(Event event) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "Sign in to reserve a seat", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        LmsModels.ReserveEventBody body = new LmsModels.ReserveEventBody();
+        body.program = event.getProgram();
+        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            String bearer = "Bearer " + tokenResult.getToken();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                kotlin.Pair<Boolean, String> result =
+                        LmsEventsDataSource.reserveSeatBlocking(bearer, event.getEventId(), body);
+                requireActivity().runOnUiThread(() -> {
+                    if (result.getFirst()) {
+                        Toast.makeText(requireContext(), "Seat reserved", Toast.LENGTH_SHORT).show();
+                        eventViewModel.fetchEvents(Util.getState(Constants.CURRENT_USER_ID, ""));
+                    } else {
+                        String msg = result.getSecond() != null ? result.getSecond() : "Could not reserve";
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+        });
     }
 
     /**

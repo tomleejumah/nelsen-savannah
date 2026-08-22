@@ -1,9 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowRight, Briefcase, Compass, Quote } from "lucide-react";
 
 import heroImg from "@/assets/hero-mentorship.jpg";
-import { EVENTS, FEATURED_EVENT, eventDateLabel, eventVenue } from "@/data/events";
+import { type AppEvent, eventDateLabel, eventVenue } from "@/data/events";
 import { FACILITATORS, FIRST_INTAKE } from "@/data/site";
+import { loadHubEvents } from "@/lib/hubEvents";
 import {
   CORE_VALUES,
   INNOVATION_CYCLE,
@@ -43,6 +45,13 @@ const toneClass = {
 } as const;
 
 function Index() {
+  const [hubEvents, setHubEvents] = useState<AppEvent[]>([]);
+  const featured = hubEvents[0];
+
+  useEffect(() => {
+    void loadHubEvents().then(setHubEvents);
+  }, []);
+
   return (
     <div>
       {/* Hero */}
@@ -225,22 +234,24 @@ function Index() {
           <div className="max-w-2xl">
             <p className="eyebrow text-ember">First intake · {FIRST_INTAKE.label}</p>
             <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
-              Reserve your free seat — {FEATURED_EVENT.title}
+              Reserve your free seat
+              {featured ? ` — ${featured.title}` : ""}
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              With {FACILITATORS.map((f) => f.name).join(" and ")} · {eventVenue(FEATURED_EVENT)}
+              With {FACILITATORS.map((f) => f.name).join(" and ")}
+              {featured ? ` · ${eventVenue(featured)}` : ""}
             </p>
           </div>
           <Link
             to="/events"
-            hash={FEATURED_EVENT.eventId}
+            hash={featured?.eventId}
             className="inline-flex items-center gap-1.5 font-display text-sm font-semibold hover:text-ember"
           >
             Reserve free seat <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {EVENTS.slice(0, 3).map((e) => (
+          {hubEvents.slice(0, 3).map((e) => (
             <Link
               key={e.eventId}
               to="/events"

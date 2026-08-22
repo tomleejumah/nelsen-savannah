@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
-import { getEventCap } from "../data/siteEvents.js";
+import { getHubEvent } from "./lmsHubEventService.js";
 import { sendInquiryEmail } from "./inquiryEmail.js";
 
 const id = () => `rsv_${crypto.randomBytes(8).toString("hex")}`;
@@ -26,18 +26,24 @@ export async function getReservationCounts() {
   return { counts, source: getPrimaryEngine() || "sqlite" };
 }
 
-export async function reserveEventSeat(eventId, body = {}) {
-  const cap = getEventCap(eventId);
-  if (!cap) {
+export async function reserveEventSeat(eventId, body = {}, actor = null) {
+  const event = await getHubEvent(eventId);
+  if (!event) {
     const err = new Error("Unknown event");
     err.status = 404;
     throw err;
   }
+  if (event.seats <= 0) {
+    const err = new Error("This event does not accept seat reservations");
+    err.status = 400;
+    throw err;
+  }
 
-  const fullName = String(body.fullName || body.name || "").trim();
-  const email = normalizeEmail(body.email);
+  const fullName = String(body.fullName || body.name || actor?.displayName || "").trim();
+  const email = normalizeEmail(body.email || actor?.email);
   const phone = normalizePhone(body.phone);
-  const program = String(body.program || "").trim();
+  const program = String(body.program || event.program || "").trim();
+  const uid = String(body.uid || actor?.uid || "").trim() || null;
 
   if (!fullName || fullName.length < 2) {
     const err = new Error("Full name is required");
@@ -48,6 +54,19 @@ export async function reserveEventSeat(eventId, body = {}) {
     const err = new Error("Valid email is required");
     err.status = 400;
     throw err;
+  }
+
+  if (uid) {
+    const existingUid = await dbGet(
+      `SELECT reservation_id FROM event_reservations WHERE event_id = ? AND uid = ?`,
+      [eventId, uid],
+    );
+    if (existingUid) {
+      const err = new Error("You already have a seat reserved for this event");
+      err.status = 409;
+      err.code = "ALREADY_RESERVED";
+      throw err;
+    }
   }
 
   const existing = await dbGet(
@@ -61,12 +80,8 @@ export async function reserveEventSeat(eventId, body = {}) {
     throw err;
   }
 
-  const countRow = await dbGet(
-    `SELECT COUNT(*) AS taken FROM event_reservations WHERE event_id = ?`,
-    [eventId],
-  );
-  const taken = Number(countRow?.taken) || 0;
-  if (taken >= cap.seats) {
+  const taken = event.seatsTaken || 0;
+  if (taken >= event.seats) {
     const err = new Error("No seats left for this event");
     err.status = 409;
     err.code = "SOLD_OUT";
@@ -77,25 +92,26 @@ export async function reserveEventSeat(eventId, body = {}) {
   const now = Date.now();
   await dbRun(
     `INSERT INTO event_reservations (
-      reservation_id, event_id, full_name, email, phone, program, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [reservationId, eventId, fullName, email, phone || null, program || null, now],
+      reservation_id, event_id, uid, full_name, email, phone, program, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [reservationId, eventId, uid, fullName, email, phone || null, program || null, now],
   );
 
   try {
     await sendInquiryEmail({
       desk: "contact",
-      subject: `Seat reserved — ${cap.title}`,
+      subject: `Seat reserved — ${event.title}`,
       replyTo: email,
       lines: [
-        `Event: ${cap.title}`,
+        `Event: ${event.title}`,
         `Event ID: ${eventId}`,
         `Reservation: ${reservationId}`,
         `Full name: ${fullName}`,
         `Email: ${email}`,
         `Phone: ${phone || "—"}`,
         `Programme: ${program || "—"}`,
-        `Price: ${cap.price}`,
+        `Price: ${event.price || "Free"}`,
+        uid ? `App user: ${uid}` : "Source: web",
       ],
     });
   } catch (err) {
@@ -107,8 +123,8 @@ export async function reserveEventSeat(eventId, body = {}) {
     reservationId,
     eventId,
     seatsTaken: newTaken,
-    seatsLeft: Math.max(0, cap.seats - newTaken),
-    seatsTotal: cap.seats,
+    seatsLeft: Math.max(0, event.seats - newTaken),
+    seatsTotal: event.seats,
     source: getPrimaryEngine() || "sqlite",
   };
 }

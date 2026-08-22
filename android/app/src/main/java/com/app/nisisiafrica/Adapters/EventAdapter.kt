@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.Event
@@ -24,6 +25,7 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
     }
 
     var onEventClick: OnEventClick? = null
+    var onReserveClick: OnEventClick? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -32,7 +34,7 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(events[position], position == events.lastIndex)
+        holder.bind(events[position], position)
     }
 
     override fun getItemCount() = events.size
@@ -69,7 +71,18 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
         }
 
         @SuppressLint("SetTextI18n")
-        fun bind(event: Event, isLast: Boolean) {
+        fun bind(event: Event, position: Int) {
+            val ctx = itemView.context
+            val active = ContextCompat.getColor(ctx, R.color.maroon_600)
+            val inactive = ContextCompat.getColor(ctx, R.color.line)
+            timelineView.setMarker(ContextCompat.getDrawable(ctx, R.drawable.marker_active))
+            timelineView.setStartLineColor(if (position == 0) active else inactive, position)
+            timelineView.setEndLineColor(
+                if (position == events.lastIndex) inactive else active,
+                position,
+            )
+            timelineView.lineStyle = TimelineView.LineStyle.DASHED
+
             val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
             tvEventDate.text = dateFormat.format(Date(event.date))
 
@@ -134,7 +147,13 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
 
             val open = { onEventClick?.onClick(event) }
             eventCard.setOnClickListener { open() }
-            btnReserve.setOnClickListener { open() }
+            btnReserve.setOnClickListener {
+                if (event.seats > 0 && event.eventType != "announcement") {
+                    onReserveClick?.onClick(event) ?: open()
+                } else {
+                    open()
+                }
+            }
         }
     }
 }

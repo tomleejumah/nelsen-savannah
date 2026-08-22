@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { authenticateUser } from "../middleware/auth.js";
+import { optionalAuthenticate } from "../middleware/optionalAuth.js";
 import { requireRoles } from "../middleware/lmsRoles.js";
 import * as lmsController from "../controllers/lmsController.js";
 
@@ -308,11 +309,23 @@ router.post(
   lmsController.postMediaReap,
 );
 
-// Public event seat reservations (no auth)
+// Hub events — public catalogue + reservations (web + Android)
+router.get("/events/public", lmsController.getPublicHubEvents);
+router.get("/events/public/:eventId", lmsController.getPublicHubEvent);
+router.post(
+  "/events",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.postHubEvent,
+);
 router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
-router.post("/events/:eventId/reserve", lmsController.postEventReserve);
+router.post(
+  "/events/:eventId/reserve",
+  optionalAuthenticate,
+  lmsController.postEventReserve,
+);
 
-// M6 TODO — authenticated events catalogue (501 until scheduled)
+// Legacy authenticated events index (501)
 router.get("/events", authenticateUser, lmsController.eventsTodo);
 router.get("/events/:eventId", authenticateUser, lmsController.eventsTodo);
 
