@@ -4,15 +4,25 @@ import type { User } from "firebase/auth";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
+  addCohortMember,
+  authorLessonQuiz,
   createAssignment,
+  createCohortRun,
+  createMilestone,
+  createSchoolCohort,
   fetchAssignedOutbox,
+  fetchLmsTracks,
   fetchMenteeProgress,
+  fetchSchoolCohorts,
   fetchSubmissionQueue,
   markSubmission,
+  setTrackPricing,
   type AssignmentDto,
+  type CohortDto,
   type MeDto,
   type MenteeProgressDto,
   type QueueItemDto,
+  type TrackCardDto,
 } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/teach")({
@@ -56,32 +66,53 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [assignLessonId, setAssignLessonId] = useState("");
   const [assignUid, setAssignUid] = useState("");
   const [assignMsg, setAssignMsg] = useState<string | null>(null);
-  const [demoTrackTitle, setDemoTrackTitle] = useState("");
-  const [demoLessonTitle, setDemoLessonTitle] = useState("");
-  const [demoLessonType, setDemoLessonType] = useState("video");
-  const [demoFileName, setDemoFileName] = useState<string | null>(null);
-  const [demoMsg, setDemoMsg] = useState<string | null>(null);
+  const [cohorts, setCohorts] = useState<CohortDto[]>([]);
+  const [tracks, setTracks] = useState<TrackCardDto[]>([]);
+  const [cohortName, setCohortName] = useState("");
+  const [runCohortId, setRunCohortId] = useState("");
+  const [memberCohortId, setMemberCohortId] = useState("");
+  const [memberUid, setMemberUid] = useState("");
+  const [runTrackId, setRunTrackId] = useState("");
+  const [runId, setRunId] = useState("");
+  const [mileLessonId, setMileLessonId] = useState("");
+  const [mileRelease, setMileRelease] = useState("");
+  const [mileDue, setMileDue] = useState("");
+  const [mileRequiresPrevious, setMileRequiresPrevious] = useState(true);
+  const [priceTrackId, setPriceTrackId] = useState("");
+  const [priceAmount, setPriceAmount] = useState("0");
+  const [quizLessonId, setQuizLessonId] = useState("");
+  const [quizPrompt, setQuizPrompt] = useState("");
+  const [quizA, setQuizA] = useState("");
+  const [quizB, setQuizB] = useState("");
+  const [quizCorrect, setQuizCorrect] = useState("a");
+  const [materialsMsg, setMaterialsMsg] = useState<string | null>(null);
+
+  const schoolId = me.schoolId || me.activeSchoolId || "nelsen-digital";
 
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
     try {
       const token = await user.getIdToken();
-      const [q, m, a] = await Promise.all([
+      const [q, m, a, c, t] = await Promise.all([
         fetchSubmissionQueue(token),
         fetchMenteeProgress(token, me.uid),
         fetchAssignedOutbox(token),
+        fetchSchoolCohorts(token, schoolId),
+        fetchLmsTracks(token),
       ]);
       if (!q.ok) setError(q.error || "Queue failed");
       setQueue(q.data?.queue || []);
       setMentees(m.data?.mentees || []);
       setOutbox(a.data?.assignments || []);
+      setCohorts(c.data?.cohorts || []);
+      setTracks(t.data?.tracks || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setBusy(false);
     }
-  }, [user, me.uid]);
+  }, [user, me.uid, schoolId]);
 
   useEffect(() => {
     void load();
@@ -306,36 +337,55 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       </section>
 
       <section id="materials" className="space-y-4 rounded-2xl border border-border/70 bg-card/50 p-5">
-        <h2 className="font-display text-xl font-semibold">Upload materials</h2>
+        <h2 className="font-display text-xl font-semibold">Cohort walkthrough</h2>
         <p className="text-sm text-muted-foreground">
-          Demo for mentors — create a track/lesson shell and attach video. Storage
-          wiring comes next; buttons here only preview the flow.
+          Reuse a track, schedule milestones, set a price, and publish a quiz version
+          for this intake. Catalog CMS still creates the actual lessons.
         </p>
+        {cohorts.length > 0 ? (
+          <ul className="text-sm text-muted-foreground">
+            {cohorts.map((c) => (
+              <li key={c.cohortId}>
+                <span className="font-medium text-foreground">{c.name}</span>
+                {` · ${c.cohortId} · ${c.memberCount || 0} members`}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            setDemoMsg(
-              demoTrackTitle.trim()
-                ? `Demo: “${demoTrackTitle.trim()}” would publish as a draft track.`
-                : "Add a track title to preview publish.",
-            );
+            void (async () => {
+              setMaterialsMsg(null);
+              const token = await user.getIdToken();
+              const result = await createSchoolCohort(token, schoolId, {
+                name: cohortName.trim(),
+              });
+              setMaterialsMsg(result.ok ? "Cohort created." : result.error || "Failed");
+              if (result.ok && result.data?.cohort.cohortId) {
+                setRunCohortId(result.data.cohort.cohortId);
+                setCohortName("");
+                await load();
+              }
+            })();
           }}
           className="space-y-2"
         >
-          <h3 className="font-medium">New track</h3>
+          <h3 className="font-medium">New cohort</h3>
           <div className="flex flex-wrap gap-2">
             <input
-              value={demoTrackTitle}
-              onChange={(e) => setDemoTrackTitle(e.target.value)}
-              placeholder="Track title (e.g. Interview skills)"
+              required
+              value={cohortName}
+              onChange={(e) => setCohortName(e.target.value)}
+              placeholder="Intake name (e.g. May 2026)"
               className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
             <button
               type="submit"
               className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
             >
-              Publish track
+              Create cohort
             </button>
           </div>
         </form>
@@ -343,34 +393,52 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            setDemoMsg(
-              demoLessonTitle.trim()
-                ? `Demo: lesson “${demoLessonTitle.trim()}” (${demoLessonType}) would attach to your track.`
-                : "Add a lesson title to preview.",
-            );
+            void (async () => {
+              setMaterialsMsg(null);
+              const token = await user.getIdToken();
+              const result = await addCohortMember(
+                token,
+                schoolId,
+                memberCohortId,
+                memberUid,
+              );
+              setMaterialsMsg(
+                result.ok ? "Learner added to cohort." : result.error || "Failed",
+              );
+            })();
           }}
           className="space-y-2"
         >
-          <h3 className="font-medium">Add lesson</h3>
+          <h3 className="font-medium">Add learner to cohort</h3>
           <div className="flex flex-wrap gap-2">
-            <input
-              value={demoLessonTitle}
-              onChange={(e) => setDemoLessonTitle(e.target.value)}
-              placeholder="Lesson title"
-              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
             <select
-              value={demoLessonType}
-              onChange={(e) => setDemoLessonType(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              required
+              value={memberCohortId}
+              onChange={(e) => setMemberCohortId(e.target.value)}
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             >
-              <option value="video">video</option>
-              <option value="read">read</option>
-              <option value="quiz">quiz</option>
-              <option value="assignment">assignment</option>
+              <option value="">Select cohort</option>
+              {cohorts.map((c) => (
+                <option key={c.cohortId} value={c.cohortId}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select
+              required
+              value={memberUid}
+              onChange={(e) => setMemberUid(e.target.value)}
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Select learner</option>
+              {[...new Map(mentees.map((m) => [m.uid, m])).values()].map((m) => (
+                <option key={m.uid} value={m.uid}>
+                  {m.displayName || m.uid}
+                </option>
+              ))}
             </select>
             <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
-              Add lesson
+              Add learner
             </button>
           </div>
         </form>
@@ -378,40 +446,239 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            setDemoMsg(
-              demoFileName
-                ? `Demo: “${demoFileName}” selected — upload stays off for this pitch (no bytes sent).`
-                : "Choose a video file to preview the upload step.",
-            );
+            void (async () => {
+              setMaterialsMsg(null);
+              const token = await user.getIdToken();
+              const result = await createCohortRun(token, schoolId, runCohortId, {
+                trackId: runTrackId,
+              });
+              setMaterialsMsg(result.ok ? "Track attached to cohort." : result.error || "Failed");
+              if (result.ok && result.data?.run.runId) {
+                setRunId(result.data.run.runId);
+                await load();
+              }
+            })();
           }}
           className="space-y-2"
         >
-          <h3 className="font-medium">Lesson video</h3>
-          <p className="text-xs text-muted-foreground">
-            Pick a file to show the flow. Nothing is uploaded in this demo.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="file"
-              accept="video/*,audio/*,application/pdf"
-              onChange={(e) => setDemoFileName(e.target.files?.[0]?.name ?? null)}
-              className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-full border border-border px-4 py-2 text-sm"
+          <h3 className="font-medium">Attach track to cohort</h3>
+          <div className="flex flex-wrap gap-2">
+            <select
+              required
+              value={runCohortId}
+              onChange={(e) => setRunCohortId(e.target.value)}
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             >
-              Upload media
+              <option value="">Select cohort</option>
+              {cohorts.map((c) => (
+                <option key={c.cohortId} value={c.cohortId}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select
+              required
+              value={runTrackId}
+              onChange={(e) => setRunTrackId(e.target.value)}
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Select track</option>
+              {tracks.map((t) => (
+                <option key={t.trackId} value={t.trackId}>
+                  {t.courseTitle}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+              Attach
             </button>
           </div>
-          {demoFileName ? (
-            <p className="text-xs text-muted-foreground">Selected: {demoFileName}</p>
-          ) : null}
         </form>
 
-        {demoMsg ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void (async () => {
+              setMaterialsMsg(null);
+              const token = await user.getIdToken();
+              const result = await createMilestone(token, schoolId, runId, {
+                lessonId: mileLessonId.trim(),
+                releaseAt: new Date(mileRelease).getTime(),
+                dueAt: mileDue ? new Date(mileDue).getTime() : undefined,
+                requiresPreviousCompletion: mileRequiresPrevious,
+              });
+              setMaterialsMsg(result.ok ? "Milestone scheduled." : result.error || "Failed");
+            })();
+          }}
+          className="space-y-2"
+        >
+          <h3 className="font-medium">Schedule milestone</h3>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={runId}
+              onChange={(e) => setRunId(e.target.value)}
+              placeholder="runId (from attach)"
+              className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              required
+              value={mileLessonId}
+              onChange={(e) => setMileLessonId(e.target.value)}
+              placeholder="lessonId"
+              className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              required
+              type="datetime-local"
+              value={mileRelease}
+              onChange={(e) => setMileRelease(e.target.value)}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              type="datetime-local"
+              value={mileDue}
+              onChange={(e) => setMileDue(e.target.value)}
+              aria-label="Milestone due date"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={mileRequiresPrevious}
+                onChange={(e) => setMileRequiresPrevious(e.target.checked)}
+              />
+              Require previous
+            </label>
+            <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+              Schedule
+            </button>
+          </div>
+        </form>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void (async () => {
+              setMaterialsMsg(null);
+              const token = await user.getIdToken();
+              const cents = Math.round(Number(priceAmount || 0) * 100);
+              const result = await setTrackPricing(token, schoolId, priceTrackId, {
+                amountMinor: cents,
+                currency: "KES",
+              });
+              setMaterialsMsg(
+                result.ok
+                  ? cents
+                    ? "Price set — enroll will paywall."
+                    : "Track is free."
+                  : result.error || "Failed",
+              );
+            })();
+          }}
+          className="space-y-2"
+        >
+          <h3 className="font-medium">Track price</h3>
+          <div className="flex flex-wrap gap-2">
+            <select
+              required
+              value={priceTrackId}
+              onChange={(e) => setPriceTrackId(e.target.value)}
+              className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Select track</option>
+              {tracks.map((t) => (
+                <option key={t.trackId} value={t.trackId}>
+                  {t.courseTitle}
+                </option>
+              ))}
+            </select>
+            <input
+              value={priceAmount}
+              onChange={(e) => setPriceAmount(e.target.value)}
+              placeholder="KES amount (0 = free)"
+              className="w-40 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+              Save price
+            </button>
+          </div>
+        </form>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void (async () => {
+              setMaterialsMsg(null);
+              const token = await user.getIdToken();
+              const result = await authorLessonQuiz(token, schoolId, quizLessonId.trim(), {
+                prompt: quizPrompt.trim(),
+                options: [
+                  { id: "a", text: quizA.trim() },
+                  { id: "b", text: quizB.trim() },
+                ],
+                correctOptionId: quizCorrect,
+                runId: runId || undefined,
+              });
+              setMaterialsMsg(
+                result.ok
+                  ? `Quiz v${result.data?.quiz.version} published for future attempts.`
+                  : result.error || "Failed",
+              );
+            })();
+          }}
+          className="space-y-2"
+        >
+          <h3 className="font-medium">Quiz for this cohort lesson</h3>
+          <p className="text-xs text-muted-foreground">
+            Uses the current runId above. New versions affect future attempts only.
+          </p>
+          <input
+            required
+            value={quizLessonId}
+            onChange={(e) => setQuizLessonId(e.target.value)}
+            placeholder="lessonId"
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <textarea
+            required
+            value={quizPrompt}
+            onChange={(e) => setQuizPrompt(e.target.value)}
+            placeholder="Question"
+            rows={2}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <div className="flex flex-wrap gap-2">
+            <input
+              required
+              value={quizA}
+              onChange={(e) => setQuizA(e.target.value)}
+              placeholder="Option A"
+              className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              required
+              value={quizB}
+              onChange={(e) => setQuizB(e.target.value)}
+              placeholder="Option B"
+              className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <select
+              value={quizCorrect}
+              onChange={(e) => setQuizCorrect(e.target.value)}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="a">A is correct</option>
+              <option value="b">B is correct</option>
+            </select>
+            <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+              Publish quiz version
+            </button>
+          </div>
+        </form>
+
+        {materialsMsg ? (
           <p className="rounded-xl border border-border/60 bg-background/80 px-4 py-3 text-sm text-muted-foreground">
-            {demoMsg}
+            {materialsMsg}
           </p>
         ) : null}
       </section>

@@ -3,21 +3,25 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import workshopImg from "@/assets/programs-workshop.jpg";
-import { PROGRAMS } from "@/data/site";
+import { LEARNING_MODEL, PROGRAMS } from "@/data/site";
 
 export const Route = createFileRoute("/programs")({
   head: () => ({
     meta: [
-      { title: "Our Programs — Sela, Trailblazers & Codelab | Nelsen Savannah" },
+      {
+        title:
+          "Programmes — Future Safari, Robotics, Data & AI, Creative, Software, Sauti, Kijiji | Nelsen Savannah",
+      },
       {
         name: "description",
         content:
-          "Programs from the Nelsen Savannah app: Sela programme, Trailblazers, Scripture Safari, and Go for it Codelab.",
+          "Seven connected programmes at Nelsen Savannah Innovation Hub — technology education, creativity, communication, and practical problem-solving.",
       },
-      { property: "og:title", content: "Our Programs | Nelsen Savannah" },
+      { property: "og:title", content: "Programmes | Nelsen Savannah Innovation Hub" },
       {
         property: "og:description",
-        content: "Sela programme, Trailblazers, Scripture Safari, and Go for it Codelab.",
+        content:
+          "Future Safari, Robotics & Automation, Data & AI, Creative Lab, Software Engineering, Sauti Academy, and Kijiji Hub.",
       },
     ],
   }),
@@ -39,18 +43,18 @@ function ProgramsPage() {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
         />
         <div className="relative mx-auto max-w-4xl text-center">
-          <p className="eyebrow text-ember">Our Programs</p>
+          <p className="eyebrow text-ember">Programme portfolio</p>
           <h1 className="mt-4 text-4xl font-bold text-foreground sm:text-6xl">
-            Structured guidance for every stage of the climb
+            Seven pathways. One innovation Hub.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Each program runs in cohorts with a trained mentor, clear goals, and sessions you can
-            actually attend. Pick the one that matches where you are right now.
+            {LEARNING_MODEL} Pick the programme that matches where you are — or where you want to
+            grow next.
           </p>
         </div>
         <img
           src={workshopImg}
-          alt="Young people laughing during a Nelsen Savanna leadership workshop"
+          alt="Learners at a Nelsen Savannah Innovation Hub workshop"
           width={1600}
           height={912}
           loading="lazy"
@@ -74,22 +78,21 @@ function ProgramsPage() {
               </span>
             </div>
             <h2 className="mt-5 text-2xl font-bold">{p.title}</h2>
+            <p className="mt-1 text-sm font-medium text-ember">{p.subtitle}</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.blurb}</p>
             <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-              {["Matched mentor within 14 days", "Monthly in-person or online sessions", "Progress review at week 12"].map(
-                (item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
-                    {item}
-                  </li>
-                ),
-              )}
+              {p.topics.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
+                  {item}
+                </li>
+              ))}
             </ul>
             <Link
               to="/contact"
               className="mt-6 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-ember"
             >
-              Apply to this program <ArrowRight className="h-4 w-4" />
+              Enquire about this programme <ArrowRight className="h-4 w-4" />
             </Link>
           </article>
         ))}

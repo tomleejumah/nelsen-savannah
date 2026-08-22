@@ -49,6 +49,12 @@ export type TrackCardDto = {
   enrolled: boolean;
   audience: string[];
   moduleCount: number;
+  schoolId?: string;
+  price?: {
+    isPaid: boolean;
+    amountMinor: number;
+    currency: string;
+  };
 };
 
 export type EnrollmentDto = {
@@ -96,8 +102,30 @@ export type LessonDto = {
   playbackUrl?: string | null;
   playbackExpiresAt?: number | null;
   bodyHtml?: string | null;
-  quiz?: { mode: string; prompt: string } | null;
+  quiz?: {
+    mode: string;
+    prompt: string;
+    quizId?: string;
+    version?: number;
+    options?: { id: string; text: string }[];
+    passingScore?: number;
+  } | null;
   assignmentPrompt?: string | null;
+  milestone?: {
+    milestoneId: string;
+    lessonId: string;
+    title: string | null;
+    releaseAt: number;
+    dueAt?: number | null;
+    order: number;
+    requiresPreviousCompletion?: boolean;
+    released: boolean;
+    previousComplete: boolean;
+    available: boolean;
+    completed: boolean;
+    overdue?: boolean;
+    lockedReason: string | null;
+  } | null;
 };
 
 export type SubmissionDto = {
@@ -186,6 +214,11 @@ export type TrackDetailDto = {
     trackPercent: number;
     status: string;
   } | null;
+  cohortRun?: {
+    runId: string | null;
+    cohortId: string | null;
+    milestones: NonNullable<LessonDto["milestone"]>[];
+  };
 };
 
 export type ModuleDetailDto = {
@@ -284,11 +317,178 @@ export async function fetchLmsLesson(idToken: string, lessonId: string) {
 }
 
 export async function enrollInTrack(idToken: string, trackId: string) {
-  return lmsFetch<{ enrollment: EnrollmentDto }>("/lms/enrollments", idToken, {
+  return lmsFetch<{
+    enrollment?: EnrollmentDto;
+    code?: string;
+    trackId?: string;
+    price?: { isPaid: boolean; amountMinor: number; currency: string };
+    payment?: { provider: string; checkoutEndpoint: string; method: string };
+  }>("/lms/enrollments", idToken, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ trackId, platform: "web" }),
   });
+}
+
+export async function checkoutTrack(idToken: string, trackId: string) {
+  return lmsFetch<{
+    purchaseId: string;
+    trackId: string;
+    status: string;
+    amountMinor?: number;
+    currency?: string;
+    alreadyOwned?: boolean;
+  }>("/lms/checkout", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackId }),
+  });
+}
+
+export type PurchaseDto = {
+  purchaseId: string;
+  trackId: string;
+  courseTitle: string;
+  schoolId: string;
+  amountMinor: number;
+  currency: string;
+  status: string;
+  provider: string;
+  createdAt: number;
+  paidAt: number | null;
+};
+
+export async function fetchMyPurchases(idToken: string) {
+  return lmsFetch<{ purchases: PurchaseDto[] }>("/lms/purchases/me", idToken);
+}
+
+export type CohortDto = {
+  cohortId: string;
+  schoolId: string;
+  name: string;
+  status: string;
+  memberCount?: number;
+  runCount?: number;
+};
+
+export async function fetchSchoolCohorts(idToken: string, schoolId: string) {
+  return lmsFetch<{ cohorts: CohortDto[] }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/cohorts`,
+    idToken,
+  );
+}
+
+export async function createSchoolCohort(
+  idToken: string,
+  schoolId: string,
+  body: { name: string },
+) {
+  return lmsFetch<{ cohort: CohortDto }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/cohorts`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function createCohortRun(
+  idToken: string,
+  schoolId: string,
+  cohortId: string,
+  body: { trackId: string },
+) {
+  return lmsFetch<{ run: { runId: string; cohortId: string; trackId: string } }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/cohorts/${encodeURIComponent(cohortId)}/runs`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function addCohortMember(
+  idToken: string,
+  schoolId: string,
+  cohortId: string,
+  uid: string,
+) {
+  return lmsFetch<{ member: { cohortId: string; uid: string; role: string } }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/cohorts/${encodeURIComponent(cohortId)}/members`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid, role: "learner" }),
+    },
+  );
+}
+
+export async function createMilestone(
+  idToken: string,
+  schoolId: string,
+  runId: string,
+  body: {
+    lessonId: string;
+    releaseAt: number;
+    dueAt?: number;
+    requiresPreviousCompletion?: boolean;
+    title?: string;
+    order?: number;
+  },
+) {
+  return lmsFetch<{ milestone: { milestoneId: string; lessonId: string } }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/cohort-runs/${encodeURIComponent(runId)}/milestones`,
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function setTrackPricing(
+  idToken: string,
+  schoolId: string,
+  trackId: string,
+  body: { amountMinor: number; currency?: string },
+) {
+  return lmsFetch<{ trackId: string; price: TrackCardDto["price"] }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/tracks/${encodeURIComponent(trackId)}/pricing`,
+    idToken,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function authorLessonQuiz(
+  idToken: string,
+  schoolId: string,
+  lessonId: string,
+  body: {
+    prompt: string;
+    options: { id: string; text: string }[];
+    correctOptionId: string;
+    runId?: string;
+  },
+) {
+  return lmsFetch<{ quiz: { quizId: string; lessonId: string; version: number } }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/lessons/${encodeURIComponent(lessonId)}/quiz`,
+    idToken,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 export async function fetchMyEnrollments(idToken: string) {
@@ -332,7 +532,12 @@ export async function fetchMyProgress(idToken: string, trackId?: string) {
 export async function submitLessonQuiz(
   idToken: string,
   lessonId: string,
-  body: { score?: number; passed?: boolean; lastPlatform?: "web" | "android" },
+  body: {
+    score?: number;
+    passed?: boolean;
+    selectedOptionId?: string;
+    lastPlatform?: "web" | "android";
+  },
 ) {
   return lmsFetch<{
     lessonId: string;
@@ -821,4 +1026,36 @@ export async function patchSchoolBranding(
       body: JSON.stringify(body),
     },
   );
+}
+
+export type EventReservationCounts = { counts: Record<string, number> };
+
+export async function fetchEventReservationCounts() {
+  return lmsFetch<EventReservationCounts>("/lms/events/reservation-counts");
+}
+
+export async function reserveEventSeat(
+  eventId: string,
+  body: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    program?: string;
+  },
+) {
+  const res = await lmsFetch<{
+    reservationId: string;
+    eventId: string;
+    seatsTaken: number;
+    seatsLeft: number;
+    seatsTotal: number;
+  }>(`/lms/events/${encodeURIComponent(eventId)}/reserve`, null, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.data) {
+    throw new Error(res.error || "Reservation failed");
+  }
+  return res.data;
 }

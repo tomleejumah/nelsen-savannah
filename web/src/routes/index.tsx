@@ -1,24 +1,35 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Briefcase, Compass, Quote, Star, UsersRound } from "lucide-react";
+import { ArrowRight, Briefcase, Compass, Quote } from "lucide-react";
 
 import heroImg from "@/assets/hero-mentorship.jpg";
-import { EVENTS, eventVenue } from "@/data/events";
-import { PARTNERS, PROGRAMS, REVIEWS, ROADMAP, STATS } from "@/data/site";
+import { EVENTS, FEATURED_EVENT, eventDateLabel, eventVenue } from "@/data/events";
+import { FACILITATORS, FIRST_INTAKE } from "@/data/site";
+import {
+  CORE_VALUES,
+  INNOVATION_CYCLE,
+  LEARNING_MODEL,
+  ORG,
+  OUTCOMES,
+  PRACTICAL_APPLICATION,
+  PROGRAMS,
+  ROADMAP,
+  STATS,
+} from "@/data/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nelsen Savanna — Mentors & Mentees, Guided Career Pathways" },
+      { title: "Nelsen Savannah Innovation Hub — Programmes & Learning" },
       {
         name: "description",
         content:
-          "Nelsen Savanna connects Kenyan youth with trained mentors — career mapping, communication and interview skills, wellbeing, and junior-to-senior workplace mentorship.",
+          "Nelsen Savannah Innovation Hub — seven programmes combining technology education, creativity, communication, and practical problem-solving for Kenya's digital economy.",
       },
-      { property: "og:title", content: "Nelsen Savanna — Mentors & Mentees" },
+      { property: "og:title", content: "Nelsen Savannah Innovation Hub" },
       {
         property: "og:description",
         content:
-          "Youth guidance in every aspect: careers, comms, interviews and social life. We bring mentors and mentees together.",
+          "Explore, create, code, build, and launch — Future Safari, Robotics, Data & AI, Creative, Software Engineering, Sauti, and Kijiji Hub.",
       },
     ],
   }),
@@ -43,27 +54,27 @@ function Index() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
           <div>
             <h1 className="text-4xl font-bold leading-[1.05] text-foreground sm:text-6xl lg:text-[4.2rem]">
-              Every young person deserves a{" "}
-              <span className="bg-ember-gradient bg-clip-text text-transparent">map</span>, not a
-              guess.
+              An innovation ecosystem where ideas become{" "}
+              <span className="bg-ember-gradient bg-clip-text text-transparent">
+                practical solutions
+              </span>
+              .
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Companion site to the Nelsen Savannah app — we pair teens, students and junior
-              professionals with mentors who have already walked the road. Not just the four careers
-              everyone talks about.
+              {ORG.vision}
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
-                to="/contact"
+                to="/programs"
                 className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
               >
-                Find me a mentor <ArrowRight className="h-4 w-4" />
+                Explore programmes <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                to="/programs"
+                to="/learning"
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 font-display text-sm font-semibold text-foreground transition-colors hover:bg-accent"
               >
-                Become a mentor
+                Start learning
               </Link>
             </div>
 
@@ -71,14 +82,7 @@ function Index() {
               {STATS.map((s, index) => (
                 <div key={s.label} className="flex min-w-0 flex-col">
                   <dt className="h-[58px] font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
-                    {index === 2 ? (
-                      <>
-                        App
-                        <br />& web
-                      </>
-                    ) : (
-                      <span className="whitespace-nowrap">{s.value}</span>
-                    )}
+                    <span className="whitespace-nowrap">{s.value}</span>
                   </dt>
 
                   <dd className="mt-2 text-xs leading-snug text-muted-foreground">{s.label}</dd>
@@ -91,15 +95,15 @@ function Index() {
             <div className="absolute -inset-6 rounded-[2.5rem] bg-ember/10 blur-3xl" />
             <img
               src={heroImg}
-              alt="A young mentee in conversation with her professional mentor"
+              alt="Learners collaborating at the Nelsen Savannah Innovation Hub"
               width={1200}
               height={1408}
               className="relative w-full rounded-[2rem] border border-border/70 object-cover shadow-elevated"
             />
             <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
               <p className="text-xs text-muted-foreground">
-                <span className="font-display font-semibold text-foreground">Based in Nairobi</span>{" "}
-                — mentorship, faith programmes, and coding labs for Kenyan youth.
+                <span className="font-display font-semibold text-foreground">{ORG.hubName}</span>{" "}
+                — {ORG.location}. Programmes from Future Safari to Kijiji Hub.
               </p>
             </div>
           </div>
@@ -109,34 +113,21 @@ function Index() {
       {/* How it works */}
       <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <div className="max-w-2xl">
-          <p className="eyebrow text-ember">How it works</p>
-          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Two groups, one deliberate bridge</h2>
+          <p className="eyebrow text-ember">Learning model</p>
+          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">From exposure to real-world impact</h2>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            {LEARNING_MODEL}
+          </p>
         </div>
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {[
-            {
-              icon: Compass,
-              title: "Tell us where you stand",
-              body: "A short intake on your stage, interests and constraints — school, campus, or first job.",
-            },
-            {
-              icon: UsersRound,
-              title: "We match, not guess",
-              body: "You are paired with a trained mentor in your field within 14 days, plus a cohort of peers.",
-            },
-            {
-              icon: Star,
-              title: "Sessions with structure",
-              body: "Monthly sessions, written goals, and a review at week 12 so progress is visible, not vague.",
-            },
-          ].map(({ icon: Icon, title, body }, i) => (
+          {OUTCOMES.map(({ title, body }, i) => (
             <article
               key={title}
               className="rounded-3xl border border-border/70 bg-card p-8 transition-shadow hover:shadow-elevated"
             >
               <div className="flex items-center justify-between">
                 <span className="icon-chip-lg">
-                  <Icon className="h-5 w-5" />
+                  <Compass className="h-5 w-5" />
                 </span>
                 <span className="font-display text-sm text-muted-foreground/50">0{i + 1}</span>
               </div>
@@ -147,44 +138,37 @@ function Index() {
         </div>
       </section>
 
-      {/* Programs */}
-      {/* Hiring partners */}
+      {/* Practical application */}
       <section className="border-y border-border/60 bg-background py-24 dark:bg-hero-gradient">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
-            <p className="eyebrow text-ember">Beyond mentorship</p>
+            <p className="eyebrow text-ember">Practical application</p>
             <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl dark:text-on-dark">
-              We have partnered with hiring agents — and we link our people to them
+              Build, test, and present — not just study
             </h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground dark:text-on-dark/70">
-              Mentorship is where it starts, not where it ends. We work with recruitment agents and
-              employers, and when a mentee is ready we put their name in front of them. Guidance,
-              then a real door to walk through.
+              Learners apply concepts through robotics builds, data capstones, creative portfolios,
+              software projects, and community innovation challenges.
             </p>
             <Link
-              to="/contact"
+              to="/learning"
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
             >
-              Partner with us <ArrowRight className="h-4 w-4" />
+              Browse learning tracks <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid gap-4">
-            {PARTNERS.map((p) => (
+            {PRACTICAL_APPLICATION.map((item) => (
               <article
-                key={p.name}
+                key={item}
                 className="flex gap-4 rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:bg-transparent dark:glass-dark"
               >
                 <span className="icon-chip-lg">
                   <Briefcase className="h-5 w-5" />
                 </span>
-                <div>
-                  <h3 className="font-display text-base font-semibold text-foreground dark:text-on-dark">
-                    {p.name}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
-                    {p.detail}
-                  </p>
-                </div>
+                <p className="text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+                  {item}
+                </p>
               </article>
             ))}
           </div>
@@ -198,8 +182,12 @@ function Index() {
             <div className="max-w-2xl">
               <p className="eyebrow text-ember">Our programs</p>
               <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
-                Guidance for the parts of life nobody schedules
+                Seven connected pathways
               </h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Enter through exploration and grow specialist technical, creative, and entrepreneurial
+                capabilities.
+              </p>
             </div>
             <Link
               to="/programs"
@@ -223,6 +211,7 @@ function Index() {
                   {p.audience}
                 </span>
                 <h3 className="mt-5 text-xl font-bold group-hover:text-ember">{p.title}</h3>
+                <p className="mt-1 text-xs font-medium text-ember">{p.subtitle}</p>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.blurb}</p>
               </Link>
             ))}
@@ -234,14 +223,20 @@ function Index() {
       <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="eyebrow text-ember">Upcoming</p>
-            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Next three rooms to be in</h2>
+            <p className="eyebrow text-ember">First intake · {FIRST_INTAKE.label}</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+              Reserve your free seat — {FEATURED_EVENT.title}
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              With {FACILITATORS.map((f) => f.name).join(" and ")} · {eventVenue(FEATURED_EVENT)}
+            </p>
           </div>
           <Link
             to="/events"
+            hash={FEATURED_EVENT.eventId}
             className="inline-flex items-center gap-1.5 font-display text-sm font-semibold hover:text-ember"
           >
-            Reserve a seat <ArrowRight className="h-4 w-4" />
+            Reserve free seat <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -249,47 +244,56 @@ function Index() {
             <Link
               key={e.eventId}
               to="/events"
+              hash={e.eventId}
               className="group flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-elevated"
             >
-              <span className="eyebrow text-ember">{e.program ?? eventVenue(e)}</span>
+              <span className="eyebrow text-ember">{eventDateLabel(e)}</span>
               <h3 className="mt-3 text-lg font-bold leading-snug">{e.title}</h3>
               <p className="mt-2 flex-1 text-sm text-muted-foreground">{eventVenue(e)}</p>
               <span className="mt-5 text-xs text-muted-foreground">
-                {(e.seats ?? 0) - (e.seatsTaken ?? 0)} seats left · {e.price ?? "—"}
+                {e.price ?? "Free"} · Reserve online
               </span>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Reviews */}
+      {/* Core values */}
       <section className="border-t border-border/60 bg-background py-24 dark:bg-hero-gradient">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-2xl">
-            <p className="eyebrow text-ember">Voices</p>
+            <p className="eyebrow text-ember">Core values</p>
             <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl dark:text-on-dark">
-              What we hear in cohorts
+              How we work at the Hub
             </h2>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {REVIEWS.map((r) => (
+            {CORE_VALUES.map((v) => (
               <figure
-                key={r.name}
+                key={v.key}
                 className="rounded-3xl border border-border/70 bg-card p-7 dark:border-transparent dark:bg-transparent dark:glass-dark"
               >
                 <Quote className="h-6 w-6 text-ember" />
-                <blockquote className="mt-4 text-sm leading-relaxed text-foreground/85 dark:text-on-dark/85">
-                  {r.quote}
-                </blockquote>
-                <figcaption className="mt-6 border-t border-border pt-4 dark:border-white/10">
+                <figcaption className="mt-4">
                   <span className="block font-display text-sm font-semibold text-foreground dark:text-on-dark">
-                    {r.name}
+                    {v.key}
                   </span>
-                  <span className="block text-xs text-muted-foreground dark:text-on-dark/60">
-                    {r.role}
+                  <span className="mt-2 block text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+                    {v.detail}
                   </span>
                 </figcaption>
               </figure>
+            ))}
+          </div>
+          <div className="mt-12 flex flex-wrap gap-2">
+            {INNOVATION_CYCLE.map((step, i) => (
+              <span
+                key={step}
+                className="rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+              >
+                {i > 0 ? "→ " : ""}
+                {step}
+              </span>
             ))}
           </div>
         </div>
@@ -302,8 +306,8 @@ function Index() {
             <p className="eyebrow text-ember">Roadmap</p>
             <h2 className="mt-4 text-3xl font-bold sm:text-4xl">What we are building next</h2>
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              The mentorship programme comes first. The learning app, the LMS and the gallery follow
-              — here is the honest order.
+              Programmes and the learning platform are live. Cohort milestones, payments, and
+              certificates are next on the roadmap.
             </p>
           </div>
           <ol className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -331,11 +335,11 @@ function Index() {
         <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card p-10 text-center sm:p-16">
           <div className="absolute inset-x-0 -top-24 mx-auto h-48 w-48 rounded-full bg-ember/20 blur-3xl" />
           <h2 className="relative text-3xl font-bold sm:text-4xl">
-            Ready to stop guessing your next step?
+            Ready to explore your pathway?
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Cohorts open every month. Join as a mentee, or bring your experience and mentor someone
-            who needs the road map you wish you had.
+            Join an intake cohort, pick a programme, and build skills that show up in projects —
+            not just on paper.
           </p>
           <div className="relative mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -345,10 +349,10 @@ function Index() {
               Join a cohort <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              to="/events"
+              to="/programs"
               className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3.5 font-display text-sm font-semibold transition-colors hover:bg-accent"
             >
-              Browse events
+              View all programmes
             </Link>
           </div>
         </div>

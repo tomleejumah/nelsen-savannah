@@ -9,11 +9,17 @@ export function lmsOk(res, data, source = "sqlite", status = 200) {
   });
 }
 
-export function lmsErr(res, message, status = 400, source = "sqlite") {
+export function lmsErr(
+  res,
+  message,
+  status = 400,
+  source = "sqlite",
+  data = null,
+) {
   return res.status(status).json({
     ok: false,
     source,
-    data: null,
+    data,
     error: message,
   });
 }

@@ -6,11 +6,11 @@ import { MEDIA } from "@/data/site";
 export const Route = createFileRoute("/blogs")({
   head: () => ({
     meta: [
-      { title: "Blogs — Stories & Guidance | Nelsen Savannah" },
+      { title: "Blogs — Innovation Hub Notes | Nelsen Savannah" },
       {
         name: "description",
         content:
-          "Articles from mentors — career paths, interview technique, mentorship and money habits.",
+          "Articles on careers, communication, innovation, and practical skills from the Nelsen Savannah Innovation Hub.",
       },
       { property: "og:title", content: "Blogs | Nelsen Savannah" },
     ],
@@ -27,7 +27,7 @@ function BlogsPage() {
       <header className="mx-auto max-w-7xl px-5 sm:px-8">
         <p className="eyebrow text-ember">Blogs</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-bold sm:text-5xl">
-          Notes from mentors, written for the person deciding right now
+          Notes from the Hub — for learners deciding their next move
         </h1>
       </header>
 

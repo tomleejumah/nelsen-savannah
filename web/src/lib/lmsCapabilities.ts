@@ -99,8 +99,8 @@ export const LMS_TOOLS: LmsTool[] = [
   },
   {
     id: "materials",
-    label: "Upload materials",
-    blurb: "Tracks, lessons, and video (demo UI)",
+    label: "Cohort walkthrough",
+    blurb: "Schedule milestones, price, and quizzes",
     to: "/teach",
     hash: "materials",
     shells: ["mentor", "school", "admin"],

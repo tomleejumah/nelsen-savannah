@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Globe, Mail, MapPin, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { ORG, PROGRAMS } from "@/data/site";
@@ -8,19 +8,19 @@ import { ORG, PROGRAMS } from "@/data/site";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Us — Join a Cohort or Mentor | Nelsen Savannah" },
+      { title: "Contact — Enrol or Partner | Nelsen Savannah Innovation Hub" },
       {
         name: "description",
-        content: `Reach Nelsen Savannah in Nairobi — ${ORG.phone} or ${ORG.email}.`,
+        content: `Reach ${ORG.hubName} in Nairobi — ${ORG.email} or ${ORG.website.replace(/^https?:\/\//, "")}.`,
       },
-      { property: "og:title", content: "Contact Nelsen Savannah" },
+      { property: "og:title", content: "Contact | Nelsen Savannah Innovation Hub" },
     ],
   }),
   component: ContactPage,
 });
 
 function ContactPage() {
-  const [role, setRole] = useState("mentee");
+  const [role, setRole] = useState("learner");
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
@@ -28,11 +28,11 @@ function ContactPage() {
         <div>
           <p className="eyebrow text-ember">Contact us</p>
           <h1 className="mt-4 text-4xl font-bold sm:text-5xl">
-            Tell us where you are, and we will match the guidance
+            Tell us which programme fits, and we will guide your next step
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Mentorship and programs only — mentee, mentor, or learning partner. We reply within two
-            working days, or message on WhatsApp for a faster hello.
+            Learners, facilitators, schools, and partners — enquire about intakes, cohorts, and
+            collaboration. We reply within two working days by email.
           </p>
           <p className="mt-4 max-w-md text-sm text-muted-foreground">
             Investing?{" "}
@@ -60,26 +60,15 @@ function ContactPage() {
             </li>
             <li>
               <a
-                href={`tel:${ORG.phone.replace(/\s/g, "")}`}
-                className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
-              >
-                <span className="icon-chip">
-                  <Phone className="h-4 w-4" />
-                </span>
-                {ORG.phone}
-              </a>
-            </li>
-            <li>
-              <a
-                href={`https://wa.me/${ORG.whatsapp}`}
+                href={ORG.website}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
               >
                 <span className="icon-chip">
-                  <Phone className="h-4 w-4" />
+                  <Globe className="h-4 w-4" />
                 </span>
-                WhatsApp · {ORG.phone}
+                {ORG.website.replace(/^https?:\/\//, "")}
               </a>
             </li>
             <li className="flex items-center gap-3 text-muted-foreground">
@@ -114,26 +103,30 @@ function ContactPage() {
             );
             window.location.href = `mailto:${ORG.email}?subject=${subject}&body=${body}`;
             toast.success("Opening your email app", {
-              description: "If nothing opens, write us on WhatsApp or email directly.",
+              description: "If nothing opens, email us directly.",
             });
           }}
           className="rounded-3xl border border-border/70 bg-card p-7 shadow-elevated sm:p-9"
         >
           <div className="grid gap-2">
-            <span className="eyebrow text-muted-foreground">I am joining as</span>
+            <span className="eyebrow text-muted-foreground">I am enquiring as</span>
             <div className="grid grid-cols-3 gap-2 rounded-2xl bg-secondary p-1.5">
-              {["mentee", "mentor", "partner"].map((r) => (
+              {[
+                { id: "learner", label: "Learner" },
+                { id: "facilitator", label: "Facilitator" },
+                { id: "partner", label: "Partner" },
+              ].map((r) => (
                 <button
-                  key={r}
+                  key={r.id}
                   type="button"
-                  onClick={() => setRole(r)}
-                  className={`rounded-xl py-2 font-display text-sm font-semibold capitalize transition-colors ${
-                    role === r
+                  onClick={() => setRole(r.id)}
+                  className={`rounded-xl py-2 font-display text-sm font-semibold transition-colors ${
+                    role === r.id
                       ? "bg-ember-gradient text-maroon-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {r}
+                  {r.label}
                 </button>
               ))}
             </div>
@@ -142,9 +135,9 @@ function ContactPage() {
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <Field label="Full name" name="name" placeholder="Your full name" required />
             <Field label="Email" name="email" type="email" placeholder="you@email.com" required />
-            <Field label="Phone" name="phone" placeholder="+254 7…" />
+            <Field label="Phone (optional)" name="phone" placeholder="+254 7…" />
             <label className="grid gap-1.5 text-sm">
-              <span className="font-medium">Program of interest</span>
+              <span className="font-medium">Programme of interest</span>
               <select
                 name="program"
                 className="h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -159,12 +152,12 @@ function ContactPage() {
           </div>
 
           <label className="mt-4 grid gap-1.5 text-sm">
-            <span className="font-medium">What do you need help with?</span>
+            <span className="font-medium">What would you like to know?</span>
             <textarea
               name="message"
               rows={4}
               required
-              placeholder="Where you are now, and what you want next."
+              placeholder="Your background, preferred intake, and what you hope to build or learn."
               className="rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </label>
@@ -176,14 +169,12 @@ function ContactPage() {
             Send message <Send className="h-4 w-4" />
           </button>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Or{" "}
+            Or email{" "}
             <a
-              href={`https://wa.me/${ORG.whatsapp}`}
+              href={`mailto:${ORG.email}`}
               className="font-medium text-foreground underline-offset-2 hover:underline"
-              target="_blank"
-              rel="noreferrer"
             >
-              WhatsApp {ORG.phone}
+              {ORG.email}
             </a>
           </p>
         </form>

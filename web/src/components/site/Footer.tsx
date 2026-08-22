@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Globe, Mail, MapPin } from "lucide-react";
 
 import { ORG, PROGRAMS } from "@/data/site";
 import { BrandMark } from "./BrandMark";
@@ -11,15 +11,14 @@ export function Footer() {
         <div>
           <BrandMark size="sm" />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {ORG.legal}. We connect young people with mentors who have already walked the road —
-            careers, communication, work and life.
+            {ORG.hubName}. {ORG.vision.slice(0, 120)}…
           </p>
         </div>
 
         <nav className="text-sm">
           <h3 className="eyebrow text-muted-foreground">Programs</h3>
           <ul className="mt-4 space-y-2">
-            {PROGRAMS.slice(0, 5).map((p) => (
+            {PROGRAMS.map((p) => (
               <li key={p.slug}>
                 <Link
                   to="/programs"
@@ -38,8 +37,8 @@ export function Footer() {
           <ul className="mt-4 space-y-2">
             {[
               { to: "/learning", label: "Learning" },
-              { to: "/invest", label: "Invest" },
-              { to: "/tourism", label: "Tourism" },
+              // { to: "/invest", label: "Invest" },
+              // { to: "/tourism", label: "Tourism" },
               { to: "/events", label: "Events" },
               { to: "/blogs", label: "Blogs" },
               { to: "/contact", label: "Contact us" },
@@ -69,12 +68,12 @@ export function Footer() {
             </li>
             <li>
               <a
-                href={`https://wa.me/${ORG.whatsapp}`}
+                href={ORG.website}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-2 transition-colors hover:text-maroon"
               >
-                <Phone className="h-4 w-4 shrink-0 text-brand-soft" /> {ORG.phone}
+                <Globe className="h-4 w-4 shrink-0 text-brand-soft" /> {ORG.website.replace(/^https?:\/\//, "")}
               </a>
             </li>
             <li className="flex items-center gap-2">

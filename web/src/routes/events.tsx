@@ -1,27 +1,30 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, MapPin, Ticket, Users } from "lucide-react";
-import { toast } from "sonner";
+import { Clock, MapPin, Ticket, UserRound, Users } from "lucide-react";
 
+import { ReserveSeatDialog } from "@/components/site/ReserveSeatDialog";
+import { FACILITATORS } from "@/data/site";
 import {
   EVENTS,
+  FEATURED_EVENT,
   eventDateLabel,
   eventFormat,
   eventTimeRange,
   eventVenue,
   type AppEvent,
 } from "@/data/events";
+import { fetchEventReservationCounts } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Events — Expos, Practice Labs & Mentor Mixers | Nelsen Savannah" },
+      { title: "Events — Reserve a Free Seat | Nelsen Savannah Innovation Hub" },
       {
         name: "description",
         content:
-          "Reserve a seat at Nelsen Savannah events — same event model as the Android app (date, time, venue/mode).",
+          "Reserve a free seat at Nelsen Savannah Innovation Hub events — first intake Friday 29 August 2026 with facilitators Tomee Juma and Evans Nyairo.",
       },
-      { property: "og:title", content: "Events | Nelsen Savannah" },
+      { property: "og:title", content: "Events | Nelsen Savannah Innovation Hub" },
     ],
   }),
   component: EventsPage,
@@ -29,18 +32,36 @@ export const Route = createFileRoute("/events")({
 
 function EventsPage() {
   const [filter, setFilter] = useState<"All" | "In person" | "Online">("All");
-  const [reserved, setReserved] = useState<string[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [reservedLocal, setReservedLocal] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ns-reserved-events") || "[]") as string[];
+    } catch {
+      return [];
+    }
+  });
+  const [activeEvent, setActiveEvent] = useState<AppEvent | null>(null);
 
-  const events = EVENTS.filter(
-    (e) => filter === "All" || eventFormat(e) === filter,
-  );
+  const refreshCounts = useCallback(async () => {
+    const res = await fetchEventReservationCounts();
+    if (res.ok && res.data?.counts) {
+      setCounts(res.data.counts);
+    }
+  }, []);
 
-  const reserve = (event: AppEvent) => {
-    if (reserved.includes(event.eventId)) return;
-    setReserved((prev) => [...prev, event.eventId]);
-    toast.success(`Seat reserved: ${event.title}`, {
-      description: `${eventVenue(event)} · ${eventDateLabel(event)}. Confirmation email on the way.`,
+  useEffect(() => {
+    void refreshCounts();
+  }, [refreshCounts]);
+
+  const events = EVENTS.filter((e) => filter === "All" || eventFormat(e) === filter);
+
+  const markReserved = (eventId: string) => {
+    setReservedLocal((prev) => {
+      const next = prev.includes(eventId) ? prev : [...prev, eventId];
+      localStorage.setItem("ns-reserved-events", JSON.stringify(next));
+      return next;
     });
+    void refreshCounts();
   };
 
   return (
@@ -48,11 +69,11 @@ function EventsPage() {
       <header className="mx-auto max-w-7xl px-5 sm:px-8">
         <p className="eyebrow text-ember">Events</p>
         <h1 className="mt-4 max-w-3xl text-4xl font-bold sm:text-5xl">
-          Show up once and the path gets clearer
+          Reserve your free seat — first intake {eventDateLabel(FEATURED_EVENT)}
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Same shape as the Android app: date, start/end time, location or meeting link. Seats are
-          limited per cohort.
+          Opening intake with {FACILITATORS.map((f) => f.name).join(" and ")}. Fill in your details
+          — no payment required.
         </p>
 
         <div className="mt-8 inline-flex gap-1.5 rounded-full bg-secondary p-1.5">
@@ -76,16 +97,17 @@ function EventsPage() {
       <section className="mx-auto mt-10 grid max-w-7xl gap-5 px-5 sm:px-8">
         {events.map((event) => {
           const seats = event.seats ?? 0;
-          const taken = event.seatsTaken ?? 0;
+          const taken = counts[event.eventId] ?? event.seatsTaken ?? 0;
           const left = Math.max(0, seats - taken);
           const pct = seats ? Math.round((taken / seats) * 100) : 0;
-          const isReserved = reserved.includes(event.eventId);
+          const isReserved = reservedLocal.includes(event.eventId);
           const format = eventFormat(event);
 
           return (
             <article
               key={event.eventId}
-              className="grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center"
+              id={event.eventId}
+              className="scroll-mt-28 grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center"
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -105,6 +127,12 @@ function EventsPage() {
                     {event.description}
                   </p>
                 )}
+                {event.facilitators?.length ? (
+                  <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <UserRound className="h-3.5 w-3.5" />
+                    Facilitators: {event.facilitators.join(" · ")}
+                  </p>
+                ) : null}
                 <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
                   <li className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5" /> {eventTimeRange(event)}
@@ -133,7 +161,7 @@ function EventsPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => reserve(event)}
+                    onClick={() => setActiveEvent(event)}
                     disabled={isReserved || left <= 0}
                     className={`mt-4 w-full rounded-full px-5 py-2.5 font-display text-sm font-semibold transition-transform ${
                       isReserved
@@ -141,7 +169,7 @@ function EventsPage() {
                         : "bg-ember-gradient text-maroon-foreground shadow-ember-glow hover:-translate-y-0.5"
                     }`}
                   >
-                    {isReserved ? "Seat reserved" : left <= 0 ? "Sold out" : "Reserve a seat"}
+                    {isReserved ? "Seat reserved" : left <= 0 ? "Full" : "Reserve free seat"}
                   </button>
                 </div>
               )}
@@ -149,6 +177,15 @@ function EventsPage() {
           );
         })}
       </section>
+
+      {activeEvent && (
+        <ReserveSeatDialog
+          event={activeEvent}
+          open={!!activeEvent}
+          onClose={() => setActiveEvent(null)}
+          onReserved={markReserved}
+        />
+      )}
     </div>
   );
 }

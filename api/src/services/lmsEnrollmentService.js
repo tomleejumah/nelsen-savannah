@@ -185,6 +185,11 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
     throw err;
   }
 
+  const { assertEnrollmentEntitlement } = await import(
+    "./lmsLearningCommerceService.js"
+  );
+  await assertEnrollmentEntitlement(profile.uid, trackId);
+
   const existing = await dbGet(
     "SELECT * FROM enrollments WHERE uid = ? AND track_id = ?",
     [profile.uid, trackId],
@@ -340,6 +345,11 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
     err.status = 403;
     throw err;
   }
+
+  const { assertLessonMilestoneAvailable } = await import(
+    "./lmsLearningCommerceService.js"
+  );
+  await assertLessonMilestoneAvailable(profile.uid, lesson);
 
   const prev = await dbGet(
     "SELECT * FROM progress WHERE uid = ? AND lesson_id = ?",

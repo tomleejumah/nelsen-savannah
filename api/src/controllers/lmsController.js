@@ -158,6 +158,7 @@ export async function postEnrollment(req, res) {
       err.message || "Enroll failed",
       err.status || 500,
       getPrimaryEngine(),
+      err.details || null,
     );
   }
 }
@@ -435,6 +436,7 @@ function handle(label, fn) {
         err.message || "Error",
         err.status || 500,
         getPrimaryEngine(),
+        err.details || null,
       );
     }
   };
@@ -478,6 +480,106 @@ export const submitQuiz = handle("[POST /lms/lessons/:lessonId/quiz]", async (re
   const { submitQuiz: submit } = await import("../services/lmsAdminService.js");
   return submit(profileFromReq(req), req.params.lessonId, req.body || {});
 });
+
+export const postCheckout = handle("[POST /lms/checkout]", async (req) => {
+  const svc = await import("../services/lmsLearningCommerceService.js");
+  const result = await svc.checkout(profileFromReq(req), req.body || {});
+  return { ...result, status: 201 };
+});
+
+export const getMyPurchases = handle("[GET /lms/purchases/me]", async (req) => {
+  const svc = await import("../services/lmsLearningCommerceService.js");
+  return svc.listMyPurchases(req.user.uid);
+});
+
+export const listCohorts = handle(
+  "[GET /lms/schools/:id/cohorts]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    return svc.listSchoolCohorts(req.user.uid, req.params.id);
+  },
+);
+
+export const postCohort = handle(
+  "[POST /lms/schools/:id/cohorts]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    const result = await svc.createCohort(
+      req.user.uid,
+      req.params.id,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const postCohortMember = handle(
+  "[POST /lms/schools/:id/cohorts/:cohortId/members]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    const result = await svc.addCohortMember(
+      req.user.uid,
+      req.params.id,
+      req.params.cohortId,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const postCohortRun = handle(
+  "[POST /lms/schools/:id/cohorts/:cohortId/runs]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    const result = await svc.createCohortTrackRun(
+      req.user.uid,
+      req.params.id,
+      req.params.cohortId,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const postMilestone = handle(
+  "[POST /lms/schools/:id/cohort-runs/:runId/milestones]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    const result = await svc.createMilestone(
+      req.user.uid,
+      req.params.id,
+      req.params.runId,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const putTrackPricing = handle(
+  "[PUT /lms/schools/:id/tracks/:trackId/pricing]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    return svc.setTrackPricing(
+      req.user.uid,
+      req.params.id,
+      req.params.trackId,
+      req.body || {},
+    );
+  },
+);
+
+export const putLessonQuiz = handle(
+  "[PUT /lms/schools/:id/lessons/:lessonId/quiz]",
+  async (req) => {
+    const svc = await import("../services/lmsLearningCommerceService.js");
+    return svc.authorQuiz(
+      req.user.uid,
+      req.params.id,
+      req.params.lessonId,
+      req.body || {},
+    );
+  },
+);
 
 export const adminCreateTrack = handle("[POST /lms/admin/tracks]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
@@ -647,7 +749,36 @@ export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   return { source: result.engine, data: result };
 });
 
-/** L8 — events deferred; live sessions stay out of core LMS for now. */
+/** L8 — public event seat reservations (site + Android-aligned eventIds). */
+export async function getEventReservationCounts(req, res) {
+  try {
+    const svc = await import("../services/lmsEventReservationService.js");
+    const result = await svc.getReservationCounts();
+    return lmsOk(res, { counts: result.counts }, result.source);
+  } catch (err) {
+    console.error("[GET /lms/events/reservation-counts]", err);
+    return lmsErr(res, "Failed to load reservation counts", 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function postEventReserve(req, res) {
+  try {
+    const svc = await import("../services/lmsEventReservationService.js");
+    const result = await svc.reserveEventSeat(req.params.eventId, req.body || {});
+    return lmsOk(res, result, result.source, 201);
+  } catch (err) {
+    console.error("[POST /lms/events/:eventId/reserve]", err.message);
+    return lmsErr(
+      res,
+      err.message || "Reservation failed",
+      err.status || 500,
+      getPrimaryEngine() || "sqlite",
+      err.code ? { code: err.code } : null,
+    );
+  }
+}
+
+/** Authenticated events catalogue — still deferred beyond reservations. */
 export function eventsTodo(_req, res) {
   return res.status(501).json({
     ok: false,

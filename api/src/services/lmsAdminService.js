@@ -458,6 +458,10 @@ export async function submitQuiz(profile, lessonId, body = {}) {
     err.status = 404;
     throw err;
   }
+  const learning = await import("./lmsLearningCommerceService.js");
+  const authored = await learning.submitAuthoredQuiz(profile, lesson, body);
+  if (authored) return authored;
+  await learning.assertLessonMilestoneAvailable(profile.uid, lesson);
   const quizPct =
     body.score !== undefined
       ? Math.max(0, Math.min(100, Number(body.score)))
