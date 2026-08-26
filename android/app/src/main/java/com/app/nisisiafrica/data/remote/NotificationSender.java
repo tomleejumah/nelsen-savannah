@@ -16,7 +16,7 @@ import retrofit2.Response;
 
 /**
  * Fire-and-forget helper for sending server push notifications through the
- * webhook ({@code api.tommlyjumah.dev/nisisi-africa/}). Each call fetches the
+ * webhook ({@code api.nelsen-savannah.co.ke/}). Each call fetches the
  * caller's Firebase ID token and enqueues the request; failures are logged but
  * never surfaced to the user since notifications are best-effort.
  */

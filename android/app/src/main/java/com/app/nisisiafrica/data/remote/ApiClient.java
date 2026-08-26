@@ -11,7 +11,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
-    private static final String BASE_URL = "https://api.tommlyjumah.dev/nisisi-africa/";
+    private static final String BASE_URL = "https://api.nelsen-savannah.co.ke/";
     private static Retrofit retrofit = null;
 
     public static Retrofit getClient() {

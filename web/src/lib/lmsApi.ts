@@ -1,6 +1,6 @@
 export const LMS_API_BASE =
   import.meta.env.VITE_LMS_API_BASE ??
-  "https://api.tommlyjumah.dev/nisisi-africa";
+  "https://api.nelsen-savannah.co.ke";
 
 export type SchoolMembershipDto = {
   id: string;

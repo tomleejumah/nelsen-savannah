@@ -210,7 +210,7 @@ export const ROADMAP = [
 export const STATS = [
   { value: "7", label: "Core programmes" },
   { value: "Nairobi", label: "Innovation Hub" },
-  { value: "Explore → Launch", label: "Innovation cycle" },
+  { value: "9 steps", label: "Innovation cycle" },
   { value: "App & web", label: "Learn anywhere" },
 ];
 

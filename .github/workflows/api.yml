@@ -44,16 +44,16 @@ jobs:
       - name: Deploy API
         env:
           PM2: /usr/local/bin/pm2
-          # Deploy directory keeps its legacy name on purpose: renaming it is a
-          # live-server move that would orphan uploads/ and data/. Do not "fix".
-          APP_DIR: /home/server/WebHooks/Nisisi-Africa
+          # All Node APIs live under /home/server/Apis/<name>.
+          APP_DIR: /home/server/Apis/nelsen-savannah
         run: |
           # Both names would bind PORT 5002, so the old process must be deleted,
           # not stopped — a stopped process returns on `pm2 resurrect`.
           "$PM2" delete nisisi-africa || true
           "$PM2" stop nelsen-savannah || true
-          # Directory was deleted once and broke deploy — always ensure it exists.
           mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
+          # Never write/replace secrets from Actions. .env + Firebase JSON are
+          # server-local only until we deliberately wire GitHub Secrets later.
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
@@ -64,7 +64,11 @@ jobs:
             "${GITHUB_WORKSPACE}/api/" "$APP_DIR/"
           cd "$APP_DIR"
           if [ ! -f .env ]; then
-            echo "::error::Missing $APP_DIR/.env — restore secrets before deploy can start the API"
+            echo "::error::Missing $APP_DIR/.env — copy from local when ready; deploy will not create it"
+            exit 1
+          fi
+          if [ ! -f firebase-service-account.json ]; then
+            echo "::error::Missing $APP_DIR/firebase-service-account.json — deploy will not create it"
             exit 1
           fi
           rm -rf node_modules
@@ -87,6 +91,4 @@ jobs:
       - name: Health smoke
         run: node scripts/smoke.mjs
         env:
-          # Still the legacy prefix: nginx has no /nelsen-savannah block yet.
-          # Flip once that location is live and returning 200.
-          LMS_SMOKE_BASE: https://api.tommlyjumah.dev/nisisi-africa
+          LMS_SMOKE_BASE: https://api.nelsen-savannah.co.ke
