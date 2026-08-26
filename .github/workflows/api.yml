@@ -52,6 +52,8 @@ jobs:
           # not stopped — a stopped process returns on `pm2 resurrect`.
           "$PM2" delete nisisi-africa || true
           "$PM2" stop nelsen-savannah || true
+          # Directory was deleted once and broke deploy — always ensure it exists.
+          mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
@@ -61,6 +63,10 @@ jobs:
             --exclude 'data/' \
             "${GITHUB_WORKSPACE}/api/" "$APP_DIR/"
           cd "$APP_DIR"
+          if [ ! -f .env ]; then
+            echo "::error::Missing $APP_DIR/.env — restore secrets before deploy can start the API"
+            exit 1
+          fi
           rm -rf node_modules
           npm install --production
           mkdir -p data uploads uploads/_tmp

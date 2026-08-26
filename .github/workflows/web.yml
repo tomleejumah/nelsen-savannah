@@ -51,17 +51,21 @@ jobs:
 
       - name: Deploy to nginx root
         env:
-          # Static SPA served by nginx on :8012 (nelsen-savannah.tommlyjumah.dev).
-          # No PM2 — API already owns the `nelsen-savannah` process name.
-          WEB_DIR: /home/server/web-projects/nelsen-savannah
+          # Must match nginx root for nelsen-savannah.tommlyjumah.dev
+          # (sites-available/nelsen-savannah.tommlyjumah.dev → root /var/www/nelsen-savannah).
+          WEB_DIR: /var/www/nelsen-savannah
+          # Keep a mirror for co.ke / ad-hoc syncs.
+          WEB_DIR_MIRROR: /home/server/web-projects/nelsen-savannah
         run: |
-          mkdir -p "$WEB_DIR"
+          mkdir -p "$WEB_DIR" "$WEB_DIR_MIRROR"
           rsync -av --delete \
             --exclude '.git' \
             "${GITHUB_WORKSPACE}/web-dist/" "$WEB_DIR/"
-          # nginx (www-data) must be able to read through /home/server (711).
-          find "$WEB_DIR" -type d -exec chmod 755 {} +
-          find "$WEB_DIR" -type f -exec chmod 644 {} +
+          rsync -av --delete \
+            --exclude '.git' \
+            "${GITHUB_WORKSPACE}/web-dist/" "$WEB_DIR_MIRROR/"
+          find "$WEB_DIR" "$WEB_DIR_MIRROR" -type d -exec chmod 755 {} +
+          find "$WEB_DIR" "$WEB_DIR_MIRROR" -type f -exec chmod 644 {} +
 
   smoke:
     needs: deploy
