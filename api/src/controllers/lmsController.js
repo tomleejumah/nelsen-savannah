@@ -798,6 +798,22 @@ export async function postHubEvent(req, res) {
   }
 }
 
+export async function deleteHubEvent(req, res) {
+  try {
+    const svc = await import("../services/lmsHubEventService.js");
+    const result = await svc.deleteHubEvent(req.params.eventId);
+    return lmsOk(res, result, result.source);
+  } catch (err) {
+    console.error("[DELETE /lms/events/:eventId]", err.message);
+    return lmsErr(
+      res,
+      err.message || "Delete failed",
+      err.status || 500,
+      getPrimaryEngine() || "sqlite",
+    );
+  }
+}
+
 /** L8 — public event seat reservations (site + Android-aligned eventIds). */
 export async function getEventReservationCounts(req, res) {
   try {

@@ -21,6 +21,10 @@ object LmsEventsDataSource {
     ): Pair<Boolean, String?> = runBlocking { reserveSeat(bearer, eventId, body) }
 
     @JvmStatic
+    fun deleteHubEventBlocking(bearer: String, eventId: String): Pair<Boolean, String?> =
+        runBlocking { deleteHubEvent(bearer, eventId) }
+
+    @JvmStatic
     fun fetchPublicEventsBlocking(): List<Event> = runBlocking { fetchPublicEvents() }
 
     private fun HubEventDto.toEvent() = Event(
@@ -80,6 +84,23 @@ object LmsEventsDataSource {
                 res.isSuccessful && envelope?.ok == true -> true to null
                 envelope?.error != null -> false to envelope.error
                 else -> false to "Could not reserve seat"
+            }
+        } catch (e: Exception) {
+            false to (e.message ?: "Network error")
+        }
+    }
+
+    suspend fun deleteHubEvent(
+        bearer: String,
+        eventId: String,
+    ): Pair<Boolean, String?> = withContext(Dispatchers.IO) {
+        try {
+            val res = ApiClient.getLmsService().deleteHubEvent(bearer, eventId).execute()
+            val envelope = res.body()
+            when {
+                res.isSuccessful && envelope?.ok == true -> true to null
+                envelope?.error != null -> false to envelope.error
+                else -> false to "Could not delete event"
             }
         } catch (e: Exception) {
             false to (e.message ?: "Network error")

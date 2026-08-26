@@ -51,6 +51,15 @@ class GoogleAuthHelper(
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)
+            val idToken = account.idToken
+            if (idToken.isNullOrBlank()) {
+                onError(
+                    IllegalStateException(
+                        "Google sign-in misconfigured (missing ID token). Check WEB_CLIENT_ID.",
+                    ),
+                )
+                return
+            }
 
             val userData = UserData(
                 id = account.id ?: "",
@@ -62,7 +71,7 @@ class GoogleAuthHelper(
                 bio = ""
             )
 
-            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
             auth.signInWithCredential(credential)
                 .addOnSuccessListener { authResult ->
                     val userId = authResult.user?.uid

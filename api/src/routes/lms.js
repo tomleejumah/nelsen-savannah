@@ -318,6 +318,12 @@ router.post(
   requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.postHubEvent,
 );
+router.delete(
+  "/events/:eventId",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.deleteHubEvent,
+);
 router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
 router.post(
   "/events/:eventId/reserve",

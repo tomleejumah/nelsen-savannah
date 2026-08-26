@@ -69,6 +69,31 @@ export async function getHubEvent(eventId) {
   return rowToEvent(row, taken[eventId] || 0);
 }
 
+/**
+ * Mentor/Admin delete — removes hub event and its reservations.
+ */
+export async function deleteHubEvent(eventId) {
+  const existing = await getHubEvent(eventId);
+  if (!existing) {
+    const err = new Error("Unknown event");
+    err.status = 404;
+    throw err;
+  }
+  // Announcements from Firebase are not in hub_events — only API hub rows.
+  if (existing.eventType === "announcement") {
+    const err = new Error("Announcements cannot be deleted here");
+    err.status = 400;
+    throw err;
+  }
+  await dbRun(`DELETE FROM event_reservations WHERE event_id = ?`, [eventId]);
+  await dbRun(`DELETE FROM hub_events WHERE event_id = ?`, [eventId]);
+  return {
+    deleted: true,
+    eventId,
+    source: getPrimaryEngine() || "sqlite",
+  };
+}
+
 export async function listPublicHubEvents() {
   const now = Date.now();
   const rows = await dbAll(
