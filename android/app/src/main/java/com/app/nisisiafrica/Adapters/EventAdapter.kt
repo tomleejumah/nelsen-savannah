@@ -141,8 +141,17 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                 tvSeatsLeft.text = "$left seats left"
                 tvSeatsPct.text = "$pct%"
                 seatsProgress.progress = pct
+                if (event.eventType != "announcement") {
+                    btnReserve.isEnabled = left > 0
+                    btnReserve.text = if (left > 0) "Reserve a seat ($left left)" else "Fully booked"
+                } else {
+                    btnReserve.isEnabled = true
+                    btnReserve.text = "Reserve a seat"
+                }
             } else {
                 seatsBlock.visibility = View.GONE
+                btnReserve.isEnabled = true
+                btnReserve.text = "Reserve a seat"
             }
 
             val open = { onEventClick?.onClick(event) }

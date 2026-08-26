@@ -38,7 +38,13 @@ class EventReminderWorker(
                 val triggerAt = (event.date - REMINDER_LEAD_MS).let { if (it < now) event.date else it }
                 val title = event.title.ifEmpty { "Upcoming event" }
                 val timeSuffix = if (event.startTime.isNotEmpty()) " at ${event.startTime}" else ""
-                scheduleAlarm(event.eventId.hashCode(), triggerAt, title, "Reminder: $title$timeSuffix")
+                scheduleAlarm(
+                    applicationContext,
+                    event.eventId.hashCode(),
+                    triggerAt,
+                    title,
+                    "Reminder: $title$timeSuffix",
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "event reminders failed", e)
@@ -54,10 +60,11 @@ class EventReminderWorker(
                 if (whenMs <= now) return@forEach
                 val triggerAt = (whenMs - REMINDER_LEAD_MS).let { if (it < now) whenMs else it }
                 scheduleAlarm(
+                    applicationContext,
                     ("booking_" + booking.id).hashCode(),
                     triggerAt,
                     "Upcoming session",
-                    "You have a session on ${booking.date} at ${booking.time}"
+                    "You have a session on ${booking.date} at ${booking.time}",
                 )
             }
         } catch (e: Exception) {
@@ -67,37 +74,44 @@ class EventReminderWorker(
         return Result.success()
     }
 
-    private fun scheduleAlarm(id: Int, triggerAtMs: Long, title: String, text: String) {
-        val intent = Intent(applicationContext, EventReminderReceiver::class.java).apply {
-            putExtra(EventReminderReceiver.EXTRA_ID, id)
-            putExtra(EventReminderReceiver.EXTRA_TITLE, title)
-            putExtra(EventReminderReceiver.EXTRA_TEXT, text)
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            applicationContext,
-            id,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val alarmManager =
-            applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                alarmManager.canScheduleExactAlarms()
-
-        if (canExact) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent
-            )
-        } else {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-        }
-    }
-
     companion object {
         private const val TAG = "EventReminderWorker"
-        private const val REMINDER_LEAD_MS = 30L * 60L * 1000L // 30 minutes before
+        const val REMINDER_LEAD_MS = 30L * 60L * 1000L // 30 minutes before
+
+        /** One-shot local reminder — callable from Java (e.g. after seat reserve). */
+        @JvmStatic
+        fun scheduleAlarm(
+            context: Context,
+            id: Int,
+            triggerAtMs: Long,
+            title: String,
+            text: String,
+        ) {
+            val intent = Intent(context, EventReminderReceiver::class.java).apply {
+                putExtra(EventReminderReceiver.EXTRA_ID, id)
+                putExtra(EventReminderReceiver.EXTRA_TITLE, title)
+                putExtra(EventReminderReceiver.EXTRA_TEXT, text)
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                id,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                    alarmManager.canScheduleExactAlarms()
+
+            if (canExact) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent
+                )
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+            }
+        }
     }
 }

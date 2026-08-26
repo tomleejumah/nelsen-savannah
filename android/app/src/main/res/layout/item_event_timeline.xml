@@ -104,7 +104,7 @@
                         android:gravity="center_vertical"
                         android:textColor="@color/muted"
                         android:textSize="11sp"
-                        app:drawableStartCompat="@drawable/ic_people" />
+                        app:drawableStartCompat="@drawable/ic_brand_mark_sm" />
 
                     <TextView
                         android:id="@+id/tvSeatsPct"
