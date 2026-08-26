@@ -14,7 +14,7 @@ import retrofit2.http.Query;
 
 /**
  * LMS endpoints on the same host as notifications
- * ({@code https://api.tommlyjumah.dev/nisisi-africa/}).
+ * ({@code https://api.nelsen-savannah.co.ke/}).
  */
 public interface LmsApiService {
 

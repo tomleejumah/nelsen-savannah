@@ -88,12 +88,11 @@ function Index() {
             </div>
 
             <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 sm:gap-8">
-              {STATS.map((s, index) => (
+              {STATS.map((s) => (
                 <div key={s.label} className="flex min-w-0 flex-col">
-                  <dt className="h-[58px] font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
-                    <span className="whitespace-nowrap">{s.value}</span>
+                  <dt className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
+                    {s.value}
                   </dt>
-
                   <dd className="mt-2 text-xs leading-snug text-muted-foreground">{s.label}</dd>
                 </div>
               ))}

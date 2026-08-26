@@ -2,7 +2,7 @@
  * Nelsen LMS roadmap — shared contract for Android + website.
  *
  * API home (no new service): monorepo `api/`
- *   Deployed as PM2 `nelsen-savannah` on server-remote → /home/server/WebHooks/Nisisi-Africa/
+ *   Deployed as PM2 `nelsen-savannah` on server-remote → /home/server/Apis/nelsen-savannah/
  *   Auth today: Bearer Firebase ID token (`middleware/auth.js` → admin.auth().verifyIdToken)
  *   Android already: Google Sign-In → FirebaseAuth (GoogleAuthHelper.kt) → same ID token
  *   Website: same Firebase Google login; call API with Authorization: Bearer <idToken>
@@ -23,7 +23,7 @@
 
 export const API = {
   repo: "api/",
-  remotePath: "/home/server/WebHooks/Nisisi-Africa/",
+  remotePath: "/home/server/Apis/nelsen-savannah/",
   pm2: "nelsen-savannah",
   health: "/health",
   existingMounts: ["/notifications", "/chat", "/didit"],

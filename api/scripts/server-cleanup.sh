@@ -16,16 +16,15 @@
 #   - Stale runner checkouts for repos that are no longer deployed here
 #
 # What it deliberately NEVER touches — the app's live state lives here:
-#   - /home/server/WebHooks/Nisisi-Africa/uploads/   (media, incl. _tmp)
-#   - /home/server/WebHooks/Nisisi-Africa/data/      (SQLite database)
+#   - /home/server/Apis/nelsen-savannah/uploads/   (media, incl. _tmp)
+#   - /home/server/Apis/nelsen-savannah/data/      (SQLite database)
 #   - .env, firebase-service-account.json
 #   - node_modules of the running app (deploy rebuilds it; deleting it
 #     mid-flight takes the API down)
 #
 set -euo pipefail
 
-# Path keeps the legacy directory name — the live app still deploys there.
-APP_DIR="${NELSEN_APP_DIR:-/home/server/WebHooks/Nisisi-Africa}"
+APP_DIR="${NELSEN_APP_DIR:-/home/server/Apis/nelsen-savannah}"
 PM2_HOME="${PM2_HOME:-$HOME/.pm2}"
 NPM_CACHE="${NPM_CONFIG_CACHE:-$HOME/.npm}"
 
@@ -34,7 +33,6 @@ RUNNER_SEARCH_PATHS=(
   "$HOME/actions-runner"
   "/opt/actions-runner"
   "/home/server/actions-runner"
-  "/home/server/WebHooks/actions-runner"
 )
 
 # Repo checkouts under _work that are still deployed from this host. Anything

@@ -3,7 +3,7 @@
 const base = (
   process.env.LMS_SMOKE_BASE ||
   process.env.PUBLIC_BASE_URL ||
-  "https://api.tommlyjumah.dev/nisisi-africa"
+  "https://api.nelsen-savannah.co.ke"
 ).replace(/\/$/, "");
 
 const url = `${base}/lms/health`;

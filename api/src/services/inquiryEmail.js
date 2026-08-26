@@ -1,17 +1,16 @@
 import { Resend } from "resend";
+import { linesToRows, renderBrandedEmail } from "./emailBrand.js";
 
 const TO = () =>
   process.env.INQUIRY_TO_EMAIL ||
   process.env.ORG_EMAIL ||
-  "hello@nelsensavanna.co.ke";
+  "info@nelsen-savannah.co.ke";
 
 const FROM = () =>
-  process.env.RESEND_FROM || "Nelsen Savannah <onboarding@resend.dev>";
+  process.env.RESEND_FROM ||
+  "Nelsen Savannah <info@nelsen-savannah.co.ke>";
 
-/**
- * @param {{ desk: string, subject: string, replyTo?: string, lines: string[] }} payload
- */
-export async function sendInquiryEmail(payload) {
+function requireKey() {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     const err = new Error(
@@ -21,15 +20,68 @@ export async function sendInquiryEmail(payload) {
     err.code = "RESEND_UNCONFIGURED";
     throw err;
   }
+  return key;
+}
 
+/**
+ * Staff desk / alert mail (branded HTML + plain text).
+ * @param {{ desk: string, subject: string, replyTo?: string, lines: string[], intro?: string }} payload
+ */
+export async function sendInquiryEmail(payload) {
   const text = payload.lines.join("\n");
-  const resend = new Resend(key);
+  const html = renderBrandedEmail({
+    title: payload.subject,
+    intro:
+      payload.intro ||
+      `New ${payload.desk || "desk"} message for Nelsen Savannah Innovation Hub.`,
+    rows: linesToRows(payload.lines),
+  });
+
+  return sendRaw({
+    to: TO(),
+    subject: payload.subject,
+    replyTo: payload.replyTo,
+    text,
+    html,
+  });
+}
+
+/**
+ * Guest-facing confirmation (e.g. seat reserved).
+ * @param {{ to: string, subject: string, title: string, intro: string, rows: Array<{label:string,value:string}>, cta?: {label:string,href:string} }} payload
+ */
+export async function sendGuestEmail(payload) {
+  const text = [
+    payload.title,
+    payload.intro,
+    "",
+    ...payload.rows.map((r) => `${r.label}: ${r.value}`),
+  ].join("\n");
+  const html = renderBrandedEmail({
+    title: payload.title,
+    intro: payload.intro,
+    rows: payload.rows,
+    cta: payload.cta,
+  });
+
+  return sendRaw({
+    to: payload.to,
+    subject: payload.subject,
+    replyTo: TO(),
+    text,
+    html,
+  });
+}
+
+async function sendRaw({ to, subject, replyTo, text, html }) {
+  const resend = new Resend(requireKey());
   const { data, error } = await resend.emails.send({
     from: FROM(),
-    to: [TO()],
-    replyTo: payload.replyTo || undefined,
-    subject: payload.subject.slice(0, 200),
+    to: [to],
+    replyTo: replyTo || undefined,
+    subject: subject.slice(0, 200),
     text,
+    html,
   });
 
   if (error) {
@@ -39,5 +91,5 @@ export async function sendInquiryEmail(payload) {
     throw err;
   }
 
-  return { id: data?.id || null, to: TO() };
+  return { id: data?.id || null, to };
 }

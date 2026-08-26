@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- MentUI event schedule card (Your schedule). -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- MentUI event schedule row: side timeline dots + card (max 3 on Home). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="12dp"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
     android:paddingEnd="12dp"
-    android:paddingBottom="12dp">
+    android:paddingBottom="4dp">
 
-    <!-- Keep TimelineView for adapter viewType; hide visually -->
     <com.github.vipulasri.timelineview.TimelineView
         android:id="@+id/itemDottedLine"
-        android:layout_width="1dp"
-        android:layout_height="1dp"
-        android:visibility="gone" />
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="10dp"
+        app:lineWidth="2dp"
+        app:markerSize="12dp" />
 
+    <!-- Kept for older findViewById callers -->
     <View
         android:id="@+id/dottedLine"
         android:layout_width="0dp"
@@ -29,8 +33,11 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/eventCard"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"
         app:cardBackgroundColor="@color/surface"
         app:cardCornerRadius="@dimen/radius_card_lg"
         app:cardElevation="@dimen/elevation_card"
@@ -43,7 +50,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Tag row + seats -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -142,7 +148,6 @@
                 android:textSize="13sp"
                 android:visibility="gone" />
 
-            <!-- Meta row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -203,4 +208,4 @@
                 android:textAllCaps="false" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-</FrameLayout>
+</LinearLayout>

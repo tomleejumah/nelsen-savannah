@@ -1,9 +1,9 @@
-import "dotenv/config";
+import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { ROOT } from "./loadEnv.js";
 import "./config/firebase.js";
 import { initLmsDb, getPrimaryEngine } from "./db/lmsDb.js";
 import { seedLmsCatalog } from "./services/lmsSeed.js";
@@ -14,9 +14,6 @@ import chatRoutes from "./routes/chat.js";
 import diditRoute from "./routes/diditRoute.js";
 import lmsRoutes from "./routes/lms.js";
 import inquiryRoutes from "./routes/inquiries.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
 
 const UPLOAD_DIR =
   process.env.UPLOAD_DIR || path.join(ROOT, "uploads");

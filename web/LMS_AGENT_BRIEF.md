@@ -15,7 +15,7 @@ Build the **Nelsen LMS** by extending the existing Express API (no new microserv
 | Piece | Path |
 |--------|------|
 | API (extend this) | `api/` |
-| Deployed on | `server-remote` → `/home/server/WebHooks/Nisisi-Africa/` · PM2 `nelsen-savannah` · `/health` OK |
+| Deployed on | `server-remote` → `/home/server/Apis/nelsen-savannah/` · PM2 `nelsen-savannah` · `/health` OK |
 | Website | `web/` |
 | Android | `android/` |
 | Roadmap source | `nelsen-savanna/src/data/lms-roadmap.js` |
@@ -122,7 +122,7 @@ Full JSON shapes: read `nelsen-savanna/src/data/lms-api-contract.js`.
 ## SSH / deploy
 
 - Host alias: `server-remote` (user `server`)
-- Deploy: GitHub Action on `main` → rsync to `/home/server/WebHooks/Nisisi-Africa/` → `pm2 restart nelsen-savannah`
+- Deploy: GitHub Action on `main` → rsync to `/home/server/Apis/nelsen-savannah/` → `pm2 restart nelsen-savannah`
 - Do not commit secrets (`.env`, `firebase-service-account.json`)
 
 ## First command for the agent

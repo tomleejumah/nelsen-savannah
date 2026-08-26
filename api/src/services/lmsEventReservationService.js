@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { getHubEvent } from "./lmsHubEventService.js";
-import { sendInquiryEmail } from "./inquiryEmail.js";
+import { sendGuestEmail, sendInquiryEmail } from "./inquiryEmail.js";
 
 const id = () => `rsv_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -98,22 +98,63 @@ export async function reserveEventSeat(eventId, body = {}, actor = null) {
   );
 
   try {
-    await sendInquiryEmail({
-      desk: "contact",
-      subject: `Seat reserved — ${event.title}`,
-      replyTo: email,
-      lines: [
-        `Event: ${event.title}`,
-        `Event ID: ${eventId}`,
-        `Reservation: ${reservationId}`,
-        `Full name: ${fullName}`,
-        `Email: ${email}`,
-        `Phone: ${phone || "—"}`,
-        `Programme: ${program || "—"}`,
-        `Price: ${event.price || "Free"}`,
-        uid ? `App user: ${uid}` : "Source: web",
-      ],
+    const staffTo = (
+      process.env.INQUIRY_TO_EMAIL ||
+      process.env.ORG_EMAIL ||
+      "info@nelsen-savannah.co.ke"
+    )
+      .trim()
+      .toLowerCase();
+    const rows = [
+      { label: "Event", value: event.title },
+      { label: "Reservation", value: reservationId },
+      { label: "Name", value: fullName },
+      { label: "Email", value: email },
+      { label: "Phone", value: phone || "—" },
+      { label: "Programme", value: program || "—" },
+      { label: "Price", value: event.price || "Free" },
+      {
+        label: "When",
+        value: [event.startTime, event.endTime].filter(Boolean).join(" – ") || "—",
+      },
+      { label: "Venue", value: event.location || (event.mode === "online" ? "Online" : "TBA") },
+    ];
+
+    // One confirmation to the guest (ticket).
+    await sendGuestEmail({
+      to: email,
+      subject: `You're reserved — ${event.title}`,
+      title: "Your seat is reserved",
+      intro: `Thanks ${fullName.split(" ")[0] || fullName} — your free seat for ${event.title} is confirmed with Nelsen Savannah Innovation Hub.`,
+      rows,
+      cta: {
+        label: "View events",
+        href: `${(
+          process.env.SITE_PUBLIC_URL || "https://nelsen-savannah.co.ke"
+        ).replace(/\/$/, "")}/events`,
+      },
     });
+
+    // One staff alert — skip if same address (avoids duplicate when testing as info@).
+    if (email !== staffTo) {
+      await sendInquiryEmail({
+        desk: "contact",
+        subject: `Seat reserved — ${event.title}`,
+        replyTo: email,
+        intro: "A free seat was reserved on the Innovation Hub site or app.",
+        lines: [
+          `Event: ${event.title}`,
+          `Event ID: ${eventId}`,
+          `Reservation: ${reservationId}`,
+          `Full name: ${fullName}`,
+          `Email: ${email}`,
+          `Phone: ${phone || "—"}`,
+          `Programme: ${program || "—"}`,
+          `Price: ${event.price || "Free"}`,
+          uid ? `App user: ${uid}` : "Source: web",
+        ],
+      });
+    }
   } catch (err) {
     console.warn("[event-reserve] email notify failed:", err.message);
   }

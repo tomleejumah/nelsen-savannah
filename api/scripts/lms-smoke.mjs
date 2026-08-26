@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Full LMS endpoint smoke against a live base URL.
- * Usage: LMS_API_BASE=https://api.tommlyjumah.dev/nisisi-africa node scripts/lms-smoke.mjs
+ * Usage: LMS_API_BASE=https://api.nelsen-savannah.co.ke node scripts/lms-smoke.mjs
  */
 import "dotenv/config";
 import admin from "../src/config/firebase.js";
 
-const BASE = (process.env.LMS_API_BASE || "https://api.tommlyjumah.dev/nisisi-africa").replace(
+const BASE = (process.env.LMS_API_BASE || "https://api.nelsen-savannah.co.ke").replace(
   /\/$/,
   "",
 );
