@@ -124,4 +124,9 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("eventId") String eventId,
             @Body LmsModels.ReserveEventBody body);
+
+    @DELETE("lms/events/{eventId}")
+    Call<LmsModels.DeleteHubEventEnvelope> deleteHubEvent(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId);
 }

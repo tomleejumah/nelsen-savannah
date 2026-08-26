@@ -1003,8 +1003,53 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             });
         }
 
+        View btnDelete = sheet.findViewById(R.id.btnDeleteEvent);
+        if (Roles.canCreate() && !"announcement".equalsIgnoreCase(event.getEventType())) {
+            btnDelete.setVisibility(View.VISIBLE);
+            btnDelete.setOnClickListener(v -> {
+                dialog.dismiss();
+                confirmDeleteEvent(event);
+            });
+        } else {
+            btnDelete.setVisibility(View.GONE);
+        }
+
         dialog.setContentView(sheet);
         dialog.show();
+    }
+
+    private void confirmDeleteEvent(Event event) {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Delete event?")
+                .setMessage("This removes \"" + (event.getTitle() != null ? event.getTitle() : "event")
+                        + "\" and its seat reservations from the hub.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (d, which) -> deleteHubEvent(event))
+                .show();
+    }
+
+    private void deleteHubEvent(Event event) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "Sign in to delete events", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            String bearer = "Bearer " + tokenResult.getToken();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                kotlin.Pair<Boolean, String> result =
+                        LmsEventsDataSource.deleteHubEventBlocking(bearer, event.getEventId());
+                requireActivity().runOnUiThread(() -> {
+                    if (result.getFirst()) {
+                        Toast.makeText(requireContext(), "Event deleted", Toast.LENGTH_SHORT).show();
+                        eventViewModel.fetchEvents(Util.getState(Constants.CURRENT_USER_ID, ""));
+                    } else {
+                        String msg = result.getSecond() != null ? result.getSecond() : "Could not delete";
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+        });
     }
 
     private void setupHomeTopBlur(View view) {

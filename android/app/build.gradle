@@ -12,7 +12,11 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def webClientId = localProperties.getProperty('WEB_CLIENT_ID', '"default_web_client_id"')
+// Web OAuth client (type 3) from Firebase — required for Google → Firebase idToken.
+def rawWebClientId = (localProperties.getProperty('WEB_CLIENT_ID')
+        ?: '209820622367-4frpduthbniq2qpiki1adc8qq0boasr0.apps.googleusercontent.com')
+        .replaceAll(/^"|"$/, '')
+def webClientId = "\"${rawWebClientId}\""
 def facebookAppId = localProperties.getProperty('FACEBOOK_APP_ID')
 def facebookClientToken = localProperties.getProperty('FACEBOOK_CLIENT_TOKEN')
 def fbLoginScheme = localProperties.getProperty('FB_LOGIN_PROTOCOL_SCHEME')

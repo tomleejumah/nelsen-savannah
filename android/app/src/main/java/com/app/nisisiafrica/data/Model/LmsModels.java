@@ -512,4 +512,15 @@ public final class LmsModels {
         public ReserveEventData data;
         public String error;
     }
+
+    public static class DeleteHubEventData {
+        public boolean deleted;
+        public String eventId;
+    }
+
+    public static class DeleteHubEventEnvelope {
+        public boolean ok;
+        public DeleteHubEventData data;
+        public String error;
+    }
 }
