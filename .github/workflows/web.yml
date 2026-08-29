@@ -83,6 +83,8 @@ jobs:
           }
           check "local home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
           check "local learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
+          check "local program" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/programs/future-safari
           check "public home" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/
           check "public learning" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/learning
+          check "public program" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/programs/future-safari
           echo "web smoke ok"
