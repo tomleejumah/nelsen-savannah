@@ -51,8 +51,7 @@ jobs:
 
       - name: Deploy to nginx root
         env:
-          # Must match nginx root for nelsen-savannah.tommlyjumah.dev
-          # (sites-available/nelsen-savannah.tommlyjumah.dev → root /var/www/nelsen-savannah).
+          # nginx root for nelsen-savannah.co.ke → /var/www/nelsen-savannah
           WEB_DIR: /var/www/nelsen-savannah
           # Keep a mirror for co.ke / ad-hoc syncs.
           WEB_DIR_MIRROR: /home/server/web-projects/nelsen-savannah
@@ -74,11 +73,11 @@ jobs:
       - name: Live site smoke
         run: |
           set -euo pipefail
-          code=$(curl -sS -o /dev/null -w "%{http_code}" \
-            https://nelsen-savannah.tommlyjumah.dev/)
+          code=$(curl -sS -L -o /dev/null -w "%{http_code}" \
+            https://nelsen-savannah.co.ke/)
           test "$code" = "200"
           # SPA fallback for client routes
-          code=$(curl -sS -o /dev/null -w "%{http_code}" \
-            https://nelsen-savannah.tommlyjumah.dev/learning)
+          code=$(curl -sS -L -o /dev/null -w "%{http_code}" \
+            https://nelsen-savannah.co.ke/learning)
           test "$code" = "200"
           echo "web smoke ok"
