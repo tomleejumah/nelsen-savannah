@@ -1,5 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import workshopImg from "@/assets/programs-workshop.jpg";
@@ -34,8 +33,15 @@ export const Route = createFileRoute("/programs")({
       },
     ],
   }),
-  component: ProgramsPage,
+  component: ProgramsLayout,
 });
+
+/** Parent of /programs/$slug — render child detail or the portfolio index. */
+function ProgramsLayout() {
+  const childMatches = useChildMatches();
+  if (childMatches.length > 0) return <Outlet />;
+  return <ProgramsIndexPage />;
+}
 
 const toneClass = {
   brand: "bg-brand/10 text-brand-soft",
@@ -43,7 +49,7 @@ const toneClass = {
   maroon: "bg-maroon/10 text-maroon",
 } as const;
 
-function ProgramsPage() {
+function ProgramsIndexPage() {
   return (
     <div className="pb-24">
       <section className="relative overflow-hidden bg-background px-5 pb-20 pt-36 sm:px-8 sm:pt-44">
