@@ -95,7 +95,7 @@ Profile: `/profile` (from learning Account / capabilities — not primary nav).
 
 | Surface | URL |
 |---------|-----|
-| Web | https://nelsen-savannah.tommlyjumah.dev/ |
+| Web | https://nelsen-savannah.co.ke/ |
 | API | https://api.nelsen-savannah.co.ke/ |
 
 CI: `.github/workflows/web.yml` (build + rsync deploy), `.github/workflows/api.yml` (API deploy).
