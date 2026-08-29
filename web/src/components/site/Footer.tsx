@@ -11,7 +11,7 @@ export function Footer() {
         <div>
           <BrandMark size="sm" />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            {ORG.hubName}. {ORG.vision.slice(0, 120)}…
+            {ORG.tagline} {ORG.pillars}.
           </p>
         </div>
 
@@ -21,8 +21,8 @@ export function Footer() {
             {PROGRAMS.map((p) => (
               <li key={p.slug}>
                 <Link
-                  to="/programs"
-                  hash={p.slug}
+                  to="/programs/$slug"
+                  params={{ slug: p.slug }}
                   className="text-muted-foreground transition-colors hover:text-maroon"
                 >
                   {p.title}

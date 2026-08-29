@@ -7,7 +7,9 @@ import { type AppEvent, eventDateLabel, eventVenue } from "@/data/events";
 import { FACILITATORS, FIRST_INTAKE } from "@/data/site";
 import { loadHubEvents } from "@/lib/hubEvents";
 import {
+  APPROACH,
   CORE_VALUES,
+  GOALS_2030,
   INNOVATION_CYCLE,
   LEARNING_MODEL,
   ORG,
@@ -16,22 +18,24 @@ import {
   PROGRAMS,
   ROADMAP,
   STATS,
+  WHO_SHOULD_JOIN,
+  WHAT_YOU_GAIN,
 } from "@/data/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nelsen Savannah Innovation Hub — Programmes & Learning" },
+      { title: "Nelsen Savannah — Learn. Build. Connect. Create Impact." },
       {
         name: "description",
         content:
-          "Nelsen Savannah Innovation Hub — seven programmes combining technology education, creativity, communication, and practical problem-solving for Kenya's digital economy.",
+          "Nelsen Savannah equips young people and communities across Africa with practical digital skills, innovation opportunities, and collaborative platforms.",
       },
-      { property: "og:title", content: "Nelsen Savannah Innovation Hub" },
+      { property: "og:title", content: "Nelsen Savannah" },
       {
         property: "og:description",
         content:
-          "Explore, create, code, build, and launch — Future Safari, Robotics, Data & AI, Creative, Software Engineering, Sauti, and Kijiji Hub.",
+          "Learn. Build. Connect. Create Impact. — education, technology, innovation and community for Africa's digital economy.",
       },
     ],
   }),
@@ -62,15 +66,15 @@ function Index() {
         />
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-32 sm:px-8 sm:pt-40 lg:grid-cols-[1.05fr_1fr] lg:pb-28">
           <div>
-            <h1 className="text-4xl font-bold leading-[1.05] text-foreground sm:text-6xl lg:text-[4.2rem]">
-              An innovation ecosystem where ideas become{" "}
-              <span className="bg-ember-gradient bg-clip-text text-transparent">
-                practical solutions
-              </span>
-              .
+            <p className="eyebrow text-ember">{ORG.pillars}</p>
+            <h1 className="mt-4 text-4xl font-bold leading-[1.05] text-foreground sm:text-6xl lg:text-[4.2rem]">
+              {ORG.tagline}
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              {ORG.vision}
+              {ORG.about}
+            </p>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {APPROACH}
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
@@ -111,18 +115,32 @@ function Index() {
             <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
               <p className="text-xs text-muted-foreground">
                 <span className="font-display font-semibold text-foreground">{ORG.hubName}</span>{" "}
-                — {ORG.location}. Programmes from Future Safari to Kijiji Hub.
+                — {ORG.location}. Seven programme pathways from Future Safari to Kijiji Hub.
               </p>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Vision & mission */}
+      <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
+        <div className="grid gap-8 lg:grid-cols-2">
+          <article className="rounded-3xl border border-border/70 bg-card p-8">
+            <p className="eyebrow text-ember">Our vision</p>
+            <h2 className="mt-4 text-2xl font-bold sm:text-3xl">{ORG.vision}</h2>
+          </article>
+          <article className="rounded-3xl border border-border/70 bg-card p-8">
+            <p className="eyebrow text-ember">Our mission</p>
+            <h2 className="mt-4 text-2xl font-bold sm:text-3xl">{ORG.mission}</h2>
+          </article>
+        </div>
+      </section>
+
       {/* How it works */}
       <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <div className="max-w-2xl">
-          <p className="eyebrow text-ember">Learning model</p>
-          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">From exposure to real-world impact</h2>
+          <p className="eyebrow text-ember">Why join</p>
+          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Learn, build, connect, create impact</h2>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {LEARNING_MODEL}
           </p>
@@ -183,6 +201,36 @@ function Index() {
         </div>
       </section>
 
+      {/* Who should join */}
+      <section className="border-y border-border/60 bg-secondary/40 py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="eyebrow text-ember">Who should join</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Built for learners, builders, and leaders</h2>
+          </div>
+          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {WHO_SHOULD_JOIN.map((item) => (
+              <li
+                key={item}
+                className="rounded-2xl border border-border/70 bg-card px-5 py-4 text-sm leading-relaxed text-muted-foreground"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-10 flex flex-wrap gap-2">
+            {WHAT_YOU_GAIN.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+              >
+                + {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Programs */}
       <section className="border-y border-border/60 bg-secondary/40 py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
@@ -209,8 +257,8 @@ function Index() {
             {PROGRAMS.map((p) => (
               <Link
                 key={p.slug}
-                to="/programs"
-                hash={p.slug}
+                to="/programs/$slug"
+                params={{ slug: p.slug }}
                 className="group rounded-3xl border border-border/70 bg-card p-7 transition-all hover:-translate-y-1 hover:shadow-elevated"
               >
                 <span
@@ -265,6 +313,34 @@ function Index() {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* 2030 goals */}
+      <section className="border-t border-border/60 bg-background py-24 dark:bg-hero-gradient">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="eyebrow text-ember">Our 2026–2030 goals</p>
+            <h2 className="mt-4 text-3xl font-bold text-foreground sm:text-4xl dark:text-on-dark">
+              Scaling impact across Africa
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+              Aspirational targets for reach, campuses, developers, AI solutions, community projects,
+              partners, and countries.
+            </p>
+          </div>
+          <dl className="mt-12 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            {GOALS_2030.map((g) => (
+              <div key={g.label} className="rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:glass-dark">
+                <dt className="font-display text-2xl font-bold text-foreground dark:text-on-dark">
+                  {g.value}
+                </dt>
+                <dd className="mt-2 text-xs leading-snug text-muted-foreground dark:text-on-dark/70">
+                  {g.label}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
@@ -345,24 +421,38 @@ function Index() {
         <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card p-10 text-center sm:p-16">
           <div className="absolute inset-x-0 -top-24 mx-auto h-48 w-48 rounded-full bg-ember/20 blur-3xl" />
           <h2 className="relative text-3xl font-bold sm:text-4xl">
-            Ready to explore your pathway?
+            Africa's future is being built now
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Join an intake cohort, pick a programme, and build skills that show up in projects —
-            not just on paper.
+            Join a programme, host a programme on your campus, become a partner, or work with us.
           </p>
           <div className="relative mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              to="/contact"
+              to="/learning"
               className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
             >
-              Join a cohort <ArrowRight className="h-4 w-4" />
+              Join a programme <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              to="/programs"
+              to="/contact"
+              search={{ intent: "campus" }}
               className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3.5 font-display text-sm font-semibold transition-colors hover:bg-accent"
             >
-              View all programmes
+              Host a programme
+            </Link>
+            <Link
+              to="/contact"
+              search={{ intent: "partner" }}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3.5 font-display text-sm font-semibold transition-colors hover:bg-accent"
+            >
+              Become a partner
+            </Link>
+            <Link
+              to="/contact"
+              search={{ intent: "careers" }}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3.5 font-display text-sm font-semibold transition-colors hover:bg-accent"
+            >
+              Work with us
             </Link>
           </div>
         </div>
