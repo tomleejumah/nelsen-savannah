@@ -127,8 +127,8 @@ export function Navbar() {
                     {PROGRAMS.map((p) => (
                       <Link
                         key={p.slug}
-                        to="/programs"
-                        hash={p.slug}
+                        to="/programs/$slug"
+                        params={{ slug: p.slug }}
                         className="rounded-xl px-3 py-2.5 transition-colors hover:bg-accent/70"
                       >
                         <span className="block font-display text-sm font-semibold text-foreground">
@@ -168,7 +168,7 @@ export function Navbar() {
               to="/contact"
               className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
             >
-              Join a cohort
+              Join a programme
             </Link>
           )}
           <button
@@ -220,8 +220,8 @@ export function Navbar() {
                     {PROGRAMS.map((p) => (
                       <Link
                         key={p.slug}
-                        to="/programs"
-                        hash={p.slug}
+                        to="/programs/$slug"
+                        params={{ slug: p.slug }}
                         onClick={() => setOpen(false)}
                         className="block min-w-0 rounded-xl px-3 py-2 transition-colors hover:bg-accent/70"
                       >
@@ -266,7 +266,7 @@ export function Navbar() {
               onClick={() => setOpen(false)}
               className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
             >
-              Join a cohort
+              Join a programme
             </Link>
           )}
         </div>
