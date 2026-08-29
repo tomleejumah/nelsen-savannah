@@ -68,16 +68,21 @@ jobs:
 
   smoke:
     needs: deploy
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Live site smoke
         run: |
           set -euo pipefail
-          code=$(curl -sS -L -o /dev/null -w "%{http_code}" \
-            https://nelsen-savannah.co.ke/)
-          test "$code" = "200"
-          # SPA fallback for client routes
-          code=$(curl -sS -L -o /dev/null -w "%{http_code}" \
-            https://nelsen-savannah.co.ke/learning)
-          test "$code" = "200"
+          check() {
+            local label="$1"
+            shift
+            local code
+            code=$(curl -sS -L -o /dev/null -w "%{http_code}" "$@")
+            echo "$label -> $code"
+            test "$code" = "200"
+          }
+          check "local home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
+          check "local learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
+          check "public home" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/
+          check "public learning" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/learning
           echo "web smoke ok"
