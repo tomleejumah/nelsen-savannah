@@ -19,7 +19,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import heroImg from "@/assets/hero-mentorship.jpg";
+import heroImg from "@/assets/gallery-learners.jpg";
+import brandBanner from "@/assets/hero-brand.jpg";
 import { type AppEvent, eventDateLabel, eventVenue } from "@/data/events";
 import { FACILITATORS, FIRST_INTAKE } from "@/data/site";
 import { loadHubEvents } from "@/lib/hubEvents";
@@ -168,15 +169,15 @@ function Index() {
             <div className="absolute -inset-6 rounded-[2.5rem] bg-ember/10 blur-3xl" />
             <img
               src={heroImg}
-              alt="Learners collaborating at the Nelsen Savannah Innovation Hub"
-              width={1200}
-              height={1408}
+              alt="Young learners coding, designing, and building at Nelsen Savannah"
+              width={1024}
+              height={877}
               className="relative w-full rounded-[2rem] border border-border/70 object-cover shadow-elevated"
             />
             <div className="glass-panel absolute -bottom-6 left-4 right-4 rounded-2xl p-4 sm:left-8 sm:right-8">
               <p className="text-xs text-muted-foreground">
                 <span className="font-display font-semibold text-foreground">{ORG.hubName}</span>{" "}
-                — {ORG.location}. Seven programme pathways from Future Safari to Kijiji Hub.
+                — {ORG.location}. Real learners, real projects.
               </p>
             </div>
           </div>
@@ -479,6 +480,37 @@ function Index() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section className="border-t border-border/60 bg-background py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="eyebrow text-ember">Gallery</p>
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Learn. Build. Create.</h2>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Moments from Nelsen Savannah — learners coding, designing, and shipping work in Kenya.
+            </p>
+          </div>
+          <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+            <img
+              src={heroImg}
+              alt="Nelsen Savannah learners at work — design, data, and code"
+              width={1024}
+              height={877}
+              loading="lazy"
+              className="h-full min-h-[18rem] w-full rounded-[1.75rem] border border-border/70 object-cover shadow-elevated"
+            />
+            <img
+              src={brandBanner}
+              alt="Nelsen Savannah Kenya brand — learners studying and creating"
+              width={1024}
+              height={405}
+              loading="lazy"
+              className="h-full min-h-[18rem] w-full rounded-[1.75rem] border border-border/70 object-cover shadow-elevated"
+            />
+          </div>
         </div>
       </section>
 
