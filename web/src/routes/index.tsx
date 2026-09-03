@@ -1,6 +1,23 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Briefcase, Compass, Quote } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Brain,
+  Code2,
+  Compass,
+  Cpu,
+  GraduationCap,
+  Layers,
+  Lightbulb,
+  MessageCircle,
+  Palette,
+  Presentation,
+  Rocket,
+  Search,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 
 import heroImg from "@/assets/hero-mentorship.jpg";
 import { type AppEvent, eventDateLabel, eventVenue } from "@/data/events";
@@ -21,6 +38,57 @@ import {
   WHO_SHOULD_JOIN,
   WHAT_YOU_GAIN,
 } from "@/data/site";
+
+const toneChip = {
+  brand: "bg-brand/10 text-brand-soft",
+  ember: "bg-ember/10 text-ember",
+  maroon: "bg-maroon/10 text-maroon",
+} as const;
+
+type IconTone = keyof typeof toneChip;
+
+/** Same footprint as icon-chip-lg; tone varies per item. */
+function FeatureIcon({
+  Icon,
+  tone,
+}: {
+  Icon: LucideIcon;
+  tone: IconTone;
+}) {
+  return (
+    <span
+      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${toneChip[tone]}`}
+    >
+      <Icon className="h-5 w-5" />
+    </span>
+  );
+}
+
+const OUTCOME_ICONS: { Icon: LucideIcon; tone: IconTone }[] = [
+  { Icon: Wrench, tone: "brand" },
+  { Icon: Layers, tone: "ember" },
+  { Icon: GraduationCap, tone: "maroon" },
+  { Icon: Lightbulb, tone: "brand" },
+];
+
+const PRACTICAL_ICONS: { Icon: LucideIcon; tone: IconTone }[] = [
+  { Icon: Bot, tone: "ember" },
+  { Icon: Cpu, tone: "brand" },
+  { Icon: Presentation, tone: "maroon" },
+  { Icon: Brain, tone: "ember" },
+  { Icon: Palette, tone: "brand" },
+  { Icon: Rocket, tone: "maroon" },
+];
+
+const VALUE_ICONS: { Icon: LucideIcon; tone: IconTone }[] = [
+  { Icon: Compass, tone: "ember" },
+  { Icon: MessageCircle, tone: "brand" },
+  { Icon: Palette, tone: "maroon" },
+  { Icon: Code2, tone: "brand" },
+  { Icon: Wrench, tone: "ember" },
+  { Icon: Search, tone: "maroon" },
+  { Icon: Rocket, tone: "ember" },
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -146,21 +214,22 @@ function Index() {
           </p>
         </div>
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {OUTCOMES.map(({ title, body }, i) => (
-            <article
-              key={title}
-              className="rounded-3xl border border-border/70 bg-card p-8 transition-shadow hover:shadow-elevated"
-            >
-              <div className="flex items-center justify-between">
-                <span className="icon-chip-lg">
-                  <Compass className="h-5 w-5" />
-                </span>
-                <span className="font-display text-sm text-muted-foreground/50">0{i + 1}</span>
-              </div>
-              <h3 className="mt-6 text-xl font-bold">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
-            </article>
-          ))}
+          {OUTCOMES.map(({ title, body }, i) => {
+            const { Icon, tone } = OUTCOME_ICONS[i % OUTCOME_ICONS.length];
+            return (
+              <article
+                key={title}
+                className="rounded-3xl border border-border/70 bg-card p-8 transition-shadow hover:shadow-elevated"
+              >
+                <div className="flex items-center justify-between">
+                  <FeatureIcon Icon={Icon} tone={tone} />
+                  <span className="font-display text-sm text-muted-foreground/50">0{i + 1}</span>
+                </div>
+                <h3 className="mt-6 text-xl font-bold">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -184,19 +253,20 @@ function Index() {
             </Link>
           </div>
           <div className="grid gap-4">
-            {PRACTICAL_APPLICATION.map((item) => (
-              <article
-                key={item}
-                className="flex gap-4 rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:bg-transparent dark:glass-dark"
-              >
-                <span className="icon-chip-lg">
-                  <Briefcase className="h-5 w-5" />
-                </span>
-                <p className="text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
-                  {item}
-                </p>
-              </article>
-            ))}
+            {PRACTICAL_APPLICATION.map((item, i) => {
+              const { Icon, tone } = PRACTICAL_ICONS[i % PRACTICAL_ICONS.length];
+              return (
+                <article
+                  key={item}
+                  className="flex gap-4 rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:bg-transparent dark:glass-dark"
+                >
+                  <FeatureIcon Icon={Icon} tone={tone} />
+                  <p className="text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+                    {item}
+                  </p>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -354,22 +424,25 @@ function Index() {
             </h2>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {CORE_VALUES.map((v) => (
-              <figure
-                key={v.key}
-                className="rounded-3xl border border-border/70 bg-card p-7 dark:border-transparent dark:bg-transparent dark:glass-dark"
-              >
-                <Quote className="h-6 w-6 text-ember" />
-                <figcaption className="mt-4">
-                  <span className="block font-display text-sm font-semibold text-foreground dark:text-on-dark">
-                    {v.key}
-                  </span>
-                  <span className="mt-2 block text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
-                    {v.detail}
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
+            {CORE_VALUES.map((v, i) => {
+              const { Icon, tone } = VALUE_ICONS[i % VALUE_ICONS.length];
+              return (
+                <figure
+                  key={v.key}
+                  className="rounded-3xl border border-border/70 bg-card p-7 dark:border-transparent dark:bg-transparent dark:glass-dark"
+                >
+                  <FeatureIcon Icon={Icon} tone={tone} />
+                  <figcaption className="mt-4">
+                    <span className="block font-display text-sm font-semibold text-foreground dark:text-on-dark">
+                      {v.key}
+                    </span>
+                    <span className="mt-2 block text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+                      {v.detail}
+                    </span>
+                  </figcaption>
+                </figure>
+              );
+            })}
           </div>
           <div className="mt-12 flex flex-wrap gap-2">
             {INNOVATION_CYCLE.map((step, i) => (
