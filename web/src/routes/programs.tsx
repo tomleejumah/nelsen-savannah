@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
-import workshopImg from "@/assets/programs-workshop.jpg";
+import workshopImg from "@/assets/hero-brand.jpg";
 import {
   AI_FOCUS_AREAS,
   CAMPUS_PHASES,
@@ -69,9 +69,9 @@ function ProgramsIndexPage() {
         </div>
         <img
           src={workshopImg}
-          alt="Learners at a Nelsen Savannah Innovation Hub workshop"
-          width={1600}
-          height={912}
+          alt="Nelsen Savannah Kenya — learners building and creating"
+          width={1024}
+          height={405}
           loading="lazy"
           className="relative mx-auto mt-14 w-full max-w-6xl rounded-3xl border border-border/70 object-cover shadow-elevated"
         />
