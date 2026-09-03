@@ -40,7 +40,6 @@ export function Footer() {
               // { to: "/invest", label: "Invest" },
               // { to: "/tourism", label: "Tourism" },
               { to: "/events", label: "Events" },
-              { to: "/blogs", label: "Blogs" },
               { to: "/contact", label: "Contact us" },
             ].map((l) => (
               <li key={l.to}>

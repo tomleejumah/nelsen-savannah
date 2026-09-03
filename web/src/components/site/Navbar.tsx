@@ -18,7 +18,6 @@ const LINKS = [
   { to: "/learning", label: "Learning" },
   // { to: "/invest", label: "Invest" },
   // { to: "/tourism", label: "Tourism" },
-  { to: "/blogs", label: "Blogs" },
   { to: "/events", label: "Events" },
   { to: "/contact", label: "Contact Us" },
 ] as const;
