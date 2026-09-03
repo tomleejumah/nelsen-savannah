@@ -39,15 +39,14 @@ import {
   WHAT_YOU_GAIN,
 } from "@/data/site";
 
-const toneChip = {
-  brand: "bg-brand/10 text-brand-soft",
-  ember: "bg-ember/10 text-ember",
-  maroon: "bg-maroon/10 text-maroon",
+const toneIcon = {
+  brand: "text-brand-soft",
+  ember: "text-ember",
+  maroon: "text-maroon",
 } as const;
 
-type IconTone = keyof typeof toneChip;
+type IconTone = keyof typeof toneIcon;
 
-/** Same footprint as icon-chip-lg; tone varies per item. */
 function FeatureIcon({
   Icon,
   tone,
@@ -55,13 +54,7 @@ function FeatureIcon({
   Icon: LucideIcon;
   tone: IconTone;
 }) {
-  return (
-    <span
-      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${toneChip[tone]}`}
-    >
-      <Icon className="h-5 w-5" />
-    </span>
-  );
+  return <Icon className={`h-5 w-5 shrink-0 ${toneIcon[tone]}`} />;
 }
 
 const OUTCOME_ICONS: { Icon: LucideIcon; tone: IconTone }[] = [
