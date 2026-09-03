@@ -511,64 +511,6 @@ export const OUTCOMES = PROGRAM_PILLARS.slice(0, 4).map(({ title, body }) => ({
   body,
 }));
 
-export const MEDIA = [
-  {
-    postID: "beyond-the-big-four-careers",
-    publisherID: "nelsen",
-    title: "Beyond the big four: 20 careers Kenyan teens are never shown",
-    description:
-      "Medicine, law, engineering, teaching. Here is what sits in the gap — and what each path actually pays, demands, and rewards.",
-    fileType: "article",
-    fileName: "beyond-the-big-four.md",
-    mediaUrl: "",
-    thumbnailUrl: "",
-    timestamp: Date.parse("2026-07-28T12:00:00+03:00"),
-    readMinutes: 7,
-  },
-  {
-    postID: "interview-answers-that-land",
-    publisherID: "nelsen",
-    title: "The four-sentence answer that wins interviews",
-    description:
-      "Situation, decision, action, result. A simple structure learners use to stop rambling under pressure.",
-    fileType: "article",
-    fileName: "interview-answers.md",
-    mediaUrl: "",
-    thumbnailUrl: "",
-    timestamp: Date.parse("2026-07-12T12:00:00+03:00"),
-    readMinutes: 5,
-  },
-  {
-    postID: "what-good-mentorship-looks-like",
-    publisherID: "nelsen",
-    title: "What good facilitation actually looks like",
-    description:
-      "The best programme leaders ask better questions and hold learners to the work they said they would ship.",
-    fileType: "article",
-    fileName: "good-mentorship.md",
-    mediaUrl: "",
-    thumbnailUrl: "",
-    timestamp: Date.parse("2026-06-30T12:00:00+03:00"),
-    readMinutes: 6,
-  },
-  {
-    postID: "first-job-money-habits",
-    publisherID: "nelsen",
-    title: "Your first salary: the three habits that decide the next decade",
-    description:
-      "Black tax, lifestyle creep, and the 20-minute monthly ritual that keeps a junior salary from disappearing.",
-    fileType: "article",
-    fileName: "first-salary.md",
-    mediaUrl: "",
-    thumbnailUrl: "",
-    timestamp: Date.parse("2026-06-18T12:00:00+03:00"),
-    readMinutes: 8,
-  },
-];
-
-/** @deprecated use MEDIA */
-export const BLOGS = MEDIA;
-
 export type LearningTrack = {
   slug: string;
   title: string;
