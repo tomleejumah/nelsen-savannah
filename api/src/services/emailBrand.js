@@ -1,6 +1,7 @@
 /**
- * Branded HTML email — same wordmark as web BrandMark (ne + SVG l + sen savannah)
- * + company colors (--logo-red / brand navy).
+ * Branded HTML email — company wordmark + colors.
+ * Do not use the web BrandMark SVG “l”: most mail clients strip SVG and the
+ * mark collapses to “nesen savannah”.
  */
 
 const SITE_URL =
@@ -18,26 +19,11 @@ const BRAND = {
   white: "#FFFFFF",
 };
 
-const L_PATH = `M 4 0
-            C 4 0, 4 95, 4 108
-            C 4 132, 18 146, 38 144
-            C 48 143, 50 133, 46 126
-            C 42 119, 33 122, 28 117
-            C 25 113, 25 108, 25 100
-            L 25 0
-            Z`;
-
-/** Mirrors web `.brand-logo` / BrandMark.tsx (inline styles for email clients). */
+/** Plain-text wordmark — reliable across Gmail, Outlook, Apple Mail, etc. */
 function brandWordmarkHtml(color = BRAND.logoRed) {
   const font = "'Baloo 2',Nunito,'Segoe UI',Arial,sans-serif";
   return `
-  <span style="display:inline-flex;align-items:flex-end;white-space:nowrap;color:${color};line-height:1;font-size:28px;" aria-label="nelsen savannah">
-    <span style="font-family:${font};font-weight:800;font-style:normal;line-height:1;color:inherit;">ne</span>
-    <svg width="10" height="30" viewBox="0 0 46 148" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="display:block;flex-shrink:0;width:10px;height:30px;margin:0 -1px;transform:skewX(-8deg);-ms-transform:skewX(-8deg);transform-origin:bottom center;overflow:visible;">
-      <path d="${L_PATH}" fill="${color}"></path>
-    </svg>
-    <span style="font-family:${font};font-weight:800;font-style:normal;line-height:1;color:inherit;">sen&nbsp;savannah</span>
-  </span>`;
+  <span style="display:inline-block;white-space:nowrap;color:${color};line-height:1;font-size:28px;font-family:${font};font-weight:800;" aria-label="nelsen savannah">nelsen&nbsp;savannah</span>`;
 }
 
 /**
