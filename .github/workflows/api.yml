@@ -79,16 +79,35 @@ jobs:
 
   smoke:
     needs: deploy
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
       - name: Health smoke
-        run: node scripts/smoke.mjs
-        env:
-          LMS_SMOKE_BASE: https://api.nelsen-savannah.co.ke
+        run: |
+          set -euo pipefail
+          # Cloudflare often returns 403 to GitHub-hosted IPs; verify on the deploy host.
+          try_url() {
+            local label="$1"
+            shift
+            local code body
+            body=$(mktemp)
+            code=$(curl -sS -L -o "$body" -w "%{http_code}" "$@" || echo "000")
+            echo "$label -> $code"
+            if [ "$code" = "200" ] && grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"' "$body"; then
+              rm -f "$body"
+              return 0
+            fi
+            head -c 300 "$body" 2>/dev/null || true
+            echo
+            rm -f "$body"
+            return 1
+          }
+          ok=0
+          try_url "local :5002" http://127.0.0.1:5002/lms/health && ok=1
+          if [ "$ok" != "1" ]; then
+            try_url "local Host header" -H "Host: api.nelsen-savannah.co.ke" http://127.0.0.1/lms/health && ok=1
+          fi
+          if [ "$ok" != "1" ]; then
+            try_url "public" --retry 3 --retry-delay 2 https://api.nelsen-savannah.co.ke/lms/health && ok=1
+          fi
+          test "$ok" = "1"
+          echo "api smoke ok"
