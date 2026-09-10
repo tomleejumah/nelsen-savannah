@@ -1,5 +1,4 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import brandBanner from "@/assets/hero-brand.jpg";
@@ -61,11 +60,56 @@ const HERO_STATS = [
   },
 ] as const;
 
-const toneClass = {
-  brand: "bg-brand/10 text-brand-soft",
-  ember: "bg-ember/10 text-ember",
-  maroon: "bg-maroon/10 text-maroon",
-} as const;
+const PATHWAY_META: Record<
+  string,
+  { tag: string; title: string; line: string }
+> = {
+  "future-safari": {
+    tag: "Entry",
+    title: "Future Safari",
+    line: "A first look at emerging tech — the on-ramp before choosing a track.",
+  },
+  "savannah-robotics-automation-lab": {
+    tag: "Builder",
+    title: "Robotics & Automation Lab",
+    line: "Design, wire, and program robots that move and respond.",
+  },
+  "savannah-data-ai-academy": {
+    tag: "Builder",
+    title: "Data & AI Academy",
+    line: "Work real datasets end to end and ship a capstone project.",
+  },
+  "savannah-software-engineering-lab": {
+    tag: "Builder",
+    title: "Software Engineering Lab",
+    line: "Write and ship software with the tools working engineers use.",
+  },
+  "savannah-creative-lab": {
+    tag: "Creative",
+    title: "Creative Lab",
+    line: "Design, illustration, and visual storytelling with real briefs.",
+  },
+  "savannah-sauti-academy": {
+    tag: "Creative",
+    title: "Sauti Academy",
+    line: "Audio, voice, and podcasting — from recording to a finished episode.",
+  },
+  "kijiji-hub": {
+    tag: "Community",
+    title: "Kijiji Hub",
+    line: "Where finished projects meet the community that will use them.",
+  },
+};
+
+const PATHWAY_ORDER = [
+  "future-safari",
+  "savannah-robotics-automation-lab",
+  "savannah-data-ai-academy",
+  "savannah-software-engineering-lab",
+  "savannah-creative-lab",
+  "savannah-sauti-academy",
+  "kijiji-hub",
+] as const;
 
 function Index() {
   const [hubEvents, setHubEvents] = useState<AppEvent[]>([]);
@@ -146,7 +190,7 @@ function Index() {
         </div>
       </section>
 
-      {/* Programmes — early, full cards */}
+      {/* Pathways — early, list only (full cards live on /programs) */}
       <section id="programmes" className="scroll-mt-28 border-b border-hairline">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
@@ -154,52 +198,45 @@ function Index() {
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
             Start wherever fits — exploration for beginners, specialist tracks for people ready to
-            build something real. Every pathway ends in a project you can show.
+            build something real.{" "}
+            <Link
+              to="/programs"
+              className="text-brick underline decoration-brick/40 underline-offset-4 hover:decoration-brick"
+            >
+              Full programme details
+            </Link>
           </p>
 
-          <div className="mt-12 grid gap-5 lg:grid-cols-2">
-            {PROGRAMS.map((p, i) => (
-              <article
-                key={p.slug}
-                className="rounded-3xl border border-hairline bg-card p-7 transition-shadow hover:shadow-elevated"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass[p.tone]}`}>
-                    {p.audience}
-                  </span>
-                  <span className="font-display text-sm text-muted-foreground/60">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <h3 className="mt-5 font-display text-2xl tracking-tight text-ink">
+          <ul className="mt-12 border-t border-hairline">
+            {PATHWAY_ORDER.map((slug) => {
+              const meta = PATHWAY_META[slug];
+              const program = PROGRAMS.find((p) => p.slug === slug);
+              if (!meta || !program) return null;
+              return (
+                <li
+                  key={slug}
+                  className="grid gap-2 border-b border-hairline py-5 sm:grid-cols-[6.5rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6"
+                >
+                  <span className="text-sm text-brick">{meta.tag}</span>
+                  <div className="min-w-0 sm:flex sm:items-baseline sm:gap-6">
+                    <h3 className="shrink-0 font-display text-lg tracking-tight text-ink sm:w-56 lg:w-64">
+                      {meta.title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:mt-0">
+                      {meta.line}
+                    </p>
+                  </div>
                   <Link
                     to="/programs/$slug"
-                    params={{ slug: p.slug }}
-                    className="transition-colors hover:text-brick"
+                    params={{ slug }}
+                    className="text-sm text-brick underline decoration-brick/40 underline-offset-4 transition-colors hover:decoration-brick"
                   >
-                    {p.title}
+                    Details
                   </Link>
-                </h3>
-                <p className="mt-1 text-sm font-medium text-brick">{p.subtitle}</p>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.blurb}</p>
-                <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-                  {p.topics.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/programs/$slug"
-                  params={{ slug: p.slug }}
-                  className="mt-6 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-ink transition-colors hover:text-brick"
-                >
-                  About this programme <ArrowRight className="h-4 w-4" />
-                </Link>
-              </article>
-            ))}
-          </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </section>
 
