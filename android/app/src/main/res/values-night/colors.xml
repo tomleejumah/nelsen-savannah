@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      MentUI dark overrides. Maroon 900/700/600/500 stay from values/colors.xml.
-      Only backgrounds, surfaces, text, lines, and tint chips swap.
+      MentUI dark — warm charcoal (not blue slate). Chocolate accents lifted for contrast.
+      maroon_900/700/600/500 stay from values/colors.xml.
     -->
 
-    <color name="bg">#170F12</color>
-    <color name="surface">#20161A</color>
-    <color name="surface_2">#2B1D21</color>
-    <color name="ink">#F4E9EA</color>
-    <color name="ink_soft">#D9C4C8</color>
-    <color name="muted">#AC8C92</color>
-    <color name="line">#3A2429</color>
+    <color name="bg">#1A1714</color>
+    <color name="surface">#24201C</color>
+    <color name="surface_2">#2E2924</color>
+    <color name="ink">#F0EBE3</color>
+    <color name="ink_soft">#D4CBC0</color>
+    <color name="muted">#A3988A</color>
+    <color name="line">#3D362E</color>
 
-    <color name="maroon_100">#3A1D25</color>
-    <color name="maroon_050">#2B1219</color>
+    <color name="maroon_100">#3A2E24</color>
+    <color name="maroon_050">#2A221C</color>
 
     <color name="tag_blue_bg">#1C2A44</color>
     <color name="tag_blue_text">#9DB6EC</color>
@@ -33,19 +33,19 @@
     <color name="text_strong">@color/ink</color>
     <color name="text_body">@color/ink_soft</color>
     <color name="text_muted">@color/muted</color>
-    <color name="text_on_action">#FFF6F4</color>
+    <color name="text_on_action">#FFF5F2EB</color>
     <color name="text_primary">@color/ink</color>
     <color name="text_secondary">@color/ink_soft</color>
     <color name="text_tertiary">@color/muted</color>
 
-    <color name="action_primary">@color/maroon_700</color>
+    <color name="action_primary">@color/maroon_600</color>
     <color name="action_accent">@color/maroon_500</color>
 
-    <color name="bubble_sent">@color/maroon_700</color>
+    <color name="bubble_sent">@color/maroon_600</color>
     <color name="bubble_received">@color/surface_2</color>
-    <color name="bubble_quote_bg">#337C1F32</color>
+    <color name="bubble_quote_bg">#336B4A32</color>
 
-    <color name="blur_overlay">#99170F12</color>
+    <color name="blur_overlay">#991A1714</color>
 
     <color name="nav_home">@color/maroon_500</color>
     <color name="nav_communities">@color/maroon_600</color>
