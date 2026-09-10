@@ -2,7 +2,7 @@
 <resources>
 
     <style name="Theme.NelsenSavannah.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenBackground">@color/bg</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/nelsen_savannah_logo_dark</item>
         <item name="postSplashScreenTheme">@style/Base.Theme.NelsenSavannah</item>
         <item name="android:fontFamily">@font/poppins_regular</item>
