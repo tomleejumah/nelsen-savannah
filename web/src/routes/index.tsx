@@ -188,7 +188,33 @@ function Index() {
         </div>
       </section>
 
-      {/* Pathways — early, list only (full cards live on /programs) */}
+      {/* 2030 goals — second after landing */}
+      <section className="border-b border-hairline bg-cream-deep">
+        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
+            What we&apos;re building toward by 2030
+          </h2>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+            Targets, not results yet — the scale we&apos;re organising the hub to reach.
+          </p>
+
+          <dl className="mt-12 grid border border-hairline sm:grid-cols-2 lg:grid-cols-4">
+            {GOALS_2030.map((g) => (
+              <div
+                key={g.label}
+                className="border-b border-r border-hairline px-5 py-7 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(4n)]:border-r-0"
+              >
+                <dt className="font-display text-3xl tracking-tight text-brick sm:text-4xl">
+                  {g.value}
+                </dt>
+                <dd className="mt-2 text-sm text-muted-foreground">{g.label}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* Pathways — list only (full cards live on /programs) */}
       <section id="programmes" className="scroll-mt-28 border-b border-hairline">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
@@ -333,32 +359,6 @@ function Index() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* 2030 goals — Community projects first */}
-      <section className="border-b border-hairline bg-cream-deep">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-            What we&apos;re building toward by 2030
-          </h2>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Targets, not results yet — the scale we&apos;re organising the hub to reach.
-          </p>
-
-          <dl className="mt-12 grid border border-hairline sm:grid-cols-2 lg:grid-cols-4">
-            {GOALS_2030.map((g) => (
-              <div
-                key={g.label}
-                className="border-b border-r border-hairline px-5 py-7 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(4n)]:border-r-0"
-              >
-                <dt className="font-display text-3xl tracking-tight text-brick sm:text-4xl">
-                  {g.value}
-                </dt>
-                <dd className="mt-2 text-sm text-muted-foreground">{g.label}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
 
