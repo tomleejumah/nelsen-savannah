@@ -49,6 +49,15 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Body LmsModels.EnrollBody body);
 
+    @POST("lms/checkout")
+    Call<LmsModels.CheckoutEnvelope> checkout(
+            @Header("Authorization") String bearer,
+            @Body LmsModels.CheckoutBody body);
+
+    @GET("lms/purchases/me")
+    Call<LmsModels.PurchasesEnvelope> myPurchases(
+            @Header("Authorization") String bearer);
+
     @GET("lms/enrollments/me")
     Call<LmsModels.EnrollmentListEnvelope> myEnrollments(@Header("Authorization") String bearer);
 

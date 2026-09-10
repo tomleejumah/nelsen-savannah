@@ -67,6 +67,8 @@ public class TrackLearnActivity extends AppCompatActivity {
     private String fallbackUrl;
     private final List<LmsModels.LessonDto> flatLessons = new ArrayList<>();
     private LmsModels.LessonDto resumeLesson;
+    private LmsModels.CohortRunDto cohortRun;
+    private LmsModels.TrackPrice trackPrice;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -189,8 +191,10 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void bindTrack(LmsModels.TrackDetailData data) {
+        cohortRun = data.cohortRun;
         LmsModels.TrackCard track = data.track;
         if (track != null) {
+            trackPrice = track.price;
             if (!TextUtils.isEmpty(track.courseTitle)) tvTitle.setText(track.courseTitle);
             String meta = "";
             if (!TextUtils.isEmpty(track.tutorName)) meta = track.tutorName;
@@ -200,6 +204,9 @@ public class TrackLearnActivity extends AppCompatActivity {
             if (!TextUtils.isEmpty(track.durationString())) {
                 meta += (meta.isEmpty() ? "" : " · ") + track.durationString() + " h";
             }
+            if (track.price != null && track.price.isPaid) {
+                meta += (meta.isEmpty() ? "" : " · ") + formatPrice(track.price);
+            }
             if (!meta.isEmpty()) tvDesc.setText(meta);
             else if (!TextUtils.isEmpty(track.does)) tvDesc.setText(track.does);
             int pct = Math.round(track.trackPercent);
@@ -208,16 +215,41 @@ public class TrackLearnActivity extends AppCompatActivity {
                     String.format(Locale.getDefault(), "Overall progress · %d%%", pct));
             if (track.enrolled) {
                 btnEnroll.setText("Continue learning");
+            } else if (track.price != null && track.price.isPaid) {
+                btnEnroll.setText("Unlock · " + formatPrice(track.price));
             }
         }
-        modulesContainer.removeAllViews();
-        flatLessons.clear();
+        if (cohortRun != null && cohortRun.milestones != null && !cohortRun.milestones.isEmpty()) {
+            TextView walk = new TextView(this);
+            walk.setText("Cohort walkthrough");
+            walk.setTextSize(14f);
+            walk.setPadding(0, 4, 0, 4);
+            walk.setTextColor(getColor(R.color.muted));
+            modulesContainer.removeAllViews();
+            modulesContainer.addView(walk);
+            for (LmsModels.MilestoneDto m : cohortRun.milestones) {
+                TextView row = new TextView(this);
+                String label = m.title != null ? m.title : ("Milestone " + m.order);
+                String state = m.completed ? "done"
+                        : (m.available ? "open" : (m.lockedReason != null ? m.lockedReason : "locked"));
+                row.setText("• " + label + " · " + state);
+                row.setTextSize(13f);
+                row.setPadding(0, 2, 0, 2);
+                row.setTextColor(getColor(m.available || m.completed ? R.color.ink : R.color.muted));
+                modulesContainer.addView(row);
+            }
+        }
         List<LmsModels.ModuleDto> modules = data.modules;
         if (modules == null || modules.isEmpty()) {
-            showFallbackLessonsHint();
+            if (cohortRun == null || cohortRun.milestones == null || cohortRun.milestones.isEmpty()) {
+                modulesContainer.removeAllViews();
+                showFallbackLessonsHint();
+            }
             return;
         }
-        // Load first module lessons for the vertical list (expand others on tap).
+        if (cohortRun == null || cohortRun.milestones == null || cohortRun.milestones.isEmpty()) {
+            modulesContainer.removeAllViews();
+        }
         for (LmsModels.ModuleDto module : modules) {
             TextView header = new TextView(this);
             header.setText(module.title != null ? module.title : "Module");
@@ -258,17 +290,20 @@ public class TrackLearnActivity extends AppCompatActivity {
         LayoutInflater inflater = LayoutInflater.from(this);
         for (int i = 0; i < lessons.size(); i++) {
             LmsModels.LessonDto lesson = lessons.get(i);
+            LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
             String status = lesson.status != null ? lesson.status.toLowerCase(Locale.US) : "";
             boolean isDone = "done".equals(status) || "completed".equals(status)
-                    || lesson.lessonPercent >= 100f;
-            boolean isCurrent = "current".equals(status) || "in_progress".equals(status)
-                    || (!isDone && resumeLesson == null && lesson.lessonPercent > 0);
-            boolean isLocked = "locked".equals(status)
-                    || (!isDone && !isCurrent && resumeLesson != null && lesson.lessonPercent <= 0
-                    && i > 0 && lessons.get(i - 1).lessonPercent < 100f);
+                    || lesson.lessonPercent >= 100f
+                    || (mile != null && mile.completed);
+            boolean isLocked = mile != null
+                    ? !mile.available && !mile.completed
+                    : "locked".equals(status);
+            boolean isCurrent = !isDone && !isLocked
+                    && ("current".equals(status) || "in_progress".equals(status)
+                    || resumeLesson == null);
 
-            // Default when LMS has no per-lesson status yet:
-            if (TextUtils.isEmpty(status) && lesson.lessonPercent <= 0) {
+            // Default when LMS has no per-lesson status / milestone yet:
+            if (mile == null && TextUtils.isEmpty(status) && lesson.lessonPercent <= 0) {
                 if (i == 0) {
                     isCurrent = true;
                     isLocked = false;
@@ -297,7 +332,14 @@ public class TrackLearnActivity extends AppCompatActivity {
             String mins = lesson.estimatedMinutes > 0
                     ? lesson.estimatedMinutes + " min" : "";
             String type = lesson.type != null ? lesson.type : "";
-            meta.setText((mins + (mins.isEmpty() || type.isEmpty() ? "" : " · ") + type).trim());
+            String lockHint = "";
+            if (isLocked && mile != null) {
+                lockHint = mile.lockedReason != null ? mile.lockedReason : "locked";
+            }
+            meta.setText((mins
+                    + (mins.isEmpty() || type.isEmpty() ? "" : " · ")
+                    + type
+                    + (lockHint.isEmpty() ? "" : " · " + lockHint)).trim());
 
             if (isDone) {
                 node.setBackgroundResource(R.drawable.bg_lesson_node_done);
@@ -321,6 +363,7 @@ public class TrackLearnActivity extends AppCompatActivity {
             row.setAlpha(isLocked ? 0.55f : 1f);
             row.setOnClickListener(v -> {
                 if (clickable) openLesson(lesson);
+                else Toast.makeText(this, milestoneLockMessage(mile), Toast.LENGTH_SHORT).show();
             });
             modulesContainer.addView(row);
         }
@@ -333,9 +376,40 @@ public class TrackLearnActivity extends AppCompatActivity {
         }
     }
 
+    @Nullable
+    private LmsModels.MilestoneDto milestoneFor(String lessonId) {
+        if (cohortRun == null || cohortRun.milestones == null || TextUtils.isEmpty(lessonId)) {
+            return null;
+        }
+        for (LmsModels.MilestoneDto m : cohortRun.milestones) {
+            if (lessonId.equals(m.lessonId)) return m;
+        }
+        return null;
+    }
+
+    private static String milestoneLockMessage(@Nullable LmsModels.MilestoneDto mile) {
+        if (mile == null) return "Lesson locked";
+        if ("release_date".equals(mile.lockedReason)) {
+            return "Opens after release date";
+        }
+        return "Complete the previous milestone first";
+    }
+
+    private static String formatPrice(LmsModels.TrackPrice price) {
+        if (price == null || !price.isPaid || price.amountMinor <= 0) return "Free";
+        return String.format(Locale.US, "%s %.2f",
+                price.currency != null ? price.currency : "USD",
+                price.amountMinor / 100.0);
+    }
+
     private void openLesson(LmsModels.LessonDto lesson) {
         if (lesson == null) return;
-        if (lesson.hasQuiz) {
+        LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
+        if (mile != null && !mile.available && !mile.completed) {
+            Toast.makeText(this, milestoneLockMessage(mile), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (lesson.hasQuiz || (lesson.quiz != null && "single_answer".equals(lesson.quiz.mode))) {
             promptQuiz(lesson);
             return;
         }
@@ -357,7 +431,15 @@ public class TrackLearnActivity extends AppCompatActivity {
                         if (response.isSuccessful() && body != null && body.ok
                                 && body.data != null && body.data.lesson != null) {
                             LmsModels.LessonDto full = body.data.lesson;
-                            if (full.hasQuiz) {
+                            if (full.milestone != null && !full.milestone.available
+                                    && !full.milestone.completed) {
+                                Toast.makeText(TrackLearnActivity.this,
+                                        milestoneLockMessage(full.milestone),
+                                        Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            if (full.hasQuiz || (full.quiz != null
+                                    && "single_answer".equals(full.quiz.mode))) {
                                 promptQuiz(full);
                             } else if (full.hasAssignment) {
                                 promptAssignment(full);
@@ -384,6 +466,11 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void promptQuiz(LmsModels.LessonDto lesson) {
+        if (lesson.quiz != null && "single_answer".equals(lesson.quiz.mode)
+                && lesson.quiz.options != null && !lesson.quiz.options.isEmpty()) {
+            promptAuthoredQuiz(lesson);
+            return;
+        }
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
         input.setHint("Score 0–100");
@@ -404,6 +491,58 @@ public class TrackLearnActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void promptAuthoredQuiz(LmsModels.LessonDto lesson) {
+        List<LmsModels.QuizOptionDto> options = lesson.quiz.options;
+        CharSequence[] labels = new CharSequence[options.size()];
+        for (int i = 0; i < options.size(); i++) {
+            labels[i] = options.get(i).text != null ? options.get(i).text : options.get(i).id;
+        }
+        final int[] selected = {-1};
+        String prompt = lesson.quiz.prompt != null ? lesson.quiz.prompt : "Choose an answer";
+        new AlertDialog.Builder(this)
+                .setTitle(lesson.title != null ? lesson.title : "Quiz")
+                .setMessage(prompt)
+                .setSingleChoiceItems(labels, -1, (d, which) -> selected[0] = which)
+                .setPositiveButton("Submit", (d, w) -> {
+                    if (selected[0] < 0 || selected[0] >= options.size()) {
+                        Toast.makeText(this, "Pick an answer", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    String optionId = options.get(selected[0]).id;
+                    submitAuthoredQuiz(lesson.lessonId, optionId);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void submitAuthoredQuiz(String lessonId, String selectedOptionId) {
+        withBearer(bearer -> ApiClient.getLmsService()
+                .submitQuiz(bearer, lessonId, LmsModels.QuizBody.option(selectedOptionId))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.QuizEnvelope> call,
+                                           Response<LmsModels.QuizEnvelope> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                            float pct = response.body().data != null
+                                    ? response.body().data.quizPct : 0f;
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Quiz scored " + Math.round(pct) + "%",
+                                    Toast.LENGTH_SHORT).show();
+                            loadTrack();
+                        } else {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Quiz submit failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.QuizEnvelope> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Quiz submit failed", Toast.LENGTH_SHORT).show();
+                    }
+                }));
     }
 
     private void promptAssignment(LmsModels.LessonDto lesson) {
@@ -523,14 +662,26 @@ public class TrackLearnActivity extends AppCompatActivity {
                     public void onResponse(Call<LmsModels.EnrollmentEnvelope> call,
                                            Response<LmsModels.EnrollmentEnvelope> response) {
                         LmsModels.EnrollmentEnvelope body = response.body();
+                        if (body == null) {
+                            body = parseEnrollmentError(response);
+                        }
                         if (response.isSuccessful() && body != null && body.ok) {
                             btnEnroll.setText("Continue learning");
                             Toast.makeText(TrackLearnActivity.this, "Enrolled", Toast.LENGTH_SHORT).show();
                             loadTrack();
-                        } else {
-                            Toast.makeText(TrackLearnActivity.this,
-                                    "Enroll failed (" + response.code() + ")", Toast.LENGTH_SHORT).show();
+                            return;
                         }
+                        if (body != null && body.data != null
+                                && "TRACK_PAYMENT_REQUIRED".equals(body.data.code)
+                                && body.data.price != null) {
+                            showPaywall(body.data.price);
+                            return;
+                        }
+                        Toast.makeText(TrackLearnActivity.this,
+                                body != null && body.error != null
+                                        ? body.error
+                                        : "Enroll failed (" + response.code() + ")",
+                                Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
@@ -539,6 +690,96 @@ public class TrackLearnActivity extends AppCompatActivity {
                                 "LMS not ready — try again later", Toast.LENGTH_SHORT).show();
                     }
                 }));
+    }
+
+    private void showPaywall(LmsModels.TrackPrice price) {
+        new AlertDialog.Builder(this)
+                .setTitle("Unlock this track")
+                .setMessage("Demo checkout — no live card or M-Pesa yet.\n\n"
+                        + formatPrice(price)
+                        + "\n\nPaying records access so you can enroll.")
+                .setPositiveButton("Pay (demo) & enroll", (d, w) -> payAndEnroll())
+                .setNeutralButton("My purchases", (d, w) -> showPurchases())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void payAndEnroll() {
+        withBearer(bearer -> ApiClient.getLmsService()
+                .checkout(bearer, new LmsModels.CheckoutBody(trackId))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.CheckoutEnvelope> call,
+                                           Response<LmsModels.CheckoutEnvelope> response) {
+                        LmsModels.CheckoutEnvelope body = response.body();
+                        if (!response.isSuccessful() || body == null || !body.ok) {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Checkout failed", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Payment recorded", Toast.LENGTH_SHORT).show();
+                        enroll();
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.CheckoutEnvelope> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Checkout failed", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+    }
+
+    private void showPurchases() {
+        withBearer(bearer -> ApiClient.getLmsService().myPurchases(bearer)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.PurchasesEnvelope> call,
+                                           Response<LmsModels.PurchasesEnvelope> response) {
+                        LmsModels.PurchasesEnvelope body = response.body();
+                        if (!response.isSuccessful() || body == null || !body.ok
+                                || body.data == null || body.data.purchases == null
+                                || body.data.purchases.isEmpty()) {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "No purchases yet", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        StringBuilder sb = new StringBuilder();
+                        for (LmsModels.PurchaseDto p : body.data.purchases) {
+                            String title = p.courseTitle != null ? p.courseTitle : p.trackId;
+                            sb.append("• ").append(title)
+                                    .append(" · ").append(p.currency != null ? p.currency : "USD")
+                                    .append(" ")
+                                    .append(String.format(Locale.US, "%.2f", p.amountMinor / 100.0))
+                                    .append(" · ").append(p.status != null ? p.status : "")
+                                    .append("\n");
+                        }
+                        new AlertDialog.Builder(TrackLearnActivity.this)
+                                .setTitle("My purchases")
+                                .setMessage(sb.toString().trim())
+                                .setPositiveButton("OK", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.PurchasesEnvelope> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Could not load purchases", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+    }
+
+    @Nullable
+    private static LmsModels.EnrollmentEnvelope parseEnrollmentError(
+            Response<LmsModels.EnrollmentEnvelope> response) {
+        try {
+            if (response.errorBody() == null) return null;
+            return new com.google.gson.Gson().fromJson(
+                    response.errorBody().charStream(),
+                    LmsModels.EnrollmentEnvelope.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void showFallbackLessonsHint() {
