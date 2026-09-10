@@ -145,11 +145,11 @@ export const LEARNING_FORMAT = [
 ] as const;
 
 export const GOALS_2030 = [
+  { value: "500+", label: "Community projects" },
   { value: "50,000+", label: "Young Africans reached" },
   { value: "100+", label: "Campuses & communities" },
   { value: "10,000+", label: "Developers & digital creators" },
   { value: "1,000+", label: "AI solutions supported" },
-  { value: "500+", label: "Community projects" },
   { value: "100+", label: "Strategic partners" },
   { value: "25+", label: "African countries" },
 ] as const;
