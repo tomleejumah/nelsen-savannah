@@ -1,13 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { ChevronDown, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
-import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
-import { primaryWorkspacePath } from "@/lib/lmsCapabilities";
-import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
@@ -50,8 +45,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [me, setMe] = useState<MeDto | null>(null);
 
   const linkActive = (to: string) => pathname != null && pathIsActive(pathname, to);
 
@@ -62,37 +55,14 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    return onAuthStateChanged(getFirebaseAuth(), (next) => {
-      const gen = bumpAuthGeneration();
-      setUser(next);
-      if (!next) {
-        setMe(null);
-        return;
-      }
-      void (async () => {
-        try {
-          const token = await next.getIdToken();
-          if (gen !== getAuthGeneration()) return;
-          const envelope = await fetchLmsMe(token);
-          if (gen !== getAuthGeneration()) return;
-          setMe(envelope.ok && envelope.data ? envelope.data : null);
-        } catch {
-          if (gen !== getAuthGeneration()) return;
-          setMe(null);
-        }
-      })();
-    });
-  }, []);
-
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-5">
       <nav
         className={cn(
           "mx-auto flex items-center gap-3 transition-all duration-500 ease-out",
           scrolled
-            ? "max-w-6xl border border-hairline bg-cream/95 px-5 py-2 shadow-elevated backdrop-blur-md sm:px-6"
-            : "max-w-6xl border border-transparent px-2 py-3 sm:px-4",
+            ? "glass-panel max-w-6xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
+            : "glass-panel max-w-6xl rounded-3xl px-3 py-3 sm:px-5",
         )}
       >
         <Link
@@ -123,13 +93,13 @@ export function Navbar() {
                   <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
                 </Link>
                 <div className="invisible absolute left-1/2 top-full w-[min(92vw,34rem)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-300 group-hover:visible group-hover:opacity-100">
-                  <div className="grid gap-1 border border-hairline bg-cream p-2 shadow-elevated sm:grid-cols-2">
+                  <div className="glass-panel grid gap-1 rounded-2xl p-2 shadow-elevated sm:grid-cols-2">
                     {PROGRAMS.map((p) => (
                       <Link
                         key={p.slug}
                         to="/programs/$slug"
                         params={{ slug: p.slug }}
-                        className="px-3 py-2.5 transition-colors hover:bg-cream-deep"
+                        className="rounded-xl px-3 py-2.5 transition-colors hover:bg-cream-deep/60"
                       >
                         <span className="block font-display text-sm text-foreground">
                           {p.title}
@@ -156,26 +126,11 @@ export function Navbar() {
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
-          {user ? (
-            <Link
-              to={primaryWorkspacePath(me)}
-              className="hidden whitespace-nowrap bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 sm:inline-flex"
-            >
-              Workspace
-            </Link>
-          ) : (
-            <Link
-              to="/programs"
-              className="hidden whitespace-nowrap bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 sm:inline-flex"
-            >
-              Join a programme
-            </Link>
-          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
-            className="grid h-9 w-9 place-items-center border border-hairline lg:hidden"
+            className="grid h-9 w-9 place-items-center rounded-full border border-hairline lg:hidden"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -183,7 +138,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-6xl overflow-y-auto border border-hairline bg-cream p-3 shadow-elevated lg:hidden">
+        <div className="glass-panel mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-6xl overflow-y-auto rounded-2xl p-3 shadow-elevated lg:hidden">
           {LINKS.map((link) =>
             "dropdown" in link && link.dropdown ? (
               <div key={link.to}>
@@ -194,7 +149,7 @@ export function Navbar() {
                     activeOptions={navActiveOptions(link.to)}
                     activeProps={{ className: "" }}
                     className={cn(
-                      "min-w-0 truncate px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep hover:text-brick focus-visible:text-brick",
+                      "min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep/60 hover:text-brick focus-visible:text-brick",
                       linkActive(link.to) && "text-brick",
                     )}
                   >
@@ -205,7 +160,7 @@ export function Navbar() {
                     aria-label="Toggle programs list"
                     aria-expanded={mobilePrograms}
                     onClick={() => setMobilePrograms((v) => !v)}
-                    className="grid h-9 w-9 shrink-0 place-items-center border border-hairline"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-hairline"
                   >
                     <ChevronDown
                       className={cn(
@@ -223,7 +178,7 @@ export function Navbar() {
                         to="/programs/$slug"
                         params={{ slug: p.slug }}
                         onClick={() => setOpen(false)}
-                        className="block min-w-0 px-3 py-2 transition-colors hover:bg-cream-deep"
+                        className="block min-w-0 rounded-xl px-3 py-2 transition-colors hover:bg-cream-deep/60"
                       >
                         <span className="block truncate font-display text-sm text-foreground">
                           {p.title}
@@ -244,30 +199,13 @@ export function Navbar() {
                 activeOptions={navActiveOptions(link.to)}
                 activeProps={{ className: "" }}
                 className={cn(
-                  "block px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep hover:text-brick focus-visible:text-brick",
+                  "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep/60 hover:text-brick focus-visible:text-brick",
                   linkActive(link.to) && "text-brick",
                 )}
               >
                 {link.label}
               </Link>
             ),
-          )}
-          {user ? (
-            <Link
-              to={primaryWorkspacePath(me)}
-              onClick={() => setOpen(false)}
-              className="mt-2 block bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground"
-            >
-              Workspace
-            </Link>
-          ) : (
-            <Link
-              to="/programs"
-              onClick={() => setOpen(false)}
-              className="mt-2 block bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground"
-            >
-              Join a programme
-            </Link>
           )}
         </div>
       )}
