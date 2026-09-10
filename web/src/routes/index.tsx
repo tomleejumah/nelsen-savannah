@@ -205,33 +205,48 @@ function Index() {
         </div>
       </section>
 
-      {/* Core values */}
+      {/* How we work — process steps */}
       <section className="border-b border-hairline">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-            How we work at the Hub
-          </h2>
-          <ul className="mt-12 border-t border-hairline">
-            {CORE_VALUES.map((v) => (
-              <li
-                key={v.key}
-                className="grid gap-2 border-b border-hairline py-5 sm:grid-cols-[11rem_1fr] sm:gap-8"
-              >
-                <span className="text-sm font-medium uppercase tracking-wide text-brick">
-                  {v.key}
-                </span>
-                <p className="text-sm leading-relaxed text-muted-foreground">{v.detail}</p>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-10 flex flex-wrap gap-x-1 gap-y-2 text-sm text-muted-foreground">
-            {INNOVATION_CYCLE.map((step, i) => (
-              <span key={step}>
-                {i > 0 ? <span className="mx-1 text-hairline">→</span> : null}
-                {step}
-              </span>
-            ))}
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-ember">
+              How we work
+            </p>
+            <h2 className="mt-3 font-display text-3xl tracking-tight text-ink sm:text-4xl">
+              From explore to launch at the Hub
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+              Seven habits learners practise across every programme — then ship something real.
+            </p>
           </div>
+
+          <div className="relative mt-16">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-[12%] right-[12%] top-6 hidden h-px bg-hairline lg:block"
+            />
+            <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+              {CORE_VALUES.map((v, i) => (
+                <li key={v.key} className="relative flex flex-col items-center text-center">
+                  <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-ember shadow-elevated">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
+                    {v.key
+                      .toLowerCase()
+                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </h3>
+                  <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
+                    {v.detail}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <p className="mt-14 text-center text-sm text-muted-foreground">
+            {INNOVATION_CYCLE.join(" → ")}
+          </p>
         </div>
       </section>
 
