@@ -306,176 +306,202 @@ function LessonPage() {
           <>
             <p className="eyebrow mt-8 capitalize text-ember">{lesson.type}</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{lesson.title}</h1>
-            {lesson.milestone && !lesson.milestone.available ? (
-              <p className="mt-4 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm">
-                This milestone is locked
-                {lesson.milestone.lockedReason === "release_date"
-                  ? ` until ${new Date(lesson.milestone.releaseAt).toLocaleString()}.`
-                  : " until you complete the previous one."}
-              </p>
-            ) : null}
-            {lesson.estimatedMinutes > 0 && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                ~{lesson.estimatedMinutes} min
-              </p>
-            )}
-
-            <div className="mt-8 space-y-4 rounded-2xl border border-border/70 bg-card p-6 sm:p-8">
-              <p className="text-base leading-relaxed text-foreground">
-                {lesson.does || "Work through this lesson, then mark it complete."}
-              </p>
-              {lesson.bodyHtml ? (
-                <div
-                  className="prose max-w-none text-sm dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: lesson.bodyHtml }}
-                />
-              ) : null}
-              {lesson.playbackUrl || lesson.contentUrl ? (
-                <SignedMediaPlayer user={user} lesson={lesson} />
-              ) : null}
-            </div>
-
-            {showQuiz && lesson.quiz?.mode === "single_answer" ? (
-              <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
-                <h2 className="font-display text-lg font-semibold">Quiz</h2>
-                <p className="text-sm text-muted-foreground">{lesson.quiz.prompt}</p>
-                <div className="space-y-2">
-                  {(lesson.quiz.options || []).map((option) => (
-                    <label
-                      key={option.id}
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
-                    >
-                      <input
-                        type="radio"
-                        name="quiz-option"
-                        checked={selectedOptionId === option.id}
-                        onChange={() => setSelectedOptionId(option.id)}
-                      />
-                      {option.text}
-                    </label>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  disabled={saving || !selectedOptionId}
-                  onClick={() => void onSubmitQuiz(true)}
-                  className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
-                >
-                  Submit answer
-                </button>
-              </div>
-            ) : showQuiz ? (
-              <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
-                <h2 className="font-display text-lg font-semibold">Quiz</h2>
-                <p className="text-sm text-muted-foreground">
-                  {lesson.quiz?.prompt ||
-                    "Record how you did on this lesson’s quiz."}
-                </p>
-                <label className="block text-sm font-medium text-foreground">
-                  Score: {quizScore}%
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={quizScore}
-                    onChange={(e) => setQuizScore(Number(e.target.value))}
-                    className="mt-2 w-full accent-[var(--maroon)]"
-                  />
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void onSubmitQuiz(true)}
-                    className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
-                  >
-                    Submit as pass (≥80)
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => void onSubmitQuiz(false)}
-                    className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent disabled:opacity-60"
-                  >
-                    Save score only
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {showAssignment && (
-              <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
-                <h2 className="font-display text-lg font-semibold">Assignment</h2>
-                <p className="text-sm text-muted-foreground">
-                  {lesson.assignmentPrompt ||
-                    "Write your response and submit for mentor review."}
-                </p>
-                {submittedOk ? (
-                  <p className="inline-flex items-center gap-2 text-sm font-medium text-brand-soft">
-                    <CheckCircle2 className="h-4 w-4" /> Submitted — check{" "}
-                    <Link to="/learning/coursework" className="underline">
-                      Coursework
-                    </Link>{" "}
-                    for status.
-                  </p>
-                ) : (
+            {(() => {
+              const locked =
+                Boolean(lesson.milestone) && !lesson.milestone!.available;
+              if (locked) {
+                return (
                   <>
-                    <textarea
-                      value={assignmentText}
-                      onChange={(e) => setAssignmentText(e.target.value)}
-                      rows={5}
-                      placeholder="Your answer…"
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-maroon/30"
-                    />
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() => void onSubmitAssignment()}
-                      className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
-                    >
-                      {saving ? "Submitting…" : "Submit assignment"}
-                    </button>
+                    <p className="mt-4 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm">
+                      This milestone is locked
+                      {lesson.milestone!.lockedReason === "release_date"
+                        ? ` until ${new Date(lesson.milestone!.releaseAt).toLocaleString()}.`
+                        : " until you complete the previous one."}
+                    </p>
+                    <div className="mt-8 flex flex-wrap items-center gap-3">
+                      <Link
+                        to="/learning/$trackId"
+                        params={{ trackId }}
+                        className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+                      >
+                        Back to modules
+                      </Link>
+                    </div>
                   </>
-                )}
-              </div>
-            )}
+                );
+              }
+              return (
+                <>
+                  {lesson.estimatedMinutes > 0 && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      ~{lesson.estimatedMinutes} min
+                    </p>
+                  )}
 
-            {error && (
-              <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </p>
-            )}
+                  <div className="mt-8 space-y-4 rounded-2xl border border-border/70 bg-card p-6 sm:p-8">
+                    <p className="text-base leading-relaxed text-foreground">
+                      {lesson.does ||
+                        "Work through this lesson, then mark it complete."}
+                    </p>
+                    {lesson.bodyHtml ? (
+                      <div
+                        className="prose max-w-none text-sm dark:prose-invert"
+                        dangerouslySetInnerHTML={{ __html: lesson.bodyHtml }}
+                      />
+                    ) : null}
+                    {lesson.playbackUrl || lesson.contentUrl ? (
+                      <SignedMediaPlayer user={user} lesson={lesson} />
+                    ) : null}
+                  </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              {done ? (
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-4 py-2 text-sm font-semibold text-brand-soft">
-                  <CheckCircle2 className="h-4 w-4" /> Lesson complete
-                  {trackPercent != null ? ` · Track ${trackPercent}%` : ""}
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void markComplete()}
-                  className="rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
-                >
-                  {saving ? "Saving…" : "Mark content complete"}
-                </button>
-              )}
-              <Link
-                to="/learning/coursework"
-                className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
-              >
-                My coursework
-              </Link>
-              <Link
-                to="/learning/$trackId"
-                params={{ trackId }}
-                className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
-              >
-                Back to modules
-              </Link>
-            </div>
+                  {showQuiz && lesson.quiz?.mode === "single_answer" ? (
+                    <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
+                      <h2 className="font-display text-lg font-semibold">Quiz</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {lesson.quiz.prompt}
+                      </p>
+                      <div className="space-y-2">
+                        {(lesson.quiz.options || []).map((option) => (
+                          <label
+                            key={option.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
+                          >
+                            <input
+                              type="radio"
+                              name="quiz-option"
+                              checked={selectedOptionId === option.id}
+                              onChange={() => setSelectedOptionId(option.id)}
+                            />
+                            {option.text}
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={saving || !selectedOptionId}
+                        onClick={() => void onSubmitQuiz(true)}
+                        className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
+                      >
+                        Submit answer
+                      </button>
+                    </div>
+                  ) : showQuiz ? (
+                    <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
+                      <h2 className="font-display text-lg font-semibold">Quiz</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {lesson.quiz?.prompt ||
+                          "Record how you did on this lesson’s quiz."}
+                      </p>
+                      <label className="block text-sm font-medium text-foreground">
+                        Score: {quizScore}%
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={quizScore}
+                          onChange={(e) => setQuizScore(Number(e.target.value))}
+                          className="mt-2 w-full accent-[var(--maroon)]"
+                        />
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => void onSubmitQuiz(true)}
+                          className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
+                        >
+                          Submit as pass (≥80)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => void onSubmitQuiz(false)}
+                          className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent disabled:opacity-60"
+                        >
+                          Save score only
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {showAssignment && (
+                    <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
+                      <h2 className="font-display text-lg font-semibold">
+                        Assignment
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {lesson.assignmentPrompt ||
+                          "Write your response and submit for mentor review."}
+                      </p>
+                      {submittedOk ? (
+                        <p className="inline-flex items-center gap-2 text-sm font-medium text-brand-soft">
+                          <CheckCircle2 className="h-4 w-4" /> Submitted — check{" "}
+                          <Link to="/learning/coursework" className="underline">
+                            Coursework
+                          </Link>{" "}
+                          for status.
+                        </p>
+                      ) : (
+                        <>
+                          <textarea
+                            value={assignmentText}
+                            onChange={(e) => setAssignmentText(e.target.value)}
+                            rows={5}
+                            placeholder="Your answer…"
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-maroon/30"
+                          />
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => void onSubmitAssignment()}
+                            className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
+                          >
+                            {saving ? "Submitting…" : "Submit assignment"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {error && (
+                    <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                      {error}
+                    </p>
+                  )}
+
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    {done ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-4 py-2 text-sm font-semibold text-brand-soft">
+                        <CheckCircle2 className="h-4 w-4" /> Lesson complete
+                        {trackPercent != null ? ` · Track ${trackPercent}%` : ""}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => void markComplete()}
+                        className="rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
+                      >
+                        {saving ? "Saving…" : "Mark content complete"}
+                      </button>
+                    )}
+                    <Link
+                      to="/learning/coursework"
+                      className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+                    >
+                      My coursework
+                    </Link>
+                    <Link
+                      to="/learning/$trackId"
+                      params={{ trackId }}
+                      className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+                    >
+                      Back to modules
+                    </Link>
+                  </div>
+                </>
+              );
+            })()}
           </>
         ) : null}
       </div>

@@ -61,6 +61,103 @@ public final class LmsModels {
 
     public static class EnrollmentData {
         public Enrollment enrollment;
+        public String code;
+        public String trackId;
+        public TrackPrice price;
+        public PaymentHint payment;
+    }
+
+    public static class TrackPrice {
+        public boolean isPaid;
+        public int amountMinor;
+        public String currency;
+    }
+
+    public static class PaymentHint {
+        public String provider;
+        public String checkoutEndpoint;
+        public String method;
+    }
+
+    public static class CheckoutBody {
+        public String trackId;
+        public CheckoutBody(String trackId) { this.trackId = trackId; }
+    }
+
+    public static class CheckoutData {
+        public String purchaseId;
+        public String trackId;
+        public String status;
+        public Integer amountMinor;
+        public String currency;
+        public Boolean alreadyOwned;
+    }
+
+    public static class CheckoutEnvelope {
+        public boolean ok;
+        public String source;
+        public CheckoutData data;
+        public String error;
+    }
+
+    public static class PurchaseDto {
+        public String purchaseId;
+        public String trackId;
+        public String courseTitle;
+        public String schoolId;
+        public int amountMinor;
+        public String currency;
+        public String status;
+        public String provider;
+        public long createdAt;
+        public Long paidAt;
+    }
+
+    public static class PurchasesData {
+        public List<PurchaseDto> purchases;
+    }
+
+    public static class PurchasesEnvelope {
+        public boolean ok;
+        public String source;
+        public PurchasesData data;
+        public String error;
+    }
+
+    public static class MilestoneDto {
+        public String milestoneId;
+        public String lessonId;
+        public String title;
+        public long releaseAt;
+        public Long dueAt;
+        public int order;
+        public boolean requiresPreviousCompletion;
+        public boolean released;
+        public boolean previousComplete;
+        public boolean available;
+        public boolean completed;
+        public Boolean overdue;
+        public String lockedReason;
+    }
+
+    public static class CohortRunDto {
+        public String runId;
+        public String cohortId;
+        public List<MilestoneDto> milestones;
+    }
+
+    public static class QuizOptionDto {
+        public String id;
+        public String text;
+    }
+
+    public static class LessonQuizDto {
+        public String mode;
+        public String prompt;
+        public String quizId;
+        public Integer version;
+        public List<QuizOptionDto> options;
+        public Integer passingScore;
     }
 
     public static class EnrollmentListEnvelope {
@@ -118,6 +215,7 @@ public final class LmsModels {
         public boolean enrolled;
         public List<String> audience;
         public int moduleCount;
+        public TrackPrice price;
 
         public String durationString() {
             return asString(duration);
@@ -140,6 +238,7 @@ public final class LmsModels {
         public TrackCard track;
         public List<ModuleDto> modules;
         public Map<String, Object> enrollment;
+        public CohortRunDto cohortRun;
     }
 
     public static class ModuleDto {
@@ -173,6 +272,8 @@ public final class LmsModels {
         public String contentUrl;
         public String playbackUrl;
         public Long playbackExpiresAt;
+        public LessonQuizDto quiz;
+        public MilestoneDto milestone;
     }
 
     public static class LessonDetailData {
@@ -215,6 +316,7 @@ public final class LmsModels {
 
     public static class EnrollBody {
         public String trackId;
+        public String platform = "android";
         public EnrollBody(String trackId) { this.trackId = trackId; }
     }
 
@@ -233,10 +335,18 @@ public final class LmsModels {
     public static class QuizBody {
         public Integer score;
         public Boolean passed;
+        public String selectedOptionId;
         public String lastPlatform = "android";
         public QuizBody(int score, boolean passed) {
             this.score = score;
             this.passed = passed;
+        }
+        public static QuizBody option(String selectedOptionId) {
+            QuizBody body = new QuizBody(0, false);
+            body.score = null;
+            body.passed = null;
+            body.selectedOptionId = selectedOptionId;
+            return body;
         }
     }
 
