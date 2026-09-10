@@ -8,9 +8,7 @@ import {
   LEARNING_FORMAT,
   LEARNING_MODEL,
   PARTNER_ECOSYSTEM,
-  PROGRAM_PILLARS,
   PROGRAMS,
-  WHAT_YOU_GAIN,
 } from "@/data/site";
 
 export const Route = createFileRoute("/programs")({
@@ -122,24 +120,6 @@ function ProgramsIndexPage() {
         ))}
       </section>
 
-      <section className="border-y border-border/60 bg-secondary/40 py-20">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <p className="eyebrow text-ember">What we deliver</p>
-          <h2 className="mt-4 text-3xl font-bold">Six pillars across every programme</h2>
-          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {PROGRAM_PILLARS.map((p) => (
-              <article
-                key={p.title}
-                className="rounded-3xl border border-border/70 bg-card p-6"
-              >
-                <h3 className="text-lg font-bold">{p.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
         <p className="eyebrow text-ember">Learning format</p>
         <h2 className="mt-4 text-3xl font-bold">Blended, applied, and inclusive</h2>
@@ -152,16 +132,6 @@ function ProgramsIndexPage() {
               <h3 className="text-lg font-bold">{item.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
             </article>
-          ))}
-        </div>
-        <div className="mt-10 flex flex-wrap gap-2">
-          {WHAT_YOU_GAIN.map((item) => (
-            <span
-              key={item}
-              className="rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-            >
-              + {item}
-            </span>
           ))}
         </div>
       </section>
