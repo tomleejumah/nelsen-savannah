@@ -11,6 +11,8 @@ export const ORG = {
   mission:
     "To equip African communities with practical digital skills, innovation opportunities and collaborative platforms that transform ideas into real-world solutions.",
   email: "hello@nelsen-savannah.co.ke",
+  /** Role applications / “Work with us” */
+  recruitEmail: "recruit@nelsen-savannah.co.ke",
   website: "https://www.nelsen-savannah.co.ke",
   location: "Nairobi, Kenya",
   websiteLegacy: "https://www.nisisi.africa",

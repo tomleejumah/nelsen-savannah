@@ -3,7 +3,7 @@ import { sendInquiryEmail } from "../services/inquiryEmail.js";
 
 const router = express.Router();
 
-const ALLOWED_DESKS = new Set(["invest", "tourism", "contact"]);
+const ALLOWED_DESKS = new Set(["invest", "tourism", "contact", "careers", "recruit"]);
 
 router.post("/", async (req, res) => {
   try {
