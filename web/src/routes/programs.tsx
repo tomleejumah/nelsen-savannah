@@ -77,6 +77,51 @@ function ProgramsIndexPage() {
         />
       </section>
 
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-8 pt-4 sm:px-8 lg:grid-cols-2">
+        {PROGRAMS.map((p, i) => (
+          <article
+            key={p.slug}
+            id={p.slug}
+            className="scroll-mt-28 rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass[p.tone]}`}>
+                {p.audience}
+              </span>
+              <span className="font-display text-sm text-muted-foreground/60">
+                0{i + 1}
+              </span>
+            </div>
+            <h2 className="mt-5 text-2xl font-bold">
+              <Link
+                to="/programs/$slug"
+                params={{ slug: p.slug }}
+                className="hover:text-ember"
+              >
+                {p.title}
+              </Link>
+            </h2>
+            <p className="mt-1 text-sm font-medium text-ember">{p.subtitle}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.blurb}</p>
+            <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
+              {p.topics.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link
+              to="/programs/$slug"
+              params={{ slug: p.slug }}
+              className="mt-6 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-ember"
+            >
+              About this programme <ArrowRight className="h-4 w-4" />
+            </Link>
+          </article>
+        ))}
+      </section>
+
       <section className="border-y border-border/60 bg-secondary/40 py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <p className="eyebrow text-ember">What we deliver</p>
@@ -157,51 +202,6 @@ function ProgramsIndexPage() {
             ))}
           </div>
         </div>
-      </section>
-
-      <section className="mx-auto mt-20 grid max-w-7xl gap-6 px-5 sm:px-8 lg:grid-cols-2">
-        {PROGRAMS.map((p, i) => (
-          <article
-            key={p.slug}
-            id={p.slug}
-            className="scroll-mt-28 rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass[p.tone]}`}>
-                {p.audience}
-              </span>
-              <span className="font-display text-sm text-muted-foreground/60">
-                0{i + 1}
-              </span>
-            </div>
-            <h2 className="mt-5 text-2xl font-bold">
-              <Link
-                to="/programs/$slug"
-                params={{ slug: p.slug }}
-                className="hover:text-ember"
-              >
-                {p.title}
-              </Link>
-            </h2>
-            <p className="mt-1 text-sm font-medium text-ember">{p.subtitle}</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.blurb}</p>
-            <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-              {p.topics.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link
-              to="/programs/$slug"
-              params={{ slug: p.slug }}
-              className="mt-6 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-foreground hover:text-ember"
-            >
-              About this programme <ArrowRight className="h-4 w-4" />
-            </Link>
-          </article>
-        ))}
       </section>
     </div>
   );
