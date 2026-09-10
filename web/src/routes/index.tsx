@@ -78,25 +78,25 @@ function Index() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10">
-            <figure className="relative overflow-hidden">
+          <div className="mt-12 grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-stretch lg:gap-10">
+            <figure className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/11] lg:aspect-auto lg:min-h-0">
               <img
                 src={heroImg}
                 alt="Learners building together at the Nelsen Savannah Nairobi hub"
                 width={1024}
                 height={877}
-                className="aspect-[4/3] w-full object-cover sm:aspect-[16/11]"
+                className="h-full w-full object-cover lg:absolute lg:inset-0"
               />
-              <figcaption className="absolute bottom-3 left-3 bg-ink/75 px-2.5 py-1 text-xs text-on-dark">
+              <figcaption className="absolute bottom-3 left-3 z-10 bg-ink/75 px-2.5 py-1 text-xs text-on-dark">
                 A build session at the Nairobi hub
               </figcaption>
             </figure>
 
-            <dl className="flex flex-col justify-center">
+            <dl className="flex flex-col justify-between">
               {HERO_STATS.map((s) => (
                 <div
                   key={s.value}
-                  className="grid grid-cols-[7.5rem_1fr] items-baseline gap-4 border-b border-hairline py-5 first:border-t sm:grid-cols-[8.5rem_1fr]"
+                  className="grid grid-cols-[7.5rem_1fr] items-baseline gap-4 border-b border-hairline py-4 first:border-t sm:grid-cols-[8.5rem_1fr] sm:py-5"
                 >
                   <dt className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
                     {s.value}
