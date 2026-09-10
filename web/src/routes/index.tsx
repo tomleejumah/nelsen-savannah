@@ -220,28 +220,54 @@ function Index() {
             </p>
           </div>
 
-          <div className="relative mt-16">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-[12%] right-[12%] top-6 hidden h-px bg-hairline lg:block"
-            />
-            <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-              {CORE_VALUES.map((v, i) => (
-                <li key={v.key} className="relative flex flex-col items-center text-center">
-                  <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-ember shadow-elevated">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
-                    {v.key
-                      .toLowerCase()
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </h3>
-                  <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
-                    {v.detail}
-                  </p>
-                </li>
-              ))}
-            </ol>
+          <div className="mt-16 space-y-12">
+            <div className="relative">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-[12%] right-[12%] top-6 hidden h-px bg-hairline lg:block"
+              />
+              <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+                {CORE_VALUES.slice(0, 4).map((v, i) => (
+                  <li key={v.key} className="relative flex flex-col items-center text-center">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-ember shadow-elevated">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
+                      {v.key
+                        .toLowerCase()
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    </h3>
+                    <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
+                      {v.detail}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="relative mx-auto max-w-3xl">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-[16%] right-[16%] top-6 hidden h-px bg-hairline sm:block"
+              />
+              <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-3">
+                {CORE_VALUES.slice(4).map((v, i) => (
+                  <li key={v.key} className="relative flex flex-col items-center text-center">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-ember shadow-elevated">
+                      {String(i + 5).padStart(2, "0")}
+                    </span>
+                    <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
+                      {v.key
+                        .toLowerCase()
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    </h3>
+                    <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
+                      {v.detail}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
 
           <p className="mt-14 text-center text-sm text-muted-foreground">
