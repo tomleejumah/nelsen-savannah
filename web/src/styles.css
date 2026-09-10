@@ -116,10 +116,11 @@
   --brand: var(--navy);
   --brand-foreground: oklch(0.97 0.01 90);
   --brand-soft: oklch(0.42 0.05 255);
-  --ember: var(--brick);
-  --ember-foreground: oklch(0.98 0.01 90);
-  --maroon: var(--brick);
-  --maroon-foreground: oklch(0.98 0.01 90);
+  /* Saturated maroon for CTAs / form chips (pre-redesign) */
+  --ember: oklch(0.52 0.21 25);
+  --ember-foreground: oklch(0.99 0.01 30);
+  --maroon: oklch(0.55 0.22 25);
+  --maroon-foreground: oklch(0.97 0.015 30);
   --logo-red: #e31e24;
   --sky-tint: oklch(0.55 0.06 250);
   --on-dark: oklch(0.96 0.01 90);
@@ -130,9 +131,14 @@
     oklch(0.2 0.03 255) 55%,
     oklch(0.18 0.02 50) 100%
   );
-  --gradient-ember: linear-gradient(100deg, oklch(0.45 0.1 35) 0%, var(--ochre) 100%);
+  --gradient-ember: linear-gradient(
+    100deg,
+    oklch(0.3 0.12 20) 0%,
+    oklch(0.52 0.21 25) 55%,
+    var(--ochre) 100%
+  );
   --shadow-elevated: 0 20px 50px -28px oklch(0.22 0.02 55 / 0.28);
-  --shadow-ember: 0 14px 32px -16px oklch(0.52 0.12 28 / 0.35);
+  --shadow-ember: 0 18px 40px -18px oklch(0.52 0.21 25 / 0.45);
   --glass-bg: oklch(0.97 0.01 90 / 0.88);
   --glass-border: oklch(0.22 0.02 55 / 0.1);
 
@@ -183,10 +189,10 @@
   --brand: oklch(0.72 0.04 255);
   --brand-foreground: oklch(0.14 0.015 260);
   --brand-soft: oklch(0.7 0.05 250);
-  --ember: var(--brick);
-  --ember-foreground: oklch(0.98 0.01 90);
-  --maroon: var(--brick);
-  --maroon-foreground: oklch(0.98 0.01 90);
+  --ember: oklch(0.63 0.21 26);
+  --ember-foreground: oklch(0.99 0.01 30);
+  --maroon: oklch(0.62 0.21 25);
+  --maroon-foreground: oklch(0.98 0.01 30);
   --logo-red: #e31e24;
   --sky-tint: oklch(0.7 0.06 246);
   --on-dark: oklch(0.96 0.01 90);
@@ -197,6 +203,13 @@
     oklch(0.16 0.025 255) 55%,
     oklch(0.2 0.03 50) 100%
   );
+  --gradient-ember: linear-gradient(
+    100deg,
+    oklch(0.35 0.14 22) 0%,
+    oklch(0.63 0.21 26) 55%,
+    var(--ochre) 100%
+  );
+  --shadow-ember: 0 18px 40px -18px oklch(0.63 0.21 26 / 0.45);
   --shadow-elevated: 0 24px 60px -28px oklch(0 0 0 / 0.55);
   --glass-bg: oklch(0.16 0.015 260 / 0.75);
   --glass-border: oklch(1 0 0 / 0.12);
