@@ -229,7 +229,7 @@ function Index() {
               <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {CORE_VALUES.slice(0, 4).map((v, i) => (
                   <li key={v.key} className="relative flex flex-col items-center text-center">
-                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-ember shadow-elevated">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ember font-display text-sm font-semibold text-on-dark shadow-elevated">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
@@ -253,7 +253,7 @@ function Index() {
               <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-3">
                 {CORE_VALUES.slice(4).map((v, i) => (
                   <li key={v.key} className="relative flex flex-col items-center text-center">
-                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-ember shadow-elevated">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ember font-display text-sm font-semibold text-on-dark shadow-elevated">
                       {String(i + 5).padStart(2, "0")}
                     </span>
                     <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
