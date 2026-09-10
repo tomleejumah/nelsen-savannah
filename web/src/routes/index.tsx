@@ -13,8 +13,6 @@ import {
   GOALS_2030,
   INNOVATION_CYCLE,
   ORG,
-  PRACTICAL_APPLICATION,
-  PROGRAM_PILLARS,
   PROGRAMS,
   ROADMAP,
   WHAT_YOU_GAIN,
@@ -335,59 +333,6 @@ function Index() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* How we deliver */}
-      <section className="border-b border-hairline bg-cream-deep">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-            Learn, build, connect, create impact
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Six pillars across every programme — practical skills through real projects, with
-            mentorship and a path to opportunity.
-          </p>
-          <ul className="mt-12 border-t border-hairline">
-            {PROGRAM_PILLARS.map((p) => (
-              <li
-                key={p.title}
-                className="grid gap-2 border-b border-hairline py-5 sm:grid-cols-[12rem_1fr] sm:gap-8"
-              >
-                <h3 className="font-display text-lg tracking-tight text-ink">{p.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* Practical application */}
-      <section className="border-b border-hairline">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-            Build, test, and present — not just study
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Learners apply concepts through robotics builds, data capstones, creative portfolios,
-            software projects, and community innovation challenges.
-          </p>
-          <ul className="mt-12 border-t border-hairline">
-            {PRACTICAL_APPLICATION.map((item) => (
-              <li
-                key={item}
-                className="border-b border-hairline py-4 text-sm leading-relaxed text-muted-foreground"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-          <Link
-            to="/learning"
-            className="mt-8 inline-flex text-sm text-brick underline decoration-brick/40 underline-offset-4 hover:decoration-brick"
-          >
-            Browse learning tracks
-          </Link>
         </div>
       </section>
 
