@@ -8,9 +8,7 @@ import {
   LEARNING_FORMAT,
   LEARNING_MODEL,
   PARTNER_ECOSYSTEM,
-  PROGRAM_PILLARS,
   PROGRAMS,
-  WHAT_YOU_GAIN,
 } from "@/data/site";
 
 export const Route = createFileRoute("/programs")({
@@ -77,89 +75,7 @@ function ProgramsIndexPage() {
         />
       </section>
 
-      <section className="border-y border-border/60 bg-secondary/40 py-20">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <p className="eyebrow text-ember">What we deliver</p>
-          <h2 className="mt-4 text-3xl font-bold">Six pillars across every programme</h2>
-          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {PROGRAM_PILLARS.map((p) => (
-              <article
-                key={p.title}
-                className="rounded-3xl border border-border/70 bg-card p-6"
-              >
-                <h3 className="text-lg font-bold">{p.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-        <p className="eyebrow text-ember">Learning format</p>
-        <h2 className="mt-4 text-3xl font-bold">Blended, applied, and inclusive</h2>
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {LEARNING_FORMAT.map((item) => (
-            <article
-              key={item.title}
-              className="rounded-3xl border border-border/70 bg-card p-7"
-            >
-              <h3 className="text-lg font-bold">{item.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-            </article>
-          ))}
-        </div>
-        <div className="mt-10 flex flex-wrap gap-2">
-          {WHAT_YOU_GAIN.map((item) => (
-            <span
-              key={item}
-              className="rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-            >
-              + {item}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-y border-border/60 bg-background py-20 dark:bg-hero-gradient">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <p className="eyebrow text-ember">2030 focus</p>
-          <h2 className="mt-4 text-3xl font-bold text-foreground dark:text-on-dark">
-            Campuses, AI solutions, and partners
-          </h2>
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {CAMPUS_PHASES.map((phase) => (
-              <article
-                key={phase.phase}
-                className="rounded-3xl border border-border/70 bg-card p-7 dark:border-transparent dark:glass-dark"
-              >
-                <h3 className="font-display text-sm font-semibold text-ember">{phase.phase}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
-                  {phase.markets}
-                </p>
-              </article>
-            ))}
-          </div>
-          <p className="mt-10 text-sm text-muted-foreground dark:text-on-dark/70">
-            AI solution focus areas: {AI_FOCUS_AREAS.join(" • ")}.
-          </p>
-          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {PARTNER_ECOSYSTEM.map((p) => (
-              <article
-                key={p.title}
-                className="rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:glass-dark"
-              >
-                <h3 className="text-base font-bold">{p.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground dark:text-on-dark/70">
-                  {p.detail}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto mt-20 grid max-w-7xl gap-6 px-5 sm:px-8 lg:grid-cols-2">
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-8 pt-4 sm:px-8 lg:grid-cols-2 lg:[&>article:last-child:nth-child(odd)]:col-span-2 lg:[&>article:last-child:nth-child(odd)]:mx-auto lg:[&>article:last-child:nth-child(odd)]:w-full lg:[&>article:last-child:nth-child(odd)]:max-w-[calc(50%-0.75rem)]">
         {PROGRAMS.map((p, i) => (
           <article
             key={p.slug}
@@ -202,6 +118,60 @@ function ProgramsIndexPage() {
             </Link>
           </article>
         ))}
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
+        <p className="eyebrow text-ember">Learning format</p>
+        <h2 className="mt-4 text-3xl font-bold">Blended, applied, and inclusive</h2>
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
+          {LEARNING_FORMAT.map((item) => (
+            <article
+              key={item.title}
+              className="rounded-3xl border border-border/70 bg-card p-7"
+            >
+              <h3 className="text-lg font-bold">{item.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y border-border/60 bg-background py-20 dark:bg-hero-gradient">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <p className="eyebrow text-ember">2030 focus</p>
+          <h2 className="mt-4 text-3xl font-bold text-foreground dark:text-on-dark">
+            Campuses, AI solutions, and partners
+          </h2>
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            {CAMPUS_PHASES.map((phase) => (
+              <article
+                key={phase.phase}
+                className="rounded-3xl border border-border/70 bg-card p-7 dark:border-transparent dark:glass-dark"
+              >
+                <h3 className="font-display text-sm font-semibold text-ember">{phase.phase}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground dark:text-on-dark/70">
+                  {phase.markets}
+                </p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-10 text-sm text-muted-foreground dark:text-on-dark/70">
+            AI solution focus areas: {AI_FOCUS_AREAS.join(" • ")}.
+          </p>
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {PARTNER_ECOSYSTEM.map((p) => (
+              <article
+                key={p.title}
+                className="rounded-3xl border border-border/70 bg-card p-6 dark:border-transparent dark:glass-dark"
+              >
+                <h3 className="text-base font-bold">{p.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground dark:text-on-dark/70">
+                  {p.detail}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
       </section>
     </div>
   );
