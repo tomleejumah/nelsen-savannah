@@ -24,7 +24,7 @@ const LINKS = [
 ] as const;
 
 const navLinkClass =
-  "whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-maroon focus-visible:text-maroon";
+  "whitespace-nowrap px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-brick focus-visible:text-brick";
 
 function pathIsActive(pathname: string, to: string) {
   if (to === "/") return pathname === "/";
@@ -91,8 +91,8 @@ export function Navbar() {
         className={cn(
           "mx-auto flex items-center gap-3 transition-all duration-500 ease-out",
           scrolled
-            ? "glass-panel max-w-6xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
-            : "max-w-7xl rounded-3xl border border-transparent px-2 py-3 sm:px-4",
+            ? "max-w-6xl border border-hairline bg-cream/95 px-5 py-2 shadow-elevated backdrop-blur-md sm:px-6"
+            : "max-w-6xl border border-transparent px-2 py-3 sm:px-4",
         )}
       >
         <Link
@@ -116,22 +116,22 @@ export function Navbar() {
                   className={cn(
                     navLinkClass,
                     "flex items-center gap-1",
-                    linkActive(link.to) && "text-maroon",
+                    linkActive(link.to) && "text-brick",
                   )}
                 >
                   {link.label}
                   <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
                 </Link>
                 <div className="invisible absolute left-1/2 top-full w-[min(92vw,34rem)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-300 group-hover:visible group-hover:opacity-100">
-                  <div className="glass-panel grid gap-1 rounded-2xl p-2 shadow-elevated sm:grid-cols-2">
+                  <div className="grid gap-1 border border-hairline bg-cream p-2 shadow-elevated sm:grid-cols-2">
                     {PROGRAMS.map((p) => (
                       <Link
                         key={p.slug}
                         to="/programs/$slug"
                         params={{ slug: p.slug }}
-                        className="rounded-xl px-3 py-2.5 transition-colors hover:bg-accent/70"
+                        className="px-3 py-2.5 transition-colors hover:bg-cream-deep"
                       >
-                        <span className="block font-display text-sm font-semibold text-foreground">
+                        <span className="block font-display text-sm text-foreground">
                           {p.title}
                         </span>
                         <span className="block text-xs text-muted-foreground">{p.audience}</span>
@@ -146,7 +146,7 @@ export function Navbar() {
                 to={link.to}
                 activeOptions={navActiveOptions(link.to)}
                 activeProps={{ className: "" }}
-                className={cn(navLinkClass, linkActive(link.to) && "text-maroon")}
+                className={cn(navLinkClass, linkActive(link.to) && "text-brick")}
               >
                 {link.label}
               </Link>
@@ -159,14 +159,14 @@ export function Navbar() {
           {user ? (
             <Link
               to={primaryWorkspacePath(me)}
-              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+              className="hidden whitespace-nowrap bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 sm:inline-flex"
             >
               Workspace
             </Link>
           ) : (
             <Link
-              to="/contact"
-              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
+              to="/programs"
+              className="hidden whitespace-nowrap bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 sm:inline-flex"
             >
               Join a programme
             </Link>
@@ -175,7 +175,7 @@ export function Navbar() {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
-            className="grid h-9 w-9 place-items-center rounded-full border border-border/70 lg:hidden"
+            className="grid h-9 w-9 place-items-center border border-hairline lg:hidden"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -183,7 +183,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="glass-panel mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-7xl overflow-y-auto rounded-2xl p-3 shadow-elevated lg:hidden">
+        <div className="mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-6xl overflow-y-auto border border-hairline bg-cream p-3 shadow-elevated lg:hidden">
           {LINKS.map((link) =>
             "dropdown" in link && link.dropdown ? (
               <div key={link.to}>
@@ -194,8 +194,8 @@ export function Navbar() {
                     activeOptions={navActiveOptions(link.to)}
                     activeProps={{ className: "" }}
                     className={cn(
-                      "min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
-                      linkActive(link.to) && "text-maroon",
+                      "min-w-0 truncate px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep hover:text-brick focus-visible:text-brick",
+                      linkActive(link.to) && "text-brick",
                     )}
                   >
                     {link.label}
@@ -205,7 +205,7 @@ export function Navbar() {
                     aria-label="Toggle programs list"
                     aria-expanded={mobilePrograms}
                     onClick={() => setMobilePrograms((v) => !v)}
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border/70"
+                    className="grid h-9 w-9 shrink-0 place-items-center border border-hairline"
                   >
                     <ChevronDown
                       className={cn(
@@ -216,16 +216,16 @@ export function Navbar() {
                   </button>
                 </div>
                 {mobilePrograms && (
-                  <div className="mb-1 ml-3 space-y-0.5 border-l border-border/60 pl-2">
+                  <div className="mb-1 ml-3 space-y-0.5 border-l border-hairline pl-2">
                     {PROGRAMS.map((p) => (
                       <Link
                         key={p.slug}
                         to="/programs/$slug"
                         params={{ slug: p.slug }}
                         onClick={() => setOpen(false)}
-                        className="block min-w-0 rounded-xl px-3 py-2 transition-colors hover:bg-accent/70"
+                        className="block min-w-0 px-3 py-2 transition-colors hover:bg-cream-deep"
                       >
-                        <span className="block truncate font-display text-sm font-semibold text-foreground">
+                        <span className="block truncate font-display text-sm text-foreground">
                           {p.title}
                         </span>
                         <span className="block truncate text-xs text-muted-foreground">
@@ -244,8 +244,8 @@ export function Navbar() {
                 activeOptions={navActiveOptions(link.to)}
                 activeProps={{ className: "" }}
                 className={cn(
-                  "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
-                  linkActive(link.to) && "text-maroon",
+                  "block px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep hover:text-brick focus-visible:text-brick",
+                  linkActive(link.to) && "text-brick",
                 )}
               >
                 {link.label}
@@ -256,15 +256,15 @@ export function Navbar() {
             <Link
               to={primaryWorkspacePath(me)}
               onClick={() => setOpen(false)}
-              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+              className="mt-2 block bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground"
             >
               Workspace
             </Link>
           ) : (
             <Link
-              to="/contact"
+              to="/programs"
               onClick={() => setOpen(false)}
-              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
+              className="mt-2 block bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground"
             >
               Join a programme
             </Link>
