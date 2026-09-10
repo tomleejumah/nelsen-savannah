@@ -57,7 +57,7 @@ function Index() {
     <div className="bg-cream text-ink">
       {/* Hero */}
       <section className="border-b border-hairline">
-        <div className="mx-auto max-w-6xl px-5 pb-16 pt-28 sm:px-8 sm:pb-20 sm:pt-36">
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-28 sm:px-8 sm:pb-20 sm:pt-36">
           <p className="text-sm text-brick">
             Nairobi, Kenya — an education and innovation hub
           </p>
@@ -126,7 +126,7 @@ function Index() {
 
       {/* 2030 goals — second after landing */}
       <section className="border-b border-hairline bg-cream-deep">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
             What we&apos;re building toward by 2030
           </h2>
@@ -152,7 +152,7 @@ function Index() {
 
       {/* Vision & mission */}
       <section className="border-b border-hairline">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:gap-16">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:gap-16">
           <div>
             <p className="text-sm text-brick">Our vision</p>
             <h2 className="mt-3 font-display text-2xl tracking-tight text-ink sm:text-3xl">
@@ -171,7 +171,7 @@ function Index() {
 
       {/* Audience */}
       <section className="bg-ink text-on-dark">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
             Built for more than students
           </h2>
@@ -207,7 +207,7 @@ function Index() {
 
       {/* Core values */}
       <section className="border-b border-hairline">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
             How we work at the Hub
           </h2>
@@ -237,7 +237,7 @@ function Index() {
 
       {/* Roadmap */}
       <section className="border-b border-hairline">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
             What&apos;s live, what&apos;s next
           </h2>
@@ -270,7 +270,7 @@ function Index() {
 
       {/* Dark CTA */}
       <section className="bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="max-w-xl font-display text-3xl tracking-tight sm:text-4xl">
             Africa&apos;s next builders are already here.
           </h2>
