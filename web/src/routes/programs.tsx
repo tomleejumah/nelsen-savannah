@@ -75,7 +75,7 @@ function ProgramsIndexPage() {
         />
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-8 pt-4 sm:px-8 lg:grid-cols-2">
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-8 pt-4 sm:px-8 lg:grid-cols-2 lg:[&>article:last-child:nth-child(odd)]:col-span-2 lg:[&>article:last-child:nth-child(odd)]:mx-auto lg:[&>article:last-child:nth-child(odd)]:w-full lg:[&>article:last-child:nth-child(odd)]:max-w-[calc(50%-0.75rem)]">
         {PROGRAMS.map((p, i) => (
           <article
             key={p.slug}
