@@ -170,8 +170,8 @@ function Index() {
         </div>
       </section>
 
-      {/* Audience — navy */}
-      <section className="bg-navy text-on-dark">
+      {/* Audience */}
+      <section className="bg-ink text-on-dark">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
             Built for more than students
