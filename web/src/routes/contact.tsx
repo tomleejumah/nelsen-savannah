@@ -45,6 +45,8 @@ function ContactPage() {
   }, [intent]);
 
   const isCampus = role === "campus";
+  const isCareers = role === "careers";
+  const contactEmail = isCareers ? ORG.recruitEmail : ORG.email;
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
@@ -54,12 +56,16 @@ function ContactPage() {
           <h1 className="mt-4 text-4xl font-bold sm:text-5xl">
             {isCampus
               ? "Invite Nelsen Savannah to your campus or community"
-              : "Join, host, partner, or work with us"}
+              : isCareers
+                ? "Apply to work with Nelsen Savannah"
+                : "Join, host, partner, or work with us"}
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
             {isCampus
               ? "Your campus has talent. Your community has ideas. Tell us about your institution, expected participants, and the programme you would like to host."
-              : "Learners, campuses, partners, and talent — we reply within two working days by email."}
+              : isCareers
+                ? "Send your profile to our recruit desk. We review applications for programme, technology, research, and operations roles."
+                : "Learners, campuses, partners, and talent — we reply within two working days by email."}
           </p>
 
           {role === "partner" && (
@@ -72,7 +78,7 @@ function ContactPage() {
             </ul>
           )}
 
-          {role === "careers" && (
+          {isCareers && (
             <ul className="mt-8 space-y-4 text-sm text-muted-foreground">
               {CAREER_AREAS.map((area) => (
                 <li key={area.title}>
@@ -87,13 +93,13 @@ function ContactPage() {
           <ul className="mt-10 space-y-4 text-sm">
             <li>
               <a
-                href={`mailto:${ORG.email}`}
+                href={`mailto:${contactEmail}`}
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-maroon"
               >
                 <span className="icon-chip">
                   <Mail className="h-4 w-4" />
                 </span>
-                {ORG.email}
+                {contactEmail}
               </a>
             </li>
             <li>
@@ -126,11 +132,17 @@ function ContactPage() {
             for (const [key, value] of fd.entries()) {
               if (String(value).trim()) lines.push(`${key}: ${value}`);
             }
-            const subject = encodeURIComponent(`Nelsen Savannah — ${role}`);
+            const subject = encodeURIComponent(
+              isCareers
+                ? `Nelsen Savannah — role application`
+                : `Nelsen Savannah — ${role}`,
+            );
             const body = encodeURIComponent(lines.join("\n"));
-            window.location.href = `mailto:${ORG.email}?subject=${subject}&body=${body}`;
+            window.location.href = `mailto:${contactEmail}?subject=${subject}&body=${body}`;
             toast.success("Opening your email app", {
-              description: "If nothing opens, email us directly.",
+              description: isCareers
+                ? `Applications go to ${ORG.recruitEmail}`
+                : "If nothing opens, email us directly.",
             });
           }}
           className="rounded-3xl border border-border/70 bg-card p-7 shadow-elevated sm:p-9"
@@ -256,15 +268,16 @@ function ContactPage() {
             type="submit"
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ember-gradient px-6 py-3.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5"
           >
-            {isCampus ? "Submit invitation" : "Send message"} <Send className="h-4 w-4" />
+            {isCampus ? "Submit invitation" : isCareers ? "Submit application" : "Send message"}{" "}
+            <Send className="h-4 w-4" />
           </button>
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Or email{" "}
             <a
-              href={`mailto:${ORG.email}`}
+              href={`mailto:${contactEmail}`}
               className="font-medium text-foreground underline-offset-2 hover:underline"
             >
-              {ORG.email}
+              {contactEmail}
             </a>
           </p>
         </form>

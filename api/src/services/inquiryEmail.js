@@ -6,6 +6,9 @@ const TO = () =>
   process.env.ORG_EMAIL ||
   "info@nelsen-savannah.co.ke";
 
+const RECRUIT_TO = () =>
+  process.env.RECRUIT_TO_EMAIL || "recruit@nelsen-savannah.co.ke";
+
 const FROM = () =>
   process.env.RESEND_FROM ||
   "Nelsen Savannah <info@nelsen-savannah.co.ke>";
@@ -23,9 +26,15 @@ function requireKey() {
   return key;
 }
 
+function inboxForDesk(desk) {
+  const d = String(desk || "").toLowerCase();
+  if (d === "careers" || d === "recruit") return RECRUIT_TO();
+  return TO();
+}
+
 /**
  * Staff desk / alert mail (branded HTML + plain text).
- * @param {{ desk: string, subject: string, replyTo?: string, lines: string[], intro?: string }} payload
+ * @param {{ desk: string, subject: string, replyTo?: string, lines: string[], intro?: string, to?: string }} payload
  */
 export async function sendInquiryEmail(payload) {
   const text = payload.lines.join("\n");
@@ -38,7 +47,7 @@ export async function sendInquiryEmail(payload) {
   });
 
   return sendRaw({
-    to: TO(),
+    to: payload.to || inboxForDesk(payload.desk),
     subject: payload.subject,
     replyTo: payload.replyTo,
     text,
