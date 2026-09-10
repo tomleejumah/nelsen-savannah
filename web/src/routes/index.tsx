@@ -1,6 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import brandBanner from "@/assets/hero-brand.jpg";
 import heroImg from "@/assets/gallery-learners.jpg";
 import {
   APPROACH,
@@ -266,36 +265,6 @@ function Index() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <section className="border-b border-hairline bg-cream-deep">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-            Learn. Build. Create.
-          </h2>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Moments from Nelsen Savannah — learners coding, designing, and shipping work in Kenya.
-          </p>
-          <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-            <img
-              src={heroImg}
-              alt="Nelsen Savannah learners at work — design, data, and code"
-              width={1024}
-              height={877}
-              loading="lazy"
-              className="h-full min-h-[16rem] w-full object-cover"
-            />
-            <img
-              src={brandBanner}
-              alt="Nelsen Savannah Kenya — learners studying and creating"
-              width={1024}
-              height={405}
-              loading="lazy"
-              className="h-full min-h-[16rem] w-full object-cover"
-            />
-          </div>
         </div>
       </section>
 
