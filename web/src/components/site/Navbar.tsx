@@ -1,13 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { ChevronDown, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
-import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
-import { primaryWorkspacePath } from "@/lib/lmsCapabilities";
-import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
@@ -24,7 +19,7 @@ const LINKS = [
 ] as const;
 
 const navLinkClass =
-  "whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-maroon focus-visible:text-maroon";
+  "whitespace-nowrap px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-brick focus-visible:text-brick";
 
 function pathIsActive(pathname: string, to: string) {
   if (to === "/") return pathname === "/";
@@ -50,8 +45,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [me, setMe] = useState<MeDto | null>(null);
 
   const linkActive = (to: string) => pathname != null && pathIsActive(pathname, to);
 
@@ -62,37 +55,14 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    return onAuthStateChanged(getFirebaseAuth(), (next) => {
-      const gen = bumpAuthGeneration();
-      setUser(next);
-      if (!next) {
-        setMe(null);
-        return;
-      }
-      void (async () => {
-        try {
-          const token = await next.getIdToken();
-          if (gen !== getAuthGeneration()) return;
-          const envelope = await fetchLmsMe(token);
-          if (gen !== getAuthGeneration()) return;
-          setMe(envelope.ok && envelope.data ? envelope.data : null);
-        } catch {
-          if (gen !== getAuthGeneration()) return;
-          setMe(null);
-        }
-      })();
-    });
-  }, []);
-
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-5">
       <nav
         className={cn(
           "mx-auto flex items-center gap-3 transition-all duration-500 ease-out",
           scrolled
-            ? "glass-panel max-w-6xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
-            : "max-w-7xl rounded-3xl border border-transparent px-2 py-3 sm:px-4",
+            ? "glass-panel max-w-7xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
+            : "glass-panel max-w-7xl rounded-3xl px-3 py-3 sm:px-5",
         )}
       >
         <Link
@@ -116,7 +86,7 @@ export function Navbar() {
                   className={cn(
                     navLinkClass,
                     "flex items-center gap-1",
-                    linkActive(link.to) && "text-maroon",
+                    linkActive(link.to) && "text-brick",
                   )}
                 >
                   {link.label}
@@ -129,9 +99,9 @@ export function Navbar() {
                         key={p.slug}
                         to="/programs/$slug"
                         params={{ slug: p.slug }}
-                        className="rounded-xl px-3 py-2.5 transition-colors hover:bg-accent/70"
+                        className="rounded-xl px-3 py-2.5 transition-colors hover:bg-cream-deep/60"
                       >
-                        <span className="block font-display text-sm font-semibold text-foreground">
+                        <span className="block font-display text-sm text-foreground">
                           {p.title}
                         </span>
                         <span className="block text-xs text-muted-foreground">{p.audience}</span>
@@ -146,7 +116,7 @@ export function Navbar() {
                 to={link.to}
                 activeOptions={navActiveOptions(link.to)}
                 activeProps={{ className: "" }}
-                className={cn(navLinkClass, linkActive(link.to) && "text-maroon")}
+                className={cn(navLinkClass, linkActive(link.to) && "text-brick")}
               >
                 {link.label}
               </Link>
@@ -156,26 +126,11 @@ export function Navbar() {
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
           <ThemeToggle />
-          {user ? (
-            <Link
-              to={primaryWorkspacePath(me)}
-              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
-            >
-              Workspace
-            </Link>
-          ) : (
-            <Link
-              to="/contact"
-              className="hidden whitespace-nowrap rounded-full bg-ember-gradient px-4 py-2 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 sm:inline-flex"
-            >
-              Join a programme
-            </Link>
-          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
-            className="grid h-9 w-9 place-items-center rounded-full border border-border/70 lg:hidden"
+            className="grid h-9 w-9 place-items-center rounded-full border border-hairline lg:hidden"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -194,8 +149,8 @@ export function Navbar() {
                     activeOptions={navActiveOptions(link.to)}
                     activeProps={{ className: "" }}
                     className={cn(
-                      "min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
-                      linkActive(link.to) && "text-maroon",
+                      "min-w-0 truncate rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep/60 hover:text-brick focus-visible:text-brick",
+                      linkActive(link.to) && "text-brick",
                     )}
                   >
                     {link.label}
@@ -205,7 +160,7 @@ export function Navbar() {
                     aria-label="Toggle programs list"
                     aria-expanded={mobilePrograms}
                     onClick={() => setMobilePrograms((v) => !v)}
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border/70"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-hairline"
                   >
                     <ChevronDown
                       className={cn(
@@ -216,16 +171,16 @@ export function Navbar() {
                   </button>
                 </div>
                 {mobilePrograms && (
-                  <div className="mb-1 ml-3 space-y-0.5 border-l border-border/60 pl-2">
+                  <div className="mb-1 ml-3 space-y-0.5 border-l border-hairline pl-2">
                     {PROGRAMS.map((p) => (
                       <Link
                         key={p.slug}
                         to="/programs/$slug"
                         params={{ slug: p.slug }}
                         onClick={() => setOpen(false)}
-                        className="block min-w-0 rounded-xl px-3 py-2 transition-colors hover:bg-accent/70"
+                        className="block min-w-0 rounded-xl px-3 py-2 transition-colors hover:bg-cream-deep/60"
                       >
-                        <span className="block truncate font-display text-sm font-semibold text-foreground">
+                        <span className="block truncate font-display text-sm text-foreground">
                           {p.title}
                         </span>
                         <span className="block truncate text-xs text-muted-foreground">
@@ -244,30 +199,13 @@ export function Navbar() {
                 activeOptions={navActiveOptions(link.to)}
                 activeProps={{ className: "" }}
                 className={cn(
-                  "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70 hover:text-maroon focus-visible:text-maroon",
-                  linkActive(link.to) && "text-maroon",
+                  "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep/60 hover:text-brick focus-visible:text-brick",
+                  linkActive(link.to) && "text-brick",
                 )}
               >
                 {link.label}
               </Link>
             ),
-          )}
-          {user ? (
-            <Link
-              to={primaryWorkspacePath(me)}
-              onClick={() => setOpen(false)}
-              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
-            >
-              Workspace
-            </Link>
-          ) : (
-            <Link
-              to="/contact"
-              onClick={() => setOpen(false)}
-              className="mt-2 block rounded-xl bg-ember-gradient px-3 py-2.5 text-center font-display text-sm font-semibold text-maroon-foreground"
-            >
-              Join a programme
-            </Link>
           )}
         </div>
       )}
