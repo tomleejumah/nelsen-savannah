@@ -61,8 +61,8 @@ export function Navbar() {
         className={cn(
           "mx-auto flex items-center gap-3 transition-all duration-500 ease-out",
           scrolled
-            ? "glass-panel max-w-6xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
-            : "glass-panel max-w-6xl rounded-3xl px-3 py-3 sm:px-5",
+            ? "glass-panel max-w-7xl rounded-full px-5 py-2 shadow-elevated sm:px-6"
+            : "glass-panel max-w-7xl rounded-3xl px-3 py-3 sm:px-5",
         )}
       >
         <Link
@@ -138,7 +138,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="glass-panel mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-6xl overflow-y-auto rounded-2xl p-3 shadow-elevated lg:hidden">
+        <div className="glass-panel mx-auto mt-2 max-h-[calc(100vh-6rem)] max-w-7xl overflow-y-auto rounded-2xl p-3 shadow-elevated lg:hidden">
           {LINKS.map((link) =>
             "dropdown" in link && link.dropdown ? (
               <div key={link.to}>
