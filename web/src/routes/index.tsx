@@ -1,19 +1,14 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 
 import brandBanner from "@/assets/hero-brand.jpg";
 import heroImg from "@/assets/gallery-learners.jpg";
-import { type AppEvent, eventDateLabel, eventVenue } from "@/data/events";
-import { loadHubEvents } from "@/lib/hubEvents";
 import {
   APPROACH,
   CORE_VALUES,
   FACILITATORS,
-  FIRST_INTAKE,
   GOALS_2030,
   INNOVATION_CYCLE,
   ORG,
-  PROGRAMS,
   ROADMAP,
   WHAT_YOU_GAIN,
   WHO_SHOULD_JOIN,
@@ -58,65 +53,7 @@ const HERO_STATS = [
   },
 ] as const;
 
-const PATHWAY_META: Record<
-  string,
-  { tag: string; title: string; line: string }
-> = {
-  "future-safari": {
-    tag: "Entry",
-    title: "Future Safari",
-    line: "A first look at emerging tech — the on-ramp before choosing a track.",
-  },
-  "savannah-robotics-automation-lab": {
-    tag: "Builder",
-    title: "Robotics & Automation Lab",
-    line: "Design, wire, and program robots that move and respond.",
-  },
-  "savannah-data-ai-academy": {
-    tag: "Builder",
-    title: "Data & AI Academy",
-    line: "Work real datasets end to end and ship a capstone project.",
-  },
-  "savannah-software-engineering-lab": {
-    tag: "Builder",
-    title: "Software Engineering Lab",
-    line: "Write and ship software with the tools working engineers use.",
-  },
-  "savannah-creative-lab": {
-    tag: "Creative",
-    title: "Creative Lab",
-    line: "Design, illustration, and visual storytelling with real briefs.",
-  },
-  "savannah-sauti-academy": {
-    tag: "Creative",
-    title: "Sauti Academy",
-    line: "Audio, voice, and podcasting — from recording to a finished episode.",
-  },
-  "kijiji-hub": {
-    tag: "Community",
-    title: "Kijiji Hub",
-    line: "Where finished projects meet the community that will use them.",
-  },
-};
-
-const PATHWAY_ORDER = [
-  "future-safari",
-  "savannah-robotics-automation-lab",
-  "savannah-data-ai-academy",
-  "savannah-software-engineering-lab",
-  "savannah-creative-lab",
-  "savannah-sauti-academy",
-  "kijiji-hub",
-] as const;
-
 function Index() {
-  const [hubEvents, setHubEvents] = useState<AppEvent[]>([]);
-  const featured = hubEvents[0];
-
-  useEffect(() => {
-    void loadHubEvents().then(setHubEvents);
-  }, []);
-
   return (
     <div className="bg-cream text-ink">
       {/* Hero */}
@@ -133,12 +70,12 @@ function Index() {
             <p className="max-w-md text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
               Robotics, data, software, design, and audio — for graduates, career changers,
               developers, and educators who want to build, not just study.{" "}
-              <a
-                href="#programmes"
+              <Link
+                to="/programs"
                 className="underline decoration-hairline underline-offset-4 transition-colors hover:text-brick hover:decoration-brick"
               >
                 See the programmes
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -172,12 +109,12 @@ function Index() {
           </div>
 
           <div className="mt-10 flex flex-wrap gap-3">
-            <a
-              href="#programmes"
+            <Link
+              to="/programs"
               className="inline-flex items-center bg-ember-gradient px-5 py-3 text-sm font-medium text-maroon-foreground shadow-ember-glow transition-opacity hover:opacity-90"
             >
               Join a programme
-            </a>
+            </Link>
             <Link
               to="/contact"
               className="inline-flex items-center border border-ink px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-on-dark"
@@ -214,56 +151,6 @@ function Index() {
         </div>
       </section>
 
-      {/* Pathways — list only (full cards live on /programs) */}
-      <section id="programmes" className="scroll-mt-28 border-b border-hairline">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="font-display text-3xl tracking-tight text-ink sm:text-4xl">
-            Seven pathways, one hub
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Start wherever fits — exploration for beginners, specialist tracks for people ready to
-            build something real.{" "}
-            <Link
-              to="/programs"
-              className="text-brick underline decoration-brick/40 underline-offset-4 hover:decoration-brick"
-            >
-              Full programme details
-            </Link>
-          </p>
-
-          <ul className="mt-12 border-t border-hairline">
-            {PATHWAY_ORDER.map((slug) => {
-              const meta = PATHWAY_META[slug];
-              const program = PROGRAMS.find((p) => p.slug === slug);
-              if (!meta || !program) return null;
-              return (
-                <li
-                  key={slug}
-                  className="grid gap-2 border-b border-hairline py-5 sm:grid-cols-[6.5rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-6"
-                >
-                  <span className="text-sm text-brick">{meta.tag}</span>
-                  <div className="min-w-0 sm:flex sm:items-baseline sm:gap-6">
-                    <h3 className="shrink-0 font-display text-lg tracking-tight text-ink sm:w-56 lg:w-64">
-                      {meta.title}
-                    </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:mt-0">
-                      {meta.line}
-                    </p>
-                  </div>
-                  <Link
-                    to="/programs/$slug"
-                    params={{ slug }}
-                    className="text-sm text-brick underline decoration-brick/40 underline-offset-4 transition-colors hover:decoration-brick"
-                  >
-                    Details
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </section>
-
       {/* Vision & mission */}
       <section className="border-b border-hairline">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:gap-16">
@@ -280,49 +167,6 @@ function Index() {
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{APPROACH}</p>
           </div>
-        </div>
-      </section>
-
-      {/* First intake / events */}
-      <section className="border-b border-hairline bg-cream-deep">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="max-w-2xl">
-              <p className="text-sm text-brick">First intake · {FIRST_INTAKE.label}</p>
-              <h2 className="mt-3 font-display text-3xl tracking-tight text-ink sm:text-4xl">
-                Reserve your free seat
-                {featured ? ` — ${featured.title}` : ""}
-              </h2>
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                With {FACILITATORS.map((f) => f.name).join(" and ")}
-                {featured ? ` · ${eventVenue(featured)}` : ""}
-              </p>
-            </div>
-            <Link
-              to="/events"
-              hash={featured?.eventId}
-              className="text-sm text-brick underline decoration-brick/40 underline-offset-4 hover:decoration-brick"
-            >
-              Reserve free seat
-            </Link>
-          </div>
-          {hubEvents.length > 0 ? (
-            <ul className="mt-12 border-t border-hairline">
-              {hubEvents.slice(0, 3).map((e) => (
-                <li key={e.eventId} className="border-b border-hairline py-5">
-                  <Link to="/events" hash={e.eventId} className="group block">
-                    <span className="text-sm text-brick">{eventDateLabel(e)}</span>
-                    <h3 className="mt-2 font-display text-xl tracking-tight text-ink group-hover:text-brick">
-                      {e.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {eventVenue(e)} · {e.price ?? "Free"}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : null}
         </div>
       </section>
 
