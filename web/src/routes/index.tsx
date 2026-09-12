@@ -169,13 +169,13 @@ function Index() {
         </div>
       </section>
 
-      {/* Audience */}
-      <section className="bg-ink text-on-dark">
+      {/* Audience — fixed dark chocolate band (readable in light + dark) */}
+      <section className="bg-ink-deep text-on-ink-deep">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
             Built for more than students
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-on-dark/70">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-on-ink-deep/70">
             Recent graduates, career changers, working developers and designers, and the educators
             who train the next group — all in the same hub.
           </p>
@@ -185,7 +185,7 @@ function Index() {
               {WHO_SHOULD_JOIN.map((item) => (
                 <li
                   key={item}
-                  className="border-b border-white/15 py-4 text-sm leading-relaxed text-on-dark/85"
+                  className="border-b border-white/15 py-4 text-sm leading-relaxed text-on-ink-deep/85"
                 >
                   {item}
                 </li>
@@ -195,7 +195,7 @@ function Index() {
               {WHAT_YOU_GAIN.map((tag) => (
                 <span
                   key={tag}
-                  className="border border-white/35 px-3 py-3 text-center text-sm text-on-dark"
+                  className="border border-white/35 px-3 py-3 text-center text-sm text-on-ink-deep"
                 >
                   {tag}
                 </span>
@@ -229,7 +229,7 @@ function Index() {
               <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {CORE_VALUES.slice(0, 4).map((v, i) => (
                   <li key={v.key} className="relative flex flex-col items-center text-center">
-                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-on-dark shadow-elevated">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink-deep font-display text-sm font-semibold text-on-ink-deep shadow-elevated">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <h3 className="mt-5 font-display text-lg tracking-tight text-ink">
@@ -253,7 +253,7 @@ function Index() {
               <ol className="grid gap-x-6 gap-y-12 sm:grid-cols-3">
                 {CORE_VALUES.slice(4).map((v, i) => (
                   <li key={v.key} className="relative flex flex-col items-center text-center">
-                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink font-display text-sm font-semibold text-on-dark shadow-elevated">
+                    <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl bg-ink-deep font-display text-sm font-semibold text-on-ink-deep shadow-elevated">
                       {String(i + 5).padStart(2, "0")}
                     </span>
                     <h3 className="mt-5 font-display text-lg tracking-tight text-ink">

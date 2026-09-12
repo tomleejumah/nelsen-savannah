@@ -75,6 +75,8 @@
   --color-cream: var(--cream);
   --color-cream-deep: var(--cream-deep);
   --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-on-ink-deep: var(--on-ink-deep);
   --color-navy: var(--navy);
   --color-brick: var(--brick);
   --color-ochre: var(--ochre);
@@ -88,6 +90,9 @@
   --cream: oklch(0.955 0.014 90);
   --cream-deep: oklch(0.92 0.02 85);
   --ink: oklch(0.22 0.02 55);
+  /* Fixed dark chocolate — never flips in .dark (inverse bands / step badges) */
+  --ink-deep: oklch(0.22 0.02 55);
+  --on-ink-deep: oklch(0.96 0.01 90);
   --navy: oklch(0.26 0.045 260);
   --brick: oklch(0.52 0.12 28);
   --ochre: oklch(0.72 0.09 75);
