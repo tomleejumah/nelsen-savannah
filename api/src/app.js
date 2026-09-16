@@ -79,7 +79,12 @@ const PORT = process.env.PORT || 5002;
 
 async function start() {
   await initLmsDb();
-  await seedLmsCatalog({ force: process.env.LMS_SEED_FORCE === "1" });
+  // Catalog seed is opt-in — empty DB stays empty until LMS_SEED_ENABLE=1 or admin seed.
+  if (process.env.LMS_SEED_ENABLE === "1" || process.env.LMS_SEED_FORCE === "1") {
+    await seedLmsCatalog({ force: process.env.LMS_SEED_FORCE === "1" });
+  } else {
+    console.log("[lms-seed] skipped (set LMS_SEED_ENABLE=1 to seed empty catalog)");
+  }
   const { seedHubEvents } = await import("./services/lmsHubEventService.js");
   await seedHubEvents({ force: process.env.LMS_SEED_FORCE === "1" });
   console.log(
