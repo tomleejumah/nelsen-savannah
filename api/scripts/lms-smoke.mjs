@@ -76,18 +76,21 @@ async function main() {
   r = await req("GET", "/lms/health", adminTok);
   results.push(pass("GET /lms/health", r.json.ok && r.json.data?.primary?.ok));
 
-  r = await req("POST", "/lms/admin/seed", adminTok);
-  // may 403 if role not synced yet — call me again after RTDB set
-  await req("GET", "/lms/me", adminTok);
-  r = await req("POST", "/lms/admin/seed", adminTok);
+  // Do not force-seed — dummy catalog must stay empty unless an admin opts in.
+  r = await req("GET", "/lms/tracks", menteeTok);
   results.push(
     pass(
-      "POST /lms/admin/seed",
-      r.status === 200 && r.json.ok,
-      `tracks=${r.json.data?.trackCount}`,
+      "GET /lms/tracks",
+      r.status === 200 && r.json.ok && Array.isArray(r.json.data?.tracks),
+      `count=${r.json.data?.tracks?.length ?? "?"}`,
     ),
   );
 
+  const demoTrack = r.json.data?.tracks?.[0];
+  if (!demoTrack) {
+    console.log("SKIP  remaining catalog/enrollment checks — no tracks in DB");
+  } else {
+  await req("GET", "/lms/me", adminTok);
   r = await req("GET", "/lms/tracks", menteeTok);
   const tracks = r.json.data?.tracks || [];
   const demo = tracks.find((t) => t.trackId === "track-ui-demo") || tracks[0];
@@ -227,6 +230,7 @@ async function main() {
       results.push(pass("GET media play signed", play.status === 200 && buf.length > 0));
     }
   }
+  } // end catalog checks when tracks exist
 
   const failed = results.filter((x) => !x).length;
   console.log(`\n${results.length - failed}/${results.length} passed`);

@@ -1,11 +1,12 @@
 /**
  * Seed LMS catalog from lmsSeed.json (from nelsen-savanna lms-roadmap.js).
- * Runs when tracks table is empty (idempotent skip otherwise).
+ * Opt-in via LMS_SEED_ENABLE=1 (or force reseed with LMS_SEED_FORCE=1 / admin seed).
  */
 
 import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import admin from "../config/firebase.js";
 import { dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import {
   dualWrite,
@@ -33,6 +34,69 @@ function lessonFlags(lesson) {
   };
 }
 
+/** Wipe catalog + learner rows tied to tracks (FK-safe). Ignores missing tables. */
+export async function clearCatalogTables() {
+  const statements = [
+    "DELETE FROM quiz_attempts",
+    "DELETE FROM cohort_quiz_versions",
+    "DELETE FROM quiz_versions",
+    "DELETE FROM quizzes",
+    "DELETE FROM milestones",
+    "DELETE FROM cohort_track_runs",
+    "DELETE FROM track_likes",
+    "DELETE FROM certificates",
+    "DELETE FROM submissions",
+    "DELETE FROM progress",
+    "DELETE FROM enrollments",
+    "DELETE FROM assignments",
+    "DELETE FROM lessons",
+    "DELETE FROM modules",
+    "DELETE FROM tracks",
+  ];
+  for (const sql of statements) {
+    try {
+      await dbRun(sql);
+    } catch (err) {
+      console.warn(`[lms-seed] clear skip: ${sql} — ${err.message}`);
+    }
+  }
+}
+
+/** Clear RTDB catalog mirrors (tracks / modules / lessons). */
+export async function clearCatalogRtdb() {
+  const db = admin.database();
+  await Promise.all([
+    db.ref("lms/tracks").remove(),
+    db.ref("lms/modules").remove(),
+    db.ref("lms/lessons").remove(),
+  ]);
+}
+
+/**
+ * Remove all LMS tracks (and related rows) from primary DB + RTDB mirror.
+ * Does not re-seed.
+ */
+export async function purgeLmsCatalog() {
+  const before = await dbGet("SELECT COUNT(*) AS c FROM tracks");
+  const trackCount = Number(before?.c ?? 0);
+  await clearCatalogTables();
+  try {
+    await clearCatalogRtdb();
+  } catch (err) {
+    console.error("[lms-purge] RTDB catalog clear failed:", err.message);
+  }
+  const after = await dbGet("SELECT COUNT(*) AS c FROM tracks");
+  console.log(
+    `[lms-purge] removed tracks (had ${trackCount}) — now ${Number(after?.c ?? 0)} engine=${getPrimaryEngine()}`,
+  );
+  return {
+    purged: true,
+    tracksRemoved: trackCount,
+    trackCount: Number(after?.c ?? 0),
+    engine: getPrimaryEngine(),
+  };
+}
+
 export async function seedLmsCatalog({ force = false } = {}) {
   const raw = JSON.parse(readFileSync(SEED_PATH, "utf8"));
   const { tracks, modules } = raw;
@@ -44,14 +108,7 @@ export async function seedLmsCatalog({ force = false } = {}) {
   }
 
   if (force && count > 0) {
-    await dbRun("DELETE FROM track_likes");
-    await dbRun("DELETE FROM certificates");
-    await dbRun("DELETE FROM submissions");
-    await dbRun("DELETE FROM progress");
-    await dbRun("DELETE FROM enrollments");
-    await dbRun("DELETE FROM lessons");
-    await dbRun("DELETE FROM modules");
-    await dbRun("DELETE FROM tracks");
+    await clearCatalogTables();
   }
 
   const now = Date.now();

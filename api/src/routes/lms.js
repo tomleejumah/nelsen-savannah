@@ -303,6 +303,12 @@ router.post(
   lmsController.adminForceSeed,
 );
 router.post(
+  "/admin/purge-catalog",
+  authenticateUser,
+  requireRoles("Admin"),
+  lmsController.adminPurgeCatalog,
+);
+router.post(
   "/admin/media/reap",
   authenticateUser,
   requireRoles("Admin"),

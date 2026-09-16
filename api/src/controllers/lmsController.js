@@ -749,6 +749,15 @@ export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   return { source: result.engine, data: result };
 });
 
+export const adminPurgeCatalog = handle(
+  "[POST /lms/admin/purge-catalog]",
+  async () => {
+    const { purgeLmsCatalog } = await import("../services/lmsSeed.js");
+    const result = await purgeLmsCatalog();
+    return { source: result.engine, data: result };
+  },
+);
+
 /** Public hub events — shared by web and Android. */
 export async function getPublicHubEvents(_req, res) {
   try {
