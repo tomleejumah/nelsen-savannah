@@ -773,7 +773,7 @@ export const LMS_TRACKS = [
     blurb:
       "Build and ship software with the tools working engineers use — from fundamentals to a reviewed project.",
     audience: ["Mentee"],
-    moduleIds: ["se-foundations", "se-build"],
+    moduleIds: [],
   },
   {
     id: "track-data-analytics",
@@ -781,7 +781,7 @@ export const LMS_TRACKS = [
     programSlug: "savannah-data-ai-academy",
     blurb: "Turn data into decisions — spreadsheets, statistics, visualization, and storytelling.",
     audience: ["Mentee"],
-    moduleIds: ["da-literacy", "da-insights"],
+    moduleIds: [],
   },
   {
     id: "track-machine-learning",
@@ -789,7 +789,7 @@ export const LMS_TRACKS = [
     programSlug: "savannah-data-ai-academy",
     blurb: "From classical ML workflows to evaluation — train models that solve real problems.",
     audience: ["Mentee"],
-    moduleIds: ["ml-basics", "ml-projects"],
+    moduleIds: [],
   },
   {
     id: "track-ai-engineering",
@@ -797,7 +797,7 @@ export const LMS_TRACKS = [
     programSlug: "savannah-data-ai-academy",
     blurb: "Design and ship AI features — prompts, APIs, evaluation, and responsible deployment.",
     audience: ["Mentee"],
-    moduleIds: ["ai-systems", "ai-ship"],
+    moduleIds: [],
   },
 ];
 

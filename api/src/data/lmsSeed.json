@@ -6,7 +6,7 @@
       "programSlug": "savannah-software-engineering-lab",
       "blurb": "Build and ship software with the tools working engineers use — from fundamentals to a reviewed project.",
       "audience": ["Mentee"],
-      "moduleIds": ["se-foundations", "se-build"],
+      "moduleIds": [],
       "tutorId": "nelsen-org",
       "tutorName": "Nelsen Savannah",
       "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
@@ -18,7 +18,7 @@
       "programSlug": "savannah-data-ai-academy",
       "blurb": "Turn data into decisions — spreadsheets, statistics, visualization, and storytelling.",
       "audience": ["Mentee"],
-      "moduleIds": ["da-literacy", "da-insights"],
+      "moduleIds": [],
       "tutorId": "nelsen-org",
       "tutorName": "Nelsen Savannah",
       "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
@@ -30,7 +30,7 @@
       "programSlug": "savannah-data-ai-academy",
       "blurb": "From classical ML workflows to evaluation — train models that solve real problems.",
       "audience": ["Mentee"],
-      "moduleIds": ["ml-basics", "ml-projects"],
+      "moduleIds": [],
       "tutorId": "nelsen-org",
       "tutorName": "Nelsen Savannah",
       "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
@@ -42,257 +42,12 @@
       "programSlug": "savannah-data-ai-academy",
       "blurb": "Design and ship AI features — prompts, APIs, evaluation, and responsible deployment.",
       "audience": ["Mentee"],
-      "moduleIds": ["ai-systems", "ai-ship"],
+      "moduleIds": [],
       "tutorId": "nelsen-org",
       "tutorName": "Nelsen Savannah",
       "tutorAvatarUrl": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop",
       "courseImageUrl": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&h=450&fit=crop"
     }
   ],
-  "modules": [
-    {
-      "id": "se-foundations",
-      "trackId": "track-software-engineering",
-      "programSlug": "savannah-software-engineering-lab",
-      "title": "Engineering foundations",
-      "does": "Tooling, version control, and clean code habits.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 120,
-      "lessons": [
-        {
-          "id": "se-f-1",
-          "title": "Dev environment & Git",
-          "does": "Set up your stack and ship your first commit.",
-          "type": "read",
-          "estimatedMinutes": 30
-        },
-        {
-          "id": "se-f-2",
-          "title": "Language & data structures",
-          "does": "Core building blocks you will reuse every day.",
-          "type": "read",
-          "estimatedMinutes": 40
-        },
-        {
-          "id": "se-f-3",
-          "title": "Checkpoint quiz",
-          "does": "Confirm foundations before the build module.",
-          "type": "quiz",
-          "hasQuiz": true,
-          "estimatedMinutes": 20
-        }
-      ]
-    },
-    {
-      "id": "se-build",
-      "trackId": "track-software-engineering",
-      "programSlug": "savannah-software-engineering-lab",
-      "title": "Build & review",
-      "does": "Ship a small app and get mentor feedback.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 180,
-      "lessons": [
-        {
-          "id": "se-b-1",
-          "title": "API & UI sketch",
-          "does": "Define the problem and thin vertical slice.",
-          "type": "read",
-          "estimatedMinutes": 40
-        },
-        {
-          "id": "se-b-2",
-          "title": "Implement the slice",
-          "does": "Code, test, and document as you go.",
-          "type": "assignment",
-          "hasAssignment": true,
-          "estimatedMinutes": 90
-        },
-        {
-          "id": "se-b-3",
-          "title": "Mentor review",
-          "does": "Submit for marking and iterate on feedback.",
-          "type": "assignment",
-          "hasAssignment": true,
-          "estimatedMinutes": 50
-        }
-      ]
-    },
-    {
-      "id": "da-literacy",
-      "trackId": "track-data-analytics",
-      "programSlug": "savannah-data-ai-academy",
-      "title": "Data literacy",
-      "does": "Spreadsheets, stats intuition, and clean datasets.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 100,
-      "lessons": [
-        {
-          "id": "da-l-1",
-          "title": "Tables & cleaning",
-          "does": "Shape messy data into analysis-ready tables.",
-          "type": "read",
-          "estimatedMinutes": 35
-        },
-        {
-          "id": "da-l-2",
-          "title": "Descriptive stats",
-          "does": "Summaries that answer real questions.",
-          "type": "read",
-          "estimatedMinutes": 35
-        },
-        {
-          "id": "da-l-3",
-          "title": "Literacy quiz",
-          "does": "Check understanding before visualization.",
-          "type": "quiz",
-          "hasQuiz": true,
-          "estimatedMinutes": 20
-        }
-      ]
-    },
-    {
-      "id": "da-insights",
-      "trackId": "track-data-analytics",
-      "programSlug": "savannah-data-ai-academy",
-      "title": "Insights & storytelling",
-      "does": "Charts, dashboards, and a short insight brief.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 140,
-      "lessons": [
-        {
-          "id": "da-i-1",
-          "title": "Visualization choices",
-          "does": "Pick charts that match the claim you want to make.",
-          "type": "read",
-          "estimatedMinutes": 40
-        },
-        {
-          "id": "da-i-2",
-          "title": "Insight brief",
-          "does": "Deliver findings a stakeholder can act on.",
-          "type": "assignment",
-          "hasAssignment": true,
-          "estimatedMinutes": 80
-        }
-      ]
-    },
-    {
-      "id": "ml-basics",
-      "trackId": "track-machine-learning",
-      "programSlug": "savannah-data-ai-academy",
-      "title": "ML basics",
-      "does": "Problem framing, train/test split, and first models.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 120,
-      "lessons": [
-        {
-          "id": "ml-b-1",
-          "title": "ML problem types",
-          "does": "Classification, regression, and when not to use ML.",
-          "type": "read",
-          "estimatedMinutes": 35
-        },
-        {
-          "id": "ml-b-2",
-          "title": "Train, validate, evaluate",
-          "does": "Avoid leakage and read basic metrics.",
-          "type": "read",
-          "estimatedMinutes": 40
-        },
-        {
-          "id": "ml-b-3",
-          "title": "Basics quiz",
-          "does": "Confirm vocabulary and workflow.",
-          "type": "quiz",
-          "hasQuiz": true,
-          "estimatedMinutes": 20
-        }
-      ]
-    },
-    {
-      "id": "ml-projects",
-      "trackId": "track-machine-learning",
-      "programSlug": "savannah-data-ai-academy",
-      "title": "ML project lab",
-      "does": "End-to-end mini model with mentor review.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 160,
-      "lessons": [
-        {
-          "id": "ml-p-1",
-          "title": "Feature pipeline",
-          "does": "Prepare features for a defined target.",
-          "type": "read",
-          "estimatedMinutes": 45
-        },
-        {
-          "id": "ml-p-2",
-          "title": "Model + write-up",
-          "does": "Train, evaluate, and explain results.",
-          "type": "assignment",
-          "hasAssignment": true,
-          "estimatedMinutes": 90
-        }
-      ]
-    },
-    {
-      "id": "ai-systems",
-      "trackId": "track-ai-engineering",
-      "programSlug": "savannah-data-ai-academy",
-      "title": "AI systems",
-      "does": "Prompts, APIs, and evaluation loops for generative AI.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 110,
-      "lessons": [
-        {
-          "id": "ai-s-1",
-          "title": "Prompt patterns",
-          "does": "Reliable prompts for product features.",
-          "type": "read",
-          "estimatedMinutes": 35
-        },
-        {
-          "id": "ai-s-2",
-          "title": "API integration",
-          "does": "Wire a model into an app safely.",
-          "type": "read",
-          "estimatedMinutes": 40
-        },
-        {
-          "id": "ai-s-3",
-          "title": "Systems quiz",
-          "does": "Safety, cost, and evaluation basics.",
-          "type": "quiz",
-          "hasQuiz": true,
-          "estimatedMinutes": 20
-        }
-      ]
-    },
-    {
-      "id": "ai-ship",
-      "trackId": "track-ai-engineering",
-      "programSlug": "savannah-data-ai-academy",
-      "title": "Ship an AI feature",
-      "does": "Build a small AI-backed feature and document risks.",
-      "audience": ["Mentee"],
-      "estimatedMinutes": 150,
-      "lessons": [
-        {
-          "id": "ai-sh-1",
-          "title": "Feature design",
-          "does": "Scope a useful AI slice with success metrics.",
-          "type": "read",
-          "estimatedMinutes": 40
-        },
-        {
-          "id": "ai-sh-2",
-          "title": "Build & review",
-          "does": "Implement and submit for mentor marking.",
-          "type": "assignment",
-          "hasAssignment": true,
-          "estimatedMinutes": 90
-        }
-      ]
-    }
-  ]
+  "modules": []
 }
