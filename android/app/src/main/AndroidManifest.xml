@@ -124,6 +124,9 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".SchoolsListActivity"
+            android:exported="false" />
+        <activity
             android:name=".QuestionnaireActivity"
             android:exported="false" />
         <activity

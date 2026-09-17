@@ -143,6 +143,15 @@ export async function listSchools(actorUid) {
   };
 }
 
+/** Any signed-in user — school picker / Explore other schools. */
+export async function listSchoolsCatalog(_actorUid) {
+  const rows = await dbAll("SELECT * FROM schools ORDER BY name ASC");
+  return {
+    source: getPrimaryEngine(),
+    data: { schools: rows.map(mapSchool) },
+  };
+}
+
 export async function createSchool(actorUid, body = {}) {
   const role = await loadUserRole(actorUid);
   if (!isSuperAdmin(role)) {

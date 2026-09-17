@@ -203,10 +203,12 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
     };
   }
 
-  const schoolId =
-    track.school_id ||
-    track.schoolId ||
-    "nelsen-digital";
+  const schoolId = track.school_id || track.schoolId || "";
+  if (!schoolId) {
+    const err = new Error("Track has no school — cannot enroll");
+    err.status = 400;
+    throw err;
+  }
 
   try {
     const { attachOnEnroll } = await import("./lmsMembershipService.js");

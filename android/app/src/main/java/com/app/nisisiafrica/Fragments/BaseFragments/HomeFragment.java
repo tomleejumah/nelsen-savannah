@@ -55,6 +55,7 @@ import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.AllMentorsActivity;
+import com.app.nisisiafrica.SchoolsListActivity;
 import com.app.nisisiafrica.StoryViewerActivity;
 import com.app.nisisiafrica.Adapters.StoryAdapter;
 import com.app.nisisiafrica.data.Model.Story;
@@ -494,6 +495,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         tvFindMyPathBlurb = view.findViewById(R.id.tvFindMyPathBlurb);
 
         view.findViewById(R.id.cardFindMyPath).setOnClickListener(v ->
+                startActivity(new Intent(getActivity(), SchoolsListActivity.class)));
+
+        view.findViewById(R.id.btnRecMe).setOnClickListener(v ->
                 startActivity(new Intent(getActivity(), QuestionnaireActivity.class)));
 
         view.findViewById(R.id.btnDonate).setOnClickListener(v -> {
@@ -554,7 +558,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     private void refreshFindMyPathCatalogHint(String bearer) {
-        ApiClient.getLmsService().tracks(bearer).enqueue(new Callback<>() {
+        ApiClient.getLmsService().tracks(bearer, null).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<LmsModels.TracksEnvelope> call,
                                    @NonNull Response<LmsModels.TracksEnvelope> response) {

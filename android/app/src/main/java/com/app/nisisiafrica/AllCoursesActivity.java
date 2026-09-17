@@ -53,6 +53,9 @@ import retrofit2.Response;
  */
 public class AllCoursesActivity extends AppCompatActivity {
 
+    public static final String EXTRA_SCHOOL_ID = "schoolId";
+    public static final String EXTRA_SCHOOL_NAME = "schoolName";
+
     private final List<CourseItem> allCourses = new ArrayList<>();
     private CourseCardAdapter listAdapter;
     private EditText etSearch;
@@ -60,6 +63,8 @@ public class AllCoursesActivity extends AppCompatActivity {
     private TextView tvResultCount;
     private View emptyState;
     private String query = "";
+    private String schoolIdFilter = "";
+    private String schoolNameFilter = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,17 +83,29 @@ public class AllCoursesActivity extends AppCompatActivity {
         tvResultCount = findViewById(R.id.tvResultCount);
         emptyState = findViewById(R.id.emptyState);
 
+        schoolIdFilter = getIntent().getStringExtra(EXTRA_SCHOOL_ID);
+        if (schoolIdFilter == null) schoolIdFilter = "";
+        schoolNameFilter = getIntent().getStringExtra(EXTRA_SCHOOL_NAME);
+        if (schoolNameFilter == null) schoolNameFilter = "";
+
         TextView tvTitle = findViewById(R.id.tvScreenTitle);
         TextView tvSubtitle = findViewById(R.id.tvScreenSubtitle);
         if (tvTitle != null) {
-            String shell = Roles.lmsShell();
-            if (Roles.SHELL_STUDENT.equals(shell)) {
-                tvTitle.setText("All Courses");
+            if (!schoolNameFilter.isEmpty()) {
+                tvTitle.setText(schoolNameFilter);
             } else {
-                tvTitle.setText(Roles.lmsShellLabel() + " · Courses");
+                String shell = Roles.lmsShell();
+                if (Roles.SHELL_STUDENT.equals(shell)) {
+                    tvTitle.setText("All Courses");
+                } else {
+                    tvTitle.setText(Roles.lmsShellLabel() + " · Courses");
+                }
             }
         }
-        if (tvSubtitle != null && !Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
+        if (tvSubtitle != null && !schoolIdFilter.isEmpty()) {
+            tvSubtitle.setText("Courses from this school — enroll to join");
+            tvSubtitle.setOnClickListener(null);
+        } else if (tvSubtitle != null && !Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
             tvSubtitle.setText("Tap here for teach board (queue · mark · assign)");
             tvSubtitle.setOnClickListener(v ->
                     startActivity(new Intent(this, MentorBoardActivity.class)));
@@ -102,31 +119,35 @@ public class AllCoursesActivity extends AppCompatActivity {
         listAdapter = new CourseCardAdapter();
         rv.setAdapter(listAdapter);
 
-        // Invisible paging bridge — LMS/Firebase returns one page; we filter in-memory.
-        PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> bridge =
-                new PagingDataAdapter<CourseItem, RecyclerView.ViewHolder>(DIFF) {
-                    @NonNull
-                    @Override
-                    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                        return new RecyclerView.ViewHolder(new View(parent.getContext())) {};
+        if (!schoolIdFilter.isEmpty()) {
+            loadTracksForSchool(schoolIdFilter);
+        } else {
+            // Invisible paging bridge — LMS/Firebase returns one page; we filter in-memory.
+            PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> bridge =
+                    new PagingDataAdapter<CourseItem, RecyclerView.ViewHolder>(DIFF) {
+                        @NonNull
+                        @Override
+                        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                            return new RecyclerView.ViewHolder(new View(parent.getContext())) {};
+                        }
+
+                        @Override
+                        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {}
+                    };
+            bridge.addLoadStateListener(state -> {
+                if (state.getRefresh() instanceof LoadState.NotLoading) {
+                    allCourses.clear();
+                    for (CourseItem c : bridge.snapshot()) {
+                        if (c != null) allCourses.add(c);
                     }
-
-                    @Override
-                    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {}
-                };
-        bridge.addLoadStateListener(state -> {
-            if (state.getRefresh() instanceof LoadState.NotLoading) {
-                allCourses.clear();
-                for (CourseItem c : bridge.snapshot()) {
-                    if (c != null) allCourses.add(c);
+                    applyFilter();
                 }
-                applyFilter();
-            }
-            return Unit.INSTANCE;
-        });
+                return Unit.INSTANCE;
+            });
 
-        SharedViewModel vm = new ViewModelProvider(this).get(SharedViewModel.class);
-        vm.getCourses().observe(this, data -> bridge.submitData(getLifecycle(), data));
+            SharedViewModel vm = new ViewModelProvider(this).get(SharedViewModel.class);
+            vm.getCourses().observe(this, data -> bridge.submitData(getLifecycle(), data));
+        }
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -139,6 +160,55 @@ public class AllCoursesActivity extends AppCompatActivity {
             }
         });
         btnClearSearch.setOnClickListener(v -> etSearch.setText(""));
+    }
+
+    private void loadTracksForSchool(String schoolId) {
+        tvResultCount.setText("Loading tracks…");
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            tvResultCount.setText("Sign in required");
+            return;
+        }
+        user.getIdToken(false).addOnSuccessListener(r ->
+                ApiClient.getLmsService()
+                        .tracks("Bearer " + r.getToken(), schoolId)
+                        .enqueue(new Callback<>() {
+                            @Override
+                            public void onResponse(@NonNull Call<LmsModels.TracksEnvelope> call,
+                                                   @NonNull Response<LmsModels.TracksEnvelope> response) {
+                                allCourses.clear();
+                                LmsModels.TracksEnvelope body = response.body();
+                                if (response.isSuccessful() && body != null && body.ok
+                                        && body.data != null && body.data.tracks != null) {
+                                    for (LmsModels.TrackCard card : body.data.tracks) {
+                                        if (card == null) continue;
+                                        String id = card.courseId != null ? card.courseId : card.trackId;
+                                        if (id == null || id.isEmpty()) continue;
+                                        allCourses.add(new CourseItem(
+                                                id,
+                                                card.tutorId != null ? card.tutorId : "",
+                                                card.courseImageUrl != null ? card.courseImageUrl : "",
+                                                card.tutorAvatarUrl != null ? card.tutorAvatarUrl : "",
+                                                card.tutorName != null ? card.tutorName : "",
+                                                card.courseTitle != null ? card.courseTitle : "",
+                                                card.durationString(),
+                                                card.lessonsString(),
+                                                card.courseLink != null ? card.courseLink : "",
+                                                card.isLiked,
+                                                card.programSlug != null ? card.programSlug : ""
+                                        ));
+                                    }
+                                }
+                                applyFilter();
+                            }
+
+                            @Override
+                            public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call,
+                                                  @NonNull Throwable t) {
+                                tvResultCount.setText("Could not load tracks");
+                                emptyState.setVisibility(View.VISIBLE);
+                            }
+                        }));
     }
 
     private void applyFilter() {

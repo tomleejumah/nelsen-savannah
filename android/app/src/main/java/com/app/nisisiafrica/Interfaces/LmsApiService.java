@@ -22,7 +22,12 @@ public interface LmsApiService {
     Call<LmsModels.MeEnvelope> me(@Header("Authorization") String bearer);
 
     @GET("lms/tracks")
-    Call<LmsModels.TracksEnvelope> tracks(@Header("Authorization") String bearer);
+    Call<LmsModels.TracksEnvelope> tracks(
+            @Header("Authorization") String bearer,
+            @Query("schoolId") String schoolId);
+
+    @GET("lms/schools/catalog")
+    Call<LmsModels.SchoolsEnvelope> schoolsCatalog(@Header("Authorization") String bearer);
 
     @GET("lms/tracks/{trackId}")
     Call<LmsModels.TrackDetailEnvelope> track(

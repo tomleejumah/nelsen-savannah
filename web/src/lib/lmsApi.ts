@@ -22,13 +22,22 @@ export type MeDto = {
   lastName: string;
   photoUrl: string;
   userRole: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
-  schoolId?: string;
-  schoolName?: string;
-  activeSchoolId?: string;
+  schoolId?: string | null;
+  schoolName?: string | null;
+  activeSchoolId?: string | null;
   memberships?: SchoolMembershipDto[];
   unaffiliated?: boolean;
+  needsSchoolPick?: boolean;
   shell?: "student" | "mentor" | "school" | "admin";
   capabilities: Record<string, boolean>;
+};
+
+export type SchoolCatalogDto = {
+  schoolId: string;
+  name: string;
+  logoUrl?: string | null;
+  accentColor?: string | null;
+  trackCount?: number;
 };
 
 export type TrackCardDto = {
@@ -294,8 +303,16 @@ export async function setActiveSchool(idToken: string, schoolId: string) {
   );
 }
 
-export async function fetchLmsTracks(idToken: string) {
-  return lmsFetch<{ tracks: TrackCardDto[] }>("/lms/tracks", idToken);
+export async function fetchLmsTracks(idToken: string, schoolId?: string | null) {
+  const q = schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : "";
+  return lmsFetch<{ tracks: TrackCardDto[] }>(`/lms/tracks${q}`, idToken);
+}
+
+export async function fetchSchoolsCatalog(idToken: string) {
+  return lmsFetch<{ schools: SchoolCatalogDto[] }>(
+    "/lms/schools/catalog",
+    idToken,
+  );
 }
 
 export async function fetchLmsTrack(idToken: string, trackId: string) {

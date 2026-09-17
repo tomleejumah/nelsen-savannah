@@ -131,19 +131,24 @@ export async function ensureActiveSchool(uid, memberships) {
     "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  let active =
-    user?.active_school_id ||
-    user?.school_id ||
-    activeRows[0]?.schoolId ||
-    DEFAULT_SCHOOL_ID;
 
-  if (activeRows.length && !activeRows.some((m) => m.schoolId === active)) {
-    active = activeRows[0].schoolId;
+  // No membership → no school context (picker / deep link / enroll attaches later).
+  if (!activeRows.length) {
+    try {
+      await dbRun(
+        `UPDATE users_mirror SET active_school_id = NULL, updated_at = ? WHERE uid = ?`,
+        [Date.now(), uid],
+      );
+    } catch {
+      /* column missing until migrate */
+    }
+    return null;
   }
 
-  if (!activeRows.length && !user?.active_school_id) {
-    // Unaffiliated → default digital school context for marketplace browse
-    active = DEFAULT_SCHOOL_ID;
+  let active = user?.active_school_id || user?.school_id || activeRows[0].schoolId;
+
+  if (!activeRows.some((m) => m.schoolId === active)) {
+    active = activeRows[0].schoolId;
   }
 
   try {
@@ -164,29 +169,26 @@ export async function setActiveSchool(uid, schoolId) {
     err.status = 400;
     throw err;
   }
-  const membership = await dbGet(
-    `SELECT * FROM school_memberships
-     WHERE uid = ? AND school_id = ? AND status = ?`,
-    [uid, sid, STATUSES.active],
-  );
-  if (!membership && sid !== DEFAULT_SCHOOL_ID) {
-    const err = new Error("Not an active member of that school");
-    err.status = 403;
+  const school = await dbGet("SELECT school_id, name FROM schools WHERE school_id = ?", [
+    sid,
+  ]);
+  if (!school) {
+    const err = new Error("School not found");
+    err.status = 404;
     throw err;
   }
+  // Browse pick is allowed for any existing school; membership still required for
+  // staff school admin actions. Enroll attaches membership via attachOnEnroll.
   const now = Date.now();
   await dbRun(
     `UPDATE users_mirror SET active_school_id = ?, school_id = ?, updated_at = ? WHERE uid = ?`,
     [sid, sid, now, uid],
   );
-  const school = await dbGet("SELECT name FROM schools WHERE school_id = ?", [
-    sid,
-  ]);
   return {
     source: getPrimaryEngine(),
     data: {
       activeSchoolId: sid,
-      schoolName: school?.name || DEFAULT_SCHOOL_NAME,
+      schoolName: school.name || sid,
     },
   };
 }
@@ -336,7 +338,12 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
 
 /** Door B — attach (or apply) when enrolling in a school's track. */
 export async function attachOnEnroll(uid, email, schoolId) {
-  const sid = schoolId || DEFAULT_SCHOOL_ID;
+  const sid = String(schoolId || "").trim();
+  if (!sid) {
+    const err = new Error("schoolId required to enroll");
+    err.status = 400;
+    throw err;
+  }
   const now = Date.now();
   const existing = await dbGet(
     `SELECT * FROM school_memberships WHERE uid = ? AND school_id = ?`,

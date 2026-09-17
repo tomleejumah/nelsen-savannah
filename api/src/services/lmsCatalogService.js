@@ -68,7 +68,7 @@ function mapTrackCard(
     moduleCount: Number(
       moduleCount ?? row.module_count ?? row.moduleCount ?? 0,
     ),
-    schoolId: row.school_id || row.schoolId || "nelsen-digital",
+    schoolId: row.school_id || row.schoolId || "",
     price: price || { isPaid: false, amountMinor: 0, currency: "USD" },
   };
 }
@@ -184,20 +184,23 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
     [uid],
   );
   const schoolId =
-    filterSchool || user?.active_school_id || user?.school_id || "nelsen-digital";
+    (filterSchool && String(filterSchool).trim()) ||
+    user?.active_school_id ||
+    user?.school_id ||
+    null;
 
-  // Active school catalog: that school's tracks. Unaffiliated marketplace still
-  // sees nelsen-digital + unscoped until they enroll into a partner school.
-  const rows = await dbAll(
-    `SELECT * FROM tracks WHERE published = 1
-     AND (
-       school_id = ?
-       OR school_id IS NULL OR school_id = ''
-       OR (? = 'nelsen-digital' AND school_id = 'nelsen-digital')
-     )
-     ORDER BY sort_order ASC, track_id ASC`,
-    [schoolId, schoolId],
-  );
+  // Explicit school → that catalog. No school → marketplace (all published).
+  const rows = schoolId
+    ? await dbAll(
+        `SELECT * FROM tracks WHERE published = 1
+         AND (school_id = ? OR school_id IS NULL OR school_id = '')
+         ORDER BY sort_order ASC, track_id ASC`,
+        [schoolId],
+      )
+    : await dbAll(
+        `SELECT * FROM tracks WHERE published = 1
+         ORDER BY sort_order ASC, track_id ASC`,
+      );
   const [likes, enrollMap, lessonCounts, moduleCounts, minuteTotals, pricing] =
     await Promise.all([
       likesFor(uid),

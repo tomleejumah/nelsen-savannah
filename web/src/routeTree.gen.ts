@@ -27,6 +27,7 @@ import { Route as LearningTrackIdRouteImport } from './routes/learning.$trackId'
 import { Route as LearningCertificatesRouteImport } from './routes/learning.certificates'
 import { Route as LearningCourseworkRouteImport } from './routes/learning.coursework'
 import { Route as ProgramsSlugRouteImport } from './routes/programs.$slug'
+import { Route as SSchoolIdRouteImport } from './routes/s.$schoolId'
 import { Route as TeachTrackIdRouteImport } from './routes/teach.$trackId'
 import { Route as LearningTrackIdLessonLessonIdRouteImport } from './routes/learning.$trackId.lesson.$lessonId'
 
@@ -120,6 +121,11 @@ const ProgramsSlugRoute = ProgramsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ProgramsRoute,
 } as any)
+const SSchoolIdRoute = SSchoolIdRouteImport.update({
+  id: '/s/$schoolId',
+  path: '/s/$schoolId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeachTrackIdRoute = TeachTrackIdRouteImport.update({
   id: '/$trackId',
   path: '/$trackId',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
   '/programs/$slug': typeof ProgramsSlugRoute
+  '/s/$schoolId': typeof SSchoolIdRoute
   '/teach/$trackId': typeof TeachTrackIdRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
   '/programs/$slug': typeof ProgramsSlugRoute
+  '/s/$schoolId': typeof SSchoolIdRoute
   '/teach/$trackId': typeof TeachTrackIdRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
   '/programs/$slug': typeof ProgramsSlugRoute
+  '/s/$schoolId': typeof SSchoolIdRoute
   '/teach/$trackId': typeof TeachTrackIdRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/learning/certificates'
     | '/learning/coursework'
     | '/programs/$slug'
+    | '/s/$schoolId'
     | '/teach/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesByTo: FileRoutesByTo
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/learning/certificates'
     | '/learning/coursework'
     | '/programs/$slug'
+    | '/s/$schoolId'
     | '/teach/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   id:
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/learning/certificates'
     | '/learning/coursework'
     | '/programs/$slug'
+    | '/s/$schoolId'
     | '/teach/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesById: FileRoutesById
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   SchoolRoute: typeof SchoolRoute
   TeachRoute: typeof TeachRouteWithChildren
   TourismRoute: typeof TourismRoute
+  SSchoolIdRoute: typeof SSchoolIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramsSlugRouteImport
       parentRoute: typeof ProgramsRoute
     }
+    '/s/$schoolId': {
+      id: '/s/$schoolId'
+      path: '/s/$schoolId'
+      fullPath: '/s/$schoolId'
+      preLoaderRoute: typeof SSchoolIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/teach/$trackId': {
       id: '/teach/$trackId'
       path: '/$trackId'
@@ -495,6 +515,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolRoute: SchoolRoute,
   TeachRoute: TeachRouteWithChildren,
   TourismRoute: TourismRoute,
+  SSchoolIdRoute: SSchoolIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

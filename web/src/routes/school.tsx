@@ -50,7 +50,7 @@ function SchoolPage() {
 }
 
 function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
-  const schoolId = me.schoolId || "nelsen-digital";
+  const schoolId = me.schoolId || me.activeSchoolId || "";
   const [members, setMembers] = useState<SchoolMemberDto[]>([]);
   const [dash, setDash] = useState<SchoolDashboardDto | null>(null);
   const [busy, setBusy] = useState(true);
