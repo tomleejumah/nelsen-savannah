@@ -71,10 +71,28 @@ jobs:
           rm -rf node_modules
           npm install --production
           mkdir -p data uploads uploads/_tmp
-          # Restart keeps the same PM2 id; start only on first deploy.
-          "$PM2" restart nelsen-savannah --update-env || \
-            "$PM2" start src/app.js --name nelsen-savannah
+          # Delete then start from APP_DIR so cwd/PORT cannot drift and a failed
+          # `pm2 restart` cannot leave nothing listening on :5002.
+          "$PM2" delete nelsen-savannah || true
+          "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
           "$PM2" save
+          # Wait until HTTP is up — PM2 "online" is not enough for smoke.
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -sf --max-time 2 http://127.0.0.1:5002/lms/health \
+              | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"'; then
+              ok=1
+              echo "API healthy on :5002 (attempt $i)"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ok" != 1 ]; then
+            echo "::error::API did not become healthy on :5002 after start"
+            "$PM2" status nelsen-savannah || true
+            "$PM2" logs nelsen-savannah --lines 50 --nostream || true
+            exit 1
+          fi
 
       - name: Health smoke (local + nginx)
         run: |
