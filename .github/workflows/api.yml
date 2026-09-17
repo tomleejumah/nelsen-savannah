@@ -13,6 +13,10 @@ on:
       - ".github/workflows/api.yml"
   workflow_dispatch:
 
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -23,7 +27,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          # sql.js (WASM) — no native better-sqlite3; CI matches current Actions default.
           node-version: "24"
           cache: npm
           cache-dependency-path: api/package-lock.json
@@ -36,6 +39,7 @@ jobs:
     needs: check
     if: github.event_name != 'pull_request'
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,15 +47,10 @@ jobs:
       - name: Deploy API
         env:
           PM2: /usr/local/bin/pm2
-          # All Node APIs live under /home/server/Apis/<name>.
           APP_DIR: /home/server/Apis/nelsen-savannah
         run: |
           set -euo pipefail
           mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
-          # Never write/replace secrets from Actions. .env + Firebase JSON are
-          # server-local only until we deliberately wire GitHub Secrets later.
-          # Exclude only runtime data at repo root (sqlite). Do NOT use bare
-          # 'data/' — that also skips src/data/lmsSeed.json and breaks catalog.
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
@@ -72,16 +71,12 @@ jobs:
           rm -rf node_modules
           npm install --omit=dev --no-audit --no-fund
           mkdir -p data uploads uploads/_tmp
-          # Restart keeps the process; start only if missing.
-          if "$PM2" describe nelsen-savannah >/dev/null 2>&1; then
-            "$PM2" restart nelsen-savannah --update-env
-          else
-            "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
-          fi
+          # Proven path: delete + start with explicit cwd (restart can keep a stale cwd/PORT).
+          "$PM2" delete nelsen-savannah || true
+          "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
           "$PM2" save
-          # Short readiness only — full smoke is a separate job.
           ok=0
-          for i in $(seq 1 15); do
+          for i in $(seq 1 20); do
             if curl -sf --max-time 2 http://127.0.0.1:5002/lms/health \
               | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"'; then
               ok=1
@@ -93,7 +88,7 @@ jobs:
           if [ "$ok" != 1 ]; then
             echo "::error::API not ready on :5002 after deploy"
             "$PM2" status nelsen-savannah || true
-            "$PM2" logs nelsen-savannah --lines 40 --nostream || true
+            "$PM2" logs nelsen-savannah --lines 50 --nostream || true
             exit 1
           fi
 
@@ -101,6 +96,7 @@ jobs:
     needs: deploy
     if: github.event_name != 'pull_request'
     runs-on: self-hosted
+    timeout-minutes: 5
     steps:
       - name: Health smoke (local + nginx)
         run: |
@@ -110,7 +106,7 @@ jobs:
             shift
             local code body
             body=$(mktemp)
-            code=$(curl -sS -L -o "$body" -w "%{http_code}" "$@" || echo "000")
+            code=$(curl -sS -L --max-time 15 -o "$body" -w "%{http_code}" "$@" || echo "000")
             echo "$label -> $code"
             if [ "$code" = "200" ] && grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"' "$body"; then
               rm -f "$body"
@@ -123,7 +119,7 @@ jobs:
           }
           try_url "local app :5002" http://127.0.0.1:5002/lms/health
           try_url "nginx Host" -H "Host: api.nelsen-savannah.co.ke" http://127.0.0.1/lms/health
-          if try_url "public" --retry 3 --retry-delay 2 https://api.nelsen-savannah.co.ke/lms/health; then
+          if try_url "public" --retry 2 --retry-delay 1 https://api.nelsen-savannah.co.ke/lms/health; then
             echo "public ok"
           else
             echo "::warning::public HTTPS failed (Cloudflare/DNS); local+nginx passed"
