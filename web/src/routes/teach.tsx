@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
-import { X } from "lucide-react";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
@@ -272,28 +271,20 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                   >
                     Open
                   </button>
-                  <a
-                    href="#add"
-                    onClick={() => {
-                      setCmsTrackId(t.trackId);
-                      setPriceTrackId(t.trackId);
-                      setRunTrackId(t.trackId);
-                    }}
+                  <button
+                    type="button"
+                    onClick={() => openSide(t.trackId, "add")}
                     className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
                   >
                     Add
-                  </a>
-                  <a
-                    href="#cms"
-                    onClick={() => {
-                      setCmsTrackId(t.trackId);
-                      setPriceTrackId(t.trackId);
-                      setRunTrackId(t.trackId);
-                    }}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openSide(t.trackId, "update")}
                     className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
                   >
                     Update
-                  </a>
+                  </button>
                 </div>
               </li>
               );
@@ -321,12 +312,13 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                   {overview.studentCount} students · avg {overview.avgProgress}%
                 </p>
               </div>
-              <a
-                href="#add"
+              <button
+                type="button"
+                onClick={() => openSide(cmsTrackId, "add")}
                 className="text-sm font-medium text-ember hover:underline"
               >
                 Add content →
-              </a>
+              </button>
             </div>
 
             <div>
@@ -404,21 +396,54 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         )}
       </section>
 
-      <AddToCoursePanel
-        user={user}
-        schoolId={schoolId}
-        tracks={tracks}
-        runId={runId || undefined}
-        initialTrackId={cmsTrackId || undefined}
-        onDone={() => {
-          void load();
-          if (cmsTrackId) void openTrack(cmsTrackId);
+      <Sheet
+        open={sidePanel !== null}
+        onOpenChange={(open) => {
+          if (!open) setSidePanel(null);
         }}
-      />
-
-      <section id="cms" className="rounded-2xl border border-border/70 bg-card/40 p-5">
-        <CatalogCmsPanel user={user} schoolId={schoolId} selectedTrackId={cmsTrackId} />
-      </section>
+      >
+        <SheetContent
+          side="right"
+          className="w-full overflow-y-auto sm:max-w-xl"
+        >
+          <SheetHeader className="pr-8 text-left">
+            <SheetTitle>
+              {sidePanel === "add" ? "Add to course" : "Update course"}
+            </SheetTitle>
+            <SheetDescription>
+              {tracks.find((t) => t.trackId === cmsTrackId)?.courseTitle ||
+                cmsTrackId ||
+                "Select a course"}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 pb-8">
+            {sidePanel === "add" && cmsTrackId ? (
+              <AddToCoursePanel
+                user={user}
+                schoolId={schoolId}
+                tracks={tracks}
+                runId={runId || undefined}
+                initialTrackId={cmsTrackId}
+                lockTrack
+                onDone={() => {
+                  void load();
+                  void openTrack(cmsTrackId);
+                }}
+              />
+            ) : null}
+            {sidePanel === "update" && cmsTrackId ? (
+              <CatalogCmsPanel
+                user={user}
+                schoolId={schoolId}
+                selectedTrackId={cmsTrackId}
+                selectedTrackTitle={
+                  tracks.find((t) => t.trackId === cmsTrackId)?.courseTitle
+                }
+              />
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <section id="queue">
         <h2 className="font-display text-xl font-semibold">Marking queue</h2>
@@ -512,7 +537,15 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="assign">
         <h2 className="font-display text-xl font-semibold">Assign work</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Prefer <a href="#add" className="text-ember underline">Add to course → Assignment</a>{" "}
+          Prefer{" "}
+          <button
+            type="button"
+            disabled={!cmsTrackId}
+            onClick={() => cmsTrackId && openSide(cmsTrackId, "add")}
+            className="text-ember underline disabled:opacity-50"
+          >
+            Add to course → Assignment
+          </button>{" "}
           for course-wide work. This form is for edge cases (single mentee).
         </p>
         <form onSubmit={(e) => void onAssign(e)} className="mt-4 space-y-3">
