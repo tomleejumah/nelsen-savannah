@@ -17,10 +17,12 @@ type Props = {
   shell: LmsShell;
   title: string;
   blurb: string;
+  /** Wider content column for split layouts (e.g. Teach). */
+  wide?: boolean;
   children?: ReactNode | ((ctx: { user: User; me: MeDto }) => ReactNode);
 };
 
-export function RoleShellPage({ shell, title, blurb, children }: Props) {
+export function RoleShellPage({ shell, title, blurb, wide, children }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
   const [busy, setBusy] = useState(true);
@@ -67,7 +69,13 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
-      <div className="mx-auto max-w-3xl px-5 sm:px-8">
+      <div
+        className={
+          wide
+            ? "mx-auto max-w-7xl px-5 sm:px-8"
+            : "mx-auto max-w-3xl px-5 sm:px-8"
+        }
+      >
         <p className="eyebrow text-ember">LMS · {shell}</p>
         <h1 className="mt-4 font-display text-4xl font-bold text-foreground sm:text-5xl">
           {title}
@@ -113,21 +121,25 @@ export function RoleShellPage({ shell, title, blurb, children }: Props) {
         )}
 
         {user && me && allowed && (
-          <div className="mt-10 space-y-8">
-            <div className="rounded-2xl border border-border/60 bg-card/40 p-5">
-              <p className="text-sm text-muted-foreground">
-                Signed in as{" "}
-                <span className="font-medium text-foreground">
-                  {me.displayName || me.email}
-                </span>
-              </p>
-              <p className="mt-1 text-xs font-medium text-ember">
-                {me.userRole}
-                {me.schoolName ? ` · ${me.schoolName}` : ""}
-              </p>
+          <div className="mt-10 lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:items-start lg:gap-10">
+            <aside className="mb-8 lg:sticky lg:top-28 lg:mb-0">
+              <CapabilitiesBoard me={me} activeShell={shell} variant="rail" />
+            </aside>
+            <div className="min-w-0 space-y-8">
+              <div className="rounded-2xl border border-border/60 bg-card/40 p-5">
+                <p className="text-sm text-muted-foreground">
+                  Signed in as{" "}
+                  <span className="font-medium text-foreground">
+                    {me.displayName || me.email}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs font-medium text-ember">
+                  {me.userRole}
+                  {me.schoolName ? ` · ${me.schoolName}` : ""}
+                </p>
+              </div>
+              {typeof children === "function" ? children({ user, me }) : children}
             </div>
-            <CapabilitiesBoard me={me} activeShell={shell} />
-            {typeof children === "function" ? children({ user, me }) : children}
           </div>
         )}
       </div>
