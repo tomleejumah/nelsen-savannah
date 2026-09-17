@@ -194,7 +194,7 @@ data class Message(
     var timestamp: Timestamp
 )
 
-data class LikeNotificationRequest(
+data class LikeNotificationRequest @JvmOverloads constructor(
     var coursePublisher: String,
     var postID: String,
     var text: String,
@@ -208,7 +208,7 @@ data class NotificationResponse(
     var fcmSent: Boolean
 )
 
-data class CommentNotificationRequest(
+data class CommentNotificationRequest @JvmOverloads constructor(
     var coursePublisher: String,
     var postID: String,
     var text: String,
