@@ -135,6 +135,11 @@ router.get(
 );
 
 router.get(
+  "/schools/catalog",
+  authenticateUser,
+  lmsController.listSchoolsCatalog,
+);
+router.get(
   "/schools",
   authenticateUser,
   requireRoles("Admin"),

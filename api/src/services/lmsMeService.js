@@ -30,6 +30,17 @@ function splitName(displayName = "") {
 }
 
 function mePayload(profile, user, role, source, extras = {}) {
+  const activeSchoolId =
+    extras.activeSchoolId !== undefined
+      ? extras.activeSchoolId
+      : user?.activeSchoolId ||
+        user?.active_school_id ||
+        user?.schoolId ||
+        user?.school_id ||
+        null;
+  const schoolId =
+    user?.schoolId || user?.school_id || activeSchoolId || null;
+  const unaffiliated = Boolean(extras.unaffiliated);
   return {
     source,
     data: {
@@ -43,17 +54,13 @@ function mePayload(profile, user, role, source, extras = {}) {
       userRole: role,
       /** @deprecated use userRole — kept for older clients */
       role,
-      schoolId: user?.schoolId || user?.school_id || DEFAULT_SCHOOL_ID,
-      schoolName: user?.schoolName || DEFAULT_SCHOOL_NAME,
-      activeSchoolId:
-        extras.activeSchoolId ||
-        user?.activeSchoolId ||
-        user?.active_school_id ||
-        user?.schoolId ||
-        user?.school_id ||
-        DEFAULT_SCHOOL_ID,
+      schoolId,
+      schoolName: user?.schoolName || "",
+      activeSchoolId,
       memberships: extras.memberships || [],
-      unaffiliated: Boolean(extras.unaffiliated),
+      unaffiliated,
+      /** True until the mentee has an active school membership (picker / deep link). */
+      needsSchoolPick: unaffiliated,
       shell: shellFor(role),
       capabilities: capabilitiesFor(role),
     },
@@ -188,7 +195,7 @@ export async function getMe(profile) {
       }
 
       let memberships = [];
-      let activeSchoolId = user?.active_school_id || user?.school_id || DEFAULT_SCHOOL_ID;
+      let activeSchoolId = user?.active_school_id || user?.school_id || null;
       try {
         const membership = await import("./lmsMembershipService.js");
         await membership.claimInvitesForUser(profile.uid, user?.email || profile.email);
@@ -201,16 +208,18 @@ export async function getMe(profile) {
         console.warn("[lms-me] memberships:", err.message);
       }
 
-      const schoolId = activeSchoolId || user?.school_id || DEFAULT_SCHOOL_ID;
-      let schoolName = DEFAULT_SCHOOL_NAME;
-      try {
-        const school = await dbGet(
-          "SELECT name FROM schools WHERE school_id = ?",
-          [schoolId],
-        );
-        if (school?.name) schoolName = school.name;
-      } catch {
-        /* schools table optional during migrate */
+      const schoolId = activeSchoolId || null;
+      let schoolName = "";
+      if (schoolId) {
+        try {
+          const school = await dbGet(
+            "SELECT name FROM schools WHERE school_id = ?",
+            [schoolId],
+          );
+          if (school?.name) schoolName = school.name;
+        } catch {
+          /* schools table optional during migrate */
+        }
       }
 
       const activeMemberships = memberships.filter((m) => m.status === "active");
@@ -257,10 +266,13 @@ export async function getMe(profile) {
       firstName: rtdbUser?.firstName || firstName,
       lastName: rtdbUser?.lastName || lastName,
       photoUrl: rtdbUser?.photoUrl,
-      schoolId: DEFAULT_SCHOOL_ID,
+      schoolId: null,
+      schoolName: "",
+      active_school_id: null,
     },
     role,
     "rtdb",
+    { activeSchoolId: null, memberships: [], unaffiliated: true },
   );
 }
 

@@ -278,9 +278,9 @@ function ProfilePage() {
           </h2>
           {schools.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              {me?.unaffiliated
-                ? "You’re in the open marketplace — enroll in a track to join that school’s wing."
-                : `Active school: ${me?.schoolName || me?.activeSchoolId || "Nelsen Digital"}`}
+              {me?.unaffiliated || me?.needsSchoolPick
+                ? "You’re not in a school yet — pick one on Learning, or enroll in a track to join that wing."
+                : `Active school: ${me?.schoolName || me?.activeSchoolId || "none"}`}
             </p>
           ) : (
             <ul className="mt-5 space-y-3">

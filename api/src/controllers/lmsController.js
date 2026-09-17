@@ -97,6 +97,7 @@ export async function listTracks(req, res) {
     const result = await getTracks(req.user.uid, {
       audience: req.query.audience,
       enrolled: req.query.enrolled,
+      schoolId: req.query.schoolId,
     });
     return lmsOk(res, result.data, result.source);
   } catch (err) {
@@ -709,6 +710,14 @@ export const listSchools = handle("[GET /lms/schools]", async (req) => {
   const svc = await import("../services/lmsSchoolService.js");
   return svc.listSchools(req.user.uid);
 });
+
+export const listSchoolsCatalog = handle(
+  "[GET /lms/schools/catalog]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.listSchoolsCatalog(req.user.uid);
+  },
+);
 
 export const createSchool = handle("[POST /lms/schools]", async (req) => {
   const svc = await import("../services/lmsSchoolService.js");

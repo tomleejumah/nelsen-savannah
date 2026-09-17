@@ -234,6 +234,24 @@ public final class LmsModels {
         public List<TrackCard> tracks;
     }
 
+    public static class SchoolDto {
+        public String schoolId;
+        public String name;
+        public long createdAt;
+        public long updatedAt;
+    }
+
+    public static class SchoolsData {
+        public List<SchoolDto> schools;
+    }
+
+    public static class SchoolsEnvelope {
+        public boolean ok;
+        public String source;
+        public SchoolsData data;
+        public String error;
+    }
+
     public static class TrackDetailData {
         public TrackCard track;
         public List<ModuleDto> modules;

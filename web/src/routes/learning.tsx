@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, Outlet, useChildMatches } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useChildMatches, useNavigate } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
@@ -17,12 +17,20 @@ import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAu
 import {
   fetchLmsMe,
   fetchLmsTracks,
+  fetchSchoolsCatalog,
   setActiveSchool,
   type MeDto,
+  type SchoolCatalogDto,
   type TrackCardDto,
 } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/learning")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    schoolId:
+      typeof search.schoolId === "string" && search.schoolId.trim()
+        ? search.schoolId.trim()
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Learning — Tracks | Nelsen Savannah" },
@@ -99,10 +107,13 @@ type DisplayTrack = {
 type CatalogFilter = "all" | "enrolled";
 
 function LearningPage() {
+  const navigate = useNavigate({ from: "/learning" });
+  const { schoolId: exploreSchoolId } = Route.useSearch();
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [apiTracks, setApiTracks] = useState<TrackCardDto[]>([]);
+  const [schools, setSchools] = useState<SchoolCatalogDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -129,12 +140,12 @@ function LearningPage() {
     [],
   );
 
-  const loadTracks = useCallback(async (u: User) => {
+  const loadTracks = useCallback(async (u: User, schoolId?: string | null) => {
     setLoading(true);
     setError(null);
     try {
       const token = await u.getIdToken();
-      const envelope = await fetchLmsTracks(token);
+      const envelope = await fetchLmsTracks(token, schoolId || undefined);
       if (!envelope.ok || !envelope.data?.tracks) {
         setApiTracks([]);
         setError(envelope.error || "Could not load tracks");
@@ -150,7 +161,7 @@ function LearningPage() {
   }, []);
 
   const paywall = useEnrollPaywall(user, async () => {
-    if (user) await loadTracks(user);
+    if (user) await loadTracks(user, exploreSchoolId);
   });
   const busyTrack = paywall.busy ? paywall.paywall?.trackId || "busy" : null;
 
@@ -160,14 +171,22 @@ function LearningPage() {
       setUser(next);
       setAuthReady(true);
       if (next) {
-        void loadTracks(next);
+        void loadTracks(next, exploreSchoolId);
         void (async () => {
           try {
             const token = await next.getIdToken();
             if (gen !== getAuthGeneration()) return;
             const envelope = await fetchLmsMe(token);
             if (gen !== getAuthGeneration()) return;
-            setMe(envelope.ok && envelope.data ? envelope.data : null);
+            const nextMe = envelope.ok && envelope.data ? envelope.data : null;
+            setMe(nextMe);
+            if (nextMe?.needsSchoolPick || nextMe?.unaffiliated) {
+              const catalog = await fetchSchoolsCatalog(token);
+              if (gen !== getAuthGeneration()) return;
+              if (catalog.ok && catalog.data?.schools) {
+                setSchools(catalog.data.schools);
+              }
+            }
           } catch {
             if (gen !== getAuthGeneration()) return;
             setMe(null);
@@ -176,10 +195,15 @@ function LearningPage() {
       } else {
         setApiTracks([]);
         setMe(null);
+        setSchools([]);
         setFilter("all");
       }
     });
-  }, [loadTracks]);
+  }, [loadTracks, exploreSchoolId]);
+
+  useEffect(() => {
+    if (user && exploreSchoolId) void loadTracks(user, exploreSchoolId);
+  }, [exploreSchoolId, loadTracks, user]);
 
   const liveTracks: DisplayTrack[] = apiTracks.map((t) => ({
     id: t.trackId,
@@ -276,19 +300,49 @@ function LearningPage() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
             {me
-              ? me.unaffiliated
-                ? "Browse courses — when you enroll, you join that school’s wing."
+              ? me.needsSchoolPick || me.unaffiliated
+                ? "Pick a school to browse its tracks — enroll to join that wing. Or explore via a school link."
                 : `Learning at ${me.schoolName || "your school"}. Switch schools anytime if you belong to more than one.`
               : "Browse the tracks, enroll, and pick up where you left off."}
           </p>
           {me ? (
             <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-left">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {me.unaffiliated ? "Marketplace" : "Your school"}
+                {me.needsSchoolPick || me.unaffiliated
+                  ? exploreSchoolId
+                    ? "Exploring"
+                    : "Choose a school"
+                  : "Your school"}
               </p>
               <p className="mt-1 font-display text-lg font-semibold">
-                {me.schoolName || me.activeSchoolId || "Nelsen Digital School"}
+                {exploreSchoolId
+                  ? schools.find((s) => s.schoolId === exploreSchoolId)?.name ||
+                    exploreSchoolId
+                  : me.schoolName || me.activeSchoolId || "No school yet"}
               </p>
+              {(me.needsSchoolPick || me.unaffiliated) && schools.length > 0 ? (
+                <label className="mt-3 block text-sm text-muted-foreground">
+                  Schools catalog
+                  <select
+                    className="mt-1.5 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+                    value={exploreSchoolId || ""}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      void navigate({
+                        to: "/learning",
+                        search: id ? { schoolId: id } : {},
+                      });
+                    }}
+                  >
+                    <option value="">All marketplace tracks</option>
+                    {schools.map((s) => (
+                      <option key={s.schoolId} value={s.schoolId}>
+                        {s.name || s.schoolId}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               {(me.memberships || []).filter((m) => m.status === "active").length > 1 ? (
                 <label className="mt-3 block text-sm text-muted-foreground">
                   Switch school
@@ -302,7 +356,7 @@ function LearningPage() {
                         if (result.ok) {
                           const refreshed = await fetchLmsMe(token);
                           if (refreshed.ok && refreshed.data) setMe(refreshed.data);
-                          await loadTracks(user);
+                          await loadTracks(user, exploreSchoolId);
                         }
                       })();
                     }}
