@@ -1,5 +1,5 @@
 /**
- * Shared catalog CMS forms for mentors, School Admin, and Super Admin.
+ * Catalog CMS — mentors update existing tracks; admins create new courses via dialog.
  */
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
@@ -13,18 +13,30 @@ import {
   uploadLessonMedia,
   type AdminStatsDto,
 } from "@/lib/lmsApi";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export function CatalogCmsPanel({
   user,
   schoolId,
   selectedTrackId,
+  /** Only Admin / SchoolAdmin may create whole new courses. */
+  allowCreateTrack = false,
 }: {
   user: User;
   schoolId?: string;
   selectedTrackId?: string;
+  allowCreateTrack?: boolean;
 }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStatsDto | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [trackId, setTrackId] = useState("");
   const [trackTitle, setTrackTitle] = useState("");
   const [editTrackId, setEditTrackId] = useState("");
@@ -72,6 +84,9 @@ export function CatalogCmsPanel({
       setModuleTrackId(trackId.trim());
       setLessonTrackId(trackId.trim());
       setEditTrackId(trackId.trim());
+      setTrackId("");
+      setTrackTitle("");
+      setCreateOpen(false);
       void loadStats();
     }
   }
@@ -149,14 +164,61 @@ export function CatalogCmsPanel({
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-xl font-semibold">Catalog CMS</h2>
-        <button
-          type="button"
-          onClick={() => void loadStats()}
-          className="rounded-full border border-border px-4 py-1.5 text-sm"
-        >
-          Refresh stats
-        </button>
+        <h2 className="font-display text-xl font-semibold">
+          {allowCreateTrack ? "Catalog CMS" : "Update course"}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {allowCreateTrack ? (
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-full bg-ember-gradient px-4 py-1.5 text-sm font-semibold text-maroon-foreground"
+                >
+                  New course
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Publish a new course</DialogTitle>
+                  <DialogDescription>
+                    Creates an empty track shell. Mentors fill modules and lessons
+                    later from Teach — they cannot create whole courses.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={(e) => void createTrack(e)} className="mt-4 space-y-3">
+                  <input
+                    required
+                    value={trackId}
+                    onChange={(e) => setTrackId(e.target.value)}
+                    placeholder="trackId (e.g. track-machine-learning)"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  />
+                  <input
+                    required
+                    value={trackTitle}
+                    onChange={(e) => setTrackTitle(e.target.value)}
+                    placeholder="Course title"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
+                  >
+                    Publish course
+                  </button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void loadStats()}
+            className="rounded-full border border-border px-4 py-1.5 text-sm"
+          >
+            Refresh stats
+          </button>
+        </div>
       </div>
       {msg ? <p className="text-sm text-ember">{msg}</p> : null}
       {stats ? (
@@ -165,32 +227,12 @@ export function CatalogCmsPanel({
           Completions (30d) {stats.completions30d}
         </p>
       ) : null}
-
-      <form onSubmit={(e) => void createTrack(e)} className="space-y-2">
-        <h3 className="font-medium">New track</h3>
-        <div className="flex flex-wrap gap-2">
-          <input
-            required
-            value={trackId}
-            onChange={(e) => setTrackId(e.target.value)}
-            placeholder="trackId"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            required
-            value={trackTitle}
-            onChange={(e) => setTrackTitle(e.target.value)}
-            placeholder="Title"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
-          >
-            Publish
-          </button>
-        </div>
-      </form>
+      {!allowCreateTrack ? (
+        <p className="text-xs text-muted-foreground">
+          New whole courses are created by admins. Here you update an existing
+          track and add modules, lessons, and media.
+        </p>
+      ) : null}
 
       <form onSubmit={(e) => void updateTrack(e)} className="space-y-2">
         <h3 className="font-medium">Update track</h3>

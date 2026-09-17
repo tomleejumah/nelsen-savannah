@@ -197,17 +197,74 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         {busy && !dash ? (
           <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
         ) : dash ? (
-          <div className="mt-4 space-y-3 text-sm">
-            <p>
-              Roster {dash.rosterCount} · Mentors {dash.mentors} · Mentees{" "}
-              {dash.mentees} · Enrollments {dash.enrollments}
-            </p>
-            <p>
-              Avg completion{" "}
-              <span className="font-semibold text-ember">{dash.avgCompletion}%</span>
-            </p>
+          <div className="mt-4 space-y-6">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Students
+                </p>
+                <p className="mt-1 font-display text-3xl font-semibold text-foreground">
+                  {dash.mentees}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {dash.enrollments} enrollments · avg {dash.avgCompletion}%
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Courses with enrollments
+                </p>
+                <p className="mt-1 font-display text-3xl font-semibold text-foreground">
+                  {dash.byCourse?.length ?? 0}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Roster {dash.rosterCount} people
+                </p>
+              </div>
+              <div className="rounded-2xl border border-dashed border-border/70 bg-card/30 px-4 py-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Mentors
+                </p>
+                <p className="mt-1 font-display text-3xl font-semibold text-muted-foreground">
+                  {dash.mentors}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Detail list coming later
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium">Enrollments by course</h3>
+              {(dash.byCourse?.length ?? 0) === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No student enrollments yet.
+                </p>
+              ) : (
+                <ul className="mt-3 divide-y divide-border/60 rounded-2xl border border-border/70 bg-card/40">
+                  {dash.byCourse.map((c) => (
+                    <li
+                      key={c.trackId}
+                      className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <p className="font-display font-semibold">{c.title}</p>
+                        <p className="text-xs text-muted-foreground">{c.trackId}</p>
+                      </div>
+                      <p className="text-muted-foreground">
+                        <span className="font-semibold text-foreground">
+                          {c.enrolled}
+                        </span>{" "}
+                        students · avg {c.avgPercent}%
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {dash.atRisk.length > 0 ? (
-              <ul className="rounded-2xl border border-border/70 bg-card px-4 py-3">
+              <ul className="rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm">
                 <li className="mb-2 font-medium">At risk (&lt;40%, inactive 7d)</li>
                 {dash.atRisk.slice(0, 8).map((a) => (
                   <li key={`${a.uid}-${a.trackId}`} className="text-muted-foreground">
@@ -216,7 +273,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No at-risk students.</p>
+              <p className="text-sm text-muted-foreground">No at-risk students.</p>
             )}
           </div>
         ) : null}
@@ -243,7 +300,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       </section>
 
       <section id="cms">
-        <CatalogCmsPanel user={user} schoolId={schoolId} />
+        <CatalogCmsPanel user={user} schoolId={schoolId} allowCreateTrack />
       </section>
 
       <section id="people" className="grid gap-8 sm:grid-cols-2">
