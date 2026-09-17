@@ -113,6 +113,16 @@ export async function adminCreateTrack(actorUid, body = {}) {
   };
 }
 
+async function actorDisplayName(uid) {
+  const row = await dbGet(
+    "SELECT display_name, email FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  if (row?.display_name && row.display_name !== uid) return row.display_name;
+  if (row?.email) return String(row.email).split("@")[0];
+  return "Mentor";
+}
+
 export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   await assertCanEditTrack(actorUid, trackId);
   const row = await dbGet("SELECT * FROM tracks WHERE track_id = ?", [trackId]);
@@ -131,15 +141,28 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   const audienceJson = body.audience
     ? JSON.stringify(body.audience)
     : row.audience_json;
+  const tutorName = await actorDisplayName(actorUid);
 
   await dualWrite({
     label: `admin-track-upd:${trackId}`,
     writeFn: async () => {
       await dbRun(
         `UPDATE tracks SET title = ?, does = ?, program_slug = ?,
-         course_image_url = ?, audience_json = ?, published = ?, updated_at = ?
+         course_image_url = ?, audience_json = ?, published = ?,
+         tutor_id = ?, tutor_name = ?, updated_at = ?
          WHERE track_id = ?`,
-        [title, does, programSlug, imageUrl, audienceJson, published, now, trackId],
+        [
+          title,
+          does,
+          programSlug,
+          imageUrl,
+          audienceJson,
+          published,
+          actorUid,
+          tutorName,
+          now,
+          trackId,
+        ],
       );
       return true;
     },
@@ -150,12 +173,23 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
         programSlug,
         courseImageUrl: imageUrl,
         published: Boolean(published),
+        tutorId: actorUid,
+        tutorName,
       });
     },
   });
   return {
     source: getPrimaryEngine(),
-    data: { track: { trackId, courseTitle: title, does, published: Boolean(published) } },
+    data: {
+      track: {
+        trackId,
+        courseTitle: title,
+        does,
+        published: Boolean(published),
+        tutorId: actorUid,
+        tutorName,
+      },
+    },
   };
 }
 
@@ -383,7 +417,7 @@ export async function adminMenteeProgress(mentorId, actorUid) {
   if (role === "Mentor") {
     rows = await dbAll(
       `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at,
-              u.display_name, u.photo_url
+              u.display_name, u.photo_url, u.email
        FROM enrollments e
        JOIN users_mirror u ON u.uid = e.uid
        WHERE e.mentor_id = ? OR e.mentor_id IS NULL
@@ -395,7 +429,7 @@ export async function adminMenteeProgress(mentorId, actorUid) {
     const schoolId = await getActorSchoolId(viewer);
     rows = await dbAll(
       `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at,
-              u.display_name, u.photo_url
+              u.display_name, u.photo_url, u.email
        FROM enrollments e
        JOIN users_mirror u ON u.uid = e.uid
        WHERE COALESCE(u.school_id, 'nelsen-digital') = ?
@@ -407,14 +441,23 @@ export async function adminMenteeProgress(mentorId, actorUid) {
   return {
     source: getPrimaryEngine(),
     data: {
-      mentees: rows.map((r) => ({
-        uid: r.uid,
-        displayName: r.display_name || "",
-        photoUrl: r.photo_url || "",
-        trackId: r.track_id,
-        trackPercent: Number(r.track_percent),
-        lastActiveAt: Number(r.last_active_at),
-      })),
+      mentees: rows.map((r) => {
+        const fromEmail = r.email ? String(r.email).split("@")[0] : "";
+        const name =
+          (r.display_name && r.display_name !== r.uid
+            ? r.display_name
+            : "") ||
+          fromEmail ||
+          "Learner";
+        return {
+          uid: r.uid,
+          displayName: name,
+          photoUrl: r.photo_url || "",
+          trackId: r.track_id,
+          trackPercent: Number(r.track_percent),
+          lastActiveAt: Number(r.last_active_at),
+        };
+      }),
     },
   };
 }
@@ -487,20 +530,32 @@ export async function adminTrackOverview(actorUid, trackId) {
       title: track.title,
       studentCount: students.length,
       avgProgress,
-      students: students.map((s) => ({
-        uid: s.uid,
-        displayName: s.display_name || s.email || s.uid,
-        photoUrl: s.photo_url || "",
-        trackPercent: Number(s.track_percent || 0),
-        status: s.status || "in_progress",
-        lastActiveAt: Number(s.last_active_at || 0),
-      })),
+      students: students.map((s) => {
+        const fromEmail = s.email ? String(s.email).split("@")[0] : "";
+        const name =
+          (s.display_name && s.display_name !== s.uid ? s.display_name : "") ||
+          fromEmail ||
+          "Learner";
+        return {
+          uid: s.uid,
+          displayName: name,
+          photoUrl: s.photo_url || "",
+          trackPercent: Number(s.track_percent || 0),
+          status: s.status || "in_progress",
+          lastActiveAt: Number(s.last_active_at || 0),
+        };
+      }),
       assignments: assignments.map((a) => {
         const rows = students.map((s) => {
           const sub = subByKey.get(`${a.assignment_id}:${s.uid}`);
+          const fromEmail = s.email ? String(s.email).split("@")[0] : "";
+          const name =
+            (s.display_name && s.display_name !== s.uid ? s.display_name : "") ||
+            fromEmail ||
+            "Learner";
           return {
             uid: s.uid,
-            displayName: s.display_name || s.email || s.uid,
+            displayName: name,
             status: sub ? String(sub.status) : "missing",
             score: sub?.score == null ? null : Number(sub.score),
             submittedAt: sub ? Number(sub.submitted_at) : null,
