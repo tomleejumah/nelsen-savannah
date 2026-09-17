@@ -46,9 +46,6 @@ jobs:
           # All Node APIs live under /home/server/Apis/<name>.
           APP_DIR: /home/server/Apis/nelsen-savannah
         run: |
-          # Process must be deleted (not only stopped) so `pm2 resurrect` cannot
-          # bring a stale instance back on PORT 5002.
-          "$PM2" delete nelsen-savannah || true
           mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
           # Never write/replace secrets from Actions. .env + Firebase JSON are
           # server-local only until we deliberately wire GitHub Secrets later.
@@ -74,7 +71,9 @@ jobs:
           rm -rf node_modules
           npm install --production
           mkdir -p data uploads uploads/_tmp
-          "$PM2" start src/app.js --name nelsen-savannah
+          # Restart keeps the same PM2 id; start only on first deploy.
+          "$PM2" restart nelsen-savannah --update-env || \
+            "$PM2" start src/app.js --name nelsen-savannah
           "$PM2" save
 
       - name: Health smoke (local + nginx)
