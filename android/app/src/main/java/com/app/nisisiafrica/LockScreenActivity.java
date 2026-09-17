@@ -226,9 +226,14 @@ public class LockScreenActivity extends AppCompatActivity {
         fill.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
+                if (pinDotsRow == null || isFinishing()) {
+                    animating = false;
+                    if (after != null && !isFinishing()) after.run();
+                    return;
+                }
                 pinDotsRow.postDelayed(() -> {
                     animating = false;
-                    if (after != null) after.run();
+                    if (!isFinishing() && after != null) after.run();
                 }, success ? 280 : 420);
             }
         });
