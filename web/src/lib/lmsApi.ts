@@ -621,6 +621,44 @@ export async function fetchMenteeProgress(idToken: string, mentorId: string) {
   );
 }
 
+export type TrackOverviewDto = {
+  trackId: string;
+  title: string;
+  studentCount: number;
+  avgProgress: number;
+  students: {
+    uid: string;
+    displayName: string;
+    photoUrl: string;
+    trackPercent: number;
+    status: string;
+    lastActiveAt: number;
+  }[];
+  assignments: {
+    id: string;
+    title: string;
+    lessonId: string | null;
+    createdAt: number;
+    dueAt: number | null;
+    completedCount: number;
+    missingCount: number;
+    students: {
+      uid: string;
+      displayName: string;
+      status: string;
+      score: number | null;
+      submittedAt: number | null;
+    }[];
+  }[];
+};
+
+export async function fetchTrackOverview(idToken: string, trackId: string) {
+  return lmsFetch<TrackOverviewDto>(
+    `/lms/admin/tracks/${encodeURIComponent(trackId)}/overview`,
+    idToken,
+  );
+}
+
 export async function createAssignment(
   idToken: string,
   body: {
