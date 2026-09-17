@@ -222,6 +222,14 @@ function TrackDetailPage() {
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                   {track.does}
                 </p>
+                {track.tutorName ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Mentor:{" "}
+                    <span className="font-medium text-foreground">
+                      {track.tutorName}
+                    </span>
+                  </p>
+                ) : null}
 
                 {hasCurriculum ? (
                   <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -282,8 +290,10 @@ function TrackDetailPage() {
                               : m.available
                                 ? "open"
                                 : m.lockedReason === "release_date"
-                                  ? `unlocks ${new Date(m.releaseAt).toLocaleDateString()}`
-                                  : "complete the previous milestone first"}
+                                  ? `unlocks ${new Date(m.releaseAt).toLocaleString()}`
+                                  : m.lockedReason === "expired"
+                                    ? `locked · expired ${m.dueAt ? new Date(m.dueAt).toLocaleString() : ""}`
+                                    : "complete the previous milestone first"}
                           </span>
                         </li>
                       ))}
@@ -329,6 +339,13 @@ function TrackDetailPage() {
                                         {lesson.type}
                                         {lesson.estimatedMinutes
                                           ? ` · ${lesson.estimatedMinutes} min`
+                                          : ""}
+                                        {mile && !mile.available
+                                          ? mile.lockedReason === "release_date"
+                                            ? ` · locked until ${new Date(mile.releaseAt).toLocaleString()}`
+                                            : mile.lockedReason === "expired"
+                                              ? ` · expired${mile.dueAt ? ` ${new Date(mile.dueAt).toLocaleString()}` : ""}`
+                                              : " · locked"
                                           : ""}
                                       </span>
                                     </span>

@@ -482,9 +482,11 @@ export async function getTrackMilestones(uid, trackId) {
   const milestones = rows.map((row) => {
     const released = Number(row.release_at) <= now;
     const requiresPrevious = Boolean(row.requires_previous_completion);
-    const available = released && (!requiresPrevious || previousComplete);
-    const completed = Number(row.lesson_percent || 0) >= 80;
     const dueAt = row.due_at ? Number(row.due_at) : null;
+    const completed = Number(row.lesson_percent || 0) >= 80;
+    const expired = Boolean(dueAt && dueAt < now && !completed);
+    const available =
+      released && !expired && (!requiresPrevious || previousComplete);
     const result = {
       milestoneId: row.milestone_id,
       lessonId: row.lesson_id,
@@ -497,12 +499,14 @@ export async function getTrackMilestones(uid, trackId) {
       previousComplete,
       available,
       completed,
-      overdue: Boolean(dueAt && dueAt < now && !completed),
+      overdue: expired,
       lockedReason: !released
         ? "release_date"
-        : requiresPrevious && !previousComplete
-          ? "previous_milestone_incomplete"
-          : null,
+        : expired
+          ? "expired"
+          : requiresPrevious && !previousComplete
+            ? "previous_milestone_incomplete"
+            : null,
     };
     previousComplete = completed;
     return result;
