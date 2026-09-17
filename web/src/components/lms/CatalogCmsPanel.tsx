@@ -26,12 +26,14 @@ export function CatalogCmsPanel({
   user,
   schoolId,
   selectedTrackId,
+  selectedTrackTitle,
   /** Only Admin / SchoolAdmin may create whole new courses. */
   allowCreateTrack = false,
 }: {
   user: User;
   schoolId?: string;
   selectedTrackId?: string;
+  selectedTrackTitle?: string;
   allowCreateTrack?: boolean;
 }) {
   const [msg, setMsg] = useState<string | null>(null);
@@ -56,6 +58,9 @@ export function CatalogCmsPanel({
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
 
+  const lockedCourse = Boolean(selectedTrackId);
+  const courseLabel = selectedTrackTitle?.trim() || selectedTrackId || "";
+
   useEffect(() => {
     if (selectedTrackId) {
       setEditTrackId(selectedTrackId);
@@ -63,6 +68,12 @@ export function CatalogCmsPanel({
       setLessonTrackId(selectedTrackId);
     }
   }, [selectedTrackId]);
+
+  useEffect(() => {
+    if (selectedTrackTitle) {
+      setEditTitle(selectedTrackTitle);
+    }
+  }, [selectedTrackTitle]);
 
   async function loadStats() {
     const token = await user.getIdToken();
@@ -234,20 +245,30 @@ export function CatalogCmsPanel({
         </p>
       ) : null}
 
+      {lockedCourse ? (
+        <div className="rounded-xl border border-border/70 bg-background/60 px-4 py-3">
+          <p className="text-xs text-muted-foreground">Course</p>
+          <p className="font-display text-lg font-semibold">{courseLabel}</p>
+          <p className="mt-0.5 font-mono text-xs text-muted-foreground">{editTrackId}</p>
+        </div>
+      ) : null}
+
       <form onSubmit={(e) => void updateTrack(e)} className="space-y-2">
         <h3 className="font-medium">Update track</h3>
         <div className="flex flex-wrap gap-2">
-          <input
-            required
-            value={editTrackId}
-            onChange={(e) => setEditTrackId(e.target.value)}
-            placeholder="trackId"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
+          {lockedCourse ? null : (
+            <input
+              required
+              value={editTrackId}
+              onChange={(e) => setEditTrackId(e.target.value)}
+              placeholder="trackId"
+              className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          )}
           <input
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="New title"
+            placeholder="Course title"
             className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <input
@@ -280,13 +301,15 @@ export function CatalogCmsPanel({
             placeholder="moduleId"
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
-          <input
-            required
-            value={moduleTrackId}
-            onChange={(e) => setModuleTrackId(e.target.value)}
-            placeholder="trackId"
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
+          {lockedCourse ? null : (
+            <input
+              required
+              value={moduleTrackId}
+              onChange={(e) => setModuleTrackId(e.target.value)}
+              placeholder="trackId"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          )}
           <input
             required
             value={moduleTitle}
@@ -317,13 +340,15 @@ export function CatalogCmsPanel({
             placeholder="moduleId"
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
-          <input
-            required
-            value={lessonTrackId}
-            onChange={(e) => setLessonTrackId(e.target.value)}
-            placeholder="trackId"
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
+          {lockedCourse ? null : (
+            <input
+              required
+              value={lessonTrackId}
+              onChange={(e) => setLessonTrackId(e.target.value)}
+              placeholder="trackId"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          )}
           <input
             required
             value={lessonTitle}
