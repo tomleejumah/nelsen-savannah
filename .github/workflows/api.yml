@@ -84,7 +84,7 @@ jobs:
       - name: Health smoke
         run: |
           set -euo pipefail
-          # Cloudflare often returns 403 to GitHub-hosted IPs; verify on the deploy host.
+          # Require local app AND nginx vhost. Public is best-effort (Cloudflare).
           try_url() {
             local label="$1"
             shift
@@ -101,13 +101,11 @@ jobs:
             rm -f "$body"
             return 1
           }
-          ok=0
-          try_url "local :5002" http://127.0.0.1:5002/lms/health && ok=1
-          if [ "$ok" != "1" ]; then
-            try_url "local Host header" -H "Host: api.nelsen-savannah.co.ke" http://127.0.0.1/lms/health && ok=1
+          try_url "local app :5002" http://127.0.0.1:5002/lms/health
+          try_url "nginx Host" -H "Host: api.nelsen-savannah.co.ke" http://127.0.0.1/lms/health
+          if try_url "public" --retry 3 --retry-delay 2 https://api.nelsen-savannah.co.ke/lms/health; then
+            echo "public ok"
+          else
+            echo "::warning::public HTTPS failed (Cloudflare/DNS); local+nginx passed"
           fi
-          if [ "$ok" != "1" ]; then
-            try_url "public" --retry 3 --retry-delay 2 https://api.nelsen-savannah.co.ke/lms/health && ok=1
-          fi
-          test "$ok" = "1"
           echo "api smoke ok"
