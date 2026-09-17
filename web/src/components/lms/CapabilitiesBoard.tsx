@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import type { MeDto } from "@/lib/lmsApi";
@@ -13,8 +14,8 @@ type Props = {
   me: MeDto;
   /** Shell of the page we’re on (filters tools). */
   activeShell?: LmsShell;
-  /** Compact = labeled strips for muscle memory (learning hero). */
-  variant?: "full" | "compact";
+  /** compact = pills; rail = sticky side progress; full = legacy cards (unused on shells). */
+  variant?: "full" | "compact" | "rail";
   className?: string;
 };
 
@@ -33,14 +34,58 @@ function ToolLink({
   className?: string;
 }) {
   return (
-    <Link
-      to={tool.to}
-      hash={tool.hash}
-      className={className}
-    >
+    <Link to={tool.to} hash={tool.hash} className={className}>
       {tool.label}
     </Link>
   );
+}
+
+function useActiveHash(hashes: string[]) {
+  const [active, setActive] = useState(() =>
+    typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "",
+  );
+
+  useEffect(() => {
+    const onHash = () => setActive(window.location.hash.replace(/^#/, ""));
+    window.addEventListener("hashchange", onHash);
+
+    const ids = hashes.filter(Boolean);
+    if (ids.length === 0) {
+      return () => window.removeEventListener("hashchange", onHash);
+    }
+
+    const observed = new Map<string, number>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          observed.set(entry.target.id, entry.intersectionRatio);
+        }
+        let bestId = "";
+        let bestRatio = 0;
+        for (const id of ids) {
+          const r = observed.get(id) ?? 0;
+          if (r > bestRatio) {
+            bestRatio = r;
+            bestId = id;
+          }
+        }
+        if (bestId && bestRatio > 0.12) setActive(bestId);
+      },
+      { rootMargin: "-15% 0px -55% 0px", threshold: [0, 0.15, 0.35, 0.6] },
+    );
+
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    }
+
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+      io.disconnect();
+    };
+  }, [hashes.join("|")]);
+
+  return active;
 }
 
 export function CapabilitiesBoard({
@@ -52,6 +97,8 @@ export function CapabilitiesBoard({
   const focus = activeShell ?? shellFromMe(me);
   const workspaces = workspacesForMe(me);
   const tools = toolsForShell(me, focus).filter((t) => t.id !== "profile");
+  const hashes = tools.map((t) => t.hash || "").filter(Boolean);
+  const activeHash = useActiveHash(hashes);
 
   if (variant === "compact") {
     return (
@@ -95,6 +142,74 @@ export function CapabilitiesBoard({
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (variant === "rail") {
+    return (
+      <nav className={cn("space-y-6", className)} aria-label="Section progress">
+        {workspaces.length > 1 ? (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Workspace
+            </p>
+            <ul className="mt-2 space-y-0.5">
+              {workspaces.map((w) => (
+                <li key={w.shell}>
+                  <Link
+                    to={w.to}
+                    className={cn(
+                      "block border-l-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                      w.shell === focus
+                        ? "border-foreground bg-secondary/60 text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {w.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            In {SHELL_LABEL[focus]}
+          </p>
+          <ul className="mt-2 space-y-0.5">
+            {tools.map((t) => {
+              const isActive = Boolean(t.hash) && t.hash === activeHash;
+              return (
+                <li key={`${t.id}-${t.hash || t.to}`}>
+                  <Link
+                    to={t.to}
+                    hash={t.hash}
+                    className={cn(
+                      "block border-l-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                      isActive
+                        ? "border-foreground bg-secondary/60 text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground",
+                    )}
+                    title={t.blurb}
+                  >
+                    {t.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <div>
+          <Link
+            to="/profile"
+            className="inline-flex w-full items-center justify-center bg-ember-gradient px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-maroon-foreground"
+          >
+            Profile
+          </Link>
+        </div>
+      </nav>
     );
   }
 
