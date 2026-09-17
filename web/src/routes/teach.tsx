@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
+import { X } from "lucide-react";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
 import { AddToCoursePanel } from "@/components/lms/AddToCoursePanel";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   addCohortMember,
   authorLessonQuiz,
@@ -29,6 +37,8 @@ import {
   type TrackOverviewDto,
 } from "@/lib/lmsApi";
 
+type SidePanel = "add" | "update" | "schedule" | null;
+
 export const Route = createFileRoute("/teach")({
   head: () => ({
     meta: [
@@ -48,6 +58,7 @@ function TeachPage() {
       shell="mentor"
       title="Teach"
       blurb="Manage courses, milestones, marking, and mentee progress."
+      wide
     >
       {({ user, me }) => <TeachBoard user={user} me={me} />}
     </RoleShellPage>
@@ -94,8 +105,21 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [overview, setOverview] = useState<TrackOverviewDto | null>(null);
   const [overviewBusy, setOverviewBusy] = useState(false);
   const [overviewErr, setOverviewErr] = useState<string | null>(null);
+  const [sidePanel, setSidePanel] = useState<SidePanel>(null);
 
   const schoolId = me.schoolId || me.activeSchoolId || "nelsen-digital";
+
+  function selectTrack(trackId: string) {
+    setCmsTrackId(trackId);
+    setPriceTrackId(trackId);
+    setRunTrackId(trackId);
+    setAssignTrackId(trackId);
+  }
+
+  function openSide(trackId: string, panel: SidePanel) {
+    selectTrack(trackId);
+    setSidePanel(panel);
+  }
 
   function statsForTrack(trackId: string) {
     const rows = mentees.filter((m) => m.trackId === trackId);
@@ -111,10 +135,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   }
 
   async function openTrack(trackId: string) {
-    setCmsTrackId(trackId);
-    setPriceTrackId(trackId);
-    setRunTrackId(trackId);
-    setAssignTrackId(trackId);
+    selectTrack(trackId);
     setOverviewBusy(true);
     setOverviewErr(null);
     try {
