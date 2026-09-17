@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
+import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
 import {
   addCohortMember,
   authorLessonQuiz,
@@ -43,7 +44,7 @@ function TeachPage() {
     <RoleShellPage
       shell="mentor"
       title="Teach"
-      blurb="Mark submissions, watch student progress, and assign coursework."
+      blurb="Manage courses, milestones, marking, and mentee progress."
     >
       {({ user, me }) => <TeachBoard user={user} me={me} />}
     </RoleShellPage>
@@ -86,6 +87,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [quizB, setQuizB] = useState("");
   const [quizCorrect, setQuizCorrect] = useState("a");
   const [materialsMsg, setMaterialsMsg] = useState<string | null>(null);
+  const [cmsTrackId, setCmsTrackId] = useState("");
 
   const schoolId = me.schoolId || me.activeSchoolId || "nelsen-digital";
 
@@ -173,6 +175,66 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
           {error}
         </p>
       ) : null}
+
+      <section id="courses">
+        <h2 className="font-display text-xl font-semibold">Your courses</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Update a track, jump to milestones, or open full catalog tools below.
+        </p>
+        {tracks.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No tracks yet — create one in Catalog CMS.
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {tracks.map((t) => (
+              <li
+                key={t.trackId}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card px-5 py-4"
+              >
+                <div>
+                  <p className="font-display font-semibold">{t.courseTitle}</p>
+                  <p className="text-xs text-muted-foreground">{t.trackId}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href="#cms"
+                    onClick={() => {
+                      setCmsTrackId(t.trackId);
+                      setPriceTrackId(t.trackId);
+                      setRunTrackId(t.trackId);
+                    }}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                  >
+                    Update
+                  </a>
+                  <a
+                    href="#materials"
+                    onClick={() => {
+                      setRunTrackId(t.trackId);
+                      setPriceTrackId(t.trackId);
+                    }}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                  >
+                    Milestones
+                  </a>
+                  <a
+                    href="#assign"
+                    onClick={() => setAssignTrackId(t.trackId)}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                  >
+                    Assign
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section id="cms" className="rounded-2xl border border-border/70 bg-card/40 p-5">
+        <CatalogCmsPanel user={user} schoolId={schoolId} selectedTrackId={cmsTrackId} />
+      </section>
 
       <section id="queue">
         <h2 className="font-display text-xl font-semibold">Marking queue</h2>
@@ -690,13 +752,6 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         </p>
         <p className="mt-3 text-sm text-muted-foreground">No payout rows yet.</p>
       </section>
-
-      <Link
-        to="/learning"
-        className="inline-flex text-sm font-medium text-maroon hover:underline"
-      >
-        Also browse learning catalog →
-      </Link>
     </div>
   );
 }

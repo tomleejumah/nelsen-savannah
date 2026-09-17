@@ -9,6 +9,7 @@ import {
   formatTrackPrice,
   useEnrollPaywall,
 } from "@/components/lms/EnrollPaywall";
+import { RequireMentee } from "@/components/lms/RequireMentee";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { LMS_FEATURES } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
@@ -39,8 +40,11 @@ export const Route = createFileRoute("/learning")({
 /** Parent of /learning/$trackId, /coursework, /certificates — must render Outlet. */
 function LearningLayout() {
   const childMatches = useChildMatches();
-  if (childMatches.length > 0) return <Outlet />;
-  return <LearningPage />;
+  return (
+    <RequireMentee>
+      {childMatches.length > 0 ? <Outlet /> : <LearningPage />}
+    </RequireMentee>
+  );
 }
 
 function LearningLmsPitch() {

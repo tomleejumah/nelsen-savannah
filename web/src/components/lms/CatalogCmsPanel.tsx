@@ -1,13 +1,14 @@
 /**
- * Shared catalog CMS forms for School Admin + Super Admin (L5).
+ * Shared catalog CMS forms for mentors, School Admin, and Super Admin.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 
 import {
   adminCreateLesson,
   adminCreateModule,
   adminCreateTrack,
+  adminUpdateTrack,
   fetchAdminStats,
   uploadLessonMedia,
   type AdminStatsDto,
@@ -16,14 +17,20 @@ import {
 export function CatalogCmsPanel({
   user,
   schoolId,
+  selectedTrackId,
 }: {
   user: User;
   schoolId?: string;
+  selectedTrackId?: string;
 }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStatsDto | null>(null);
   const [trackId, setTrackId] = useState("");
   const [trackTitle, setTrackTitle] = useState("");
+  const [editTrackId, setEditTrackId] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editBlurb, setEditBlurb] = useState("");
+  const [editPublished, setEditPublished] = useState(true);
   const [moduleId, setModuleId] = useState("");
   const [moduleTrackId, setModuleTrackId] = useState("");
   const [moduleTitle, setModuleTitle] = useState("");
@@ -36,6 +43,14 @@ export function CatalogCmsPanel({
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedTrackId) {
+      setEditTrackId(selectedTrackId);
+      setModuleTrackId(selectedTrackId);
+      setLessonTrackId(selectedTrackId);
+    }
+  }, [selectedTrackId]);
 
   async function loadStats() {
     const token = await user.getIdToken();
@@ -50,14 +65,29 @@ export function CatalogCmsPanel({
     const result = await adminCreateTrack(token, {
       trackId: trackId.trim(),
       title: trackTitle.trim(),
-      schoolId,
+      ...(schoolId ? { schoolId } : {}),
     });
     setMsg(result.ok ? `Track ${trackId} published` : result.error || "Failed");
     if (result.ok) {
       setModuleTrackId(trackId.trim());
       setLessonTrackId(trackId.trim());
+      setEditTrackId(trackId.trim());
       void loadStats();
     }
+  }
+
+  async function updateTrack(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    const token = await user.getIdToken();
+    const body: { title?: string; blurb?: string; published: boolean } = {
+      published: editPublished,
+    };
+    if (editTitle.trim()) body.title = editTitle.trim();
+    if (editBlurb.trim()) body.blurb = editBlurb.trim();
+    const result = await adminUpdateTrack(token, editTrackId.trim(), body);
+    setMsg(result.ok ? `Track ${editTrackId} updated` : result.error || "Failed");
+    if (result.ok) void loadStats();
   }
 
   async function createModule(e: React.FormEvent) {
@@ -158,6 +188,42 @@ export function CatalogCmsPanel({
             className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
           >
             Publish
+          </button>
+        </div>
+      </form>
+
+      <form onSubmit={(e) => void updateTrack(e)} className="space-y-2">
+        <h3 className="font-medium">Update track</h3>
+        <div className="flex flex-wrap gap-2">
+          <input
+            required
+            value={editTrackId}
+            onChange={(e) => setEditTrackId(e.target.value)}
+            placeholder="trackId"
+            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <input
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            placeholder="New title"
+            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <input
+            value={editBlurb}
+            onChange={(e) => setEditBlurb(e.target.value)}
+            placeholder="Blurb"
+            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
+          <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={editPublished}
+              onChange={(e) => setEditPublished(e.target.checked)}
+            />
+            Published
+          </label>
+          <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+            Save
           </button>
         </div>
       </form>

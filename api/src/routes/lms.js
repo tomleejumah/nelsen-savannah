@@ -251,25 +251,25 @@ router.put(
 router.post(
   "/admin/tracks",
   authenticateUser,
-  requireRoles("Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminCreateTrack,
 );
 router.put(
   "/admin/tracks/:trackId",
   authenticateUser,
-  requireRoles("Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminUpdateTrack,
 );
 router.post(
   "/admin/modules",
   authenticateUser,
-  requireRoles("Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminCreateModule,
 );
 router.post(
   "/admin/lessons",
   authenticateUser,
-  requireRoles("Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminCreateLesson,
 );
 router.patch(
@@ -287,7 +287,7 @@ router.post(
 router.get(
   "/admin/stats",
   authenticateUser,
-  requireRoles("Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminStats,
 );
 router.get(
