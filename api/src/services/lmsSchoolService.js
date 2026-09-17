@@ -534,9 +534,11 @@ export async function schoolDashboard(actorUid, schoolId) {
     [schoolId],
   );
   const enrollments = await dbAll(
-    `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at, u.display_name
+    `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at, u.display_name,
+            COALESCE(t.title, e.track_id) AS track_title
      FROM enrollments e
      JOIN users_mirror u ON u.uid = e.uid
+     LEFT JOIN tracks t ON t.track_id = e.track_id
      WHERE COALESCE(u.school_id, 'nelsen-digital') = ?`,
     [schoolId],
   );
@@ -565,6 +567,28 @@ export async function schoolDashboard(actorUid, schoolId) {
   const school = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
+  const byCourseMap = new Map();
+  for (const e of enrollments) {
+    const key = e.track_id;
+    const row = byCourseMap.get(key) || {
+      trackId: key,
+      title: e.track_title || key,
+      enrolled: 0,
+      percentSum: 0,
+    };
+    row.enrolled += 1;
+    row.percentSum += Number(e.track_percent || 0);
+    byCourseMap.set(key, row);
+  }
+  const byCourse = [...byCourseMap.values()]
+    .map((r) => ({
+      trackId: r.trackId,
+      title: r.title,
+      enrolled: r.enrolled,
+      avgPercent: r.enrolled ? Math.round(r.percentSum / r.enrolled) : 0,
+    }))
+    .sort((a, b) => b.enrolled - a.enrolled);
+
   return {
     source: getPrimaryEngine(),
     data: {
@@ -577,6 +601,7 @@ export async function schoolDashboard(actorUid, schoolId) {
         .length,
       enrollments: enrollments.length,
       avgCompletion,
+      byCourse,
       atRisk,
       logoUrl: school?.logo_url || null,
       accentColor: school?.accent_color || null,
