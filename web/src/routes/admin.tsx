@@ -193,7 +193,7 @@ function AdminConsole({ user, me }: { user: User; me: MeDto }) {
       </section>
 
       <section id="cms">
-        <CatalogCmsPanel user={user} />
+        <CatalogCmsPanel user={user} allowCreateTrack />
       </section>
 
       <section id="schools">

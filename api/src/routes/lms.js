@@ -251,7 +251,7 @@ router.put(
 router.post(
   "/admin/tracks",
   authenticateUser,
-  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  requireRoles("Admin", "SchoolAdmin"),
   lmsController.adminCreateTrack,
 );
 router.put(
