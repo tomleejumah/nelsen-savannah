@@ -22,8 +22,10 @@ export function Footer() {
       </div>
       <div className="sr-only">
         <Link to="/programs">Programs</Link>
-        <Link to="/learning">Learning</Link>
-        <Link to="/contact">Contact</Link>
+        <Link to="/login">Sign in</Link>
+        <Link to="/contact" search={{ intent: undefined }}>
+          Contact
+        </Link>
       </div>
     </footer>
   );

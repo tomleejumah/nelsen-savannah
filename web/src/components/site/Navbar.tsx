@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { onAuthStateChanged } from "firebase/auth";
 import { ChevronDown, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
+import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
+import { workspacesForMe } from "@/lib/lmsCapabilities";
+import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
@@ -10,7 +16,6 @@ import { ThemeToggle } from "./ThemeToggle";
 const LINKS = [
   { to: "/", label: "Home" },
   { to: "/programs", label: "Our Programs", dropdown: true },
-  { to: "/learning", label: "Learning" },
   // { to: "/invest", label: "Invest" },
   // { to: "/tourism", label: "Tourism" },
   { to: "/blogs", label: "Blogs" },
@@ -40,11 +45,47 @@ function navActiveOptions(to: string) {
   return { exact: to === "/", includeSearch: false } as const;
 }
 
+function useWorkspaceNav() {
+  const [me, setMe] = useState<MeDto | null>(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(getFirebaseAuth(), (user) => {
+      const gen = bumpAuthGeneration();
+      if (!user) {
+        setMe(null);
+        return;
+      }
+      void (async () => {
+        try {
+          const token = await user.getIdToken();
+          if (gen !== getAuthGeneration()) return;
+          const envelope = await fetchLmsMe(token);
+          if (gen !== getAuthGeneration()) return;
+          setMe(envelope.ok && envelope.data ? envelope.data : null);
+        } catch {
+          if (gen !== getAuthGeneration()) return;
+          setMe(null);
+        }
+      })();
+    });
+  }, []);
+
+  return useMemo(() => {
+    if (!me) return null;
+    const home = shellHomePath(shellFromMe(me));
+    const label =
+      workspacesForMe(me).find((w) => w.to === home)?.label ||
+      (shellFromMe(me) === "student" ? "Learning" : "Workspace");
+    return { to: home, label };
+  }, [me]);
+}
+
 export function Navbar() {
   const pathname = useNavPathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
+  const workspace = useWorkspaceNav();
 
   const linkActive = (to: string) => pathname != null && pathIsActive(pathname, to);
 
@@ -122,6 +163,16 @@ export function Navbar() {
               </Link>
             ),
           )}
+          {workspace ? (
+            <Link
+              to={workspace.to}
+              activeOptions={navActiveOptions(workspace.to)}
+              activeProps={{ className: "" }}
+              className={cn(navLinkClass, linkActive(workspace.to) && "text-brick")}
+            >
+              {workspace.label}
+            </Link>
+          ) : null}
         </div>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
@@ -207,6 +258,20 @@ export function Navbar() {
               </Link>
             ),
           )}
+          {workspace ? (
+            <Link
+              to={workspace.to}
+              onClick={() => setOpen(false)}
+              activeOptions={navActiveOptions(workspace.to)}
+              activeProps={{ className: "" }}
+              className={cn(
+                "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep/60 hover:text-brick focus-visible:text-brick",
+                linkActive(workspace.to) && "text-brick",
+              )}
+            >
+              {workspace.label}
+            </Link>
+          ) : null}
         </div>
       )}
     </header>

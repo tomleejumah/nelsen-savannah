@@ -28,7 +28,8 @@ export function shellFromMe(me: MeDto | null | undefined): LmsShell {
 
 export function canAccessShell(me: MeDto | null | undefined, shell: LmsShell): boolean {
   const mine = shellFromMe(me);
-  if (shell === "student") return true;
+  // Learning / student shell is mentee-only — mentors & admins use Teach / School / Admin.
+  if (shell === "student") return mine === "student";
   if (shell === "mentor") {
     return mine === "mentor" || mine === "school" || mine === "admin";
   }

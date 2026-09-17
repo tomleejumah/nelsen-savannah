@@ -814,6 +814,28 @@ export async function adminCreateTrack(
   );
 }
 
+export async function adminUpdateTrack(
+  idToken: string,
+  trackId: string,
+  body: {
+    title?: string;
+    blurb?: string;
+    published?: boolean;
+    programSlug?: string;
+    imageUrl?: string;
+  },
+) {
+  return lmsFetch<{ track: { trackId: string; courseTitle: string; published: boolean } }>(
+    `/lms/admin/tracks/${encodeURIComponent(trackId)}`,
+    idToken,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 export async function adminCreateModule(
   idToken: string,
   body: { moduleId: string; trackId: string; title: string; does?: string },
