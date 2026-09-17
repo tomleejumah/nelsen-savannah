@@ -143,6 +143,8 @@ function LoginPage() {
         const name = displayName.trim();
         if (name) {
           await updateProfile(cred.user, { displayName: name });
+          // Force a fresh ID token so /lms/me sees the name claim (mobile parity).
+          await cred.user.getIdToken(true);
         }
         toast.success("Account created");
       } else {

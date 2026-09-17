@@ -81,8 +81,12 @@ export async function upsertUserFromToken(profile) {
       if (existing) {
         await dbRun(
           `UPDATE users_mirror
-           SET email = ?, display_name = ?, first_name = ?, last_name = ?,
-               photo_url = ?, updated_at = ?
+           SET email = COALESCE(NULLIF(?, ''), email),
+               display_name = COALESCE(NULLIF(?, ''), display_name),
+               first_name = COALESCE(NULLIF(?, ''), first_name),
+               last_name = COALESCE(NULLIF(?, ''), last_name),
+               photo_url = COALESCE(NULLIF(?, ''), photo_url),
+               updated_at = ?
            WHERE uid = ?`,
           [
             email,
@@ -95,6 +99,9 @@ export async function upsertUserFromToken(profile) {
           ],
         );
       } else {
+        const fallbackName =
+          displayName || (email ? email.split("@")[0] : "") || "Learner";
+        const names = splitName(fallbackName);
         await dbRun(
           `INSERT INTO users_mirror
             (uid, email, display_name, first_name, last_name, photo_url, created_at, updated_at)
@@ -102,9 +109,9 @@ export async function upsertUserFromToken(profile) {
           [
             profile.uid,
             email,
-            displayName,
-            firstName,
-            lastName,
+            fallbackName,
+            firstName || names.firstName,
+            lastName || names.lastName,
             photoUrl,
             now,
             now,
