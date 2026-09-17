@@ -74,6 +74,8 @@ function mapTrackCard(
 }
 
 function mapModule(row, { modulePercent = 0, status = "available", lessonCount } = {}) {
+  const releaseAtRaw = row.release_at ?? row.releaseAt;
+  const dueAtRaw = row.due_at ?? row.dueAt;
   return {
     moduleId: row.module_id || row.moduleId,
     trackId: row.track_id || row.trackId,
@@ -86,17 +88,21 @@ function mapModule(row, { modulePercent = 0, status = "available", lessonCount }
         : Number(row.lesson_count ?? row.lessonCount ?? 0),
     modulePercent: Number(modulePercent) || 0,
     status,
+    releaseAt: releaseAtRaw != null ? Number(releaseAtRaw) : null,
+    dueAt: dueAtRaw != null ? Number(dueAtRaw) : null,
   };
 }
 
 function mapLesson(row, { lessonPercent = 0, status = "available" } = {}) {
+  const rawType = row.type || "text";
+  const type = rawType === "read" ? "text" : rawType;
   return {
     lessonId: row.lesson_id || row.lessonId,
     moduleId: row.module_id || row.moduleId,
     trackId: row.track_id || row.trackId,
     title: row.title,
     does: row.does || "",
-    type: row.type || "read",
+    type,
     estimatedMinutes: Number(row.estimated_minutes ?? row.estimatedMinutes ?? 0),
     hasQuiz: Boolean(row.has_quiz ?? row.hasQuiz),
     hasAssignment: Boolean(row.has_assignment ?? row.hasAssignment),
@@ -436,19 +442,43 @@ export async function getLessonById(uid, lessonId) {
       const {
         getAuthoredQuiz,
         getTrackMilestones,
+        getChapterLockForLesson,
       } = await import("./lmsLearningCommerceService.js");
-      const [authoredQuiz, cohortRun] = await Promise.all([
+      const [authoredQuiz, cohortRun, chapterLock] = await Promise.all([
         hasQuiz ? getAuthoredQuiz(uid, lessonId, row.track_id) : null,
         getTrackMilestones(uid, row.track_id),
+        getChapterLockForLesson(uid, row),
       ]);
-      const milestone =
+      const cohortMilestone =
         cohortRun.milestones.find((item) => item.lessonId === lessonId) || null;
+      const milestone = chapterLock
+        ? {
+            milestoneId: `chapter:${chapterLock.moduleId}`,
+            lessonId,
+            title: chapterLock.title,
+            releaseAt: chapterLock.releaseAt,
+            dueAt: chapterLock.dueAt,
+            order: 0,
+            requiresPreviousCompletion: false,
+            released: chapterLock.released,
+            previousComplete: true,
+            available: chapterLock.available,
+            completed: chapterLock.completed,
+            overdue: chapterLock.overdue,
+            lockedReason: chapterLock.lockedReason,
+          }
+        : cohortMilestone;
+
+      const lessonType = lesson.type === "read" ? "text" : lesson.type;
+      const isText = lessonType === "text";
+      const isPdf = lessonType === "pdf";
 
       return {
         source: getPrimaryEngine(),
         data: {
           lesson: {
             ...lesson,
+            type: lessonType,
             contentUrl: enrolled ? lesson.contentUrl : null,
             playbackUrl,
             playbackExpiresAt,
@@ -462,10 +492,23 @@ export async function getLessonById(uid, lessonId) {
                 }
               : null,
             milestone,
-            assignmentPrompt: hasAssignment
-              ? lesson.does ||
-                "Write your response below and submit for mentor review."
+            assignmentPrompt:
+              hasAssignment || isText
+                ? lesson.does ||
+                  (isText
+                    ? "Write your response below and submit."
+                    : "Write your response below and submit for mentor review.")
+                : null,
+            hasAssignment: hasAssignment || isText,
+            chapter: chapterLock
+              ? {
+                  moduleId: chapterLock.moduleId,
+                  title: chapterLock.title,
+                  releaseAt: chapterLock.releaseAt,
+                  dueAt: chapterLock.dueAt,
+                }
               : null,
+            isPdf,
           },
         },
       };

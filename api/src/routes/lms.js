@@ -266,11 +266,35 @@ router.post(
   requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminCreateModule,
 );
+router.put(
+  "/admin/modules/:moduleId",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminUpdateModule,
+);
+router.delete(
+  "/admin/modules/:moduleId",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminDeleteModule,
+);
 router.post(
   "/admin/lessons",
   authenticateUser,
   requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminCreateLesson,
+);
+router.put(
+  "/admin/lessons/:lessonId",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminUpdateLesson,
+);
+router.delete(
+  "/admin/lessons/:lessonId",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminDeleteLesson,
 );
 router.patch(
   "/admin/users/:uid/role",
@@ -301,6 +325,12 @@ router.get(
   authenticateUser,
   requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminTrackOverview,
+);
+router.get(
+  "/admin/tracks/:trackId/overview/students/:uid",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminTrackStudentDetail,
 );
 router.post(
   "/admin/seed",

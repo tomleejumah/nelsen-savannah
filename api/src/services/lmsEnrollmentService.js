@@ -52,6 +52,8 @@ function mapProgress(row, extras = {}) {
     quizPct: Number(row.quiz_pct ?? row.quizPct ?? 0),
     assignmentPct: Number(row.assignment_pct ?? row.assignmentPct ?? 0),
     lessonPercent: Number(row.lesson_percent ?? row.lessonPercent ?? 0),
+    watchSeconds: Number(row.watch_seconds ?? row.watchSeconds ?? 0),
+    watchPct: Number(row.watch_pct ?? row.watchPct ?? 0),
     status: row.status || "available",
     lastPlatform: row.last_platform || row.lastPlatform || null,
     updatedAt: Number(row.updated_at ?? row.updatedAt ?? 0),
@@ -358,7 +360,7 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
 
   const opened =
     body.opened !== undefined ? Boolean(body.opened) : Boolean(prev?.opened);
-  const contentPct =
+  let contentPct =
     body.contentPct !== undefined
       ? clampPct(body.contentPct)
       : Number(prev?.content_pct ?? 0);
@@ -370,6 +372,21 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
     body.assignmentPct !== undefined
       ? clampPct(body.assignmentPct)
       : Number(prev?.assignment_pct ?? 0);
+  let watchSeconds =
+    body.watchSeconds !== undefined
+      ? Math.max(0, Math.floor(Number(body.watchSeconds) || 0))
+      : Number(prev?.watch_seconds ?? 0);
+  let watchPct =
+    body.watchPct !== undefined
+      ? clampPct(body.watchPct)
+      : Number(prev?.watch_pct ?? 0);
+  // Video: watch pct drives content signal when client reports it.
+  if (
+    (lesson.type === "video" || body.watchPct !== undefined || body.watchSeconds !== undefined) &&
+    body.watchPct !== undefined
+  ) {
+    contentPct = Math.max(contentPct, watchPct);
+  }
   const lastPlatform =
     body.lastPlatform === "android" || body.lastPlatform === "web"
       ? body.lastPlatform
@@ -395,7 +412,8 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
         await dbRun(
           `UPDATE progress SET
             opened = ?, content_pct = ?, quiz_pct = ?, assignment_pct = ?,
-            lesson_percent = ?, status = ?, last_platform = ?, updated_at = ?
+            lesson_percent = ?, watch_seconds = ?, watch_pct = ?,
+            status = ?, last_platform = ?, updated_at = ?
            WHERE uid = ? AND lesson_id = ?`,
           [
             opened ? 1 : 0,
@@ -403,6 +421,8 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
             quizPct,
             assignmentPct,
             lessonPercent,
+            watchSeconds,
+            watchPct,
             status,
             lastPlatform,
             now,
@@ -414,8 +434,9 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
         await dbRun(
           `INSERT INTO progress (
             uid, lesson_id, module_id, track_id, opened, content_pct,
-            quiz_pct, assignment_pct, lesson_percent, status, last_platform, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            quiz_pct, assignment_pct, lesson_percent, watch_seconds, watch_pct,
+            status, last_platform, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             profile.uid,
             lessonId,
@@ -426,6 +447,8 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
             quizPct,
             assignmentPct,
             lessonPercent,
+            watchSeconds,
+            watchPct,
             status,
             lastPlatform,
             now,
@@ -444,6 +467,8 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
         quizPct,
         assignmentPct,
         lessonPercent,
+        watchSeconds,
+        watchPct,
         status,
         lastPlatform,
         updatedAt: now,
@@ -490,6 +515,8 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
           quiz_pct: quizPct,
           assignment_pct: assignmentPct,
           lesson_percent: lessonPercent,
+          watch_seconds: watchSeconds,
+          watch_pct: watchPct,
           status,
           last_platform: lastPlatform,
           updated_at: now,

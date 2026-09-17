@@ -514,7 +514,50 @@ export async function getTrackMilestones(uid, trackId) {
   return { runId: run.run_id, cohortId: run.cohort_id, milestones };
 }
 
+/** Chapter (module) date window — preferred lock source when set. */
+export async function getChapterLockForLesson(uid, lesson) {
+  const mod = await dbGet("SELECT * FROM modules WHERE module_id = ?", [
+    lesson.module_id,
+  ]);
+  if (!mod || mod.release_at == null || mod.due_at == null) return null;
+  const now = Date.now();
+  const releaseAt = Number(mod.release_at);
+  const dueAt = Number(mod.due_at);
+  const progress = await dbGet(
+    "SELECT lesson_percent FROM progress WHERE uid = ? AND lesson_id = ?",
+    [uid, lesson.lesson_id],
+  );
+  const completed = Number(progress?.lesson_percent || 0) >= 80;
+  const released = releaseAt <= now;
+  const expired = dueAt < now && !completed;
+  const available = released && !expired;
+  return {
+    moduleId: mod.module_id,
+    title: mod.title,
+    releaseAt,
+    dueAt,
+    released,
+    available,
+    completed,
+    overdue: expired,
+    lockedReason: !released ? "release_date" : expired ? "expired" : null,
+  };
+}
+
 export async function assertLessonMilestoneAvailable(uid, lesson) {
+  const chapter = await getChapterLockForLesson(uid, lesson);
+  if (chapter) {
+    if (chapter.available) return chapter;
+    const err = new Error("Chapter is locked");
+    err.status = 403;
+    err.details = {
+      code: "CHAPTER_LOCKED",
+      trackId: lesson.track_id,
+      lessonId: lesson.lesson_id,
+      chapter,
+    };
+    throw err;
+  }
   const context = await getTrackMilestones(uid, lesson.track_id);
   const milestone = context.milestones.find(
     (item) => item.lessonId === lesson.lesson_id,

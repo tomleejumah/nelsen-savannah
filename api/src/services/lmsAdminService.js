@@ -193,6 +193,42 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   };
 }
 
+function parseRequiredChapterWindow(body) {
+  const releaseAt = Number(body.releaseAt);
+  const dueAt = Number(body.dueAt);
+  if (!Number.isFinite(releaseAt) || releaseAt <= 0) {
+    const err = new Error("releaseAt required");
+    err.status = 400;
+    throw err;
+  }
+  if (!Number.isFinite(dueAt) || dueAt <= 0) {
+    const err = new Error("dueAt required");
+    err.status = 400;
+    throw err;
+  }
+  if (dueAt < releaseAt) {
+    const err = new Error("dueAt must be on or after releaseAt");
+    err.status = 400;
+    throw err;
+  }
+  return { releaseAt, dueAt };
+}
+
+function normalizeLessonType(type) {
+  const t = String(type || "text").toLowerCase();
+  if (t === "read") return "text";
+  if (
+    t === "text" ||
+    t === "video" ||
+    t === "pdf" ||
+    t === "quiz" ||
+    t === "assignment"
+  ) {
+    return t;
+  }
+  return "text";
+}
+
 export async function adminCreateModule(actorUid, body = {}) {
   const { moduleId, trackId, title } = body;
   if (!moduleId || !trackId || !title) {
@@ -200,23 +236,27 @@ export async function adminCreateModule(actorUid, body = {}) {
     err.status = 400;
     throw err;
   }
+  const { releaseAt, dueAt } = parseRequiredChapterWindow(body);
   await assertCanEditTrack(actorUid, trackId);
   const now = Date.now();
+  const does = body.blurb || body.does || "";
   await dualWrite({
     label: `admin-mod:${moduleId}`,
     writeFn: async () => {
       await dbRun(
         `INSERT INTO modules (
           module_id, track_id, title, does, estimated_minutes,
-          sort_order, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          sort_order, release_at, due_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           moduleId,
           trackId,
           title,
-          body.does || "",
+          does,
           body.estimatedMinutes || 0,
           body.order || 0,
+          releaseAt,
+          dueAt,
           now,
           now,
         ],
@@ -228,19 +268,186 @@ export async function adminCreateModule(actorUid, body = {}) {
         moduleId,
         trackId,
         title,
-        does: body.does || "",
+        does,
         estimatedMinutes: body.estimatedMinutes || 0,
+        releaseAt,
+        dueAt,
       });
     },
   });
   return {
     source: getPrimaryEngine(),
-    data: { module: { moduleId, trackId, title, does: body.does || "" } },
+    data: {
+      module: {
+        moduleId,
+        trackId,
+        title,
+        does,
+        releaseAt,
+        dueAt,
+      },
+    },
+  };
+}
+
+export async function adminUpdateModule(actorUid, moduleId, body = {}) {
+  const mid = String(moduleId || "").trim();
+  if (!mid) {
+    const err = new Error("moduleId required");
+    err.status = 400;
+    throw err;
+  }
+  const row = await dbGet("SELECT * FROM modules WHERE module_id = ?", [mid]);
+  if (!row) {
+    const err = new Error("Module not found");
+    err.status = 404;
+    throw err;
+  }
+  await assertCanEditTrack(actorUid, row.track_id);
+  const title = body.title != null ? String(body.title).trim() : row.title;
+  if (!title) {
+    const err = new Error("title required");
+    err.status = 400;
+    throw err;
+  }
+  const does =
+    body.blurb != null || body.does != null
+      ? String(body.blurb ?? body.does ?? "")
+      : row.does || "";
+  const estimatedMinutes =
+    body.estimatedMinutes != null
+      ? Number(body.estimatedMinutes) || 0
+      : Number(row.estimated_minutes || 0);
+  const sortOrder =
+    body.order != null || body.sortOrder != null
+      ? Number(body.order ?? body.sortOrder) || 0
+      : Number(row.sort_order || 0);
+  let releaseAt = row.release_at != null ? Number(row.release_at) : null;
+  let dueAt = row.due_at != null ? Number(row.due_at) : null;
+  if (body.releaseAt != null || body.dueAt != null) {
+    const window = parseRequiredChapterWindow({
+      releaseAt: body.releaseAt != null ? body.releaseAt : releaseAt,
+      dueAt: body.dueAt != null ? body.dueAt : dueAt,
+    });
+    releaseAt = window.releaseAt;
+    dueAt = window.dueAt;
+  } else if (!releaseAt || !dueAt) {
+    const err = new Error("releaseAt and dueAt required");
+    err.status = 400;
+    throw err;
+  }
+  const now = Date.now();
+  await dualWrite({
+    label: `admin-mod-upd:${mid}`,
+    writeFn: async () => {
+      await dbRun(
+        `UPDATE modules SET
+          title = ?, does = ?, estimated_minutes = ?, sort_order = ?,
+          release_at = ?, due_at = ?, updated_at = ?
+         WHERE module_id = ?`,
+        [title, does, estimatedMinutes, sortOrder, releaseAt, dueAt, now, mid],
+      );
+      return true;
+    },
+    mirrorFn: async () => {
+      await mirrorModule(mid, {
+        moduleId: mid,
+        trackId: row.track_id,
+        title,
+        does,
+        estimatedMinutes,
+        releaseAt,
+        dueAt,
+        updatedAt: now,
+      });
+    },
+  });
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      module: {
+        moduleId: mid,
+        trackId: row.track_id,
+        title,
+        does,
+        releaseAt,
+        dueAt,
+      },
+    },
+  };
+}
+
+export async function adminDeleteModule(actorUid, moduleId) {
+  const mid = String(moduleId || "").trim();
+  if (!mid) {
+    const err = new Error("moduleId required");
+    err.status = 400;
+    throw err;
+  }
+  const row = await dbGet("SELECT * FROM modules WHERE module_id = ?", [mid]);
+  if (!row) {
+    const err = new Error("Module not found");
+    err.status = 404;
+    throw err;
+  }
+  await assertCanEditTrack(actorUid, row.track_id);
+  const lessons = await dbAll(
+    "SELECT lesson_id, media_id FROM lessons WHERE module_id = ?",
+    [mid],
+  );
+  await dualWrite({
+    label: `admin-mod-del:${mid}`,
+    writeFn: async () => {
+      for (const lesson of lessons) {
+        await dbRun("DELETE FROM progress WHERE lesson_id = ?", [lesson.lesson_id]);
+        await dbRun("DELETE FROM submissions WHERE lesson_id = ?", [
+          lesson.lesson_id,
+        ]);
+        try {
+          await dbRun("DELETE FROM quiz_attempts WHERE lesson_id = ?", [
+            lesson.lesson_id,
+          ]);
+        } catch {
+          /* table may not exist on older DBs */
+        }
+        try {
+          await dbRun("DELETE FROM quizzes WHERE lesson_id = ?", [
+            lesson.lesson_id,
+          ]);
+        } catch {
+          /* optional */
+        }
+        if (lesson.media_id) {
+          try {
+            await dbRun(
+              "UPDATE media_assets SET status = ? WHERE media_id = ?",
+              ["detached", lesson.media_id],
+            );
+          } catch {
+            /* optional */
+          }
+        }
+        await dbRun("DELETE FROM lessons WHERE lesson_id = ?", [lesson.lesson_id]);
+      }
+      await dbRun("DELETE FROM modules WHERE module_id = ?", [mid]);
+      return true;
+    },
+    mirrorFn: async () => {
+      const { default: admin } = await import("../config/firebase.js");
+      for (const lesson of lessons) {
+        await admin.database().ref(`lms/lessons/${lesson.lesson_id}`).remove();
+      }
+      await admin.database().ref(`lms/modules/${mid}`).remove();
+    },
+  });
+  return {
+    source: getPrimaryEngine(),
+    data: { deleted: true, moduleId: mid, lessonsDeleted: lessons.length },
   };
 }
 
 export async function adminCreateLesson(actorUid, body = {}) {
-  const { lessonId, moduleId, trackId, title, type } = body;
+  const { lessonId, moduleId, trackId, title } = body;
   if (!lessonId || !moduleId || !trackId || !title) {
     const err = new Error("lessonId, moduleId, trackId, title required");
     err.status = 400;
@@ -248,7 +455,9 @@ export async function adminCreateLesson(actorUid, body = {}) {
   }
   await assertCanEditTrack(actorUid, trackId);
   const now = Date.now();
-  const hasQuiz = body.hasQuiz || type === "quiz" ? 1 : 0;
+  const type = normalizeLessonType(body.type);
+  const does = body.blurb || body.does || "";
+  const quizFlag = body.hasQuiz != null ? (body.hasQuiz ? 1 : 0) : type === "quiz" ? 1 : 0;
   const hasAssignment = body.hasAssignment || type === "assignment" ? 1 : 0;
   await dualWrite({
     label: `admin-lesson:${lessonId}`,
@@ -264,10 +473,10 @@ export async function adminCreateLesson(actorUid, body = {}) {
           moduleId,
           trackId,
           title,
-          body.does || "",
-          type || "read",
+          does,
+          type,
           body.estimatedMinutes || 0,
-          hasQuiz,
+          quizFlag,
           hasAssignment,
           body.contentUrl || null,
           body.mediaId || null,
@@ -284,8 +493,9 @@ export async function adminCreateLesson(actorUid, body = {}) {
         moduleId,
         trackId,
         title,
-        type: type || "read",
-        hasQuiz: Boolean(hasQuiz),
+        does,
+        type,
+        hasQuiz: Boolean(quizFlag),
         hasAssignment: Boolean(hasAssignment),
         mediaId: body.mediaId || null,
       });
@@ -293,8 +503,165 @@ export async function adminCreateLesson(actorUid, body = {}) {
   });
   return {
     source: getPrimaryEngine(),
-    data: { lesson: { lessonId, moduleId, trackId, title, type: type || "read" } },
+    data: { lesson: { lessonId, moduleId, trackId, title, type, does } },
   };
+}
+
+export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
+  const lid = String(lessonId || "").trim();
+  if (!lid) {
+    const err = new Error("lessonId required");
+    err.status = 400;
+    throw err;
+  }
+  const row = await dbGet("SELECT * FROM lessons WHERE lesson_id = ?", [lid]);
+  if (!row) {
+    const err = new Error("Lesson not found");
+    err.status = 404;
+    throw err;
+  }
+  await assertCanEditTrack(actorUid, row.track_id);
+  const title = body.title != null ? String(body.title).trim() : row.title;
+  if (!title) {
+    const err = new Error("title required");
+    err.status = 400;
+    throw err;
+  }
+  const does =
+    body.blurb != null || body.does != null
+      ? String(body.blurb ?? body.does ?? "")
+      : row.does || "";
+  const type =
+    body.type != null ? normalizeLessonType(body.type) : normalizeLessonType(row.type);
+  const quizFlag =
+    body.hasQuiz != null ? (body.hasQuiz ? 1 : 0) : Number(row.has_quiz || 0);
+  const hasAssignment =
+    body.hasAssignment != null
+      ? body.hasAssignment
+        ? 1
+        : 0
+      : Number(row.has_assignment || 0);
+  const mediaId =
+    body.mediaId !== undefined ? body.mediaId || null : row.media_id || null;
+  const contentUrl =
+    body.contentUrl !== undefined
+      ? body.contentUrl || null
+      : row.content_url || null;
+  const estimatedMinutes =
+    body.estimatedMinutes != null
+      ? Number(body.estimatedMinutes) || 0
+      : Number(row.estimated_minutes || 0);
+  const sortOrder =
+    body.order != null || body.sortOrder != null
+      ? Number(body.order ?? body.sortOrder) || 0
+      : Number(row.sort_order || 0);
+  const now = Date.now();
+  await dualWrite({
+    label: `admin-lesson-upd:${lid}`,
+    writeFn: async () => {
+      await dbRun(
+        `UPDATE lessons SET
+          title = ?, does = ?, type = ?, estimated_minutes = ?,
+          has_quiz = ?, has_assignment = ?, content_url = ?, media_id = ?,
+          sort_order = ?, updated_at = ?
+         WHERE lesson_id = ?`,
+        [
+          title,
+          does,
+          type,
+          estimatedMinutes,
+          quizFlag,
+          hasAssignment,
+          contentUrl,
+          mediaId,
+          sortOrder,
+          now,
+          lid,
+        ],
+      );
+      return true;
+    },
+    mirrorFn: async () => {
+      await mirrorLesson(lid, {
+        lessonId: lid,
+        moduleId: row.module_id,
+        trackId: row.track_id,
+        title,
+        does,
+        type,
+        hasQuiz: Boolean(quizFlag),
+        hasAssignment: Boolean(hasAssignment),
+        mediaId,
+        contentUrl,
+        updatedAt: now,
+      });
+    },
+  });
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      lesson: {
+        lessonId: lid,
+        moduleId: row.module_id,
+        trackId: row.track_id,
+        title,
+        type,
+        does,
+        hasQuiz: Boolean(quizFlag),
+        mediaId,
+      },
+    },
+  };
+}
+
+export async function adminDeleteLesson(actorUid, lessonId) {
+  const lid = String(lessonId || "").trim();
+  if (!lid) {
+    const err = new Error("lessonId required");
+    err.status = 400;
+    throw err;
+  }
+  const row = await dbGet("SELECT * FROM lessons WHERE lesson_id = ?", [lid]);
+  if (!row) {
+    const err = new Error("Lesson not found");
+    err.status = 404;
+    throw err;
+  }
+  await assertCanEditTrack(actorUid, row.track_id);
+  await dualWrite({
+    label: `admin-lesson-del:${lid}`,
+    writeFn: async () => {
+      await dbRun("DELETE FROM progress WHERE lesson_id = ?", [lid]);
+      await dbRun("DELETE FROM submissions WHERE lesson_id = ?", [lid]);
+      try {
+        await dbRun("DELETE FROM quiz_attempts WHERE lesson_id = ?", [lid]);
+      } catch {
+        /* optional */
+      }
+      try {
+        await dbRun("DELETE FROM quizzes WHERE lesson_id = ?", [lid]);
+      } catch {
+        /* optional */
+      }
+      if (row.media_id) {
+        try {
+          await dbRun(
+            "UPDATE media_assets SET status = ? WHERE media_id = ?",
+            ["detached", row.media_id],
+          );
+        } catch {
+          /* optional */
+        }
+      }
+      await dbRun("DELETE FROM lessons WHERE lesson_id = ?", [lid]);
+      return true;
+    },
+    mirrorFn: async () => {
+      const { default: admin } = await import("../config/firebase.js");
+      await admin.database().ref(`lms/lessons/${lid}`).remove();
+    },
+  });
+  return { source: getPrimaryEngine(), data: { deleted: true, lessonId: lid } };
 }
 
 export async function adminSetRole(actorUid, targetUid, userRole) {
@@ -506,6 +873,21 @@ export async function adminTrackOverview(actorUid, trackId) {
      WHERE track_id = ? AND assignment_id IS NOT NULL`,
     [tid],
   );
+  const modules = await dbAll(
+    `SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order ASC, created_at ASC`,
+    [tid],
+  );
+  const lessons = await dbAll(
+    `SELECT lesson_id, module_id, title, type, does, media_id, has_quiz, sort_order
+     FROM lessons WHERE track_id = ? ORDER BY sort_order ASC, created_at ASC`,
+    [tid],
+  );
+  const lessonsByModule = new Map();
+  for (const lesson of lessons) {
+    const list = lessonsByModule.get(lesson.module_id) || [];
+    list.push(lesson);
+    lessonsByModule.set(lesson.module_id, list);
+  }
   const subByKey = new Map();
   for (const s of submissions) {
     const key = `${s.assignment_id}:${s.uid}`;
@@ -523,6 +905,15 @@ export async function adminTrackOverview(actorUid, trackId) {
             students.length,
         );
 
+  function learnerName(s) {
+    const fromEmail = s.email ? String(s.email).split("@")[0] : "";
+    return (
+      (s.display_name && s.display_name !== s.uid ? s.display_name : "") ||
+      fromEmail ||
+      "Learner"
+    );
+  }
+
   return {
     source: getPrimaryEngine(),
     data: {
@@ -530,32 +921,39 @@ export async function adminTrackOverview(actorUid, trackId) {
       title: track.title,
       studentCount: students.length,
       avgProgress,
-      students: students.map((s) => {
-        const fromEmail = s.email ? String(s.email).split("@")[0] : "";
-        const name =
-          (s.display_name && s.display_name !== s.uid ? s.display_name : "") ||
-          fromEmail ||
-          "Learner";
+      chapters: modules.map((m) => {
+        const chapterLessons = lessonsByModule.get(m.module_id) || [];
         return {
-          uid: s.uid,
-          displayName: name,
-          photoUrl: s.photo_url || "",
-          trackPercent: Number(s.track_percent || 0),
-          status: s.status || "in_progress",
-          lastActiveAt: Number(s.last_active_at || 0),
+          moduleId: m.module_id,
+          title: m.title,
+          does: m.does || "",
+          releaseAt: m.release_at != null ? Number(m.release_at) : null,
+          dueAt: m.due_at != null ? Number(m.due_at) : null,
+          lessonCount: chapterLessons.length,
+          lessons: chapterLessons.map((l) => ({
+            lessonId: l.lesson_id,
+            title: l.title,
+            type: l.type || "text",
+            does: l.does || "",
+            mediaId: l.media_id || null,
+            hasQuiz: Boolean(l.has_quiz),
+          })),
         };
       }),
+      students: students.map((s) => ({
+        uid: s.uid,
+        displayName: learnerName(s),
+        photoUrl: s.photo_url || "",
+        trackPercent: Number(s.track_percent || 0),
+        status: s.status || "in_progress",
+        lastActiveAt: Number(s.last_active_at || 0),
+      })),
       assignments: assignments.map((a) => {
         const rows = students.map((s) => {
           const sub = subByKey.get(`${a.assignment_id}:${s.uid}`);
-          const fromEmail = s.email ? String(s.email).split("@")[0] : "";
-          const name =
-            (s.display_name && s.display_name !== s.uid ? s.display_name : "") ||
-            fromEmail ||
-            "Learner";
           return {
             uid: s.uid,
-            displayName: name,
+            displayName: learnerName(s),
             status: sub ? String(sub.status) : "missing",
             score: sub?.score == null ? null : Number(sub.score),
             submittedAt: sub ? Number(sub.submitted_at) : null,
@@ -573,6 +971,126 @@ export async function adminTrackOverview(actorUid, trackId) {
           completedCount: completed,
           missingCount: Math.max(0, students.length - completed),
           students: rows,
+        };
+      }),
+    },
+  };
+}
+
+/** Per-student lesson progress for one track (Open → student click). */
+export async function adminTrackStudentDetail(actorUid, trackId, studentUid) {
+  const role = await loadUserRole(actorUid);
+  if (!canMarkAssignments(role) && !isSuperAdmin(role)) {
+    const err = new Error("Mentor required");
+    err.status = 403;
+    throw err;
+  }
+  const tid = String(trackId || "").trim();
+  const uid = String(studentUid || "").trim();
+  if (!tid || !uid) {
+    const err = new Error("trackId and studentUid required");
+    err.status = 400;
+    throw err;
+  }
+  const enroll = await dbGet(
+    `SELECT e.*, u.display_name, u.photo_url, u.email
+     FROM enrollments e
+     LEFT JOIN users_mirror u ON u.uid = e.uid
+     WHERE e.uid = ? AND e.track_id = ?`,
+    [uid, tid],
+  );
+  if (!enroll) {
+    const err = new Error("Enrollment not found");
+    err.status = 404;
+    throw err;
+  }
+  const modules = await dbAll(
+    `SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order ASC`,
+    [tid],
+  );
+  const lessons = await dbAll(
+    `SELECT * FROM lessons WHERE track_id = ? ORDER BY sort_order ASC`,
+    [tid],
+  );
+  const progressRows = await dbAll(
+    `SELECT * FROM progress WHERE uid = ? AND track_id = ?`,
+    [uid, tid],
+  );
+  const progressByLesson = new Map(
+    progressRows.map((p) => [p.lesson_id, p]),
+  );
+  const submissions = await dbAll(
+    `SELECT * FROM submissions WHERE uid = ? AND track_id = ?
+     ORDER BY submitted_at DESC`,
+    [uid, tid],
+  );
+  const latestSubByLesson = new Map();
+  for (const s of submissions) {
+    if (!latestSubByLesson.has(s.lesson_id)) {
+      latestSubByLesson.set(s.lesson_id, s);
+    }
+  }
+  const fromEmail = enroll.email ? String(enroll.email).split("@")[0] : "";
+  const displayName =
+    (enroll.display_name && enroll.display_name !== uid
+      ? enroll.display_name
+      : "") ||
+    fromEmail ||
+    "Learner";
+  const lessonsByModule = new Map();
+  for (const lesson of lessons) {
+    const list = lessonsByModule.get(lesson.module_id) || [];
+    list.push(lesson);
+    lessonsByModule.set(lesson.module_id, list);
+  }
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      trackId: tid,
+      student: {
+        uid,
+        displayName,
+        photoUrl: enroll.photo_url || "",
+        trackPercent: Number(enroll.track_percent || 0),
+        status: enroll.status || "in_progress",
+        lastActiveAt: Number(enroll.last_active_at || 0),
+      },
+      chapters: modules.map((m) => {
+        const chapterLessons = lessonsByModule.get(m.module_id) || [];
+        return {
+          moduleId: m.module_id,
+          title: m.title,
+          does: m.does || "",
+          releaseAt: m.release_at != null ? Number(m.release_at) : null,
+          dueAt: m.due_at != null ? Number(m.due_at) : null,
+          lessons: chapterLessons.map((l) => {
+            const p = progressByLesson.get(l.lesson_id);
+            const sub = latestSubByLesson.get(l.lesson_id);
+            return {
+              lessonId: l.lesson_id,
+              title: l.title,
+              type: l.type || "text",
+              does: l.does || "",
+              hasQuiz: Boolean(l.has_quiz),
+              opened: Boolean(p?.opened),
+              contentPct: Number(p?.content_pct || 0),
+              watchSeconds: Number(p?.watch_seconds || 0),
+              watchPct: Number(p?.watch_pct || 0),
+              quizPct: Number(p?.quiz_pct || 0),
+              assignmentPct: Number(p?.assignment_pct || 0),
+              lessonPercent: Number(p?.lesson_percent || 0),
+              status: p?.status || "available",
+              submission: sub
+                ? {
+                    submissionId: sub.submission_id,
+                    body: sub.body || "",
+                    status: sub.status,
+                    score: sub.score == null ? null : Number(sub.score),
+                    submittedAt: Number(sub.submitted_at),
+                  }
+                : null,
+            };
+          }),
         };
       }),
     },
