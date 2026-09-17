@@ -20,14 +20,31 @@ function parseAudience(json) {
   }
 }
 
-function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false, lessonCount, moduleCount, price } = {}) {
+function mapTrackCard(
+  row,
+  {
+    enrolled = false,
+    trackPercent = 0,
+    isLiked = false,
+    lessonCount,
+    moduleCount,
+    estimatedMinutes,
+    price,
+  } = {},
+) {
   const trackId = row.track_id || row.trackId;
-  const lessons =
+  const lessonsN =
     lessonCount != null
-      ? String(lessonCount)
+      ? Number(lessonCount)
       : row.lessons != null
-        ? String(row.lessons)
-        : "0";
+        ? Number(row.lessons)
+        : 0;
+  const minutes =
+    estimatedMinutes != null
+      ? Number(estimatedMinutes)
+      : Number(row.estimated_minutes ?? row.estimatedMinutes ?? 0);
+  // Hours derived from lesson minutes — never a stale tracks.duration column.
+  const hours = minutes > 0 ? Math.max(1, Math.round(minutes / 60)) : 0;
   return {
     courseId: trackId,
     tutorId: row.tutor_id || row.tutorId || "nelsen-org",
@@ -35,8 +52,9 @@ function mapTrackCard(row, { enrolled = false, trackPercent = 0, isLiked = false
     tutorAvatarUrl: row.tutor_avatar_url || row.tutorAvatarUrl || "",
     tutorName: row.tutor_name || row.tutorName || "Nelsen Savannah",
     courseTitle: row.title || row.courseTitle || "",
-    duration: String(row.duration != null && row.duration !== "" ? row.duration : "1"),
-    lessons,
+    duration: String(hours),
+    estimatedMinutes: minutes,
+    lessons: String(lessonsN),
     courseLink: "",
     isLiked: Boolean(isLiked),
     trackId,
@@ -130,6 +148,14 @@ async function moduleCountByTrack() {
   return new Map(rows.map((r) => [r.track_id, Number(r.c)]));
 }
 
+async function minutesByTrack() {
+  const rows = await dbAll(
+    `SELECT track_id, COALESCE(SUM(estimated_minutes), 0) AS m
+     FROM lessons GROUP BY track_id`,
+  );
+  return new Map(rows.map((r) => [r.track_id, Number(r.m)]));
+}
+
 async function pricingByTrack() {
   const rows = await dbAll(
     "SELECT track_id, currency, amount_minor, active FROM track_pricing",
@@ -166,13 +192,15 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
      ORDER BY sort_order ASC, track_id ASC`,
     [schoolId, schoolId],
   );
-  const [likes, enrollMap, lessonCounts, moduleCounts, pricing] = await Promise.all([
-    likesFor(uid),
-    enrollmentsFor(uid),
-    lessonCountByTrack(),
-    moduleCountByTrack(),
-    pricingByTrack(),
-  ]);
+  const [likes, enrollMap, lessonCounts, moduleCounts, minuteTotals, pricing] =
+    await Promise.all([
+      likesFor(uid),
+      enrollmentsFor(uid),
+      lessonCountByTrack(),
+      moduleCountByTrack(),
+      minutesByTrack(),
+      pricingByTrack(),
+    ]);
 
   let tracks = rows.map((row) => {
     const trackId = row.track_id;
@@ -183,6 +211,7 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
       isLiked: likes.has(trackId),
       lessonCount: lessonCounts.get(trackId) || 0,
       moduleCount: moduleCounts.get(trackId) || 0,
+      estimatedMinutes: minuteTotals.get(trackId) || 0,
       price: pricing.get(trackId),
     });
   });
@@ -255,7 +284,7 @@ export async function getTrackById(uid, trackId) {
       if (!row) {
         return { source: getPrimaryEngine(), data: null, notFound: true };
       }
-      const [mods, likes, enrollMap, lessonCounts, moduleLessonCounts, pricing] =
+      const [mods, likes, enrollMap, lessonCounts, moduleLessonCounts, minuteTotals, pricing] =
         await Promise.all([
           dbAll(
             "SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order ASC",
@@ -265,6 +294,7 @@ export async function getTrackById(uid, trackId) {
           enrollmentsFor(uid),
           lessonCountByTrack(),
           lessonCountByModule(),
+          minutesByTrack(),
           pricingByTrack(),
         ]);
       const track = mapTrackCard(row, {
@@ -272,6 +302,8 @@ export async function getTrackById(uid, trackId) {
         trackPercent: enrollMap.get(trackId) || 0,
         isLiked: likes.has(trackId),
         lessonCount: lessonCounts.get(trackId) || 0,
+        moduleCount: mods.length,
+        estimatedMinutes: minuteTotals.get(trackId) || 0,
         price: pricing.get(trackId),
       });
       track.moduleCount = mods.length;

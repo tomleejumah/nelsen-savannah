@@ -83,23 +83,6 @@ function LearningLmsPitch() {
   );
 }
 
-const toneByAudience = {
-  Mentee: "brand",
-  Mentor: "ember",
-  Admin: "maroon",
-} as const;
-
-function trackTone(audience: string[]) {
-  const key = (audience[0] ?? "Mentee") as keyof typeof toneByAudience;
-  return toneByAudience[key] ?? "brand";
-}
-
-const toneClass = {
-  brand: "bg-brand/10 text-brand-soft",
-  ember: "bg-ember/10 text-ember",
-  maroon: "bg-maroon/10 text-maroon",
-} as const;
-
 type DisplayTrack = {
   id: string;
   title: string;
@@ -435,29 +418,22 @@ function LearningPage() {
         ) : null}
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {filteredTracks.map((track) => {
-            const tone = trackTone(track.audience);
-            return (
+          {filteredTracks.map((track) => (
               <article
                 key={track.id}
                 className="relative flex flex-col rounded-3xl border border-border/70 bg-card p-7 transition-shadow hover:shadow-elevated"
               >
-                <span
-                  className={`self-start rounded-full px-3 py-1 text-xs font-semibold ${toneClass[tone]}`}
-                >
-                  {track.audience.join(" · ")}
-                </span>
-                <h3 className="mt-5 text-xl font-bold leading-snug">{track.title}</h3>
+                <h3 className="text-xl font-bold leading-snug">{track.title}</h3>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                   {track.blurb}
                 </p>
-                <div className="mt-6 flex items-center gap-5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
+                <div className="mt-6 flex flex-wrap items-center gap-5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-ember" /> {track.moduleCount} modules
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <BookOpen className="h-3.5 w-3.5 text-ember" /> ~{track.hours} hrs ·{" "}
-                    {track.lessons} lessons
+                    <BookOpen className="h-3.5 w-3.5 text-ember" /> {track.lessons} lessons
+                    {Number(track.hours) > 0 ? ` · ~${track.hours} hrs` : ""}
                   </span>
                 </div>
                 {showingLive ? (
@@ -497,8 +473,7 @@ function LearningPage() {
                   </div>
                 ) : null}
               </article>
-            );
-          })}
+          ))}
         </div>
       </section>
 
