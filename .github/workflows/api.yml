@@ -46,6 +46,7 @@ jobs:
           # All Node APIs live under /home/server/Apis/<name>.
           APP_DIR: /home/server/Apis/nelsen-savannah
         run: |
+          set -euo pipefail
           mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
           # Never write/replace secrets from Actions. .env + Firebase JSON are
           # server-local only until we deliberately wire GitHub Secrets later.
@@ -69,35 +70,41 @@ jobs:
             exit 1
           fi
           rm -rf node_modules
-          npm install --production
+          npm install --omit=dev --no-audit --no-fund
           mkdir -p data uploads uploads/_tmp
-          # Delete then start from APP_DIR so cwd/PORT cannot drift and a failed
-          # `pm2 restart` cannot leave nothing listening on :5002.
-          "$PM2" delete nelsen-savannah || true
-          "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
+          # Restart keeps the process; start only if missing.
+          if "$PM2" describe nelsen-savannah >/dev/null 2>&1; then
+            "$PM2" restart nelsen-savannah --update-env
+          else
+            "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
+          fi
           "$PM2" save
-          # Wait until HTTP is up — PM2 "online" is not enough for smoke.
+          # Short readiness only — full smoke is a separate job.
           ok=0
-          for i in $(seq 1 30); do
+          for i in $(seq 1 15); do
             if curl -sf --max-time 2 http://127.0.0.1:5002/lms/health \
               | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"'; then
               ok=1
-              echo "API healthy on :5002 (attempt $i)"
+              echo "API ready on :5002 (attempt $i)"
               break
             fi
             sleep 1
           done
           if [ "$ok" != 1 ]; then
-            echo "::error::API did not become healthy on :5002 after start"
+            echo "::error::API not ready on :5002 after deploy"
             "$PM2" status nelsen-savannah || true
-            "$PM2" logs nelsen-savannah --lines 50 --nostream || true
+            "$PM2" logs nelsen-savannah --lines 40 --nostream || true
             exit 1
           fi
 
+  smoke:
+    needs: deploy
+    if: github.event_name != 'pull_request'
+    runs-on: self-hosted
+    steps:
       - name: Health smoke (local + nginx)
         run: |
           set -euo pipefail
-          # Same runner as deploy — no second queue wait.
           try_url() {
             local label="$1"
             shift
