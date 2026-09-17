@@ -99,7 +99,7 @@ export function renderBrandedEmail(opts) {
           <tr>
             <td style="padding:18px 32px;background:${BRAND.soft};border-top:1px solid ${BRAND.border};text-align:center;">
               <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:11px;color:${BRAND.muted};">
-                © ${new Date().getFullYear()} Nelsen Savannah Organization + Company Limited · Nairobi, Kenya
+                © ${new Date().getFullYear()} Nelsen Savannah Company Limited · Nairobi, Kenya
               </p>
               <p style="margin:8px 0 0;">
                 <a href="${escapeAttr(SITE_URL)}" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:11px;color:${BRAND.accent};text-decoration:none;">${SITE_URL.replace(/^https?:\/\//, "")}</a>
