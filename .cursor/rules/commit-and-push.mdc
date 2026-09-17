@@ -1,0 +1,16 @@
+---
+description: Always commit and push completed work to GitHub for tracking
+alwaysApply: true
+---
+
+# Commit and push for tracking
+
+After finishing a coherent unit of work in this repo:
+
+1. **Commit** the related changes in focused, step-by-step commits (one concern per commit). Prefer several small commits over one mixed dump.
+2. **Push** to `origin` on the current branch after those commits so GitHub stays the source of truth for tracking.
+3. Do this without waiting to be asked again — the default for this project is commit + push when work is done.
+4. Never commit secrets (`.env`, `google-services.json`, service-account keys, credentials). Warn if they appear in the working tree.
+5. Skip IDE/noise paths unless the user explicitly wants them (`android/.idea/`, `android/.kotlin/`, build artifacts).
+6. Follow the existing commit-message style in `git log` (imperative, why-focused).
+7. Do not force-push `main`/`master`. Use a normal `git push` (or `-u` when setting upstream).
