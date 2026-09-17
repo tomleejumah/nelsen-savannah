@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS modules (
   does TEXT,
   estimated_minutes INTEGER DEFAULT 0,
   sort_order INTEGER DEFAULT 0,
+  release_at INTEGER,
+  due_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (track_id) REFERENCES tracks(track_id)
@@ -127,6 +129,8 @@ CREATE TABLE IF NOT EXISTS progress (
   quiz_pct INTEGER DEFAULT 0,
   assignment_pct INTEGER DEFAULT 0,
   lesson_percent INTEGER DEFAULT 0,
+  watch_seconds INTEGER DEFAULT 0,
+  watch_pct INTEGER DEFAULT 0,
   status TEXT,
   last_platform TEXT,
   updated_at INTEGER NOT NULL,
@@ -259,6 +263,8 @@ CREATE TABLE IF NOT EXISTS modules (
   does TEXT,
   estimated_minutes INTEGER DEFAULT 0,
   sort_order INTEGER DEFAULT 0,
+  release_at BIGINT,
+  due_at BIGINT,
   created_at BIGINT NOT NULL,
   updated_at BIGINT NOT NULL
 );
@@ -307,6 +313,8 @@ CREATE TABLE IF NOT EXISTS progress (
   quiz_pct INTEGER DEFAULT 0,
   assignment_pct INTEGER DEFAULT 0,
   lesson_percent INTEGER DEFAULT 0,
+  watch_seconds INTEGER DEFAULT 0,
+  watch_pct INTEGER DEFAULT 0,
   status TEXT,
   last_platform TEXT,
   updated_at BIGINT NOT NULL,
@@ -419,6 +427,14 @@ async function ensureMigrations() {
       : "ALTER TABLE milestones ADD COLUMN due_at INTEGER",
     "ALTER TABLE milestones ADD COLUMN requires_previous_completion INTEGER NOT NULL DEFAULT 1",
     "ALTER TABLE event_reservations ADD COLUMN uid TEXT",
+    engine === "postgres"
+      ? "ALTER TABLE modules ADD COLUMN release_at BIGINT"
+      : "ALTER TABLE modules ADD COLUMN release_at INTEGER",
+    engine === "postgres"
+      ? "ALTER TABLE modules ADD COLUMN due_at BIGINT"
+      : "ALTER TABLE modules ADD COLUMN due_at INTEGER",
+    "ALTER TABLE progress ADD COLUMN watch_seconds INTEGER DEFAULT 0",
+    "ALTER TABLE progress ADD COLUMN watch_pct INTEGER DEFAULT 0",
   ];
   for (const sql of alters) {
     try {

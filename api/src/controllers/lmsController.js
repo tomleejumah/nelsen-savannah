@@ -598,11 +598,43 @@ export const adminCreateModule = handle("[POST /lms/admin/modules]", async (req)
   return { ...result, status: 201 };
 });
 
+export const adminUpdateModule = handle(
+  "[PUT /lms/admin/modules/:moduleId]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminUpdateModule(req.user.uid, req.params.moduleId, req.body || {});
+  },
+);
+
+export const adminDeleteModule = handle(
+  "[DELETE /lms/admin/modules/:moduleId]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminDeleteModule(req.user.uid, req.params.moduleId);
+  },
+);
+
 export const adminCreateLesson = handle("[POST /lms/admin/lessons]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
   const result = await svc.adminCreateLesson(req.user.uid, req.body || {});
   return { ...result, status: 201 };
 });
+
+export const adminUpdateLesson = handle(
+  "[PUT /lms/admin/lessons/:lessonId]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminUpdateLesson(req.user.uid, req.params.lessonId, req.body || {});
+  },
+);
+
+export const adminDeleteLesson = handle(
+  "[DELETE /lms/admin/lessons/:lessonId]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminDeleteLesson(req.user.uid, req.params.lessonId);
+  },
+);
 
 export const adminSetRole = handle("[PATCH /lms/admin/users/:uid/role]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
@@ -639,6 +671,18 @@ export const adminTrackOverview = handle(
   async (req) => {
     const svc = await import("../services/lmsAdminService.js");
     return svc.adminTrackOverview(req.user.uid, req.params.trackId);
+  },
+);
+
+export const adminTrackStudentDetail = handle(
+  "[GET /lms/admin/tracks/:trackId/overview/students/:uid]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminTrackStudentDetail(
+      req.user.uid,
+      req.params.trackId,
+      req.params.uid,
+    );
   },
 );
 
