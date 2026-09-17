@@ -104,20 +104,24 @@ public class ChatFragment extends Fragment {
     private String pendingMediaType = "file";
     private ActionMode messageActionMode;
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentChatBinding.inflate(inflater, container, false);
-
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Must register before the fragment is created — not in onCreateView.
         imagePicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
                     if (uri != null) sendPickedImage(uri);
                 });
-
         documentPicker = registerForActivityResult(
                 new ActivityResultContracts.GetContent(), uri -> {
                     if (uri != null) sendPickedMedia(uri, pendingMediaType);
                 });
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        binding = FragmentChatBinding.inflate(inflater, container, false);
 
         initConfiguration();
         setupRecyclerView();

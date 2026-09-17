@@ -145,7 +145,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Home"
+                        android:text="@string/nav_home"
                         android:textColor="@color/muted"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -173,7 +173,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Groups"
+                        android:text="@string/nav_groups"
                         android:textColor="@color/muted"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -228,7 +228,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Chat"
+                        android:text="@string/nav_chat"
                         android:textColor="@color/muted"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -256,7 +256,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Profile"
+                        android:text="@string/nav_profile"
                         android:textColor="@color/muted"
                         android:textSize="11sp" />
                 </LinearLayout>

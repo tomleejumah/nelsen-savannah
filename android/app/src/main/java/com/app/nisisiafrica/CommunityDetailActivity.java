@@ -1,16 +1,22 @@
 package com.app.nisisiafrica;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,9 +25,12 @@ import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.data.Model.Community;
 import com.app.nisisiafrica.data.Model.CommunityPost;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
+import com.app.nisisiafrica.data.remote.StorageUploader;
+import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
@@ -35,12 +44,15 @@ public class CommunityDetailActivity extends AppCompatActivity {
     private final CommunityRepository repository = new CommunityRepository();
     private String communityId;
     private String communityName;
+    private String createdBy;
     private boolean isMember = false;
 
     private TextView tvMembers, tvDescription, tvNoPosts;
-    private MaterialButton btnJoin;
+    private MaterialButton btnJoin, btnChangeLogo;
+    private ImageView imgGroupLogo;
     private CommunityPostAdapter postAdapter;
     private ListenerRegistration communityReg, postsReg;
+    private ActivityResultLauncher<PickVisualMediaRequest> logoPicker;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,7 +67,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
         }
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
-        toolbar.setTitle(communityName != null ? communityName : "Group");
+        toolbar.setTitle(communityName != null ? communityName : getString(R.string.groups_title));
         toolbar.setNavigationOnClickListener(v -> finish());
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -66,6 +78,18 @@ public class CommunityDetailActivity extends AppCompatActivity {
         tvDescription = findViewById(R.id.tvDescription);
         tvNoPosts = findViewById(R.id.tvNoPosts);
         btnJoin = findViewById(R.id.btnJoin);
+        btnChangeLogo = findViewById(R.id.btnChangeLogo);
+        imgGroupLogo = findViewById(R.id.imgGroupLogo);
+
+        logoPicker = registerForActivityResult(
+                new ActivityResultContracts.PickVisualMedia(), uri -> {
+                    if (uri != null) uploadLogo(uri);
+                });
+
+        btnChangeLogo.setOnClickListener(v -> logoPicker.launch(
+                new PickVisualMediaRequest.Builder()
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                        .build()));
 
         RecyclerView rvPosts = findViewById(R.id.rvPosts);
         rvPosts.setLayoutManager(new LinearLayoutManager(this));
@@ -93,6 +117,45 @@ public class CommunityDetailActivity extends AppCompatActivity {
         refreshMembership();
     }
 
+    private void uploadLogo(Uri uri) {
+        btnChangeLogo.setEnabled(false);
+        StorageUploader.upload(uri, "community_icons", (ok, url) -> {
+            btnChangeLogo.setEnabled(true);
+            if (!ok || url == null) {
+                Toast.makeText(this, "Logo upload failed", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            repository.updateCommunityIcon(communityId, url, success -> {
+                if (success) {
+                    Glide.with(this).load(url).circleCrop().into(imgGroupLogo);
+                    Toast.makeText(this, "Logo updated", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Could not save logo", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    private void bindLogo(String iconUrl) {
+        if (!TextUtils.isEmpty(iconUrl)) {
+            Glide.with(this)
+                    .load(iconUrl)
+                    .placeholder(R.mipmap.ic_launcher)
+                    .error(R.mipmap.ic_launcher)
+                    .circleCrop()
+                    .into(imgGroupLogo);
+        } else {
+            imgGroupLogo.setImageResource(R.mipmap.ic_launcher);
+        }
+    }
+
+    private void refreshChangeLogoVisibility() {
+        String me = FirebaseAuth.getInstance().getUid();
+        boolean canEdit = Roles.isMentor() || Roles.canManageApp() || Roles.canManageSchoolUsers()
+                || (me != null && me.equals(createdBy));
+        btnChangeLogo.setVisibility(canEdit ? View.VISIBLE : View.GONE);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (Roles.isMentor() || Roles.canManageApp() || Roles.canManageSchoolUsers()) {
@@ -116,10 +179,10 @@ public class CommunityDetailActivity extends AppCompatActivity {
 
     private void confirmDeleteGroup() {
         new AlertDialog.Builder(this)
-                .setTitle("Delete group")
+                .setTitle(R.string.group_delete)
                 .setMessage("Delete \"" + (communityName != null ? communityName : "this group")
                         + "\"? This cannot be undone.")
-                .setPositiveButton("Delete", (d, w) -> repository.deleteCommunity(communityId, success -> {
+                .setPositiveButton(R.string.group_delete, (d, w) -> repository.deleteCommunity(communityId, success -> {
                     if (success) {
                         Toast.makeText(this, "Group deleted", Toast.LENGTH_SHORT).show();
                         finish();
@@ -127,7 +190,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
                         Toast.makeText(this, "Could not delete group", Toast.LENGTH_SHORT).show();
                     }
                 }))
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
@@ -169,8 +232,11 @@ public class CommunityDetailActivity extends AppCompatActivity {
             }
             Community c = snapshot.toObject(Community.class);
             if (c == null) return;
+            createdBy = c.getCreatedBy();
             tvDescription.setText(c.getDescription());
             tvMembers.setText(c.getMemberCount() + " members  \u00b7  " + c.getPostCount() + " posts");
+            bindLogo(c.getIconUrl());
+            refreshChangeLogoVisibility();
         });
 
         postsReg = repository.postsQuery(communityId).addSnapshotListener((snapshot, e) -> {

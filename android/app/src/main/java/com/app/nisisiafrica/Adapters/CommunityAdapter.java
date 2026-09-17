@@ -2,9 +2,11 @@ package com.app.nisisiafrica.Adapters;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -54,6 +56,17 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
         holder.name.setText(c.getName());
         holder.desc.setText(c.getDescription());
         holder.meta.setText(c.getMemberCount() + " members  \u00b7  " + c.getPostCount() + " posts");
+
+        if (!TextUtils.isEmpty(c.getIconUrl())) {
+            Glide.with(holder.logo.getContext())
+                    .load(c.getIconUrl())
+                    .placeholder(R.mipmap.ic_launcher)
+                    .error(R.mipmap.ic_launcher)
+                    .circleCrop()
+                    .into(holder.logo);
+        } else {
+            holder.logo.setImageResource(R.mipmap.ic_launcher);
+        }
 
         bindMemberAvatars(holder.overlap, c.getRecentMemberAvatars());
 
@@ -108,6 +121,7 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView name, desc, meta;
         OverlapImageListView overlap;
+        ImageView logo;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -115,6 +129,7 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
             desc = itemView.findViewById(R.id.tvCommunityDesc);
             meta = itemView.findViewById(R.id.tvCommunityMeta);
             overlap = itemView.findViewById(R.id.overlapImage);
+            logo = itemView.findViewById(R.id.imgCommunityLogo);
         }
     }
 }

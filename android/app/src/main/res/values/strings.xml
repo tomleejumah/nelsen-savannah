@@ -1,8 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Nelsen Savannah</string>
     <string name="terms">I have read and understood the terms of service, privacy policy and community guidelines</string>
-
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="todo">TODO</string>
     <string name="percent_sign" translatable="false">%</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_groups">Groups</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_profile">Profile</string>
+
+    <string name="settings_language">Language</string>
+    <string name="settings_language_hint">English</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_swahili">Kiswahili</string>
+    <string name="language_picker_title">Choose language</string>
+
+    <string name="story_create_personal">Your story</string>
+    <string name="story_create_corporate">Corporate story</string>
+    <string name="story_publish">Publish story</string>
+    <string name="groups_title">Groups</string>
+    <string name="groups_empty_title">No groups yet</string>
+    <string name="groups_empty_body">Join topic spaces, ask questions, and share with mentors and peers.</string>
+    <string name="group_change_logo">Change logo</string>
+    <string name="group_delete">Delete group</string>
 </resources>

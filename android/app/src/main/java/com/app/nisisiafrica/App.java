@@ -6,6 +6,7 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
+import com.app.nisisiafrica.Utils.LocaleHelper;
 import com.app.nisisiafrica.Utils.ThemeManager;
 import com.app.nisisiafrica.Utils.Util;
 
@@ -22,6 +23,7 @@ public class App extends Application {
         // Util must be initialised first: the theme preference is read from it.
         Util.init(this);
         ThemeManager.applyPersistedMode();
+        LocaleHelper.applyPersisted(this);
         appDatabase = AppDatabase.getInstance(this);
         DiditSdk.INSTANCE.initialize(this);
         ProcessLifecycleOwner.get().getLifecycle()

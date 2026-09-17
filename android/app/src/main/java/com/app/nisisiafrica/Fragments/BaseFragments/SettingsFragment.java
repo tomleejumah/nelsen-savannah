@@ -32,10 +32,12 @@ import com.app.nisisiafrica.PinManager;
 import com.app.nisisiafrica.BannerAdminActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SetpinActivity;
+import com.app.nisisiafrica.Utils.LocaleHelper;
 import com.app.nisisiafrica.Utils.ThemeManager;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.remote.ApiClient;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 
 import kotlin.Unit;
@@ -97,6 +99,12 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.btn_instagram).setOnClickListener(v -> openUrlInBrowser(URL_INSTAGRAM));
         view.findViewById(R.id.btn_youtube).setOnClickListener(v -> openUrlInBrowser(URL_YOUTUBE));
         view.findViewById(R.id.btn_facebook).setOnClickListener(v -> openUrlInBrowser(URL_FACEBOOK));
+
+        TextView langHint = view.findViewById(R.id.tv_language_hint);
+        TextView langLabel = view.findViewById(R.id.tv_language_options);
+        if (langLabel != null) langLabel.setText(R.string.settings_language);
+        if (langHint != null) langHint.setText(LocaleHelper.displayLabel(requireContext()));
+        view.findViewById(R.id.cl_language_options).setOnClickListener(v -> showLanguagePicker(langHint));
 
         RelativeLayout cardVerifyProfile = view.findViewById(R.id.cardVerifyProfile);
         cardVerifyProfile.setVisibility(Roles.isMentee() ? View.GONE : View.VISIBLE);
@@ -242,6 +250,36 @@ public class SettingsFragment extends Fragment {
         if (handler != null) {
             handler.stopListening();
         }
+    }
+
+    private void showLanguagePicker(TextView hint) {
+        String[] labels = {
+                getString(R.string.language_english),
+                getString(R.string.language_french),
+                getString(R.string.language_swahili)
+        };
+        String[] tags = {
+                LocaleHelper.LANG_EN,
+                LocaleHelper.LANG_FR,
+                LocaleHelper.LANG_SW
+        };
+        String current = LocaleHelper.current(requireContext());
+        int checked = 0;
+        for (int i = 0; i < tags.length; i++) {
+            if (tags[i].equals(current)) {
+                checked = i;
+                break;
+            }
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.language_picker_title)
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    LocaleHelper.setLanguage(requireActivity(), tags[which]);
+                    if (hint != null) hint.setText(LocaleHelper.displayLabel(requireContext()));
+                    dialog.dismiss();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void updateVerificationUI(String status) {

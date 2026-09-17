@@ -47,10 +47,36 @@
                         android:orientation="vertical"
                         android:padding="16dp">
 
+                        <FrameLayout
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:layout_gravity="center_horizontal"
+                            android:background="@drawable/bg_chip_circle">
+
+                            <ImageView
+                                android:id="@+id/imgGroupLogo"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="2dp"
+                                android:scaleType="centerCrop"
+                                android:src="@mipmap/ic_launcher" />
+                        </FrameLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnChangeLogo"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:text="@string/group_change_logo"
+                            android:textAllCaps="false"
+                            android:visibility="gone" />
+
                         <TextView
                             android:id="@+id/tvDescription"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:textColor="@color/ink_soft"
                             android:textSize="14sp" />
 
