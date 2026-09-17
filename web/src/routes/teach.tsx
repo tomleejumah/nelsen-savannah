@@ -4,7 +4,6 @@ import type { User } from "firebase/auth";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
-import { AddToCoursePanel } from "@/components/lms/AddToCoursePanel";
 import {
   Sheet,
   SheetContent,
@@ -25,7 +24,7 @@ import {
   type TrackCardDto,
 } from "@/lib/lmsApi";
 
-type SidePanel = "add" | "update" | null;
+type SidePanel = "update" | null;
 
 export const Route = createFileRoute("/teach")({
   head: () => ({
@@ -148,8 +147,8 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="courses">
         <h2 className="font-display text-xl font-semibold">Your courses</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Open a course for its students and management. Edit course opens a side
-          panel; Add material adds video, PDF, or an assignment.
+          Open a course for students and syllabus. Edit course opens a side panel
+          to add chapters and lessons.
         </p>
         {tracks.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
@@ -180,13 +179,6 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => openSide(t.trackId, "add")}
-                      className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                    >
-                      Add material
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => openSide(t.trackId, "update")}
                       className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
                     >
@@ -208,36 +200,21 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       >
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader className="pr-8 text-left">
-            <SheetTitle>
-              {sidePanel === "add" ? "Add material" : "Edit course"}
-            </SheetTitle>
+            <SheetTitle>Edit course</SheetTitle>
             <SheetDescription>
-              {sidePanel === "add"
-                ? "Video, PDF, assignment, or scheduled lesson for "
-                : "Title, description, modules, lessons, and media for "}
+              Chapters, dates, and lessons for{" "}
               {tracks.find((t) => t.trackId === cmsTrackId)?.courseTitle ||
                 cmsTrackId ||
                 "this course"}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 pb-8">
-            {sidePanel === "add" && cmsTrackId ? (
-              <AddToCoursePanel
-                user={user}
-                schoolId={schoolId}
-                tracks={tracks}
-                initialTrackId={cmsTrackId}
-                lockTrack
-                onDone={() => {
-                  void load();
-                }}
-              />
-            ) : null}
             {sidePanel === "update" && cmsTrackId ? (
               <CatalogCmsPanel
                 user={user}
                 schoolId={schoolId}
                 selectedTrackId={cmsTrackId}
+                onChanged={() => void load()}
               />
             ) : null}
           </div>

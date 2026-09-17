@@ -1,19 +1,27 @@
 /**
- * Catalog CMS — mentors update existing tracks; admins create new courses via dialog.
+ * Catalog CMS — chapter-centric course editor (manual Save).
+ * Admins create new courses via dialog; mentors grow syllabus by chapters + lessons.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 
 import {
   adminCreateLesson,
   adminCreateModule,
   adminCreateTrack,
+  adminDeleteLesson,
+  adminDeleteModule,
+  adminUpdateLesson,
+  adminUpdateModule,
   adminUpdateTrack,
+  authorLessonQuiz,
   fetchAdminStats,
   fetchLmsModule,
   fetchLmsTrack,
   uploadLessonMedia,
   type AdminStatsDto,
+  type LessonDto,
+  type ModuleDto,
 } from "@/lib/lmsApi";
 import {
   Dialog,
@@ -37,25 +45,33 @@ function slugId(prefix: string, title: string) {
 
 function lessonSlugPrefix(type: string) {
   if (type === "video") return "vid";
-  if (type === "quiz") return "quiz";
-  if (type === "assignment") return "asgn";
-  return "read";
+  if (type === "pdf") return "pdf";
+  if (type === "text") return "txt";
+  return "les";
 }
 
-type AttachedMedia = {
-  filename: string;
-  mediaId: string;
-  lessonId: string;
+function toLocalInput(ms: number | null | undefined) {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(value: string) {
+  const t = new Date(value).getTime();
+  return Number.isFinite(t) ? t : NaN;
+}
+
+type ChapterState = ModuleDto & {
+  lessons: LessonDto[];
 };
 
 export function CatalogCmsPanel({
   user,
   schoolId,
   selectedTrackId,
-  /** Only Admin / SchoolAdmin may create whole new courses. */
   allowCreateTrack = false,
-  lessons,
-  modules,
+  onChanged,
 }: {
   user: User;
   schoolId?: string;
@@ -63,102 +79,107 @@ export function CatalogCmsPanel({
   allowCreateTrack?: boolean;
   lessons?: { lessonId: string; title: string }[];
   modules?: { moduleId: string; title: string }[];
+  onChanged?: () => void;
 }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStatsDto | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [advancedIds, setAdvancedIds] = useState(false);
   const [trackId, setTrackId] = useState("");
   const [trackTitle, setTrackTitle] = useState("");
   const [editTrackId, setEditTrackId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editBlurb, setEditBlurb] = useState("");
   const [editPublished, setEditPublished] = useState(true);
-  const [moduleId, setModuleId] = useState("");
-  const [moduleTrackId, setModuleTrackId] = useState("");
-  const [moduleTitle, setModuleTitle] = useState("");
-  const [lessonId, setLessonId] = useState("");
-  const [lessonModuleId, setLessonModuleId] = useState("");
-  const [lessonTrackId, setLessonTrackId] = useState("");
-  const [lessonTitle, setLessonTitle] = useState("");
-  const [lessonType, setLessonType] = useState("read");
-  const [mediaLessonId, setMediaLessonId] = useState("");
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [uploadPct, setUploadPct] = useState<number | null>(null);
-  const [uploadMsg, setUploadMsg] = useState<string | null>(null);
-  const [attachedMedia, setAttachedMedia] = useState<AttachedMedia[]>([]);
-  const [fetchedModules, setFetchedModules] = useState<
-    { moduleId: string; title: string }[]
-  >([]);
-  const [fetchedLessons, setFetchedLessons] = useState<
-    { lessonId: string; title: string }[]
-  >([]);
+  const [chapters, setChapters] = useState<ChapterState[]>([]);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(
+    null,
+  );
+  const [busy, setBusy] = useState(false);
 
-  const moduleOptions = modules?.length ? modules : fetchedModules;
-  const lessonOptions = lessons?.length ? lessons : fetchedLessons;
+  // Add chapter form
+  const [newChapterTitle, setNewChapterTitle] = useState("");
+  const [newChapterDoes, setNewChapterDoes] = useState("");
+  const [newChapterStart, setNewChapterStart] = useState("");
+  const [newChapterEnd, setNewChapterEnd] = useState("");
+
+  // Edit selected chapter
+  const [chTitle, setChTitle] = useState("");
+  const [chDoes, setChDoes] = useState("");
+  const [chStart, setChStart] = useState("");
+  const [chEnd, setChEnd] = useState("");
+
+  // Add lesson
+  const [lesTitle, setLesTitle] = useState("");
+  const [lesDoes, setLesDoes] = useState("");
+  const [lesType, setLesType] = useState<"text" | "video" | "pdf">("text");
+  const [lesFile, setLesFile] = useState<File | null>(null);
+  const [quizPrompt, setQuizPrompt] = useState("");
+  const [quizOptions, setQuizOptions] = useState("A|Correct option\nB|Wrong option");
+  const [quizCorrect, setQuizCorrect] = useState("A");
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
+
+  const selected = chapters.find((c) => c.moduleId === selectedChapterId) || null;
+
+  const loadSyllabus = useCallback(async () => {
+    const tid = selectedTrackId || editTrackId;
+    if (!tid) {
+      setChapters([]);
+      return;
+    }
+    setBusy(true);
+    try {
+      const token = await user.getIdToken();
+      const envelope = await fetchLmsTrack(token, tid);
+      if (!envelope.ok || !envelope.data) return;
+      const track = envelope.data.track;
+      setEditTrackId(tid);
+      setEditTitle(track.courseTitle || "");
+      setEditBlurb(track.does || "");
+      setEditPublished(true);
+      const mods = envelope.data.modules || [];
+      const loaded: ChapterState[] = [];
+      for (const m of mods) {
+        const modEnv = await fetchLmsModule(token, m.moduleId);
+        loaded.push({
+          ...m,
+          lessons: modEnv.data?.lessons || [],
+        });
+      }
+      setChapters(loaded);
+      if (
+        selectedChapterId &&
+        !loaded.some((c) => c.moduleId === selectedChapterId)
+      ) {
+        setSelectedChapterId(null);
+      }
+    } catch {
+      setMsg("Failed to load syllabus");
+    } finally {
+      setBusy(false);
+    }
+  }, [selectedTrackId, editTrackId, user, selectedChapterId]);
 
   useEffect(() => {
-    if (selectedTrackId) {
-      setEditTrackId(selectedTrackId);
-      setModuleTrackId(selectedTrackId);
-      setLessonTrackId(selectedTrackId);
-    }
+    if (selectedTrackId) setEditTrackId(selectedTrackId);
   }, [selectedTrackId]);
 
   useEffect(() => {
-    const tid = selectedTrackId || editTrackId;
-    if (!tid || (lessons && lessons.length > 0 && modules && modules.length > 0)) {
+    void loadSyllabus();
+  }, [selectedTrackId, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!selected) {
+      setChTitle("");
+      setChDoes("");
+      setChStart("");
+      setChEnd("");
       return;
     }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const token = await user.getIdToken();
-        const envelope = await fetchLmsTrack(token, tid);
-        if (cancelled || !envelope.ok || !envelope.data) return;
-        const mods = envelope.data.modules || [];
-        if (!modules?.length) {
-          setFetchedModules(
-            mods.map((m) => ({ moduleId: m.moduleId, title: m.title })),
-          );
-        }
-        if (!lessons?.length) {
-          const rows: { lessonId: string; title: string }[] = [];
-          await Promise.all(
-            mods.map(async (m) => {
-              const modEnv = await fetchLmsModule(token, m.moduleId);
-              for (const l of modEnv.data?.lessons || []) {
-                rows.push({ lessonId: l.lessonId, title: l.title });
-              }
-            }),
-          );
-          if (!cancelled) setFetchedLessons(rows);
-        }
-      } catch {
-        /* picker falls back to text inputs */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedTrackId, editTrackId, user, lessons, modules]);
-
-  function onModuleTitleChange(title: string) {
-    setModuleTitle(title);
-    if (!advancedIds) setModuleId(slugId("mod", title));
-  }
-
-  function onLessonTitleChange(title: string) {
-    setLessonTitle(title);
-    if (!advancedIds) setLessonId(slugId(lessonSlugPrefix(lessonType), title));
-  }
-
-  function onLessonTypeChange(type: string) {
-    setLessonType(type);
-    if (!advancedIds && lessonTitle.trim()) {
-      setLessonId(slugId(lessonSlugPrefix(type), lessonTitle));
-    }
-  }
+    setChTitle(selected.title);
+    setChDoes(selected.does || "");
+    setChStart(toLocalInput(selected.releaseAt));
+    setChEnd(toLocalInput(selected.dueAt));
+  }, [selected]);
 
   async function loadStats() {
     const token = await user.getIdToken();
@@ -170,415 +191,560 @@ export function CatalogCmsPanel({
     e.preventDefault();
     setMsg(null);
     const token = await user.getIdToken();
+    const id = trackId.trim() || slugId("track", trackTitle);
     const result = await adminCreateTrack(token, {
-      trackId: trackId.trim(),
+      trackId: id,
       title: trackTitle.trim(),
       ...(schoolId ? { schoolId } : {}),
     });
-    setMsg(result.ok ? `Track ${trackId} published` : result.error || "Failed");
+    setMsg(result.ok ? `Track ${id} published` : result.error || "Failed");
     if (result.ok) {
-      setModuleTrackId(trackId.trim());
-      setLessonTrackId(trackId.trim());
-      setEditTrackId(trackId.trim());
+      setEditTrackId(id);
       setTrackId("");
       setTrackTitle("");
       setCreateOpen(false);
       void loadStats();
+      onChanged?.();
     }
   }
 
-  async function updateTrack(e: React.FormEvent) {
+  async function saveTrack(e: React.FormEvent) {
     e.preventDefault();
+    if (!editTrackId.trim()) return;
     setMsg(null);
     const token = await user.getIdToken();
-    const body: { title?: string; blurb?: string; published: boolean } = {
+    const result = await adminUpdateTrack(token, editTrackId.trim(), {
+      ...(editTitle.trim() ? { title: editTitle.trim() } : {}),
+      blurb: editBlurb,
       published: editPublished,
-    };
-    if (editTitle.trim()) body.title = editTitle.trim();
-    if (editBlurb.trim()) body.blurb = editBlurb.trim();
-    const result = await adminUpdateTrack(token, editTrackId.trim(), body);
-    setMsg(result.ok ? `Track ${editTrackId} updated` : result.error || "Failed");
-    if (result.ok) void loadStats();
+    });
+    setMsg(result.ok ? "Course saved" : result.error || "Failed");
+    if (result.ok) {
+      void loadStats();
+      onChanged?.();
+    }
   }
 
-  async function createModule(e: React.FormEvent) {
+  async function addChapter(e: React.FormEvent) {
     e.preventDefault();
+    const tid = (selectedTrackId || editTrackId).trim();
+    if (!tid) {
+      setMsg("Select a course first");
+      return;
+    }
+    const releaseAt = fromLocalInput(newChapterStart);
+    const dueAt = fromLocalInput(newChapterEnd);
+    if (!newChapterTitle.trim() || !Number.isFinite(releaseAt) || !Number.isFinite(dueAt)) {
+      setMsg("Chapter needs title, start, and end");
+      return;
+    }
     setMsg(null);
     const token = await user.getIdToken();
-    const id = moduleId.trim() || slugId("mod", moduleTitle);
+    const id = slugId("mod", newChapterTitle);
     const result = await adminCreateModule(token, {
       moduleId: id,
-      trackId: moduleTrackId.trim(),
-      title: moduleTitle.trim(),
+      trackId: tid,
+      title: newChapterTitle.trim(),
+      does: newChapterDoes.trim(),
+      releaseAt,
+      dueAt,
     });
-    setMsg(result.ok ? `Module ${id} created` : result.error || "Failed");
+    setMsg(result.ok ? `Chapter saved` : result.error || "Failed");
     if (result.ok) {
-      setLessonModuleId(id);
-      setLessonTrackId(moduleTrackId.trim());
+      setNewChapterTitle("");
+      setNewChapterDoes("");
+      setNewChapterStart("");
+      setNewChapterEnd("");
+      setSelectedChapterId(id);
+      await loadSyllabus();
+      onChanged?.();
     }
   }
 
-  async function createLesson(e: React.FormEvent) {
+  async function saveChapter(e: React.FormEvent) {
     e.preventDefault();
+    if (!selected) return;
+    const releaseAt = fromLocalInput(chStart);
+    const dueAt = fromLocalInput(chEnd);
+    if (!chTitle.trim() || !Number.isFinite(releaseAt) || !Number.isFinite(dueAt)) {
+      setMsg("Chapter needs title, start, and end");
+      return;
+    }
     setMsg(null);
     const token = await user.getIdToken();
-    const id = lessonId.trim() || slugId(lessonSlugPrefix(lessonType), lessonTitle);
-    const result = await adminCreateLesson(token, {
-      lessonId: id,
-      moduleId: lessonModuleId.trim(),
-      trackId: lessonTrackId.trim(),
-      title: lessonTitle.trim(),
-      type: lessonType,
-      hasQuiz: lessonType === "quiz",
-      hasAssignment: lessonType === "assignment",
+    const result = await adminUpdateModule(token, selected.moduleId, {
+      title: chTitle.trim(),
+      does: chDoes,
+      releaseAt,
+      dueAt,
     });
-    setMsg(result.ok ? `Lesson ${id} created` : result.error || "Failed");
-    if (result.ok && lessonType === "video") setMediaLessonId(id);
+    setMsg(result.ok ? "Chapter saved" : result.error || "Failed");
+    if (result.ok) {
+      await loadSyllabus();
+      onChanged?.();
+    }
   }
 
-  async function uploadMedia(e: React.FormEvent) {
+  async function deleteChapter() {
+    if (!selected) return;
+    if (!confirm(`Delete chapter “${selected.title}” and its lessons?`)) return;
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await adminDeleteModule(token, selected.moduleId);
+    setMsg(result.ok ? "Chapter deleted" : result.error || "Failed");
+    if (result.ok) {
+      setSelectedChapterId(null);
+      await loadSyllabus();
+      onChanged?.();
+    }
+  }
+
+  async function addLesson(e: React.FormEvent) {
     e.preventDefault();
-    if (!mediaFile) return;
-    setUploadMsg(null);
-    setUploadPct(0);
-    const filename = mediaFile.name;
-    const lesson = mediaLessonId.trim();
+    if (!selected) {
+      setMsg("Select a chapter first");
+      return;
+    }
+    const tid = selected.trackId;
+    if (!lesTitle.trim()) {
+      setMsg("Lesson title required");
+      return;
+    }
+    if ((lesType === "video" || lesType === "pdf") && !lesFile) {
+      setMsg("Choose a file for video/PDF lessons");
+      return;
+    }
+    setMsg(null);
+    const token = await user.getIdToken();
+    const id = slugId(lessonSlugPrefix(lesType), lesTitle);
+    const create = await adminCreateLesson(token, {
+      lessonId: id,
+      moduleId: selected.moduleId,
+      trackId: tid,
+      title: lesTitle.trim(),
+      type: lesType,
+      does: lesDoes.trim(),
+      hasQuiz: Boolean(quizPrompt.trim()) && (lesType === "pdf" || lesType === "video"),
+    });
+    if (!create.ok) {
+      setMsg(create.error || "Failed to create lesson");
+      return;
+    }
     try {
-      const token = await user.getIdToken();
-      const media = await uploadLessonMedia(token, {
-        lessonId: lesson,
-        file: mediaFile,
-        onProgress: setUploadPct,
-      });
-      setUploadMsg(
-        `Attached ${media.mediaId} to ${lesson} (${Math.round(media.sizeBytes / 1024 / 1024)} MB)`,
-      );
-      setAttachedMedia((prev) => [
-        { filename, mediaId: media.mediaId, lessonId: lesson },
-        ...prev,
-      ]);
-      setMediaFile(null);
+      if (lesFile && (lesType === "video" || lesType === "pdf")) {
+        setUploadPct(0);
+        await uploadLessonMedia(token, {
+          lessonId: id,
+          file: lesFile,
+          onProgress: setUploadPct,
+        });
+      }
+      if (quizPrompt.trim() && (lesType === "pdf" || lesType === "video") && schoolId) {
+        const lines = quizOptions
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+        const options = lines.map((line) => {
+          const [oid, ...rest] = line.split("|");
+          const id = (oid || "").trim();
+          return { id, text: rest.join("|").trim() || id };
+        });
+        if (options.length >= 2 && quizCorrect.trim()) {
+          await authorLessonQuiz(token, schoolId, id, {
+            prompt: quizPrompt.trim(),
+            options,
+            correctOptionId: quizCorrect.trim(),
+          });
+          await adminUpdateLesson(token, id, { hasQuiz: true });
+        }
+      }
+      setMsg(`Lesson “${lesTitle.trim()}” saved`);
+      setLesTitle("");
+      setLesDoes("");
+      setLesFile(null);
+      setQuizPrompt("");
+      setUploadPct(null);
+      await loadSyllabus();
+      onChanged?.();
     } catch (err) {
-      setUploadMsg(err instanceof Error ? err.message : "Upload failed");
-    } finally {
+      setMsg(err instanceof Error ? err.message : "Lesson save failed");
       setUploadPct(null);
     }
   }
 
-  function modulePicker() {
-    if (moduleOptions.length > 0) {
-      return (
-        <select
-          required
-          value={lessonModuleId}
-          onChange={(e) => setLessonModuleId(e.target.value)}
-          className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="">Select module</option>
-          {moduleOptions.map((m) => (
-            <option key={m.moduleId} value={m.moduleId}>
-              {m.title}
-            </option>
-          ))}
-        </select>
-      );
+  async function deleteLesson(lessonId: string, title: string) {
+    if (!confirm(`Delete lesson “${title}”?`)) return;
+    const token = await user.getIdToken();
+    const result = await adminDeleteLesson(token, lessonId);
+    setMsg(result.ok ? "Lesson deleted" : result.error || "Failed");
+    if (result.ok) {
+      await loadSyllabus();
+      onChanged?.();
     }
-    if (advancedIds) {
-      return (
-        <input
-          required
-          value={lessonModuleId}
-          onChange={(e) => setLessonModuleId(e.target.value)}
-          placeholder="moduleId"
-          className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-      );
-    }
-    return (
-      <p className="text-xs text-muted-foreground">
-        Add a module first, then pick it for the lesson.
-      </p>
-    );
   }
 
-  function lessonPicker() {
-    if (lessonOptions.length > 0) {
-      return (
-        <select
-          required
-          value={mediaLessonId}
-          onChange={(e) => setMediaLessonId(e.target.value)}
-          className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="">Select lesson</option>
-          {lessonOptions.map((l) => (
-            <option key={l.lessonId} value={l.lessonId}>
-              {l.title}
-            </option>
-          ))}
-        </select>
-      );
-    }
-    return (
-      <input
-        required
-        value={mediaLessonId}
-        onChange={(e) => setMediaLessonId(e.target.value)}
-        placeholder="lessonId"
-        className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-      />
-    );
-  }
+  const activeTrackId = selectedTrackId || editTrackId;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-xl font-semibold">
-          {allowCreateTrack ? "Catalog CMS" : "Update course"}
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {allowCreateTrack ? (
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
+    <div className="space-y-6 text-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="font-display text-lg font-semibold">
+            {allowCreateTrack && !selectedTrackId ? "Catalog CMS" : "Edit course"}
+          </h3>
+          <p className="text-muted-foreground">
+            Chapters share one date window; lessons inside are text, video, or PDF.
+          </p>
+        </div>
+        {allowCreateTrack ? (
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-secondary"
+              >
+                New course
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>New course</DialogTitle>
+                <DialogDescription>
+                  Creates an empty track shell. Add chapters after.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={createTrack} className="space-y-3">
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                  placeholder="Title"
+                  value={trackTitle}
+                  onChange={(e) => {
+                    setTrackTitle(e.target.value);
+                    setTrackId(slugId("track", e.target.value));
+                  }}
+                  required
+                />
                 <button
-                  type="button"
-                  className="rounded-full bg-ember-gradient px-4 py-1.5 text-sm font-semibold text-maroon-foreground"
+                  type="submit"
+                  className="rounded-full bg-ember px-4 py-2 text-sm font-medium text-white"
                 >
-                  New course
+                  Create
                 </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Publish a new course</DialogTitle>
-                  <DialogDescription>
-                    Creates an empty track shell. Mentors fill modules and lessons
-                    later from Teach — they cannot create whole courses.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={(e) => void createTrack(e)} className="mt-4 space-y-3">
-                  <input
-                    required
-                    value={trackId}
-                    onChange={(e) => setTrackId(e.target.value)}
-                    placeholder="trackId (e.g. track-machine-learning)"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-                  />
-                  <input
-                    required
-                    value={trackTitle}
-                    onChange={(e) => setTrackTitle(e.target.value)}
-                    placeholder="Course title"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
-                  >
-                    Publish course
-                  </button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          ) : null}
+              </form>
+            </DialogContent>
+          </Dialog>
+        ) : null}
+      </div>
+
+      {msg ? (
+        <p className="rounded-lg bg-secondary/60 px-3 py-2 text-xs">{msg}</p>
+      ) : null}
+
+      {stats ? (
+        <p className="text-xs text-muted-foreground">
+          Enrollments {stats.enrollmentsTotal} · Avg {stats.avgTrackPercent}% ·
+          Completions (30d) {stats.completions30d}
           <button
             type="button"
+            className="ml-2 underline"
             onClick={() => void loadStats()}
-            className="rounded-full border border-border px-4 py-1.5 text-sm"
           >
             Refresh stats
           </button>
-        </div>
-      </div>
-      {msg ? <p className="text-sm text-ember">{msg}</p> : null}
-      {stats ? (
-        <p className="text-sm text-muted-foreground">
-          Enrollments {stats.enrollmentsTotal} · Avg {stats.avgTrackPercent}% ·
-          Completions (30d) {stats.completions30d}
         </p>
-      ) : null}
-      {!allowCreateTrack ? (
-        <p className="text-xs text-muted-foreground">
-          New whole courses are created by admins. Here you update an existing
-          track and add modules, lessons, and media.
+      ) : (
+        <button
+          type="button"
+          className="text-xs underline text-muted-foreground"
+          onClick={() => void loadStats()}
+        >
+          Load stats
+        </button>
+      )}
+
+      {!activeTrackId ? (
+        <p className="text-muted-foreground">
+          Open a course from Teach, or create one above.
         </p>
-      ) : null}
-
-      <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={advancedIds}
-          onChange={(e) => setAdvancedIds(e.target.checked)}
-        />
-        Advanced: edit ids
-      </label>
-
-      <form onSubmit={(e) => void updateTrack(e)} className="space-y-2">
-        <h3 className="font-medium">Update track</h3>
-        <div className="flex flex-wrap gap-2">
-          {advancedIds ? (
+      ) : (
+        <>
+          <form onSubmit={saveTrack} className="space-y-3 rounded-2xl border border-border/70 p-4">
+            <h4 className="font-medium">Course</h4>
             <input
+              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              placeholder="Title"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+            />
+            <textarea
+              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              placeholder="Description"
+              rows={2}
+              value={editBlurb}
+              onChange={(e) => setEditBlurb(e.target.value)}
+            />
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={editPublished}
+                onChange={(e) => setEditPublished(e.target.checked)}
+              />
+              Published
+            </label>
+            <button
+              type="submit"
+              className="rounded-full bg-ember px-4 py-1.5 text-sm font-medium text-white"
+            >
+              Save
+            </button>
+          </form>
+
+          <section className="space-y-3">
+            <h4 className="font-medium">Chapters</h4>
+            {busy ? (
+              <p className="text-muted-foreground">Loading syllabus…</p>
+            ) : chapters.length === 0 ? (
+              <p className="text-muted-foreground">No chapters yet.</p>
+            ) : (
+              <ul className="divide-y divide-border/60 rounded-2xl border border-border/70">
+                {chapters.map((c) => (
+                  <li key={c.moduleId}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedChapterId(c.moduleId)}
+                      className={`flex w-full flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-left hover:bg-secondary/40 ${
+                        selectedChapterId === c.moduleId ? "bg-secondary/50" : ""
+                      }`}
+                    >
+                      <span className="font-medium">{c.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {c.lessons.length} lesson{c.lessons.length === 1 ? "" : "s"}
+                        {c.releaseAt && c.dueAt
+                          ? ` · ${new Date(c.releaseAt).toLocaleDateString()} → ${new Date(c.dueAt).toLocaleDateString()}`
+                          : " · dates missing"}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <form
+            onSubmit={addChapter}
+            className="space-y-3 rounded-2xl border border-dashed border-border p-4"
+          >
+            <h4 className="font-medium">Add chapter</h4>
+            <input
+              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              placeholder="Title (e.g. Introduction)"
+              value={newChapterTitle}
+              onChange={(e) => setNewChapterTitle(e.target.value)}
               required
-              value={editTrackId}
-              onChange={(e) => setEditTrackId(e.target.value)}
-              placeholder="trackId"
-              className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
-          ) : null}
-          <input
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="New title"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            value={editBlurb}
-            onChange={(e) => setEditBlurb(e.target.value)}
-            placeholder="Description"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={editPublished}
-              onChange={(e) => setEditPublished(e.target.checked)}
+            <textarea
+              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              placeholder="Description"
+              rows={2}
+              value={newChapterDoes}
+              onChange={(e) => setNewChapterDoes(e.target.value)}
             />
-            Published
-          </label>
-          <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
-            Save
-          </button>
-        </div>
-      </form>
-
-      <form onSubmit={(e) => void createModule(e)} className="space-y-2">
-        <h3 className="font-medium">New module</h3>
-        <div className="flex flex-wrap gap-2">
-          <input
-            required
-            value={moduleTitle}
-            onChange={(e) => onModuleTitleChange(e.target.value)}
-            placeholder="Title"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          {advancedIds ? (
-            <>
-              <input
-                value={moduleId}
-                onChange={(e) => setModuleId(e.target.value)}
-                placeholder="moduleId"
-                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              <input
-                required
-                value={moduleTrackId}
-                onChange={(e) => setModuleTrackId(e.target.value)}
-                placeholder="trackId"
-                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-            </>
-          ) : null}
-          <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
-            Add module
-          </button>
-        </div>
-      </form>
-
-      <form onSubmit={(e) => void createLesson(e)} className="space-y-2">
-        <h3 className="font-medium">New lesson</h3>
-        <div className="flex flex-wrap gap-2">
-          <input
-            required
-            value={lessonTitle}
-            onChange={(e) => onLessonTitleChange(e.target.value)}
-            placeholder="Title"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          {modulePicker()}
-          <select
-            value={lessonType}
-            onChange={(e) => onLessonTypeChange(e.target.value)}
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="read">read</option>
-            <option value="video">video</option>
-            <option value="quiz">quiz</option>
-            <option value="assignment">assignment</option>
-          </select>
-          {advancedIds ? (
-            <>
-              <input
-                value={lessonId}
-                onChange={(e) => setLessonId(e.target.value)}
-                placeholder="lessonId"
-                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              {!moduleOptions.length ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="space-y-1 text-xs">
+                <span className="text-muted-foreground">Start</span>
                 <input
+                  type="datetime-local"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  value={newChapterStart}
+                  onChange={(e) => setNewChapterStart(e.target.value)}
                   required
-                  value={lessonModuleId}
-                  onChange={(e) => setLessonModuleId(e.target.value)}
-                  placeholder="moduleId"
-                  className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
                 />
-              ) : null}
-              <input
-                required
-                value={lessonTrackId}
-                onChange={(e) => setLessonTrackId(e.target.value)}
-                placeholder="trackId"
-                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-            </>
-          ) : null}
-          <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
-            Add lesson
-          </button>
-        </div>
-      </form>
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="text-muted-foreground">End</span>
+                <input
+                  type="datetime-local"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  value={newChapterEnd}
+                  onChange={(e) => setNewChapterEnd(e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+            <button
+              type="submit"
+              className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
+            >
+              Save chapter
+            </button>
+          </form>
 
-      <form onSubmit={(e) => void uploadMedia(e)} className="space-y-2">
-        <h3 className="font-medium">Lesson media</h3>
-        <p className="text-sm text-muted-foreground">
-          The file goes straight to private storage. Learners only ever receive a
-          short-lived signed link.
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {lessonPicker()}
-          <input
-            required
-            type="file"
-            accept="video/*,audio/*,application/pdf"
-            onChange={(e) => setMediaFile(e.target.files?.[0] ?? null)}
-            className="min-w-[12rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={uploadPct !== null || !mediaFile}
-            className="rounded-full border border-border px-4 py-2 text-sm disabled:opacity-50"
-          >
-            {uploadPct !== null ? `Uploading ${uploadPct}%` : "Upload media"}
-          </button>
-        </div>
-        {uploadPct !== null ? (
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full bg-ember transition-all"
-              style={{ width: `${uploadPct}%` }}
-            />
-          </div>
-        ) : null}
-        {uploadMsg ? <p className="text-sm">{uploadMsg}</p> : null}
-        {attachedMedia.length > 0 ? (
-          <ul className="space-y-1 rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-            {attachedMedia.map((row, i) => (
-              <li key={`${row.mediaId}-${i}`}>
-                <span className="font-medium text-foreground">{row.filename}</span>
-                {` · ${row.mediaId} · lesson ${row.lessonId}`}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </form>
+          {selected ? (
+            <div className="space-y-4 rounded-2xl border border-border/70 p-4">
+              <form onSubmit={saveChapter} className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="font-medium">Edit chapter</h4>
+                  <button
+                    type="button"
+                    onClick={() => void deleteChapter()}
+                    className="text-xs text-destructive underline"
+                  >
+                    Delete chapter
+                  </button>
+                </div>
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                  value={chTitle}
+                  onChange={(e) => setChTitle(e.target.value)}
+                  required
+                />
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                  rows={2}
+                  value={chDoes}
+                  onChange={(e) => setChDoes(e.target.value)}
+                />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="space-y-1 text-xs">
+                    <span className="text-muted-foreground">Start</span>
+                    <input
+                      type="datetime-local"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      value={chStart}
+                      onChange={(e) => setChStart(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label className="space-y-1 text-xs">
+                    <span className="text-muted-foreground">End</span>
+                    <input
+                      type="datetime-local"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      value={chEnd}
+                      onChange={(e) => setChEnd(e.target.value)}
+                      required
+                    />
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-full bg-ember px-4 py-1.5 font-medium text-white"
+                >
+                  Save
+                </button>
+              </form>
+
+              <div className="space-y-2">
+                <h5 className="font-medium">Lessons in this chapter</h5>
+                {selected.lessons.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">None yet.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {selected.lessons.map((l) => (
+                      <li
+                        key={l.lessonId}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2"
+                      >
+                        <span>
+                          <span className="font-medium">{l.title}</span>
+                          <span className="ml-2 text-xs uppercase text-muted-foreground">
+                            {l.type === "read" ? "text" : l.type}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          className="text-xs text-destructive underline"
+                          onClick={() => void deleteLesson(l.lessonId, l.title)}
+                        >
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <form onSubmit={addLesson} className="space-y-3 border-t border-border/60 pt-4">
+                <h5 className="font-medium">Add lesson</h5>
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                  placeholder="Title"
+                  value={lesTitle}
+                  onChange={(e) => setLesTitle(e.target.value)}
+                  required
+                />
+                <label className="space-y-1 text-xs block">
+                  <span className="text-muted-foreground">Media type</span>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={lesType}
+                    onChange={(e) =>
+                      setLesType(e.target.value as "text" | "video" | "pdf")
+                    }
+                  >
+                    <option value="text">Text (write & submit)</option>
+                    <option value="video">Video (watch time)</option>
+                    <option value="pdf">PDF (doc + questions)</option>
+                  </select>
+                </label>
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                  rows={3}
+                  placeholder={
+                    lesType === "text"
+                      ? "Prompts — what mentees should write / submit"
+                      : "Description"
+                  }
+                  value={lesDoes}
+                  onChange={(e) => setLesDoes(e.target.value)}
+                />
+                {lesType === "video" || lesType === "pdf" ? (
+                  <>
+                    <input
+                      type="file"
+                      accept={lesType === "video" ? "video/*" : "application/pdf"}
+                      onChange={(e) => setLesFile(e.target.files?.[0] || null)}
+                    />
+                    <textarea
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                      rows={2}
+                      placeholder="Optional question prompt"
+                      value={quizPrompt}
+                      onChange={(e) => setQuizPrompt(e.target.value)}
+                    />
+                    {quizPrompt.trim() ? (
+                      <>
+                        <textarea
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                          rows={3}
+                          placeholder={"id|option text (one per line)"}
+                          value={quizOptions}
+                          onChange={(e) => setQuizOptions(e.target.value)}
+                        />
+                        <input
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                          placeholder="Correct option id"
+                          value={quizCorrect}
+                          onChange={(e) => setQuizCorrect(e.target.value)}
+                        />
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
+                {uploadPct != null ? (
+                  <p className="text-xs text-muted-foreground">Upload {uploadPct}%</p>
+                ) : null}
+                <button
+                  type="submit"
+                  className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
+                >
+                  Save lesson
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

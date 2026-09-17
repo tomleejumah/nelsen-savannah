@@ -26,15 +26,22 @@ const RESIGN_LEAD_SECONDS = 60;
 function SignedMediaPlayer({
   user,
   lesson,
+  onWatchProgress,
 }: {
   user: User | null;
   lesson: LessonDto;
+  onWatchProgress?: (info: { watchSeconds: number; watchPct: number }) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [url, setUrl] = useState(lesson.playbackUrl || lesson.contentUrl || "");
   const [expiresAt, setExpiresAt] = useState(lesson.playbackExpiresAt ?? null);
   const [refreshing, setRefreshing] = useState(false);
+  const lastReport = useRef(0);
   const mediaId = lesson.mediaId ?? null;
+  const isPdf =
+    lesson.type === "pdf" ||
+    /\.pdf(\?|$)/i.test(url) ||
+    (lesson as { isPdf?: boolean }).isPdf === true;
 
   useEffect(() => {
     setUrl(lesson.playbackUrl || lesson.contentUrl || "");
@@ -73,11 +80,32 @@ function SignedMediaPlayer({
     return () => clearTimeout(timer);
   }, [expiresAt, mediaId, resign]);
 
+  function reportWatch() {
+    const video = videoRef.current;
+    if (!video || !onWatchProgress) return;
+    const duration = video.duration;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const watched = Math.floor(video.currentTime);
+    const pct = Math.min(100, Math.round((watched / duration) * 100));
+    const now = Date.now();
+    if (now - lastReport.current < 4000 && pct < 95) return;
+    lastReport.current = now;
+    onWatchProgress({ watchSeconds: watched, watchPct: pct });
+  }
+
   const playable =
-    /\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/");
+    !isPdf &&
+    (/\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/"));
 
   return (
     <div className="space-y-3">
+      {isPdf && url ? (
+        <iframe
+          title={lesson.title}
+          src={url}
+          className="h-[28rem] w-full rounded-xl border border-border bg-background"
+        />
+      ) : null}
       {playable ? (
         <video
           ref={videoRef}
@@ -85,6 +113,9 @@ function SignedMediaPlayer({
           controls
           src={url || undefined}
           onError={() => void resign()}
+          onTimeUpdate={reportWatch}
+          onPause={reportWatch}
+          onEnded={reportWatch}
         />
       ) : null}
       <a
@@ -93,7 +124,7 @@ function SignedMediaPlayer({
         rel="noreferrer"
         className="inline-flex text-sm font-semibold text-ember hover:underline"
       >
-        Open lesson media
+        {isPdf ? "Open PDF" : "Open lesson media"}
       </a>
       {expiresAt ? (
         <p className="text-xs text-muted-foreground">
@@ -180,6 +211,32 @@ function LessonPage() {
           }
         : prev,
     );
+  }
+
+  async function onWatchProgress(info: {
+    watchSeconds: number;
+    watchPct: number;
+  }) {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const result = await patchLessonProgress(token, lessonId, {
+        opened: true,
+        watchSeconds: info.watchSeconds,
+        watchPct: info.watchPct,
+        contentPct: info.watchPct,
+        lastPlatform: "web",
+      });
+      if (result.ok && result.data) {
+        applyProgress(
+          result.data.progress.lessonPercent,
+          result.data.progress.status,
+          result.data.progress.trackPercent,
+        );
+      }
+    } catch {
+      /* ignore transient watch sync errors */
+    }
   }
 
   async function markComplete() {
@@ -272,8 +329,14 @@ function LessonPage() {
   }
 
   const done = (lesson?.lessonPercent ?? 0) >= 80;
+  const lessonType =
+    lesson?.type === "read" ? "text" : lesson?.type || "text";
   const showQuiz = Boolean(lesson?.hasQuiz || lesson?.quiz);
-  const showAssignment = Boolean(lesson?.hasAssignment || lesson?.assignmentPrompt);
+  const showAssignment = Boolean(
+    lesson?.hasAssignment ||
+      lesson?.assignmentPrompt ||
+      lessonType === "text",
+  );
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
@@ -304,19 +367,22 @@ function LessonPage() {
           </p>
         ) : lesson ? (
           <>
-            <p className="eyebrow mt-8 capitalize text-ember">{lesson.type}</p>
+            <p className="eyebrow mt-8 capitalize text-ember">{lessonType}</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{lesson.title}</h1>
             {(() => {
               const locked =
                 Boolean(lesson.milestone) && !lesson.milestone!.available;
               if (locked) {
+                const reason = lesson.milestone!.lockedReason;
                 return (
                   <>
                     <p className="mt-4 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm">
-                      This milestone is locked
-                      {lesson.milestone!.lockedReason === "release_date"
+                      This chapter is locked
+                      {reason === "release_date"
                         ? ` until ${new Date(lesson.milestone!.releaseAt).toLocaleString()}.`
-                        : " until you complete the previous one."}
+                        : reason === "expired"
+                          ? ` — the window ended${lesson.milestone!.dueAt ? ` ${new Date(lesson.milestone!.dueAt).toLocaleString()}` : ""}.`
+                          : " until you complete the previous step."}
                     </p>
                     <div className="mt-8 flex flex-wrap items-center gap-3">
                       <Link
@@ -324,7 +390,7 @@ function LessonPage() {
                         params={{ trackId }}
                         className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
                       >
-                        Back to modules
+                        Back to chapters
                       </Link>
                     </div>
                   </>
@@ -341,7 +407,9 @@ function LessonPage() {
                   <div className="mt-8 space-y-4 rounded-2xl border border-border/70 bg-card p-6 sm:p-8">
                     <p className="text-base leading-relaxed text-foreground">
                       {lesson.does ||
-                        "Work through this lesson, then mark it complete."}
+                        (lessonType === "text"
+                          ? "Read the prompts below and submit your answers."
+                          : "Work through this lesson, then mark it complete.")}
                     </p>
                     {lesson.bodyHtml ? (
                       <div
@@ -350,7 +418,15 @@ function LessonPage() {
                       />
                     ) : null}
                     {lesson.playbackUrl || lesson.contentUrl ? (
-                      <SignedMediaPlayer user={user} lesson={lesson} />
+                      <SignedMediaPlayer
+                        user={user}
+                        lesson={lesson}
+                        onWatchProgress={
+                          lessonType === "video"
+                            ? (info) => void onWatchProgress(info)
+                            : undefined
+                        }
+                      />
                     ) : null}
                   </div>
 
@@ -427,11 +503,13 @@ function LessonPage() {
                   {showAssignment && (
                     <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
                       <h2 className="font-display text-lg font-semibold">
-                        Assignment
+                        {lessonType === "text" ? "Your response" : "Assignment"}
                       </h2>
                       <p className="text-sm text-muted-foreground">
                         {lesson.assignmentPrompt ||
-                          "Write your response and submit for mentor review."}
+                          (lessonType === "text"
+                            ? "Write your answers in the box below and submit."
+                            : "Write your response and submit for mentor review.")}
                       </p>
                       {submittedOk ? (
                         <p className="inline-flex items-center gap-2 text-sm font-medium text-brand-soft">

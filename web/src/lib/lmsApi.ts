@@ -84,6 +84,8 @@ export type ModuleDto = {
   lessonCount: number;
   modulePercent?: number;
   status?: string;
+  releaseAt?: number | null;
+  dueAt?: number | null;
 };
 
 export type LessonDto = {
@@ -507,6 +509,8 @@ export async function patchLessonProgress(
     contentPct?: number;
     quizPct?: number;
     assignmentPct?: number;
+    watchSeconds?: number;
+    watchPct?: number;
     lastPlatform?: "web" | "android";
   },
 ) {
@@ -517,6 +521,8 @@ export async function patchLessonProgress(
       trackPercent: number;
       modulePercent: number;
       status: string;
+      watchSeconds?: number;
+      watchPct?: number;
     };
   }>(`/lms/progress/${lessonId}`, idToken, {
     method: "PATCH",
@@ -626,6 +632,22 @@ export type TrackOverviewDto = {
   title: string;
   studentCount: number;
   avgProgress: number;
+  chapters: {
+    moduleId: string;
+    title: string;
+    does: string;
+    releaseAt: number | null;
+    dueAt: number | null;
+    lessonCount: number;
+    lessons: {
+      lessonId: string;
+      title: string;
+      type: string;
+      does: string;
+      mediaId: string | null;
+      hasQuiz: boolean;
+    }[];
+  }[];
   students: {
     uid: string;
     displayName: string;
@@ -652,9 +674,61 @@ export type TrackOverviewDto = {
   }[];
 };
 
+export type TrackStudentDetailDto = {
+  trackId: string;
+  student: {
+    uid: string;
+    displayName: string;
+    photoUrl: string;
+    trackPercent: number;
+    status: string;
+    lastActiveAt: number;
+  };
+  chapters: {
+    moduleId: string;
+    title: string;
+    does: string;
+    releaseAt: number | null;
+    dueAt: number | null;
+    lessons: {
+      lessonId: string;
+      title: string;
+      type: string;
+      does: string;
+      hasQuiz: boolean;
+      opened: boolean;
+      contentPct: number;
+      watchSeconds: number;
+      watchPct: number;
+      quizPct: number;
+      assignmentPct: number;
+      lessonPercent: number;
+      status: string;
+      submission: {
+        submissionId: string;
+        body: string;
+        status: string;
+        score: number | null;
+        submittedAt: number;
+      } | null;
+    }[];
+  }[];
+};
+
 export async function fetchTrackOverview(idToken: string, trackId: string) {
   return lmsFetch<TrackOverviewDto>(
     `/lms/admin/tracks/${encodeURIComponent(trackId)}/overview`,
+    idToken,
+  );
+}
+
+export async function fetchTrackStudentDetail(
+  idToken: string,
+  trackId: string,
+  uid: string,
+) {
+  return lmsFetch<TrackStudentDetailDto>(
+    `/lms/admin/tracks/${encodeURIComponent(trackId)}/overview/students/${encodeURIComponent(uid)}`,
     idToken,
   );
 }
@@ -883,13 +957,60 @@ export async function adminUpdateTrack(
 
 export async function adminCreateModule(
   idToken: string,
-  body: { moduleId: string; trackId: string; title: string; does?: string },
+  body: {
+    moduleId: string;
+    trackId: string;
+    title: string;
+    blurb?: string;
+    does?: string;
+    releaseAt: number;
+    dueAt: number;
+  },
 ) {
-  return lmsFetch<{ module: { moduleId: string } }>("/lms/admin/modules", idToken, {
+  return lmsFetch<{
+    module: {
+      moduleId: string;
+      title: string;
+      does: string;
+      releaseAt: number;
+      dueAt: number;
+    };
+  }>("/lms/admin/modules", idToken, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+export async function adminUpdateModule(
+  idToken: string,
+  moduleId: string,
+  body: {
+    title?: string;
+    blurb?: string;
+    does?: string;
+    releaseAt?: number;
+    dueAt?: number;
+    order?: number;
+  },
+) {
+  return lmsFetch<{ module: { moduleId: string } }>(
+    `/lms/admin/modules/${encodeURIComponent(moduleId)}`,
+    idToken,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function adminDeleteModule(idToken: string, moduleId: string) {
+  return lmsFetch<{ deleted: boolean }>(
+    `/lms/admin/modules/${encodeURIComponent(moduleId)}`,
+    idToken,
+    { method: "DELETE" },
+  );
 }
 
 export async function adminCreateLesson(
@@ -900,15 +1021,53 @@ export async function adminCreateLesson(
     trackId: string;
     title: string;
     type?: string;
+    blurb?: string;
+    does?: string;
     hasQuiz?: boolean;
     hasAssignment?: boolean;
+    mediaId?: string;
   },
 ) {
-  return lmsFetch<{ lesson: { lessonId: string } }>("/lms/admin/lessons", idToken, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return lmsFetch<{ lesson: { lessonId: string; type: string } }>(
+    "/lms/admin/lessons",
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function adminUpdateLesson(
+  idToken: string,
+  lessonId: string,
+  body: {
+    title?: string;
+    blurb?: string;
+    does?: string;
+    type?: string;
+    hasQuiz?: boolean;
+    mediaId?: string | null;
+  },
+) {
+  return lmsFetch<{ lesson: { lessonId: string } }>(
+    `/lms/admin/lessons/${encodeURIComponent(lessonId)}`,
+    idToken,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function adminDeleteLesson(idToken: string, lessonId: string) {
+  return lmsFetch<{ deleted: boolean }>(
+    `/lms/admin/lessons/${encodeURIComponent(lessonId)}`,
+    idToken,
+    { method: "DELETE" },
+  );
 }
 
 export type MediaUploadTicketDto = {

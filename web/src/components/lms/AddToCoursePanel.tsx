@@ -102,10 +102,14 @@ export function AddToCoursePanel({
     if (moduleId && moduleId !== "__new__") return moduleId;
     const modTitle = newModuleTitle.trim() || "New section";
     const id = slugId("mod", modTitle);
+    const releaseAt = Date.now();
+    const dueAt = releaseAt + 7 * 24 * 60 * 60 * 1000;
     const result = await adminCreateModule(token, {
       moduleId: id,
       trackId,
       title: modTitle,
+      releaseAt,
+      dueAt,
     });
     if (!result.ok) throw new Error(result.error || "Could not create module");
     setModuleId(id);
@@ -118,6 +122,8 @@ export function AddToCoursePanel({
         does: "",
         estimatedMinutes: 0,
         lessonCount: 0,
+        releaseAt,
+        dueAt,
       },
     ]);
     return id;
