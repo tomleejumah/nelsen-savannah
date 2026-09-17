@@ -2,12 +2,20 @@ package com.app.nisisiafrica.data.Model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
 
 /**
- * Corporate advertisement "story". Authored in the Firebase console under the
- * realtime-database node "stories/{id}".
+ * Home story. {@code storyType}:
+ * <ul>
+ *   <li>{@code personal} — mentee/mentor posts</li>
+ *   <li>{@code corporate} — school/super-admin marketplace / brand ads</li>
+ * </ul>
+ * Media is hosted on our API under {@code /uploads/app/stories/...}.
  */
 public class Story implements Parcelable {
+    public static final String TYPE_PERSONAL = "personal";
+    public static final String TYPE_CORPORATE = "corporate";
+
     public String storyId;
     public String companyName;
     public String logoUrl;
@@ -19,9 +27,20 @@ public class Story implements Parcelable {
     public String ownerId;
     public long expiresAt;
     public long views;
+    /** personal | corporate — defaults to corporate for legacy rows. */
+    public String storyType = TYPE_CORPORATE;
 
     public Story() {
         // Required for Firebase deserialization
+    }
+
+    public boolean isPersonal() {
+        return TYPE_PERSONAL.equalsIgnoreCase(storyType);
+    }
+
+    public String displayLabel() {
+        if (!TextUtils.isEmpty(companyName)) return companyName;
+        return isPersonal() ? "Story" : "Brand";
     }
 
     protected Story(Parcel in) {
@@ -36,6 +55,8 @@ public class Story implements Parcelable {
         ownerId = in.readString();
         expiresAt = in.readLong();
         views = in.readLong();
+        storyType = in.readString();
+        if (storyType == null || storyType.isEmpty()) storyType = TYPE_CORPORATE;
     }
 
     @Override
@@ -51,6 +72,7 @@ public class Story implements Parcelable {
         dest.writeString(ownerId);
         dest.writeLong(expiresAt);
         dest.writeLong(views);
+        dest.writeString(storyType != null ? storyType : TYPE_CORPORATE);
     }
 
     @Override

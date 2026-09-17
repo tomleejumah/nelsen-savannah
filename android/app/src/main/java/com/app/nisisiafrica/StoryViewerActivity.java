@@ -129,7 +129,7 @@ public class StoryViewerActivity extends AppCompatActivity {
             progressBars.get(i).setProgress(i < index ? 100 : 0);
         }
 
-        headerName.setText(story.companyName != null ? story.companyName : "");
+        headerName.setText(story.displayLabel());
         String logo = !TextUtils.isEmpty(story.logoUrl) ? story.logoUrl : story.mediaUrl;
         Glide.with(this).load(logo).placeholder(R.drawable.ic_image_placeholder).into(headerLogo);
         Glide.with(this).load(story.mediaUrl).placeholder(R.drawable.ic_image_placeholder).into(storyImage);
@@ -141,7 +141,7 @@ public class StoryViewerActivity extends AppCompatActivity {
             caption.setVisibility(View.GONE);
         }
 
-        if (!TextUtils.isEmpty(story.ctaUrl)) {
+        if (!story.isPersonal() && !TextUtils.isEmpty(story.ctaUrl)) {
             cta.setVisibility(View.VISIBLE);
             cta.setOnClickListener(v -> {
                 String url = normalizeUrl(story.ctaUrl);

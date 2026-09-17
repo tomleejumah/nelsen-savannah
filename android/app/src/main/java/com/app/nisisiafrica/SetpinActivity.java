@@ -3,7 +3,6 @@ package com.app.nisisiafrica;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +22,8 @@ public class SetpinActivity extends AppCompatActivity {
     private String firstPin = null;
     private boolean confirming = false;
     private String uid;
+    private TextView tvTitle;
+    private TextView tvSubtitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +42,9 @@ public class SetpinActivity extends AppCompatActivity {
             return;
         }
         uid = user.getUid();
+
+        tvTitle = findViewById(R.id.tvSetPinTitle);
+        tvSubtitle = findViewById(R.id.tvSetPinSubtitle);
 
         dots = new View[]{
                 findViewById(R.id.dot1),
@@ -82,23 +86,29 @@ public class SetpinActivity extends AppCompatActivity {
             firstPin = entered;
             confirming = true;
             reset();
-            toast("Re-enter PIN");
+            if (tvTitle != null) tvTitle.setText("Confirm PIN");
+            if (tvSubtitle != null) tvSubtitle.setText("Re-enter your PIN to confirm");
         } else {
             if (entered.equals(firstPin)) {
                 try {
                     PinManager.savePin(this, uid, entered);
-                    toast("PIN set");
+                    if (tvSubtitle != null) tvSubtitle.setText("PIN saved");
                     setResult(RESULT_OK);
                     finish();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    toast("Failed to save PIN");
+                    if (tvSubtitle != null) tvSubtitle.setText("Failed to save PIN — try again");
+                    confirming = false;
+                    firstPin = null;
+                    reset();
+                    if (tvTitle != null) tvTitle.setText("Set PIN code");
                 }
             } else {
-                toast("PINs do not match");
+                if (tvSubtitle != null) tvSubtitle.setText("PINs do not match — start again");
                 confirming = false;
                 firstPin = null;
                 reset();
+                if (tvTitle != null) tvTitle.setText("Set PIN code");
             }
         }
     }
@@ -123,10 +133,6 @@ public class SetpinActivity extends AppCompatActivity {
                             : R.drawable.pin_dot_empty
             );
         }
-    }
-
-    private void toast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
     @Override

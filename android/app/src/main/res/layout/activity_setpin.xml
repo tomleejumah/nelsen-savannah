@@ -21,6 +21,7 @@
             android:contentDescription="Back" />
 
         <TextView
+            android:id="@+id/tvSetPinTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
@@ -39,6 +40,7 @@
         android:paddingTop="80dp">
 
         <TextView
+            android:id="@+id/tvSetPinSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Set a PIN now to access your account quickly and securely"

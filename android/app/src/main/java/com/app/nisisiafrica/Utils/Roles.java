@@ -101,6 +101,11 @@ public final class Roles {
         return isSuperAdmin() || isSchoolAdmin();
     }
 
+    /** Corporate marketplace stories (brand ads). Personal stories are for mentees/mentors. */
+    public static boolean postsCorporateStories() {
+        return isSuperAdmin() || isSchoolAdmin();
+    }
+
     public static boolean isAdmin(String role) {
         return isSuperAdmin(role);
     }
