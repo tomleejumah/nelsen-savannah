@@ -54,13 +54,15 @@ jobs:
           mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
           # Never write/replace secrets from Actions. .env + Firebase JSON are
           # server-local only until we deliberately wire GitHub Secrets later.
+          # Exclude only runtime data at repo root (sqlite). Do NOT use bare
+          # 'data/' — that also skips src/data/lmsSeed.json and breaks catalog.
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
             --exclude 'firebase-service-account.json' \
             --exclude '.github' \
             --exclude 'uploads/' \
-            --exclude 'data/' \
+            --exclude '/data/' \
             "${GITHUB_WORKSPACE}/api/" "$APP_DIR/"
           cd "$APP_DIR"
           if [ ! -f .env ]; then
