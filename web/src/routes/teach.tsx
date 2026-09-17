@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
@@ -36,8 +36,15 @@ export const Route = createFileRoute("/teach")({
       },
     ],
   }),
-  component: TeachPage,
+  component: TeachLayout,
 });
+
+/** Parent of /teach/$trackId — must render Outlet for course workspace. */
+function TeachLayout() {
+  const childMatches = useChildMatches();
+  if (childMatches.length > 0) return <Outlet />;
+  return <TeachPage />;
+}
 
 function TeachPage() {
   return (
@@ -65,7 +72,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [cmsTrackId, setCmsTrackId] = useState("");
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
 
-  const schoolId = me.schoolId || me.activeSchoolId || "nelsen-digital";
+  const schoolId = me.schoolId || me.activeSchoolId || "";
 
   function openSide(trackId: string, panel: SidePanel) {
     setCmsTrackId(trackId);
