@@ -9,18 +9,22 @@
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarCommunities"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/bg"
-        app:title="Groups"
-        app:titleTextColor="@color/ink"
-        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display" />
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:title="Groups" />
+
+    <!-- Clears shared glass top bar in MainActivity -->
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="top" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCommunities"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingTop="?attr/actionBarSize"
+        android:paddingTop="8dp"
         android:paddingBottom="96dp" />
 
     <LinearLayout

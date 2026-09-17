@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      MentUI design tokens — editorial cream / warm ink / chocolate (web-aligned).
+      Pure white light mode. Brand accents stay chocolate.
       Layouts should prefer MentUI names (maroon_*, bg, surface, ink, …).
-      Legacy semantic aliases map onto MentUI so existing screens pick up the restyle.
     -->
 
     <!-- Chocolate scale (name kept as maroon_* for layout compatibility) -->
@@ -11,17 +10,17 @@
     <color name="maroon_700">#5C3D2A</color>
     <color name="maroon_600">#6B4A32</color>
     <color name="maroon_500">#7A5640</color>
-    <color name="maroon_100">#EDE6DC</color>
-    <color name="maroon_050">#F5F0E8</color>
+    <color name="maroon_100">#F0EBE4</color>
+    <color name="maroon_050">#F7F5F2</color>
 
-    <!-- Surfaces / text / line (light; night overrides) -->
-    <color name="bg">#F5F1E8</color>
-    <color name="surface">#FAF8F4</color>
-    <color name="surface_2">#EBE4D6</color>
-    <color name="ink">#2C2620</color>
-    <color name="ink_soft">#4A433A</color>
-    <color name="muted">#6B6358</color>
-    <color name="line">#D4CBB8</color>
+    <!-- Surfaces / text / line (light white) -->
+    <color name="bg">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_2">#F4F4F5</color>
+    <color name="ink">#1A1A1A</color>
+    <color name="ink_soft">#3F3F46</color>
+    <color name="muted">#71717A</color>
+    <color name="line">#E4E4E7</color>
 
     <color name="tag_blue_bg">#E7EEFB</color>
     <color name="tag_blue_text">#33509E</color>
@@ -62,7 +61,7 @@
     <color name="bubble_received">@color/surface_2</color>
     <color name="bubble_quote_bg">#1A5C3D2A</color>
 
-    <color name="blur_overlay">#85F5F1E8</color>
+    <color name="blur_overlay">#CCFFFFFF</color>
 
     <color name="nav_home">@color/maroon_700</color>
     <color name="nav_communities">@color/maroon_600</color>
@@ -133,9 +132,9 @@
     <color name="accent_gold_light">#FEF3C7</color>
     <color name="progress_background">@color/surface_2</color>
 
-    <color name="dark_background_primary">#0F172A</color>
-    <color name="dark_background_secondary">#1E293B</color>
-    <color name="dark_card_background">#334155</color>
-    <color name="dark_text_primary">#F8FAFC</color>
-    <color name="dark_text_secondary">#CBD5E1</color>
+    <color name="dark_background_primary">#000000</color>
+    <color name="dark_background_secondary">#000000</color>
+    <color name="dark_card_background">#121212</color>
+    <color name="dark_text_primary">#FFFFFF</color>
+    <color name="dark_text_secondary">#E5E5E5</color>
 </resources>

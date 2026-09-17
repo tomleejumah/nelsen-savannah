@@ -92,7 +92,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     hasUpvoted = nowUpvoted;
                     applyUpvoteStyle();
                     if (nowUpvoted) {
-                        NotificationSender.like(postAuthorId, postId, "liked your post");
+                        NotificationSender.like(postAuthorId, postId, "liked your post", communityId);
                     }
                 }
             });
@@ -115,7 +115,7 @@ public class PostDetailActivity extends AppCompatActivity {
                 if (success) {
                     etComment.setText("");
                     clearReply();
-                    NotificationSender.comment(postAuthorId, postId, "commented on your post", body);
+                    NotificationSender.comment(postAuthorId, postId, "commented on your post", body, communityId);
                 }
             });
         });

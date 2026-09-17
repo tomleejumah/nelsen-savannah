@@ -98,13 +98,14 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         // Click listener
         holder.itemView.setOnClickListener(v -> {
-            // Mark as read via API
             clickListener.onNotificationClick(notification);
-
-            //todo Open course details
-//            Intent intent = new Intent(context, CourseDetailActivity.class);
-//            intent.putExtra("courseId", notification.getCourseID());
-//            context.startActivity(intent);
+            String communityId = notification.getCommunityId();
+            if (communityId != null && !communityId.isEmpty()) {
+                Intent intent = new Intent(context, com.app.nisisiafrica.PostDetailActivity.class);
+                intent.putExtra(com.app.nisisiafrica.PostDetailActivity.EXTRA_COMMUNITY_ID, communityId);
+                intent.putExtra(com.app.nisisiafrica.PostDetailActivity.EXTRA_POST_ID, notification.getCourseID());
+                context.startActivity(intent);
+            }
         });
     }
 

@@ -88,86 +88,6 @@
             </RelativeLayout>
 
             <androidx.appcompat.widget.AppCompatTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:text="GENERAL"
-                android:textAllCaps="true"
-                android:textColor="@color/muted"
-                android:textSize="12sp" />
-
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/cl_share_app"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:background="?attr/selectableItemBackground">
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:scaleType="fitXY"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@+id/tv_share_app"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/ic_settings_share"/>
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/tv_share_app"
-                    android:layout_width="0dp"
-                    android:fontFamily="@font/poppins_regular"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
-                    android:layout_marginStart="56dp"
-                    android:layout_marginEnd="20dp"
-                    android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Share"
-                    android:textAlignment="viewStart"
-                    android:textSize="14sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/cl_rate_app"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:background="?attr/selectableItemBackground">
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:scaleType="fitXY"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@+id/tv_rate_app"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/ic_settings_rate"
-                     />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/tv_rate_app"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="56dp"
-                    android:layout_marginEnd="20dp"
-                    android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Rate us"
-                    android:textAlignment="viewStart"
-                    android:textSize="14sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.appcompat.widget.AppCompatTextView
                 style="@style/FontMedium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -277,6 +197,153 @@
                     app:layout_constraintTop_toTopOf="parent"
                     android:rotation="180"
                     app:srcCompat="@drawable/ic_back" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="GENERAL"
+                android:textAllCaps="true"
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_share_app"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:scaleType="fitXY"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/tv_share_app"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_settings_share"/>
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_share_app"
+                    android:layout_width="0dp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:layout_marginStart="56dp"
+                    android:layout_marginEnd="20dp"
+                    android:gravity="left|center_vertical|center_horizontal|center|start"
+                    android:text="Share"
+                    android:textAlignment="viewStart"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_rate_app"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:scaleType="fitXY"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/tv_rate_app"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_settings_rate"
+                     />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_rate_app"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="56dp"
+                    android:layout_marginEnd="20dp"
+                    android:gravity="left|center_vertical|center_horizontal|center|start"
+                    android:text="Rate us"
+                    android:textAlignment="viewStart"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_programmes"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:scaleType="fitXY"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/tv_programmes"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_trophy" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_programmes"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="56dp"
+                    android:layout_marginEnd="20dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Our programmes"
+                    android:textAlignment="viewStart"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_logout"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:scaleType="fitXY"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/tv_logout"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_back"
+                    app:tint="@color/accent_error" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_logout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="56dp"
+                    android:layout_marginEnd="20dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Log out"
+                    android:textAlignment="viewStart"
+                    android:textColor="@color/accent_error"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.appcompat.widget.AppCompatTextView
@@ -397,9 +464,9 @@
                         android:gravity="center"
                         android:weightSum="4">
 
-                        <!-- LinkedIn Button -->
                         <ImageButton
-                            android:backgroundTint="@color/white"
+                            android:background="@android:color/transparent"
+                            android:backgroundTint="@android:color/transparent"
                             android:id="@+id/btn_linkedin"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
@@ -413,7 +480,8 @@
 
                         <!-- Twitter/X Button -->
                         <ImageButton
-                            android:backgroundTint="@color/white"
+                            android:background="@android:color/transparent"
+                            android:backgroundTint="@android:color/transparent"
                             android:id="@+id/btn_instagram"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
@@ -427,7 +495,8 @@
 
                         <!-- GitHub Button -->
                         <ImageButton
-                            android:backgroundTint="@color/white"
+                            android:background="@android:color/transparent"
+                            android:backgroundTint="@android:color/transparent"
                             android:id="@+id/btn_youtube"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
@@ -441,7 +510,8 @@
 
                         <!-- Instagram Button -->
                         <ImageButton
-                            android:backgroundTint="@color/white"
+                            android:background="@android:color/transparent"
+                            android:backgroundTint="@android:color/transparent"
                             android:id="@+id/btn_facebook"
                             android:layout_width="0dp"
                             android:layout_height="56dp"

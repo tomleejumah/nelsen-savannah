@@ -68,20 +68,11 @@
                 <TextView
                     android:id="@+id/tvFormatTag"
                     style="@style/Nelsen.Tag.Blue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:textSize="10sp" />
-
-                <TextView
-                    android:id="@+id/tvEventDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:fontFamily="@font/font_ui"
-                    android:textColor="@color/muted"
-                    android:textSize="11sp" />
+                    android:textSize="10sp" />
 
                 <LinearLayout
                     android:id="@+id/seatsBlock"
@@ -119,6 +110,26 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/tvEventDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/font_ui"
+                android:textColor="@color/muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvEventPlace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/font_ui"
+                android:maxLines="1"
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+
+            <TextView
                 android:id="@+id/tvEventTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -145,21 +156,10 @@
 
                 <TextView
                     android:id="@+id/tvEventTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/font_ui"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvEventPlace"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
                     android:fontFamily="@font/font_ui"
-                    android:maxLines="1"
                     android:textColor="@color/muted"
                     android:textSize="12sp" />
 
@@ -181,18 +181,18 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReserve"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+                style="@style/Nelsen.Button.Primary"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="40dp"
                 android:layout_gravity="end"
+                android:layout_marginTop="8dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:minWidth="0dp"
-                android:paddingHorizontal="4dp"
+                android:paddingHorizontal="16dp"
                 android:text="Reserve"
                 android:textAllCaps="false"
-                android:textColor="@color/maroon_600"
-                android:textSize="12sp" />
+                android:textSize="13sp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

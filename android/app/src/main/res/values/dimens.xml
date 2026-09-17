@@ -15,4 +15,12 @@
     <dimen name="step_bar_h1">5dp</dimen>
     <dimen name="step_bar_h2">9dp</dimen>
     <dimen name="step_bar_h3">14dp</dimen>
+
+    <!-- Responsive page gutters (overridden in values-sw600dp) -->
+    <dimen name="page_horizontal">12dp</dimen>
+    <dimen name="page_horizontal_lg">16dp</dimen>
+    <dimen name="content_max_width">720dp</dimen>
+    <dimen name="bottom_nav_margin_h">16dp</dimen>
+    <dimen name="course_card_width">160dp</dimen>
+    <dimen name="course_card_height">220dp</dimen>
 </resources>
