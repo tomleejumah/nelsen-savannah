@@ -1,6 +1,6 @@
 export const ORG = {
   name: "Nelsen Savannah",
-  legal: "Nelsen Savannah Organization + Company Limited",
+  legal: "Nelsen Savannah Company Limited",
   hubName: "Nelsen Savannah Innovation Hub",
   tagline: "Learn. Build. Connect. Create Impact.",
   pillars: "Education • Technology • Innovation • Community",
