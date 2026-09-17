@@ -66,10 +66,14 @@ jobs:
           find "$WEB_DIR" "$WEB_DIR_MIRROR" -type d -exec chmod 755 {} +
           find "$WEB_DIR" "$WEB_DIR_MIRROR" -type f -exec chmod 644 {} +
 
+  smoke:
+    needs: deploy
+    if: github.event_name != 'pull_request'
+    runs-on: self-hosted
+    steps:
       - name: Live site smoke (nginx + public)
         run: |
           set -euo pipefail
-          # Same runner as deploy — no second queue wait.
           check() {
             local label="$1"
             shift
