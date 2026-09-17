@@ -38,9 +38,10 @@ public class CreateCommunityActivity extends AppCompatActivity {
         TextInputEditText etName = findViewById(R.id.etName);
         TextInputEditText etDescription = findViewById(R.id.etDescription);
         MaterialButton btnCreate = findViewById(R.id.btnCreate);
-        imgCommunity = findViewById(R.id.imgCommunity);
+            imgCommunity = findViewById(R.id.imgCommunity);
+            imgCommunity.setImageResource(R.mipmap.ic_launcher);
 
-        imagePicker = registerForActivityResult(
+            imagePicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
                     if (uri != null) {
                         selectedImage = uri;

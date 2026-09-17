@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nelsen Savannah</string>
+    <string name="terms">Nimesoma na kuelewa masharti ya huduma, sera ya faragha na miongozo ya jamii</string>
+
+    <string name="nav_home">Nyumbani</string>
+    <string name="nav_groups">Vikundi</string>
+    <string name="nav_chat">Mazungumzo</string>
+    <string name="nav_profile">Wasifu</string>
+
+    <string name="settings_language">Lugha</string>
+    <string name="settings_language_hint">Kiswahili</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_swahili">Kiswahili</string>
+    <string name="language_picker_title">Chagua lugha</string>
+
+    <string name="story_create_personal">Hadithi yako</string>
+    <string name="story_create_corporate">Hadithi ya kampuni</string>
+    <string name="story_publish">Chapisha hadithi</string>
+    <string name="groups_title">Vikundi</string>
+    <string name="groups_empty_title">Hakuna vikundi bado</string>
+    <string name="groups_empty_body">Jiunge na nafasi za mada, uliza maswali, na shiriki na washauri na wenzako.</string>
+    <string name="group_change_logo">Badilisha nembo</string>
+    <string name="group_delete">Futa kikundi</string>
+</resources>

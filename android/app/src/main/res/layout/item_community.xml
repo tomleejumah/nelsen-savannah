@@ -22,14 +22,15 @@
         <FrameLayout
             android:layout_width="46dp"
             android:layout_height="46dp"
-            android:background="@drawable/bg_chip_circle"
-            android:padding="10dp">
+            android:background="@drawable/bg_chip_circle">
 
             <ImageView
+                android:id="@+id/imgCommunityLogo"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_people"
-                app:tint="@color/maroon_700" />
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher" />
         </FrameLayout>
 
         <LinearLayout

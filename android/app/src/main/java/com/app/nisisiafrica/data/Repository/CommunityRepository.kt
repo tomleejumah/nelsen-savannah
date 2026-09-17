@@ -226,6 +226,13 @@ class CommunityRepository {
             .addOnFailureListener { callback.onResult(false) }
     }
 
+    /** Updates the group logo URL (creator / mentors). */
+    fun updateCommunityIcon(communityId: String, iconUrl: String, callback: BoolCallback) {
+        communityRef(communityId).update("iconUrl", iconUrl)
+            .addOnSuccessListener { callback.onResult(true) }
+            .addOnFailureListener { callback.onResult(false) }
+    }
+
     /** Deletes the group document. Mentors/admins only (enforced by UI). */
     fun deleteCommunity(communityId: String, callback: BoolCallback) {
         communityRef(communityId).delete()

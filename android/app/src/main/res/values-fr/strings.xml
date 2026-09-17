@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nelsen Savannah</string>
+    <string name="terms">J\'ai lu et compris les conditions d\'utilisation, la politique de confidentialité et les règles de la communauté</string>
+
+    <string name="nav_home">Accueil</string>
+    <string name="nav_groups">Groupes</string>
+    <string name="nav_chat">Discussion</string>
+    <string name="nav_profile">Profil</string>
+
+    <string name="settings_language">Langue</string>
+    <string name="settings_language_hint">Français</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_swahili">Kiswahili</string>
+    <string name="language_picker_title">Choisir la langue</string>
+
+    <string name="story_create_personal">Votre story</string>
+    <string name="story_create_corporate">Story entreprise</string>
+    <string name="story_publish">Publier la story</string>
+    <string name="groups_title">Groupes</string>
+    <string name="groups_empty_title">Aucun groupe pour l\'instant</string>
+    <string name="groups_empty_body">Rejoignez des espaces thématiques, posez des questions et partagez avec mentors et pairs.</string>
+    <string name="group_change_logo">Changer le logo</string>
+    <string name="group_delete">Supprimer le groupe</string>
+</resources>
