@@ -187,17 +187,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         plusIcon = view.findViewById(R.id.plusIcon);
         setupCreateFab(view);
 
-        CircleImageView imgDp = view.findViewById(R.id.imgDp);
+        // Avatar lives on MainActivity glass top bar now — do not Glide into a missing imgDp.
         userViewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
             if (data == null) return;
 
             userData = data;
             onUserDataReceived(data);
-            Glide.with(this)
-                    .load(data.getPhotoUrl())
-//                    .placeholder(R.drawable.donation)
-//                        .error(R.drawable.ic_error)
-                    .into(imgDp);
 
             // Floating speed-dial replaced by MainActivity's contextual bottom-bar FAB.
             if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
@@ -254,7 +249,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
 
         // Mentors/Admins never land on "Book a mentor" from the empty calendar state.
-        View emptyBook = view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor);
+        View emptyState = view.findViewById(R.id.emptyStateView);
+        View emptyBook = emptyState != null ? emptyState.findViewById(R.id.btnBookMentor) : null;
         if (emptyBook != null && !Roles.browsesMentors()) {
             emptyBook.setVisibility(View.GONE);
         }
@@ -332,19 +328,24 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
-        view.findViewById(R.id.emptyStateView).findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
-            if (!Roles.browsesMentors()) {
-                showCreateSheet();
-            } else {
-                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
-            }
-        });
+        if (emptyBook != null) {
+            emptyBook.setOnClickListener(v -> {
+                if (!Roles.browsesMentors()) {
+                    showCreateSheet();
+                } else {
+                    startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+                }
+            });
+        }
 
-        view.findViewById(R.id.tvSeeMore).setOnClickListener(v -> {
-            if (Roles.browsesMentors()) {
-                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
-            }
-        });
+        View tvSeeMore = view.findViewById(R.id.tvSeeMore);
+        if (tvSeeMore != null) {
+            tvSeeMore.setOnClickListener(v -> {
+                if (Roles.browsesMentors()) {
+                    startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+                }
+            });
+        }
 
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
@@ -427,10 +428,12 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         TextView showAll = view.findViewById(R.id.showMoreMentors);
         TextView txtSeeAll = view.findViewById(R.id.seeAll);
-        txtSeeAll.setPaintFlags(txtSeeAll.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         View.OnClickListener listener = this::goToViewAll;
-        txtSeeAll.setOnClickListener(listener);
-        showAll.setOnClickListener(listener);
+        if (txtSeeAll != null) {
+            txtSeeAll.setPaintFlags(txtSeeAll.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+            txtSeeAll.setOnClickListener(listener);
+        }
+        if (showAll != null) showAll.setOnClickListener(listener);
 
         tvFindMyPathBlurb = view.findViewById(R.id.tvFindMyPathBlurb);
 
@@ -1131,29 +1134,30 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     private void getEvents(UserData userData, View view) {
         eventViewModel.getEvents().observe(getViewLifecycleOwner(), events -> {
+            View empty = view.findViewById(R.id.emptyStateView);
+            View seeMore = view.findViewById(R.id.tvSeeMore);
 
-            if (events.isEmpty()) {
-                view.findViewById(R.id.emptyStateView).setVisibility(View.VISIBLE);
-                rvUpcomingEvents.setVisibility(View.GONE);
-                btnBookMentor.setText(!Roles.browsesMentors(userData.getUserRole())
-                        ? "Create" : "Book a mentor");
+            if (events == null || events.isEmpty()) {
+                if (empty != null) empty.setVisibility(View.VISIBLE);
+                if (rvUpcomingEvents != null) rvUpcomingEvents.setVisibility(View.GONE);
+                if (btnBookMentor != null) {
+                    btnBookMentor.setText(!Roles.browsesMentors(userData.getUserRole())
+                            ? "Create" : "Book a mentor");
+                }
             } else {
-                view.findViewById(R.id.emptyStateView).setVisibility(View.GONE);
-                rvUpcomingEvents.setVisibility(View.VISIBLE);
+                if (empty != null) empty.setVisibility(View.GONE);
+                if (rvUpcomingEvents != null) rvUpcomingEvents.setVisibility(View.VISIBLE);
 
-                // Filter for upcoming events
                 List<Event> upcoming = events.stream()
                         .filter(e -> e.getDate() >= System.currentTimeMillis())
                         .limit(3)
                         .collect(Collectors.toList());
 
                 eventAdapter.submitList(upcoming);
-                // Home shows next 3 only — no See more / View all.
-                view.findViewById(R.id.tvSeeMore).setVisibility(View.GONE);
+                if (seeMore != null) seeMore.setVisibility(View.GONE);
             }
         });
 
-        // 2. Trigger the actual data fetch
         eventViewModel.fetchEvents(Util.getState(Constants.CURRENT_USER_ID, ""));
     }
 
