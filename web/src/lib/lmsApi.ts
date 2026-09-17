@@ -39,6 +39,7 @@ export type TrackCardDto = {
   tutorName: string;
   courseTitle: string;
   duration: string;
+  estimatedMinutes?: number;
   lessons: string;
   courseLink: string;
   isLiked: boolean;
