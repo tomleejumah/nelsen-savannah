@@ -36,6 +36,7 @@ export function AddToCoursePanel({
   tracks,
   runId,
   initialTrackId,
+  lockTrack = false,
   onDone,
 }: {
   user: User;
@@ -43,6 +44,8 @@ export function AddToCoursePanel({
   tracks: TrackCardDto[];
   runId?: string;
   initialTrackId?: string;
+  /** When true, course is fixed to initialTrackId (no dropdown). */
+  lockTrack?: boolean;
   onDone?: () => void;
 }) {
   const [kind, setKind] = useState<Kind>("video");
@@ -253,22 +256,31 @@ export function AddToCoursePanel({
       <p className="text-xs text-muted-foreground">{kinds.find((k) => k.id === kind)?.blurb}</p>
 
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-3">
-        <label className="block text-sm">
-          <span className="text-muted-foreground">Course (track)</span>
-          <select
-            required
-            value={trackId}
-            onChange={(e) => setTrackId(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Select track</option>
-            {tracks.map((t) => (
-              <option key={t.trackId} value={t.trackId}>
-                {t.courseTitle}
-              </option>
-            ))}
-          </select>
-        </label>
+        {lockTrack && trackId ? (
+          <div className="rounded-xl border border-border/70 bg-background/60 px-4 py-3">
+            <p className="text-xs text-muted-foreground">Course</p>
+            <p className="font-display font-semibold">
+              {tracks.find((t) => t.trackId === trackId)?.courseTitle || trackId}
+            </p>
+          </div>
+        ) : (
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Course (track)</span>
+            <select
+              required
+              value={trackId}
+              onChange={(e) => setTrackId(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Select track</option>
+              {tracks.map((t) => (
+                <option key={t.trackId} value={t.trackId}>
+                  {t.courseTitle}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {(kind === "video" || kind === "pdf") && (
           <>
