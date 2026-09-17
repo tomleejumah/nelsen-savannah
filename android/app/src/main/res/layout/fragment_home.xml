@@ -158,7 +158,7 @@
                         android:visibility="visible" />
                 </LinearLayout>
 
-                <!-- Find My Path — questionnaire → age-filtered LMS tracks -->
+                <!-- Enroll Schools — school picker → courses -->
                 <LinearLayout
                     android:id="@+id/cardFindMyPath"
                     android:layout_width="match_parent"
@@ -184,7 +184,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/font_display"
-                            android:text="Find My Path"
+                            android:text="Enroll Schools"
                             android:textColor="@color/ink"
                             android:textSize="18sp"
                             android:textStyle="bold" />
@@ -195,7 +195,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:fontFamily="@font/font_ui"
-                            android:text="Discover learning paths tailored to your goals."
+                            android:text="Pick a school, then browse and enroll in their courses."
                             android:textColor="@color/muted"
                             android:textSize="13sp" />
                     </LinearLayout>

@@ -314,6 +314,11 @@ public final class LmsModels {
         public String courseImageUrl;
         public String nextLessonId;
         public float progressPct;
+        public String tutorId;
+        public String tutorName;
+        public String tutorAvatarUrl;
+        public String duration;
+        public String programSlug;
     }
 
     public static class Progress {

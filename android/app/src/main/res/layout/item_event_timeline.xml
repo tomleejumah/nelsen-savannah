@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- MentUI event schedule row: side timeline dots + card (max 3 on Home). -->
+<!-- Compact schedule row (pre-MentUI density): date · title · time · small CTA. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -7,18 +7,17 @@
     android:orientation="horizontal"
     android:paddingStart="8dp"
     android:paddingEnd="12dp"
-    android:paddingBottom="4dp">
+    android:paddingBottom="2dp">
 
     <com.github.vipulasri.timelineview.TimelineView
         android:id="@+id/itemDottedLine"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="10dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="8dp"
         app:lineWidth="2dp"
-        app:markerSize="12dp" />
+        app:markerSize="10dp" />
 
-    <!-- Kept for older findViewById callers -->
     <View
         android:id="@+id/dottedLine"
         android:layout_width="0dp"
@@ -35,12 +34,12 @@
         android:id="@+id/eventCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="6dp"
         android:layout_weight="1"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="8dp"
         app:cardBackgroundColor="@color/surface"
-        app:cardCornerRadius="@dimen/radius_card_lg"
-        app:cardElevation="@dimen/elevation_card"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="0dp"
         app:strokeColor="@color/line"
         app:strokeWidth="1dp">
 
@@ -48,7 +47,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -56,73 +57,64 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/tvProgramTag"
+                    style="@style/Nelsen.Tag.Maroon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="10sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tvFormatTag"
+                    style="@style/Nelsen.Tag.Blue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvEventDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tvProgramTag"
-                        style="@style/Nelsen.Tag.Maroon"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:visibility="gone" />
-
-                    <TextView
-                        android:id="@+id/tvFormatTag"
-                        style="@style/Nelsen.Tag.Blue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp" />
-
-                    <TextView
-                        android:id="@+id/tvEventDate"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:fontFamily="@font/font_ui"
-                        android:textColor="@color/muted"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
 
                 <LinearLayout
                     android:id="@+id/seatsBlock"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="end"
-                    android:orientation="vertical"
+                    android:orientation="horizontal"
                     android:visibility="gone">
 
                     <TextView
                         android:id="@+id/tvSeatsLeft"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:drawablePadding="4dp"
                         android:fontFamily="@font/font_ui"
-                        android:gravity="center_vertical"
                         android:textColor="@color/muted"
-                        android:textSize="11sp"
-                        app:drawableStartCompat="@drawable/ic_brand_mark_sm" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/tvSeatsPct"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="end"
+                        android:layout_marginStart="4dp"
                         android:fontFamily="@font/font_ui"
                         android:textColor="@color/muted"
-                        android:textSize="11sp" />
+                        android:textSize="10sp"
+                        android:visibility="gone" />
 
                     <ProgressBar
                         android:id="@+id/seatsProgress"
                         style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="88dp"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="4dp"
-                        android:max="100"
-                        android:progressDrawable="@drawable/progress_seats" />
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -130,28 +122,24 @@
                 android:id="@+id/tvEventTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:fontFamily="@font/font_display"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/font_ui"
+                android:maxLines="1"
                 android:textColor="@color/ink"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvEventDesc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
-                android:maxLines="2"
-                android:textColor="@color/ink_soft"
-                android:textSize="13sp"
                 android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -159,36 +147,29 @@
                     android:id="@+id/tvEventTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:drawablePadding="4dp"
                     android:fontFamily="@font/font_ui"
-                    android:gravity="center_vertical"
                     android:textColor="@color/muted"
-                    android:textSize="12sp"
-                    app:drawableStartCompat="@drawable/ic_clock" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvEventPlace"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:drawablePadding="4dp"
                     android:ellipsize="end"
                     android:fontFamily="@font/font_ui"
-                    android:gravity="center_vertical"
                     android:maxLines="1"
                     android:textColor="@color/muted"
-                    android:textSize="12sp"
-                    app:drawableStartCompat="@drawable/ic_location" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvEventPrice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:fontFamily="@font/font_ui"
                     android:textColor="@color/muted"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:visibility="gone" />
             </LinearLayout>
 
@@ -200,12 +181,18 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReserve"
-                style="@style/Nelsen.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Reserve a seat"
-                android:textAllCaps="false" />
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_gravity="end"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="4dp"
+                android:text="Reserve"
+                android:textAllCaps="false"
+                android:textColor="@color/maroon_600"
+                android:textSize="12sp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

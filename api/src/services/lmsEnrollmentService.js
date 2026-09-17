@@ -262,7 +262,8 @@ export async function listMyEnrollments(uid) {
   if (health.ok) {
     try {
       const rows = await dbAll(
-        `SELECT e.*, t.title AS course_title, t.course_image_url
+        `SELECT e.*, t.title AS course_title, t.course_image_url,
+                t.tutor_id, t.tutor_name, t.tutor_avatar_url, t.duration, t.program_slug
          FROM enrollments e
          JOIN tracks t ON t.track_id = e.track_id
          WHERE e.uid = ?
@@ -277,6 +278,11 @@ export async function listMyEnrollments(uid) {
             courseTitle: row.course_title,
             courseImageUrl: row.course_image_url || "",
             nextLessonId: next,
+            tutorId: row.tutor_id || "",
+            tutorName: row.tutor_name || "",
+            tutorAvatarUrl: row.tutor_avatar_url || "",
+            duration: row.duration || "",
+            programSlug: row.program_slug || "",
           }),
         );
       }

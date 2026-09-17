@@ -16,7 +16,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/eventCard"
     android:layout_width="160dp"
-    android:layout_height="220dp"
+    android:layout_height="wrap_content"
+    android:minHeight="120dp"
     android:layout_marginEnd="4dp"
     android:layout_marginStart="8dp"
     android:layout_marginVertical="4dp"
@@ -31,20 +32,20 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Course Image -->
+        <!-- Course image/video — hidden on home until course is opened -->
         <RelativeLayout
+            android:id="@+id/courseMediaSection"
             android:layout_width="match_parent"
-            android:layout_height="120dp">
+            android:layout_height="120dp"
+            android:visibility="gone">
 
             <ImageView
                 android:id="@+id/iv_course_image"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                app:layout_constraintDimensionRatio="1:1"
                 android:src="@drawable/login" />
 
-            <!-- Online Status Indicator -->
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/likeBtn"
                 android:layout_width="32dp"
