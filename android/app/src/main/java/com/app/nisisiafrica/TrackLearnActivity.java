@@ -61,6 +61,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private TextView tvStatLocked;
     private TextView tvPlayerPlaceholder;
     private VideoView videoView;
+    private View playerFrame;
     private LinearLayout modulesContainer;
     private MaterialButton btnEnroll;
     private String trackId;
@@ -99,6 +100,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         tvStatLocked = findViewById(R.id.tvStatLocked);
         tvPlayerPlaceholder = findViewById(R.id.tvPlayerPlaceholder);
         videoView = findViewById(R.id.videoView);
+        playerFrame = findViewById(R.id.playerFrame);
         modulesContainer = findViewById(R.id.modulesContainer);
         btnEnroll = findViewById(R.id.btnEnroll);
 
@@ -625,6 +627,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void playUrl(String url) {
+        if (playerFrame != null) playerFrame.setVisibility(View.VISIBLE);
         tvPlayerPlaceholder.setVisibility(View.GONE);
         videoView.setVisibility(View.VISIBLE);
         videoView.setVideoURI(Uri.parse(url));

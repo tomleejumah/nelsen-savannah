@@ -540,8 +540,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     }
                     if (n > 0) {
                         tvFindMyPathBlurb.setText(n == 1
-                                ? "1 track in progress — continue where you left off."
-                                : n + " tracks in progress — continue where you left off.");
+                                ? "1 school track in progress — open Enroll Schools to continue."
+                                : n + " school tracks in progress — open Enroll Schools to continue.");
                     } else {
                         refreshFindMyPathCatalogHint(bearer);
                     }
@@ -570,7 +570,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     n = body.data.tracks.size();
                 }
                 if (n > 0) {
-                    tvFindMyPathBlurb.setText(n + " learning tracks ready — pick a path that fits your goals.");
+                    tvFindMyPathBlurb.setText(
+                            "Browse " + n + " schools and enroll in a course that fits you.");
                 }
                 // else keep layout default copy
             }

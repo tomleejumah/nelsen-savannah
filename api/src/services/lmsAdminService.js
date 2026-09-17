@@ -49,6 +49,15 @@ export async function adminCreateTrack(actorUid, body = {}) {
   if (!isSuperAdmin(role)) schoolId = actorSchool;
   const now = Date.now();
   const audienceJson = JSON.stringify(body.audience || ["Mentee"]);
+  const tutorId = body.tutorId || actorUid;
+  const tutorName =
+    body.tutorName || (await actorDisplayName(actorUid));
+  const actorRow = await dbGet(
+    "SELECT photo_url FROM users_mirror WHERE uid = ?",
+    [actorUid],
+  );
+  const tutorAvatarUrl =
+    body.tutorAvatarUrl || actorRow?.photo_url || "";
   await dualWrite({
     label: `admin-track:${trackId}`,
     writeFn: async () => {
@@ -72,9 +81,9 @@ export async function adminCreateTrack(actorUid, body = {}) {
           body.title,
           body.blurb || body.does || "",
           body.imageUrl || "",
-          body.tutorId || "nelsen-org",
-          body.tutorName || "Nelsen Savannah",
-          body.tutorAvatarUrl || "",
+          tutorId,
+          tutorName,
+          tutorAvatarUrl,
           body.duration || "1",
           audienceJson,
           body.order || 0,
@@ -94,6 +103,9 @@ export async function adminCreateTrack(actorUid, body = {}) {
         programSlug: row.program_slug,
         published: Boolean(row.published),
         schoolId,
+        tutorId,
+        tutorName,
+        tutorAvatarUrl,
       });
     },
   });
@@ -108,6 +120,9 @@ export async function adminCreateTrack(actorUid, body = {}) {
         programSlug: body.programSlug || "",
         audience: body.audience || ["Mentee"],
         schoolId,
+        tutorId,
+        tutorName,
+        tutorAvatarUrl,
       },
     },
   };

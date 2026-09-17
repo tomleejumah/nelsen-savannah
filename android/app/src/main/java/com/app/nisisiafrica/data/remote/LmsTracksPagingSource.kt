@@ -8,14 +8,13 @@ import com.app.nisisiafrica.Utils.PathAgeFilter
 import com.app.nisisiafrica.data.Model.CourseItem
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 /**
- * Personalized course feed from GET /lms/enrollments/me.
- * The full catalog remains available through Find My Path / Learning.
+ * Personalized course feed from GET /lms/enrollments/me (LMS DB via API).
+ * Full catalog: Enroll Schools → GET /lms/tracks.
  */
 class LmsTracksPagingSource(
     private val appContext: Context? = null,
@@ -75,56 +74,22 @@ class LmsTracksPagingSource(
             val items = body.data.enrollments.map { enrollment ->
                 CourseItem(
                     courseId = enrollment.trackId ?: "",
-                    tutorId = enrollment.mentorId ?: "",
+                    tutorId = enrollment.tutorId ?: enrollment.mentorId ?: "",
                     courseImageUrl = enrollment.courseImageUrl ?: "",
-                    tutorAvatarUrl = "",
-                    tutorName = "",
+                    tutorAvatarUrl = enrollment.tutorAvatarUrl ?: "",
+                    tutorName = enrollment.tutorName ?: "",
                     courseTitle = enrollment.courseTitle ?: enrollment.trackId ?: "",
-                    duration = "",
+                    duration = enrollment.duration ?: "",
                     lessons = "${enrollment.lessonsCompleted}/${enrollment.lessonsTotal} lessons",
                     courseLink = "",
                     isLiked = false,
-                    programSlug = "",
+                    programSlug = enrollment.programSlug ?: "",
                 )
             }.filter { it.courseId.isNotBlank() }
-            LoadResult.Page(items, prevKey = null, nextKey = null)
+            LoadResult.Page(ageFilter(items), prevKey = null, nextKey = null)
         } catch (e: Exception) {
             Log.e(TAG, "LMS exception", e)
             LoadResult.Page(emptyList(), null, null)
-        }
-    }
-
-    private suspend fun loadFromFirebase(): LoadResult<Int, CourseItem> = withContext(Dispatchers.IO) {
-        try {
-            val snapshot = FirebaseDatabase.getInstance().reference
-                .child("courses")
-                .orderByKey()
-                .get()
-                .await()
-            val items = snapshot.children.mapNotNull { courseSnapshot ->
-                val id = courseSnapshot.child("courseId").getValue(String::class.java)
-                    ?: courseSnapshot.key
-                    ?: return@mapNotNull null
-                if (id.isBlank()) return@mapNotNull null
-                CourseItem(
-                    courseId = id,
-                    tutorId = courseSnapshot.child("tutorId").getValue(String::class.java) ?: "",
-                    courseImageUrl = courseSnapshot.child("courseImageUrl").getValue(String::class.java) ?: "",
-                    tutorAvatarUrl = courseSnapshot.child("mentorImageUrl").getValue(String::class.java) ?: "",
-                    tutorName = courseSnapshot.child("mentorName").getValue(String::class.java) ?: "",
-                    courseTitle = courseSnapshot.child("courseTitle").getValue(String::class.java) ?: "",
-                    duration = courseSnapshot.child("courseDuration").getValue(String::class.java) ?: "",
-                    lessons = courseSnapshot.child("courseLessons").getValue(String::class.java) ?: "",
-                    courseLink = courseSnapshot.child("courseLink").getValue(String::class.java) ?: "",
-                    isLiked = courseSnapshot.child("isLiked").getValue(Boolean::class.java) ?: false,
-                    programSlug = courseSnapshot.child("programSlug").getValue(String::class.java) ?: "",
-                )
-            }
-            Log.i(TAG, "Firebase courses/ count=${items.size}")
-            LoadResult.Page(ageFilter(items), prevKey = null, nextKey = null)
-        } catch (e: Exception) {
-            Log.e(TAG, "Firebase courses failed", e)
-            LoadResult.Error(e)
         }
     }
 

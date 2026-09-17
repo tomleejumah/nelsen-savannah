@@ -34,7 +34,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * School picker for mentees — Find My Path.
+ * School picker for mentees — Enroll Schools.
  * Lists membership schools first, then Explore others from GET /lms/schools/catalog.
  */
 public class SchoolsListActivity extends AppCompatActivity {

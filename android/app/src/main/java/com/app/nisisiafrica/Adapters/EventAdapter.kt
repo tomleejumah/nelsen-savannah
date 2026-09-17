@@ -90,13 +90,8 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
             else "Session with " + listOf(event.mentorName, event.menteeName)
                 .firstOrNull { it.isNotBlank() }.orEmpty()
 
-            val desc = event.description
-            if (!desc.isNullOrBlank()) {
-                tvEventDesc.visibility = View.VISIBLE
-                tvEventDesc.text = desc
-            } else {
-                tvEventDesc.visibility = View.GONE
-            }
+            // Keep home schedule compact — description only on detail.
+            tvEventDesc.visibility = View.GONE
 
             if (event.program.isNotBlank()) {
                 tvProgramTag.visibility = View.VISIBLE
@@ -138,20 +133,20 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                 seatsBlock.visibility = View.VISIBLE
                 val left = (event.seats - event.seatsTaken).coerceAtLeast(0)
                 val pct = ((event.seatsTaken.toFloat() / event.seats) * 100f).toInt().coerceIn(0, 100)
-                tvSeatsLeft.text = "$left seats left"
+                tvSeatsLeft.text = "$left left"
                 tvSeatsPct.text = "$pct%"
                 seatsProgress.progress = pct
-                if (event.eventType != "announcement") {
+                if (event.seats > 0 && event.eventType != "announcement") {
                     btnReserve.isEnabled = left > 0
-                    btnReserve.text = if (left > 0) "Reserve a seat ($left left)" else "Fully booked"
+                    btnReserve.text = if (left > 0) "Reserve · $left left" else "Full"
                 } else {
                     btnReserve.isEnabled = true
-                    btnReserve.text = "Reserve a seat"
+                    btnReserve.text = "Reserve"
                 }
             } else {
                 seatsBlock.visibility = View.GONE
                 btnReserve.isEnabled = true
-                btnReserve.text = "Reserve a seat"
+                btnReserve.text = "Reserve"
             }
 
             val open = { onEventClick?.onClick(event) }
