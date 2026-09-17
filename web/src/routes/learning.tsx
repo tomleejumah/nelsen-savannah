@@ -427,6 +427,7 @@ function LearningPage() {
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                   {track.blurb}
                 </p>
+                {(Number(track.moduleCount) > 0 || Number(track.lessons) > 0) ? (
                 <div className="mt-6 flex flex-wrap items-center gap-5 border-t border-border/60 pt-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-ember" /> {track.moduleCount} modules
@@ -436,6 +437,11 @@ function LearningPage() {
                     {Number(track.hours) > 0 ? ` · ~${track.hours} hrs` : ""}
                   </span>
                 </div>
+                ) : (
+                <p className="mt-6 border-t border-border/60 pt-4 text-xs text-muted-foreground">
+                  Content coming soon — enroll to get started.
+                </p>
+                )}
                 {showingLive ? (
                   <div className="mt-4 flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-foreground">
