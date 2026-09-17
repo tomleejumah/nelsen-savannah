@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:navigationIcon="@drawable/ic_back"
-        app:title="Our programmes"
+        app:title="Other programmes"
         app:titleTextColor="@color/ink" />
 
     <androidx.recyclerview.widget.RecyclerView

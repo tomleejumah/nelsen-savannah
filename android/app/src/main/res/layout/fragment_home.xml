@@ -19,73 +19,22 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
+            android:visibility="gone"
             app:elevation="0dp">
 
-            <!-- Not a BlurView: nested BlurView inside activity BlurTarget crashes on setup. -->
+            <!-- Top chrome moved to MainActivity glass BlurView (outside BlurTarget). -->
             <FrameLayout
                 android:id="@+id/homeTopBlur"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/blur_overlay">
-
-            <LinearLayout
-                android:id="@+id/top1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="8dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/font_display"
-                    android:text="Nelsen Savannah"
-                    android:textColor="@color/maroon_700"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/bg_chip_circle"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:id="@+id/imgNotification"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        app:srcCompat="@drawable/ic_notifications"
-                        app:tint="@color/maroon_700" />
-
-                    <TextView
-                        android:id="@+id/notifCounter"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_gravity="top|end"
-                        android:background="@drawable/circle"
-                        android:gravity="center"
-                        android:text="0"
-                        android:textColor="@color/white"
-                        android:textSize="9sp"
-                        android:textStyle="bold"
-                        android:visibility="gone" />
-                </FrameLayout>
-
-                <de.hdodenhof.circleimageview.CircleImageView
-                    android:id="@+id/imgDp"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_person" />
-            </LinearLayout>
-            </FrameLayout>
+                android:layout_height="0dp"
+                android:visibility="gone" />
         </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- Spacer so content clears the activity glass top bar -->
+        <Space
+            android:id="@+id/homeTopSpacer"
+            android:layout_width="match_parent"
+            android:layout_height="64dp" />
 
         <ScrollView
             android:id="@+id/scrollView"
@@ -200,73 +149,6 @@
                             android:textSize="13sp" />
                     </LinearLayout>
 
-                    <FrameLayout
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_marginStart="12dp"
-                        android:background="@drawable/bg_chip_circle_ember">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="@null"
-                            android:rotation="-45"
-                            android:src="@drawable/ic_more"
-                            app:tint="@color/ink" />
-                    </FrameLayout>
-                </LinearLayout>
-
-                <!-- Personalized enrollments; full catalog is under Find My Path / Learning -->
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="10dp"
-                    android:paddingTop="12dp">
-
-                    <TextView
-                        android:id="@+id/tvTopCoursesHeader"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:drawablePadding="8dp"
-                        android:fontFamily="@font/font_ui"
-                        android:text="Active course"
-                        android:textColor="@color/ink"
-                        android:textSize="19sp"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_step_mark" />
-
-                    <TextView
-                        android:id="@+id/seeAll"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:fontFamily="@font/font_ui"
-                        android:text="See all"
-                        android:textColor="@color/maroon_600"
-                        android:textSize="14sp" />
-                </RelativeLayout>
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rcCourses"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    tools:itemCount="5" />
-
-                <LinearLayout
-                    android:id="@+id/bannerCarousel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <androidx.viewpager2.widget.ViewPager2
-                        android:id="@+id/bannerViewPager"
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp" />
                 </LinearLayout>
 
                 <!-- Your schedule -->
@@ -281,7 +163,7 @@
                     android:textColor="@color/ink"
                     android:textSize="19sp"
                     android:textStyle="bold"
-                    app:drawableStartCompat="@drawable/ic_step_mark" />
+                    app:drawableStartCompat="@drawable/ic_clock" />
 
                 <LinearLayout
                     android:id="@+id/emptyStateView"
@@ -370,6 +252,58 @@
                         android:layout_height="wrap_content" />
                 </androidx.cardview.widget.CardView>
 
+                <!-- Personalized enrollments; full catalog is under Find My Path / Learning -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="10dp"
+                    android:paddingTop="12dp">
+
+                    <TextView
+                        android:id="@+id/tvTopCoursesHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:drawablePadding="8dp"
+                        android:fontFamily="@font/font_ui"
+                        android:text="Active course"
+                        android:textColor="@color/ink"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/ic_play" />
+
+                    <TextView
+                        android:id="@+id/seeAll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:fontFamily="@font/font_ui"
+                        android:text="See all"
+                        android:textColor="@color/maroon_600"
+                        android:textSize="14sp" />
+                </RelativeLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rcCourses"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:itemCount="5" />
+
+                <LinearLayout
+                    android:id="@+id/bannerCarousel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/bannerViewPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+                </LinearLayout>
+
                 <!-- Mentors live in-course; home rail hidden -->
                 <RelativeLayout
                     android:id="@+id/mentorsSectionHeader"
@@ -394,6 +328,47 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:visibility="gone" />
+
+                <!-- Other programmes (near bottom) -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="10dp"
+                    android:paddingTop="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:drawablePadding="8dp"
+                        android:fontFamily="@font/font_ui"
+                        android:text="Other programmes"
+                        android:textColor="@color/ink"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/ic_trophy" />
+
+                    <TextView
+                        android:id="@+id/seeAllProgrammes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:fontFamily="@font/font_ui"
+                        android:text="See all"
+                        android:textColor="@color/maroon_600"
+                        android:textSize="14sp" />
+                </RelativeLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rcProgrammes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="8dp"
+                    tools:itemCount="3" />
 
                 <!-- Quick actions -->
                 <com.google.android.material.card.MaterialCardView
@@ -534,47 +509,6 @@
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Our programmes (near bottom) -->
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="10dp"
-                    android:paddingTop="12dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:drawablePadding="8dp"
-                        android:fontFamily="@font/font_ui"
-                        android:text="Our programmes"
-                        android:textColor="@color/ink"
-                        android:textSize="19sp"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_step_mark" />
-
-                    <TextView
-                        android:id="@+id/seeAllProgrammes"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:fontFamily="@font/font_ui"
-                        android:text="See all"
-                        android:textColor="@color/maroon_600"
-                        android:textSize="14sp" />
-                </RelativeLayout>
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rcProgrammes"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipToPadding="false"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="8dp"
-                    tools:itemCount="3" />
 
                 <Space
                     android:layout_width="match_parent"

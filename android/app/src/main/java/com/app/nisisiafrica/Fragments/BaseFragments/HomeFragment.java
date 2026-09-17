@@ -131,8 +131,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private SharedPreferences prefs;
     private String role;
     private TextView txtDateInfo;
-    private TextView notifCounter;
-    private ImageView imgNotification;
     private TextView tvFindMyPathBlurb;
     private Button btnBookMentor;
     private EventViewModel eventViewModel;
@@ -252,7 +250,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         fetchStoriesRealtime();
 
 
-        btnBookMentor.setOnClickListener(v -> {
+        view.findViewById(R.id.btnBookMentor).setOnClickListener(v -> {
             if (!Roles.browsesMentors()) {
                 showCreateSheet();
             } else {
@@ -265,11 +263,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         if (emptyBook != null && !Roles.browsesMentors()) {
             emptyBook.setVisibility(View.GONE);
         }
-
-        view.findViewById(R.id.imgNotification).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), NotificationsActivity.class);
-            startActivity(intent);
-        });
 
         if (plusIcon != null) {
             plusIcon.setOnClickListener(v -> showCreateSheet());
@@ -437,52 +430,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             startActivity(intent);
         });
 
-        view.findViewById(R.id.imgDp).setOnClickListener(v -> {
-            Log.d(TAG, "onCreateView: clicked ");
-            PopupMenu popup = new PopupMenu(getContext(), v);
-            popup.getMenu().add("Profile");
-            popup.getMenu().add("Search");
-            popup.getMenu().add("Our Programmes");
-            popup.getMenu().add("Logout");
-
-            popup.setOnMenuItemClickListener(item -> {
-                String title = item.getTitle().toString();
-
-                switch (title) {
-                    case "Profile":
-                        Intent intent = new Intent(getActivity(), ProfileActivity.class);
-                        intent.putExtra(Constants.IS_MENTOR, false);
-                        intent.putExtra(Constants.CURRENT_USER_ID, userData.getId());
-                        startActivity(intent);
-                        break;
-                    case "Search":
-                        //open search activity
-                        break;
-                    case "Our Programmes":
-                        showToolsSheet();
-                        break;
-                    case "Logout":
-                        prefs = requireContext().getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE);
-                        prefs.edit().remove("initial_token_written").apply();
-                        FirebaseRemoteDataSource.INSTANCE.signOutAll(getContext(), () -> {
-                            startActivity(new Intent(getActivity(), LoginSignUpActivity.class));
-                            return Unit.INSTANCE;
-                        });
-                        break;
-                }
-
-                return true;
-            });
-
-            popup.show();
-
-        });
-
-        view.findViewById(R.id.imgNotification).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), NotificationsActivity.class);
-            startActivity(intent);
-        });
-
         TextView showAll = view.findViewById(R.id.showMoreMentors);
         TextView txtSeeAll = view.findViewById(R.id.seeAll);
         txtSeeAll.setPaintFlags(txtSeeAll.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
@@ -490,8 +437,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         txtSeeAll.setOnClickListener(listener);
         showAll.setOnClickListener(listener);
 
-        notifCounter = view.findViewById(R.id.notifCounter);
-        imgNotification = view.findViewById(R.id.imgNotification);
         tvFindMyPathBlurb = view.findViewById(R.id.tvFindMyPathBlurb);
 
         view.findViewById(R.id.cardFindMyPath).setOnClickListener(v ->
@@ -706,7 +651,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     @Override
     public void onResume() {
         super.onResume();
-        setupNotificationCounter();
         if (coursesAdapter != null) {
             coursesAdapter.refresh();
         }
@@ -715,18 +659,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     @Override
     public void onPause() {
         super.onPause();
-        NotificationCounter.stopListening();
-    }
-
-    private void setupNotificationCounter() {
-        NotificationCounter.startListening(count -> {
-            if (count > 0) {
-                notifCounter.setVisibility(View.VISIBLE);
-                notifCounter.setText(count > 99 ? "99+" : String.valueOf(count));
-            } else {
-                notifCounter.setVisibility(View.GONE);
-            }
-        });
     }
 
     private void setupCreateFab(View view) {

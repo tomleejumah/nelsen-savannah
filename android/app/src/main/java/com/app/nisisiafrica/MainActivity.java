@@ -39,8 +39,10 @@ import com.app.nisisiafrica.Fragments.BaseFragments.ChatFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.CommunitiesFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.ProfileFragment;
+import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
+import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
@@ -51,6 +53,7 @@ import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.bumptech.glide.Glide;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -98,6 +101,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private View fabCard;
     private ImageView navHomeIcon, navGroupsIcon, navChatIcon, navProfileIcon;
     private TextView navHomeLabel, navGroupsLabel, navChatLabel, navProfileLabel;
+    private View topBarRow;
+    private TextView topBarTitle;
+    private View btnHomeNotifications;
+    private TextView notifCounter;
+    private de.hdodenhof.circleimageview.CircleImageView imgDp;
     /** True while a conversation is open inside ChatFragment — hides the create-chat FAB. */
     private boolean chatConversationOpen = false;
 
@@ -263,21 +271,89 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 });
     }
 
-    /** Translucent (blurred) bottom bar — keep blur; do not hide on scroll. */
+    /** Translucent (blurred) bottom + top bars — keep blur; do not hide on scroll. */
     private void setupBlurBars() {
         bottomBarRow = findViewById(R.id.bottomBarRow);
         fabCard = findViewById(R.id.fabCard);
         fabIcon = findViewById(R.id.fabIcon);
+        topBarRow = findViewById(R.id.topBarRow);
+        topBarTitle = findViewById(R.id.homeTopTitle);
+        btnHomeNotifications = findViewById(R.id.btnHomeNotifications);
+        notifCounter = findViewById(R.id.notifCounter);
+        imgDp = findViewById(R.id.imgDp);
 
         eightbitlab.com.blurview.BlurTarget target = findViewById(R.id.blurTarget);
         eightbitlab.com.blurview.BlurView navBlur = findViewById(R.id.navBlur);
+        eightbitlab.com.blurview.BlurView topBlur = findViewById(R.id.topBlur);
         int overlay = ContextCompat.getColor(this, R.color.blur_overlay);
         try {
             navBlur.setupWith(target).setBlurRadius(22f).setOverlayColor(overlay);
+            topBlur.setupWith(target).setBlurRadius(22f).setOverlayColor(overlay);
         } catch (Exception e) {
             Log.w(TAG, "Blur setup failed; falling back to solid bars", e);
             int solid = ContextCompat.getColor(this, R.color.surface_card);
             navBlur.setBackgroundColor(solid);
+            topBlur.setBackgroundColor(solid);
+        }
+
+        if (btnHomeNotifications != null) {
+            btnHomeNotifications.setOnClickListener(v ->
+                    startActivity(new Intent(this, NotificationsActivity.class)));
+        }
+        if (imgDp != null) {
+            imgDp.setOnClickListener(v -> navigateToProfileTab());
+        }
+        bindTopAvatar();
+        startNotificationBadge();
+    }
+
+    private void bindTopAvatar() {
+        if (imgDp == null) return;
+        sharedUserViewModel1.getUserData().observe(this, user -> {
+            if (user == null) return;
+            String url = user.getPhotoUrl();
+            if (!TextUtils.isEmpty(url)) {
+                Glide.with(this).load(url).placeholder(R.drawable.ic_person).into(imgDp);
+            }
+        });
+    }
+
+    private void startNotificationBadge() {
+        NotificationCounter.startListening(count -> {
+            if (notifCounter == null) return;
+            if (count > 0) {
+                notifCounter.setVisibility(View.VISIBLE);
+                notifCounter.setText(count > 99 ? "99+" : String.valueOf(count));
+            } else {
+                notifCounter.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    /** Titles + trailing actions for the shared glass top bar (Home / Groups / Chat / Profile). */
+    private void applyTopBarContext(int tabId) {
+        if (topBarRow == null || topBarTitle == null) return;
+        if (chatConversationOpen && tabId == R.id.chatFragment) {
+            topBarRow.setVisibility(View.GONE);
+            return;
+        }
+        topBarRow.setVisibility(View.VISIBLE);
+        if (tabId == R.id.homeFragment) {
+            topBarTitle.setText("Nelsen Savannah");
+            if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
+            if (imgDp != null) imgDp.setVisibility(View.VISIBLE);
+        } else if (tabId == R.id.communitiesFragment) {
+            topBarTitle.setText("Groups");
+            if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
+            if (imgDp != null) imgDp.setVisibility(View.GONE);
+        } else if (tabId == R.id.chatFragment) {
+            topBarTitle.setText("Messages");
+            if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.GONE);
+            if (imgDp != null) imgDp.setVisibility(View.GONE);
+        } else if (tabId == R.id.profileFragment) {
+            topBarTitle.setText("Profile");
+            if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.GONE);
+            if (imgDp != null) imgDp.setVisibility(View.GONE);
         }
     }
 
@@ -312,6 +388,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         }
         currentTabId = tabId;
         applyNavSelection(tabId);
+        applyTopBarContext(tabId);
     }
 
     private void applyNavSelection(int tabId) {
@@ -343,6 +420,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (bottomBarRow != null) {
             bottomBarRow.setVisibility(open ? View.GONE : View.VISIBLE);
         }
+        applyTopBarContext(currentTabId);
         applyMainInsets();
     }
 
@@ -426,6 +504,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     public void navigateToHomeTab() {
         selectTab(R.id.homeFragment, true);
+    }
+
+    public void navigateToProfileTab() {
+        selectTab(R.id.profileFragment, true);
     }
 
     private void handleCachedUser() {
@@ -596,6 +678,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     @Override
     protected void onDestroy() {
+        NotificationCounter.stopListening();
         super.onDestroy();
         disposables.clear();
     }

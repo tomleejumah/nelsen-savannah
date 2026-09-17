@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablets / large phones (≥600dp width) -->
+    <dimen name="page_horizontal">32dp</dimen>
+    <dimen name="page_horizontal_lg">40dp</dimen>
+    <dimen name="content_max_width">840dp</dimen>
+    <dimen name="bottom_nav_margin_h">48dp</dimen>
+    <dimen name="course_card_width">180dp</dimen>
+    <dimen name="course_card_height">240dp</dimen>
+    <dimen name="radius_card_lg">24dp</dimen>
+    <dimen name="radius_card_md">18dp</dimen>
+</resources>

@@ -226,6 +226,13 @@ class CommunityRepository {
             .addOnFailureListener { callback.onResult(false) }
     }
 
+    /** Deletes the group document. Mentors/admins only (enforced by UI). */
+    fun deleteCommunity(communityId: String, callback: BoolCallback) {
+        communityRef(communityId).delete()
+            .addOnSuccessListener { callback.onResult(true) }
+            .addOnFailureListener { callback.onResult(false) }
+    }
+
     fun isMember(communityId: String, callback: BoolCallback) {
         val uid = auth.currentUser?.uid ?: return callback.onResult(false)
         communityRef(communityId).collection("members").document(uid).get()

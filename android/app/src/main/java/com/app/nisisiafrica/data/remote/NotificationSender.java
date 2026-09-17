@@ -60,15 +60,25 @@ public final class NotificationSender {
 
     /** Notify {@code authorId} that someone upvoted/liked their post. */
     public static void like(String authorId, String postId, String text) {
+        like(authorId, postId, text, "");
+    }
+
+    public static void like(String authorId, String postId, String text, String communityId) {
         if (isSelfOrEmpty(authorId)) return;
-        send((s, b) -> s.sendLikeNotification(b, new LikeNotificationRequest(authorId, postId, text)));
+        send((s, b) -> s.sendLikeNotification(
+                b, new LikeNotificationRequest(authorId, postId, text, communityId != null ? communityId : "")));
     }
 
     /** Notify {@code authorId} that someone commented on their post. */
     public static void comment(String authorId, String postId, String text, String commentText) {
+        comment(authorId, postId, text, commentText, "");
+    }
+
+    public static void comment(String authorId, String postId, String text, String commentText, String communityId) {
         if (isSelfOrEmpty(authorId)) return;
         send((s, b) -> s.sendCommentNotification(
-                b, new CommentNotificationRequest(authorId, postId, text, commentText)));
+                b, new CommentNotificationRequest(
+                        authorId, postId, text, commentText, communityId != null ? communityId : "")));
     }
 
     /** Notify {@code recipientId} that a new event/session was scheduled with them. */

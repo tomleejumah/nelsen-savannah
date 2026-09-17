@@ -3,7 +3,7 @@ import { sendFCMNotification } from "../services/fcmService.js";
 
 export const sendLikeNotification = async (req, res) => {
   const uid = req.user.uid;
-  const { coursePublisher, postID, text } = req.body;
+  const { coursePublisher, postID, text, communityId } = req.body;
 
   if (!coursePublisher || !postID || !text) {
     return res.status(400).json({
@@ -19,11 +19,13 @@ export const sendLikeNotification = async (req, res) => {
   }
 
   try {
+    const isGroup = !!(communityId && String(communityId).trim());
     const notificationData = {
       senderId: uid,
       text: text,
       courseID: postID,
-      type: "like",
+      communityId: isGroup ? communityId : "",
+      type: isGroup ? "community_like" : "like",
       timestamp: admin.database.ServerValue.TIMESTAMP,
       read: false,
     };
@@ -53,7 +55,7 @@ export const sendLikeNotification = async (req, res) => {
 
 export const sendCommentNotification = async (req, res) => {
   const uid = req.user.uid;
-  const { coursePublisher, postID, text, commentText } = req.body;
+  const { coursePublisher, postID, text, commentText, communityId } = req.body;
 
   if (!coursePublisher || !postID || !text) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -64,12 +66,14 @@ export const sendCommentNotification = async (req, res) => {
   }
 
   try {
+    const isGroup = !!(communityId && String(communityId).trim());
     const notificationData = {
       senderId: uid,
       text: text,
       courseID: postID,
+      communityId: isGroup ? communityId : "",
       commentText: commentText || "",
-      type: "comment",
+      type: isGroup ? "community_comment" : "comment",
       timestamp: admin.database.ServerValue.TIMESTAMP,
       read: false,
     };

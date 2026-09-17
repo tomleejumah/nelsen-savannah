@@ -1,29 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      MentUI dark — warm charcoal (not blue slate). Chocolate accents lifted for contrast.
-      maroon_900/700/600/500 stay from values/colors.xml.
+      Pure black dark mode. Chocolate accents stay from values/colors.xml.
     -->
 
-    <color name="bg">#1A1714</color>
-    <color name="surface">#24201C</color>
-    <color name="surface_2">#2E2924</color>
-    <color name="ink">#F0EBE3</color>
-    <color name="ink_soft">#D4CBC0</color>
-    <color name="muted">#A3988A</color>
-    <color name="line">#3D362E</color>
+    <color name="bg">#000000</color>
+    <color name="surface">#000000</color>
+    <color name="surface_2">#121212</color>
+    <color name="ink">#FFFFFF</color>
+    <color name="ink_soft">#E5E5E5</color>
+    <color name="muted">#A3A3A3</color>
+    <color name="line">#2A2A2A</color>
 
-    <color name="maroon_100">#3A2E24</color>
-    <color name="maroon_050">#2A221C</color>
+    <color name="maroon_100">#1F1A17</color>
+    <color name="maroon_050">#141414</color>
 
-    <color name="tag_blue_bg">#1C2A44</color>
+    <color name="tag_blue_bg">#0A1528</color>
     <color name="tag_blue_text">#9DB6EC</color>
-    <color name="status_pending_bg">#3A2C13</color>
+    <color name="status_pending_bg">#1A1408</color>
     <color name="status_pending_text">#E8B968</color>
 
     <color name="shadow_maroon">#66000000</color>
 
-    <!-- Semantic aliases follow MentUI dark -->
     <color name="surface_app">@color/bg</color>
     <color name="surface_card">@color/surface</color>
     <color name="surface_muted">@color/surface_2</color>
@@ -33,7 +31,7 @@
     <color name="text_strong">@color/ink</color>
     <color name="text_body">@color/ink_soft</color>
     <color name="text_muted">@color/muted</color>
-    <color name="text_on_action">#FFF5F2EB</color>
+    <color name="text_on_action">#FFFFFFFF</color>
     <color name="text_primary">@color/ink</color>
     <color name="text_secondary">@color/ink_soft</color>
     <color name="text_tertiary">@color/muted</color>
@@ -45,7 +43,7 @@
     <color name="bubble_received">@color/surface_2</color>
     <color name="bubble_quote_bg">#336B4A32</color>
 
-    <color name="blur_overlay">#991A1714</color>
+    <color name="blur_overlay">#99000000</color>
 
     <color name="nav_home">@color/maroon_500</color>
     <color name="nav_communities">@color/maroon_600</color>

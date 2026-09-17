@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
-import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
@@ -58,9 +57,6 @@ public class ProfileFragment extends Fragment {
             intent.putExtra(Constants.IS_MENTOR, isMentor);
             startActivity(intent);
         });
-
-        view.findViewById(R.id.btnNotifications).setOnClickListener(v ->
-                startActivity(new Intent(requireContext(), NotificationsActivity.class)));
 
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         userViewModel.getUserData().observe(getViewLifecycleOwner(), user -> {

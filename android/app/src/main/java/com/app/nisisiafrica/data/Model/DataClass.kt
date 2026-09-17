@@ -197,7 +197,8 @@ data class Message(
 data class LikeNotificationRequest(
     var coursePublisher: String,
     var postID: String,
-    var text: String
+    var text: String,
+    var communityId: String = ""
 )
 
 data class NotificationResponse(
@@ -211,7 +212,8 @@ data class CommentNotificationRequest(
     var coursePublisher: String,
     var postID: String,
     var text: String,
-    var commentText: String
+    var commentText: String,
+    var communityId: String = ""
 )
 
 data class EventNotificationRequest(
@@ -230,6 +232,7 @@ data class NotificationData(
     var senderId: String = "",
     var text: String = "",
     var courseID: String = "",
+    var communityId: String = "",
     var type: String = "",
     var timestamp: Long = 0L,
     var read: Boolean = false,

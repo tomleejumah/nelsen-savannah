@@ -141,25 +141,34 @@ public class NotificationsActivity extends AppCompatActivity {
                         }
                     });
 
-            // Load course details from Firebase
-             FirebaseDatabase.getInstance().getReference("courses")
-                    .child(notification.getCourseID())
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            String courseName = snapshot.child("courseTitle").getValue(String.class);
-                            String courseImage = snapshot.child("courseImageUrl").getValue(String.class);
+            // Load course / group target details
+            boolean isGroup = (notification.getCommunityId() != null
+                    && !notification.getCommunityId().isEmpty())
+                    || (notification.getType() != null && notification.getType().startsWith("community_"));
+            if (isGroup) {
+                notification.setCourseName("your group post");
+                notification.setCourseImage(null);
+                adapter.notifyItemChanged(position);
+            } else {
+                FirebaseDatabase.getInstance().getReference("courses")
+                        .child(notification.getCourseID())
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                String courseName = snapshot.child("courseTitle").getValue(String.class);
+                                String courseImage = snapshot.child("courseImageUrl").getValue(String.class);
 
-                            notification.setCourseName(courseName != null ? courseName : "Course");
-                            notification.setCourseImage(courseImage);
-                            adapter.notifyItemChanged(position);
-                        }
+                                notification.setCourseName(courseName != null ? courseName : "Course");
+                                notification.setCourseImage(courseImage);
+                                adapter.notifyItemChanged(position);
+                            }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            Log.e(TAG, "Error loading course: " + error.getMessage());
-                        }
-                    });
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                Log.e(TAG, "Error loading course: " + error.getMessage());
+                            }
+                        });
+            }
         }
     }
 
