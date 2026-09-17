@@ -4,6 +4,7 @@ import type { User } from "firebase/auth";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
+import { AddToCoursePanel } from "@/components/lms/AddToCoursePanel";
 import {
   addCohortMember,
   authorLessonQuiz,
@@ -146,11 +147,11 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
     const token = await user.getIdToken();
     const result = await createAssignment(token, {
       title: assignTitle.trim(),
-      prompt: assignPrompt.trim() || undefined,
-      modelAnswer: assignModelAnswer.trim() || undefined,
-      trackId: assignTrackId.trim() || undefined,
-      lessonId: assignLessonId.trim() || undefined,
-      assigneeUid: assignUid.trim() || undefined,
+      ...(assignPrompt.trim() ? { prompt: assignPrompt.trim() } : {}),
+      ...(assignModelAnswer.trim() ? { modelAnswer: assignModelAnswer.trim() } : {}),
+      ...(assignTrackId.trim() ? { trackId: assignTrackId.trim() } : {}),
+      ...(assignLessonId.trim() ? { lessonId: assignLessonId.trim() } : {}),
+      ...(assignUid.trim() ? { assigneeUid: assignUid.trim() } : {}),
     });
     if (!result.ok) {
       setAssignMsg(result.error || "Assign failed");
@@ -198,6 +199,17 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <a
+                    href="#add"
+                    onClick={() => {
+                      setCmsTrackId(t.trackId);
+                      setPriceTrackId(t.trackId);
+                      setRunTrackId(t.trackId);
+                    }}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                  >
+                    Add
+                  </a>
+                  <a
                     href="#cms"
                     onClick={() => {
                       setCmsTrackId(t.trackId);
@@ -235,6 +247,15 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="cms" className="rounded-2xl border border-border/70 bg-card/40 p-5">
         <CatalogCmsPanel user={user} schoolId={schoolId} selectedTrackId={cmsTrackId} />
       </section>
+
+      <AddToCoursePanel
+        user={user}
+        schoolId={schoolId}
+        tracks={tracks}
+        runId={runId || undefined}
+        initialTrackId={cmsTrackId || undefined}
+        onDone={() => void load()}
+      />
 
       <section id="queue">
         <h2 className="font-display text-xl font-semibold">Marking queue</h2>
@@ -328,8 +349,8 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="assign">
         <h2 className="font-display text-xl font-semibold">Assign work</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Students open & answer in Coursework. Include a model answer for marking
-          reference; attach a lesson when you can so submit always has a target.
+          Prefer <a href="#add" className="text-ember underline">Add to course → Assignment</a>{" "}
+          for course-wide work. This form is for edge cases (single mentee).
         </p>
         <form onSubmit={(e) => void onAssign(e)} className="mt-4 space-y-3">
           <input
@@ -354,22 +375,29 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <div className="flex flex-wrap gap-3">
-            <input
+            <select
+              required
               value={assignTrackId}
               onChange={(e) => setAssignTrackId(e.target.value)}
-              placeholder="trackId (optional)"
               className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
+            >
+              <option value="">Select course</option>
+              {tracks.map((t) => (
+                <option key={t.trackId} value={t.trackId}>
+                  {t.courseTitle}
+                </option>
+              ))}
+            </select>
             <input
               value={assignLessonId}
               onChange={(e) => setAssignLessonId(e.target.value)}
-              placeholder="lessonId (optional, recommended)"
+              placeholder="lessonId (optional)"
               className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
             <input
               value={assignUid}
               onChange={(e) => setAssignUid(e.target.value)}
-              placeholder="assignee uid (optional)"
+              placeholder="one mentee uid (optional — leave blank for whole course)"
               className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
           </div>
@@ -390,7 +418,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                 <span className="font-medium text-foreground">{a.title}</span>
                 {a.trackId ? ` · ${a.trackId}` : ""}
                 {a.lessonId ? ` · lesson ${a.lessonId}` : ""}
-                {a.assigneeUid ? ` · ${a.assigneeUid}` : ""}
+                {a.assigneeUid ? ` · ${a.assigneeUid}` : " · whole course"}
                 {a.modelAnswer ? " · has model answer" : ""}
               </li>
             ))}

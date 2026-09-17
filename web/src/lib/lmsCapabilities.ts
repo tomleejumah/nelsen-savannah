@@ -114,6 +114,14 @@ export const LMS_TOOLS: LmsTool[] = [
     shells: ["mentor", "school", "admin"],
   },
   {
+    id: "add",
+    label: "Add to course",
+    blurb: "Video, PDF, course assignment, or milestone",
+    to: "/teach",
+    hash: "add",
+    shells: ["mentor", "school", "admin"],
+  },
+  {
     id: "dashboard",
     label: "Dashboard",
     blurb: "Roster health and at-risk students",
