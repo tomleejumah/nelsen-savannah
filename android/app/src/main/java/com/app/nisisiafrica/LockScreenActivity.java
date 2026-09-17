@@ -1,10 +1,14 @@
 package com.app.nisisiafrica;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -23,8 +27,11 @@ public class LockScreenActivity extends AppCompatActivity {
 
     private String uid;
     private View[] dots;
+    private View pinDotsRow;
+    private TextView tvSubtitle;
     private final StringBuilder pin = new StringBuilder();
     private static final int PIN_LENGTH = 6;
+    private boolean animating = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +58,8 @@ public class LockScreenActivity extends AppCompatActivity {
             }
         });
 
+        pinDotsRow = findViewById(R.id.llPinDots);
+        tvSubtitle = findViewById(R.id.tvPinSubtitle);
         dots = new View[]{
                 findViewById(R.id.dot1),
                 findViewById(R.id.dot2),
@@ -87,6 +96,7 @@ public class LockScreenActivity extends AppCompatActivity {
     private void showBiometricPrompt() {
         BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Unlock")
+                .setSubtitle("Verify fingerprint to continue")
                 .setNegativeButtonText("Use PIN")
                 .build();
 
@@ -95,12 +105,28 @@ public class LockScreenActivity extends AppCompatActivity {
                 new BiometricPrompt.AuthenticationCallback() {
                     @Override
                     public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult r) {
-                        unlockSuccess();
+                        if (tvSubtitle != null) {
+                            tvSubtitle.setText("Fingerprint verified");
+                        }
+                        playFillFeedback(true, () -> unlockSuccess());
+                    }
+
+                    @Override
+                    public void onAuthenticationFailed() {
+                        if (tvSubtitle != null) {
+                            tvSubtitle.setText("Fingerprint not recognized — try again or use PIN");
+                        }
+                        playFillFeedback(false, () -> {
+                            pin.setLength(0);
+                            updateDots();
+                        });
                     }
 
                     @Override
                     public void onAuthenticationError(int code, CharSequence msg) {
-                        // user dismissed, falls back to PIN UI already visible
+                        if (tvSubtitle != null) {
+                            tvSubtitle.setText("Enter your PIN to continue");
+                        }
                     }
                 });
 
@@ -108,17 +134,16 @@ public class LockScreenActivity extends AppCompatActivity {
     }
 
     private void addDigit(String digit) {
-        if (pin.length() >= PIN_LENGTH) return;
+        if (animating || pin.length() >= PIN_LENGTH) return;
         pin.append(digit);
         updateDots();
         if (pin.length() == PIN_LENGTH) verifyPin();
     }
 
     private void removeDigit() {
-        if (pin.length() > 0) {
-            pin.deleteCharAt(pin.length() - 1);
-            updateDots();
-        }
+        if (animating || pin.length() == 0) return;
+        pin.deleteCharAt(pin.length() - 1);
+        updateDots();
     }
 
     private void updateDots() {
@@ -128,23 +153,86 @@ public class LockScreenActivity extends AppCompatActivity {
                             ? R.drawable.pin_dot_filled
                             : R.drawable.pin_dot_empty
             );
+            dots[i].setScaleX(1f);
+            dots[i].setScaleY(1f);
+            dots[i].setAlpha(1f);
         }
     }
 
     private void verifyPin() {
         try {
             if (PinManager.verifyPin(this, uid, pin.toString())) {
-                unlockSuccess();
+                if (tvSubtitle != null) tvSubtitle.setText("PIN correct");
+                playFillFeedback(true, this::unlockSuccess);
             } else {
-                Toast.makeText(this, "Wrong PIN", Toast.LENGTH_SHORT).show();
-                pin.setLength(0);
-                updateDots();
+                if (tvSubtitle != null) tvSubtitle.setText("Wrong PIN — try again");
+                playFillFeedback(false, () -> {
+                    pin.setLength(0);
+                    updateDots();
+                });
             }
         } catch (Exception e) {
-            Toast.makeText(this, "Unable to verify PIN", Toast.LENGTH_SHORT).show();
-            pin.setLength(0);
-            updateDots();
+            if (tvSubtitle != null) tvSubtitle.setText("Unable to verify PIN — try again");
+            playFillFeedback(false, () -> {
+                pin.setLength(0);
+                updateDots();
+            });
         }
+    }
+
+    /**
+     * Cascading fill on the pin dots, then green (success) or red (error).
+     * Used for both PIN entry and fingerprint result feedback.
+     */
+    private void playFillFeedback(boolean success, Runnable after) {
+        if (animating) return;
+        animating = true;
+
+        AnimatorSet fill = new AnimatorSet();
+        Animator[] pulses = new Animator[dots.length];
+        for (int i = 0; i < dots.length; i++) {
+            final View dot = dots[i];
+            final int index = i;
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(dot, View.SCALE_X, 1f, 1.35f, 1f);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(dot, View.SCALE_Y, 1f, 1.35f, 1f);
+            AnimatorSet pulse = new AnimatorSet();
+            pulse.playTogether(scaleX, scaleY);
+            pulse.setDuration(140);
+            pulse.setStartDelay(i * 55L);
+            pulse.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+                    dot.setBackgroundResource(R.drawable.pin_dot_filled);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    if (index == dots.length - 1) {
+                        int tint = success ? R.drawable.pin_dot_success : R.drawable.pin_dot_error;
+                        for (View d : dots) d.setBackgroundResource(tint);
+                        if (!success && pinDotsRow != null) {
+                            ObjectAnimator shake = ObjectAnimator.ofFloat(
+                                    pinDotsRow, View.TRANSLATION_X, 0, 18, -18, 12, -12, 0);
+                            shake.setDuration(320);
+                            shake.start();
+                        }
+                    }
+                }
+            });
+            pulses[i] = pulse;
+        }
+        fill.playTogether(pulses);
+        fill.setInterpolator(new AccelerateDecelerateInterpolator());
+        fill.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                pinDotsRow.postDelayed(() -> {
+                    animating = false;
+                    if (after != null) after.run();
+                }, success ? 280 : 420);
+            }
+        });
+        fill.start();
     }
 
     private void unlockSuccess() {

@@ -80,7 +80,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
 
         int dataIndex = position - 1;
         Story story = stories.get(dataIndex);
-        holder.company.setText(story.companyName != null ? story.companyName : "");
+        holder.company.setText(story.displayLabel());
         if (story.logoUrl != null && !story.logoUrl.isEmpty()) {
             Glide.with(context)
                     .load(story.logoUrl)

@@ -14,12 +14,14 @@ import chatRoutes from "./routes/chat.js";
 import diditRoute from "./routes/diditRoute.js";
 import lmsRoutes from "./routes/lms.js";
 import inquiryRoutes from "./routes/inquiries.js";
+import mediaRoutes from "./routes/media.js";
 
 const UPLOAD_DIR =
   process.env.UPLOAD_DIR || path.join(ROOT, "uploads");
 const DATA_DIR = process.env.LMS_DATA_DIR || path.join(ROOT, "data");
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(path.join(UPLOAD_DIR, "app"), { recursive: true });
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const app = express();
@@ -40,6 +42,15 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// App media (stories, groups, chat) — always public under /uploads/app.
+app.use(
+  "/uploads/app",
+  express.static(path.join(UPLOAD_DIR, "app"), {
+    fallthrough: true,
+    maxAge: "7d",
+  }),
+);
 
 // Media is private by default: bytes are only reachable through a time-limited
 // signed URL (/lms/media/:id/url). Set MEDIA_PUBLIC_UPLOADS=1 to restore the
@@ -63,6 +74,7 @@ app.use("/chat", chatRoutes);
 app.use("/didit", diditRoute);
 app.use("/lms", lmsRoutes);
 app.use("/inquiries", inquiryRoutes);
+app.use("/media", mediaRoutes);
 
 // 404 handler
 app.use((req, res) => {

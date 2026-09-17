@@ -227,6 +227,14 @@ data class NotificationListResponse(
     val notifications: List<NotificationData> = emptyList()
 )
 
+data class MediaUploadResponse(
+    val success: Boolean = false,
+    val url: String? = null,
+    val folder: String? = null,
+    val path: String? = null,
+    val error: String? = null
+)
+
 data class NotificationData(
     var id: String = "",
     var senderId: String = "",

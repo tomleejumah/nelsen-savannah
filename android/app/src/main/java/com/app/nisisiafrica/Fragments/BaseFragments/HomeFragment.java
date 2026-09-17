@@ -238,13 +238,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             storyIntent.putExtra(StoryViewerActivity.EXTRA_START_INDEX, position);
             startActivity(storyIntent);
         });
-        storyAdapter.setOnAddClick(() -> {
-            if (Roles.canCreate()) {
-                startActivity(new Intent(getActivity(), CreateStoryActivity.class));
-            } else {
-                Toast.makeText(getContext(), "Mentors create stories from Create", Toast.LENGTH_SHORT).show();
-            }
-        });
+        storyAdapter.setOnAddClick(() ->
+                startActivity(new Intent(getActivity(), CreateStoryActivity.class)));
         rvStories.setAdapter(storyAdapter);
         storiesRef = FirebaseDatabase.getInstance().getReference("stories");
         fetchStoriesRealtime();
