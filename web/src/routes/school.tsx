@@ -3,8 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
 
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
+import { CohortIntakesPanel } from "@/components/lms/CohortIntakesPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
+  fetchLmsTracks,
+  fetchMenteeProgress,
   fetchSchoolDashboard,
   fetchSchoolMembers,
   fetchSchoolMoney,
@@ -15,8 +18,10 @@ import {
   registerSchoolMentee,
   registerSchoolMentor,
   type MeDto,
+  type MenteeProgressDto,
   type SchoolDashboardDto,
   type SchoolMemberDto,
+  type TrackCardDto,
 } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/school")({
@@ -67,17 +72,21 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [moneyNote, setMoneyNote] = useState<string | null>(null);
   const [payoutNote, setPayoutNote] = useState<string | null>(null);
   const [balance, setBalance] = useState(0);
+  const [tracks, setTracks] = useState<TrackCardDto[]>([]);
+  const [mentees, setMentees] = useState<MenteeProgressDto[]>([]);
 
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
     try {
       const token = await user.getIdToken();
-      const [m, d, money, payouts] = await Promise.all([
+      const [m, d, money, payouts, t, progress] = await Promise.all([
         fetchSchoolMembers(token, schoolId),
         fetchSchoolDashboard(token, schoolId),
         fetchSchoolMoney(token, schoolId),
         fetchSchoolTutorPayouts(token, schoolId),
+        fetchLmsTracks(token),
+        fetchMenteeProgress(token, me.uid),
       ]);
       if (!m.ok) setError(m.error || "Could not load roster");
       setMembers(m.data?.members || []);
@@ -89,12 +98,14 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         setMoneyNote(money.data.note);
       }
       if (payouts.ok && payouts.data) setPayoutNote(payouts.data.note);
+      setTracks(t.data?.tracks || []);
+      setMentees(progress.data?.mentees || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setBusy(false);
     }
-  }, [user, schoolId]);
+  }, [user, schoolId, me.uid]);
 
   useEffect(() => {
     void load();
@@ -301,6 +312,15 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
 
       <section id="cms">
         <CatalogCmsPanel user={user} schoolId={schoolId} allowCreateTrack />
+      </section>
+
+      <section id="intakes" className="rounded-2xl border border-border/70 bg-card/40 p-5">
+        <CohortIntakesPanel
+          user={user}
+          schoolId={schoolId}
+          tracks={tracks}
+          mentees={mentees}
+        />
       </section>
 
       <section id="people" className="grid gap-8 sm:grid-cols-2">
