@@ -46,6 +46,8 @@ type ModuleWithLessons = {
   does: string;
   lessonCount: number;
   modulePercent?: number;
+  releaseAt?: number | null;
+  dueAt?: number | null;
   lessons: LessonDto[];
 };
 
@@ -94,6 +96,8 @@ function TrackDetailPage() {
               does: mod.does,
               lessonCount: lessons.length || mod.lessonCount,
               modulePercent: mod.modulePercent,
+              releaseAt: mod.releaseAt ?? null,
+              dueAt: mod.dueAt ?? null,
               lessons,
             };
           }),
@@ -303,15 +307,29 @@ function TrackDetailPage() {
 
                 {hasCurriculum ? (
                   <section className="mt-12">
-                    <h2 className="text-xl font-bold">Modules & lessons</h2>
+                    <h2 className="text-xl font-bold">Chapters & lessons</h2>
                     <div className="mt-6 space-y-6">
-                      {modules.map((mod, i) => (
+                      {modules.map((mod, i) => {
+                        const now = Date.now();
+                        const hasWindow = Boolean(mod.releaseAt && mod.dueAt);
+                        const chapterReleased =
+                          !hasWindow || Number(mod.releaseAt) <= now;
+                        const chapterExpired =
+                          hasWindow && Number(mod.dueAt) < now;
+                        const chapterLockedReason = !hasWindow
+                          ? null
+                          : !chapterReleased
+                            ? "release_date"
+                            : chapterExpired
+                              ? "expired"
+                              : null;
+                        return (
                         <div
                           key={mod.moduleId}
                           className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6"
                         >
                           <p className="text-xs font-medium text-muted-foreground">
-                            Module {i + 1}
+                            Chapter {i + 1}
                           </p>
                           <h3 className="mt-1 font-display text-lg font-semibold">
                             {mod.title}
@@ -319,13 +337,27 @@ function TrackDetailPage() {
                           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                             {mod.does}
                           </p>
+                          {hasWindow ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {new Date(mod.releaseAt!).toLocaleDateString()} →{" "}
+                              {new Date(mod.dueAt!).toLocaleDateString()}
+                              {chapterLockedReason === "release_date"
+                                ? " · not open yet"
+                                : chapterLockedReason === "expired"
+                                  ? " · window ended (finish incomplete lessons)"
+                                  : " · open"}
+                            </p>
+                          ) : null}
                           {mod.lessons.length > 0 ? (
                             <ul className="mt-5 space-y-2 border-t border-border/60 pt-4">
                               {mod.lessons.map((lesson, li) => {
                                 const mile = detail.cohortRun?.milestones?.find(
                                   (item) => item.lessonId === lesson.lessonId,
                                 );
-                                const canOpen = !mile || mile.available;
+                                const canOpen =
+                                  chapterReleased && (!mile || mile.available);
+                                const typeLabel =
+                                  lesson.type === "read" ? "text" : lesson.type;
                                 const row = (
                                   <>
                                     <span className="text-xs text-muted-foreground">
@@ -336,17 +368,22 @@ function TrackDetailPage() {
                                         {lesson.title}
                                       </span>
                                       <span className="block text-xs capitalize text-muted-foreground">
-                                        {lesson.type}
+                                        {typeLabel}
                                         {lesson.estimatedMinutes
                                           ? ` · ${lesson.estimatedMinutes} min`
                                           : ""}
-                                        {mile && !mile.available
-                                          ? mile.lockedReason === "release_date"
-                                            ? ` · locked until ${new Date(mile.releaseAt).toLocaleString()}`
-                                            : mile.lockedReason === "expired"
-                                              ? ` · expired${mile.dueAt ? ` ${new Date(mile.dueAt).toLocaleString()}` : ""}`
+                                        {!canOpen
+                                          ? chapterLockedReason === "release_date"
+                                            ? ` · locked until ${new Date(mod.releaseAt!).toLocaleString()}`
+                                            : mile && !mile.available
+                                              ? mile.lockedReason ===
+                                                "release_date"
+                                                ? ` · locked until ${new Date(mile.releaseAt).toLocaleString()}`
+                                                : " · locked"
                                               : " · locked"
-                                          : ""}
+                                          : chapterExpired
+                                            ? " · past due"
+                                            : ""}
                                       </span>
                                     </span>
                                     <span className="shrink-0 text-xs font-medium text-ember">
@@ -378,7 +415,8 @@ function TrackDetailPage() {
                             </ul>
                           ) : null}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </section>
                 ) : null}
