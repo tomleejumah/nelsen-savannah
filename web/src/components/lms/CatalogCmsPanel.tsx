@@ -10,6 +10,8 @@ import {
   adminCreateTrack,
   adminUpdateTrack,
   fetchAdminStats,
+  fetchLmsModule,
+  fetchLmsTrack,
   uploadLessonMedia,
   type AdminStatsDto,
 } from "@/lib/lmsApi";
@@ -22,23 +24,50 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+function slugId(prefix: string, title: string) {
+  const base = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+  const stamp = Date.now().toString(36).slice(-4);
+  return `${prefix}-${base || "item"}-${stamp}`;
+}
+
+function lessonSlugPrefix(type: string) {
+  if (type === "video") return "vid";
+  if (type === "quiz") return "quiz";
+  if (type === "assignment") return "asgn";
+  return "read";
+}
+
+type AttachedMedia = {
+  filename: string;
+  mediaId: string;
+  lessonId: string;
+};
+
 export function CatalogCmsPanel({
   user,
   schoolId,
   selectedTrackId,
-  selectedTrackTitle,
   /** Only Admin / SchoolAdmin may create whole new courses. */
   allowCreateTrack = false,
+  lessons,
+  modules,
 }: {
   user: User;
   schoolId?: string;
   selectedTrackId?: string;
-  selectedTrackTitle?: string;
   allowCreateTrack?: boolean;
+  lessons?: { lessonId: string; title: string }[];
+  modules?: { moduleId: string; title: string }[];
 }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStatsDto | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [advancedIds, setAdvancedIds] = useState(false);
   const [trackId, setTrackId] = useState("");
   const [trackTitle, setTrackTitle] = useState("");
   const [editTrackId, setEditTrackId] = useState("");
@@ -57,9 +86,16 @@ export function CatalogCmsPanel({
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
+  const [attachedMedia, setAttachedMedia] = useState<AttachedMedia[]>([]);
+  const [fetchedModules, setFetchedModules] = useState<
+    { moduleId: string; title: string }[]
+  >([]);
+  const [fetchedLessons, setFetchedLessons] = useState<
+    { lessonId: string; title: string }[]
+  >([]);
 
-  const lockedCourse = Boolean(selectedTrackId);
-  const courseLabel = selectedTrackTitle?.trim() || selectedTrackId || "";
+  const moduleOptions = modules?.length ? modules : fetchedModules;
+  const lessonOptions = lessons?.length ? lessons : fetchedLessons;
 
   useEffect(() => {
     if (selectedTrackId) {
@@ -70,10 +106,59 @@ export function CatalogCmsPanel({
   }, [selectedTrackId]);
 
   useEffect(() => {
-    if (selectedTrackTitle) {
-      setEditTitle(selectedTrackTitle);
+    const tid = selectedTrackId || editTrackId;
+    if (!tid || (lessons && lessons.length > 0 && modules && modules.length > 0)) {
+      return;
     }
-  }, [selectedTrackTitle]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const envelope = await fetchLmsTrack(token, tid);
+        if (cancelled || !envelope.ok || !envelope.data) return;
+        const mods = envelope.data.modules || [];
+        if (!modules?.length) {
+          setFetchedModules(
+            mods.map((m) => ({ moduleId: m.moduleId, title: m.title })),
+          );
+        }
+        if (!lessons?.length) {
+          const rows: { lessonId: string; title: string }[] = [];
+          await Promise.all(
+            mods.map(async (m) => {
+              const modEnv = await fetchLmsModule(token, m.moduleId);
+              for (const l of modEnv.data?.lessons || []) {
+                rows.push({ lessonId: l.lessonId, title: l.title });
+              }
+            }),
+          );
+          if (!cancelled) setFetchedLessons(rows);
+        }
+      } catch {
+        /* picker falls back to text inputs */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTrackId, editTrackId, user, lessons, modules]);
+
+  function onModuleTitleChange(title: string) {
+    setModuleTitle(title);
+    if (!advancedIds) setModuleId(slugId("mod", title));
+  }
+
+  function onLessonTitleChange(title: string) {
+    setLessonTitle(title);
+    if (!advancedIds) setLessonId(slugId(lessonSlugPrefix(lessonType), title));
+  }
+
+  function onLessonTypeChange(type: string) {
+    setLessonType(type);
+    if (!advancedIds && lessonTitle.trim()) {
+      setLessonId(slugId(lessonSlugPrefix(type), lessonTitle));
+    }
+  }
 
   async function loadStats() {
     const token = await user.getIdToken();
@@ -120,14 +205,15 @@ export function CatalogCmsPanel({
     e.preventDefault();
     setMsg(null);
     const token = await user.getIdToken();
+    const id = moduleId.trim() || slugId("mod", moduleTitle);
     const result = await adminCreateModule(token, {
-      moduleId: moduleId.trim(),
+      moduleId: id,
       trackId: moduleTrackId.trim(),
       title: moduleTitle.trim(),
     });
-    setMsg(result.ok ? `Module ${moduleId} created` : result.error || "Failed");
+    setMsg(result.ok ? `Module ${id} created` : result.error || "Failed");
     if (result.ok) {
-      setLessonModuleId(moduleId.trim());
+      setLessonModuleId(id);
       setLessonTrackId(moduleTrackId.trim());
     }
   }
@@ -136,8 +222,9 @@ export function CatalogCmsPanel({
     e.preventDefault();
     setMsg(null);
     const token = await user.getIdToken();
+    const id = lessonId.trim() || slugId(lessonSlugPrefix(lessonType), lessonTitle);
     const result = await adminCreateLesson(token, {
-      lessonId: lessonId.trim(),
+      lessonId: id,
       moduleId: lessonModuleId.trim(),
       trackId: lessonTrackId.trim(),
       title: lessonTitle.trim(),
@@ -145,8 +232,8 @@ export function CatalogCmsPanel({
       hasQuiz: lessonType === "quiz",
       hasAssignment: lessonType === "assignment",
     });
-    setMsg(result.ok ? `Lesson ${lessonId} created` : result.error || "Failed");
-    if (result.ok && lessonType === "video") setMediaLessonId(lessonId.trim());
+    setMsg(result.ok ? `Lesson ${id} created` : result.error || "Failed");
+    if (result.ok && lessonType === "video") setMediaLessonId(id);
   }
 
   async function uploadMedia(e: React.FormEvent) {
@@ -154,22 +241,93 @@ export function CatalogCmsPanel({
     if (!mediaFile) return;
     setUploadMsg(null);
     setUploadPct(0);
+    const filename = mediaFile.name;
+    const lesson = mediaLessonId.trim();
     try {
       const token = await user.getIdToken();
       const media = await uploadLessonMedia(token, {
-        lessonId: mediaLessonId.trim(),
+        lessonId: lesson,
         file: mediaFile,
         onProgress: setUploadPct,
       });
       setUploadMsg(
-        `Attached ${media.mediaId} to ${mediaLessonId.trim()} (${Math.round(media.sizeBytes / 1024 / 1024)} MB)`,
+        `Attached ${media.mediaId} to ${lesson} (${Math.round(media.sizeBytes / 1024 / 1024)} MB)`,
       );
+      setAttachedMedia((prev) => [
+        { filename, mediaId: media.mediaId, lessonId: lesson },
+        ...prev,
+      ]);
       setMediaFile(null);
     } catch (err) {
       setUploadMsg(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploadPct(null);
     }
+  }
+
+  function modulePicker() {
+    if (moduleOptions.length > 0) {
+      return (
+        <select
+          required
+          value={lessonModuleId}
+          onChange={(e) => setLessonModuleId(e.target.value)}
+          className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="">Select module</option>
+          {moduleOptions.map((m) => (
+            <option key={m.moduleId} value={m.moduleId}>
+              {m.title}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (advancedIds) {
+      return (
+        <input
+          required
+          value={lessonModuleId}
+          onChange={(e) => setLessonModuleId(e.target.value)}
+          placeholder="moduleId"
+          className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        />
+      );
+    }
+    return (
+      <p className="text-xs text-muted-foreground">
+        Add a module first, then pick it for the lesson.
+      </p>
+    );
+  }
+
+  function lessonPicker() {
+    if (lessonOptions.length > 0) {
+      return (
+        <select
+          required
+          value={mediaLessonId}
+          onChange={(e) => setMediaLessonId(e.target.value)}
+          className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="">Select lesson</option>
+          {lessonOptions.map((l) => (
+            <option key={l.lessonId} value={l.lessonId}>
+              {l.title}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    return (
+      <input
+        required
+        value={mediaLessonId}
+        onChange={(e) => setMediaLessonId(e.target.value)}
+        placeholder="lessonId"
+        className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+      />
+    );
   }
 
   return (
@@ -245,18 +403,19 @@ export function CatalogCmsPanel({
         </p>
       ) : null}
 
-      {lockedCourse ? (
-        <div className="rounded-xl border border-border/70 bg-background/60 px-4 py-3">
-          <p className="text-xs text-muted-foreground">Course</p>
-          <p className="font-display text-lg font-semibold">{courseLabel}</p>
-          <p className="mt-0.5 font-mono text-xs text-muted-foreground">{editTrackId}</p>
-        </div>
-      ) : null}
+      <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={advancedIds}
+          onChange={(e) => setAdvancedIds(e.target.checked)}
+        />
+        Advanced: edit ids
+      </label>
 
       <form onSubmit={(e) => void updateTrack(e)} className="space-y-2">
         <h3 className="font-medium">Update track</h3>
         <div className="flex flex-wrap gap-2">
-          {lockedCourse ? null : (
+          {advancedIds ? (
             <input
               required
               value={editTrackId}
@@ -264,17 +423,17 @@ export function CatalogCmsPanel({
               placeholder="trackId"
               className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
-          )}
+          ) : null}
           <input
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="Course title"
+            placeholder="New title"
             className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <input
             value={editBlurb}
             onChange={(e) => setEditBlurb(e.target.value)}
-            placeholder="Blurb"
+            placeholder="Description"
             className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
@@ -296,27 +455,28 @@ export function CatalogCmsPanel({
         <div className="flex flex-wrap gap-2">
           <input
             required
-            value={moduleId}
-            onChange={(e) => setModuleId(e.target.value)}
-            placeholder="moduleId"
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          {lockedCourse ? null : (
-            <input
-              required
-              value={moduleTrackId}
-              onChange={(e) => setModuleTrackId(e.target.value)}
-              placeholder="trackId"
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
-          )}
-          <input
-            required
             value={moduleTitle}
-            onChange={(e) => setModuleTitle(e.target.value)}
+            onChange={(e) => onModuleTitleChange(e.target.value)}
             placeholder="Title"
             className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
+          {advancedIds ? (
+            <>
+              <input
+                value={moduleId}
+                onChange={(e) => setModuleId(e.target.value)}
+                placeholder="moduleId"
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <input
+                required
+                value={moduleTrackId}
+                onChange={(e) => setModuleTrackId(e.target.value)}
+                placeholder="trackId"
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+            </>
+          ) : null}
           <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
             Add module
           </button>
@@ -328,37 +488,15 @@ export function CatalogCmsPanel({
         <div className="flex flex-wrap gap-2">
           <input
             required
-            value={lessonId}
-            onChange={(e) => setLessonId(e.target.value)}
-            placeholder="lessonId"
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            required
-            value={lessonModuleId}
-            onChange={(e) => setLessonModuleId(e.target.value)}
-            placeholder="moduleId"
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          {lockedCourse ? null : (
-            <input
-              required
-              value={lessonTrackId}
-              onChange={(e) => setLessonTrackId(e.target.value)}
-              placeholder="trackId"
-              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
-          )}
-          <input
-            required
             value={lessonTitle}
-            onChange={(e) => setLessonTitle(e.target.value)}
+            onChange={(e) => onLessonTitleChange(e.target.value)}
             placeholder="Title"
             className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
+          {modulePicker()}
           <select
             value={lessonType}
-            onChange={(e) => setLessonType(e.target.value)}
+            onChange={(e) => onLessonTypeChange(e.target.value)}
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
           >
             <option value="read">read</option>
@@ -366,6 +504,32 @@ export function CatalogCmsPanel({
             <option value="quiz">quiz</option>
             <option value="assignment">assignment</option>
           </select>
+          {advancedIds ? (
+            <>
+              <input
+                value={lessonId}
+                onChange={(e) => setLessonId(e.target.value)}
+                placeholder="lessonId"
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              {!moduleOptions.length ? (
+                <input
+                  required
+                  value={lessonModuleId}
+                  onChange={(e) => setLessonModuleId(e.target.value)}
+                  placeholder="moduleId"
+                  className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              ) : null}
+              <input
+                required
+                value={lessonTrackId}
+                onChange={(e) => setLessonTrackId(e.target.value)}
+                placeholder="trackId"
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+            </>
+          ) : null}
           <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
             Add lesson
           </button>
@@ -379,13 +543,7 @@ export function CatalogCmsPanel({
           short-lived signed link.
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            required
-            value={mediaLessonId}
-            onChange={(e) => setMediaLessonId(e.target.value)}
-            placeholder="lessonId"
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
+          {lessonPicker()}
           <input
             required
             type="file"
@@ -410,6 +568,16 @@ export function CatalogCmsPanel({
           </div>
         ) : null}
         {uploadMsg ? <p className="text-sm">{uploadMsg}</p> : null}
+        {attachedMedia.length > 0 ? (
+          <ul className="space-y-1 rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+            {attachedMedia.map((row, i) => (
+              <li key={`${row.mediaId}-${i}`}>
+                <span className="font-medium text-foreground">{row.filename}</span>
+                {` · ${row.mediaId} · lesson ${row.lessonId}`}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </form>
     </div>
   );
