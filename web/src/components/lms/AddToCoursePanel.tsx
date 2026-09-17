@@ -9,8 +9,10 @@ import {
   adminCreateModule,
   createAssignment,
   createMilestone,
+  fetchLmsModule,
   fetchLmsTrack,
   uploadLessonMedia,
+  type LessonDto,
   type ModuleDto,
   type TrackCardDto,
 } from "@/lib/lmsApi";
@@ -46,6 +48,7 @@ export function AddToCoursePanel({
   const [kind, setKind] = useState<Kind>("video");
   const [trackId, setTrackId] = useState(initialTrackId || "");
   const [modules, setModules] = useState<ModuleDto[]>([]);
+  const [lessons, setLessons] = useState<LessonDto[]>([]);
   const [moduleId, setModuleId] = useState("");
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [title, setTitle] = useState("");
@@ -66,6 +69,7 @@ export function AddToCoursePanel({
   useEffect(() => {
     if (!trackId) {
       setModules([]);
+      setLessons([]);
       setModuleId("");
       return;
     }
@@ -77,6 +81,14 @@ export function AddToCoursePanel({
       const list = envelope.data?.modules || [];
       setModules(list);
       setModuleId((prev) => (prev && list.some((m) => m.moduleId === prev) ? prev : ""));
+      const lessonLists = await Promise.all(
+        list.map(async (m) => {
+          const modEnv = await fetchLmsModule(token, m.moduleId);
+          return modEnv.data?.lessons || [];
+        }),
+      );
+      if (cancelled) return;
+      setLessons(lessonLists.flat());
     })();
     return () => {
       cancelled = true;
@@ -346,13 +358,29 @@ export function AddToCoursePanel({
             ) : (
               <p className="text-xs text-muted-foreground">Using run {runId}</p>
             )}
-            <input
-              required
-              value={lessonIdForMile}
-              onChange={(e) => setLessonIdForMile(e.target.value)}
-              placeholder="lessonId (from this track)"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
+            {lessons.length > 0 ? (
+              <select
+                required
+                value={lessonIdForMile}
+                onChange={(e) => setLessonIdForMile(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Select lesson</option>
+                {lessons.map((l) => (
+                  <option key={l.lessonId} value={l.lessonId}>
+                    {l.title}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                required
+                value={lessonIdForMile}
+                onChange={(e) => setLessonIdForMile(e.target.value)}
+                placeholder="lessonId (add a lesson first)"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+            )}
             <div className="flex flex-wrap gap-2">
               <input
                 required

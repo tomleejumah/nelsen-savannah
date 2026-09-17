@@ -122,6 +122,14 @@ export const LMS_TOOLS: LmsTool[] = [
     shells: ["mentor", "school", "admin"],
   },
   {
+    id: "cockpit",
+    label: "Course cockpit",
+    blurb: "Students and assignment completion",
+    to: "/teach",
+    hash: "cockpit",
+    shells: ["mentor", "school", "admin"],
+  },
+  {
     id: "dashboard",
     label: "Dashboard",
     blurb: "Roster health and at-risk students",

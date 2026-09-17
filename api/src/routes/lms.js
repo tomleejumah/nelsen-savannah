@@ -296,6 +296,12 @@ router.get(
   requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.adminMenteeProgress,
 );
+router.get(
+  "/admin/tracks/:trackId/overview",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminTrackOverview,
+);
 router.post(
   "/admin/seed",
   authenticateUser,

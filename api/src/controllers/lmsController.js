@@ -634,6 +634,14 @@ export const adminMenteeProgress = handle(
   },
 );
 
+export const adminTrackOverview = handle(
+  "[GET /lms/admin/tracks/:trackId/overview]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminTrackOverview(req.user.uid, req.params.trackId);
+  },
+);
+
 export const postAssignment = handle("[POST /lms/assignments]", async (req) => {
   const svc = await import("../services/lmsAssignmentService.js");
   const result = await svc.createAssignment(profileFromReq(req), req.body || {});

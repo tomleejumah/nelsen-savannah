@@ -17,6 +17,7 @@ import {
   fetchMenteeProgress,
   fetchSchoolCohorts,
   fetchSubmissionQueue,
+  fetchTrackOverview,
   markSubmission,
   setTrackPricing,
   type AssignmentDto,
@@ -25,6 +26,7 @@ import {
   type MenteeProgressDto,
   type QueueItemDto,
   type TrackCardDto,
+  type TrackOverviewDto,
 } from "@/lib/lmsApi";
 
 export const Route = createFileRoute("/teach")({
@@ -89,8 +91,48 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [quizCorrect, setQuizCorrect] = useState("a");
   const [materialsMsg, setMaterialsMsg] = useState<string | null>(null);
   const [cmsTrackId, setCmsTrackId] = useState("");
+  const [overview, setOverview] = useState<TrackOverviewDto | null>(null);
+  const [overviewBusy, setOverviewBusy] = useState(false);
+  const [overviewErr, setOverviewErr] = useState<string | null>(null);
 
   const schoolId = me.schoolId || me.activeSchoolId || "nelsen-digital";
+
+  function statsForTrack(trackId: string) {
+    const rows = mentees.filter((m) => m.trackId === trackId);
+    const studentCount = rows.length;
+    const avgProgress =
+      studentCount === 0
+        ? 0
+        : Math.round(
+            rows.reduce((a, m) => a + Number(m.trackPercent || 0), 0) /
+              studentCount,
+          );
+    return { studentCount, avgProgress };
+  }
+
+  async function openTrack(trackId: string) {
+    setCmsTrackId(trackId);
+    setPriceTrackId(trackId);
+    setRunTrackId(trackId);
+    setAssignTrackId(trackId);
+    setOverviewBusy(true);
+    setOverviewErr(null);
+    try {
+      const token = await user.getIdToken();
+      const envelope = await fetchTrackOverview(token, trackId);
+      if (!envelope.ok || !envelope.data) {
+        setOverview(null);
+        setOverviewErr(envelope.error || "Could not load course overview");
+        return;
+      }
+      setOverview(envelope.data);
+    } catch (err) {
+      setOverview(null);
+      setOverviewErr(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setOverviewBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -180,7 +222,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="courses">
         <h2 className="font-display text-xl font-semibold">Your courses</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Update a track, jump to milestones, or open full catalog tools below.
+          Open a course for roster &amp; assignments, or Add / Update content.
         </p>
         {tracks.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
@@ -188,16 +230,27 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {tracks.map((t) => (
+            {tracks.map((t) => {
+              const stats = statsForTrack(t.trackId);
+              return (
               <li
                 key={t.trackId}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card px-5 py-4"
               >
                 <div>
                   <p className="font-display font-semibold">{t.courseTitle}</p>
-                  <p className="text-xs text-muted-foreground">{t.trackId}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {stats.studentCount} students · avg {stats.avgProgress}%
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void openTrack(t.trackId)}
+                    className="rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
+                  >
+                    Open
+                  </button>
                   <a
                     href="#add"
                     onClick={() => {
@@ -220,32 +273,114 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                   >
                     Update
                   </a>
-                  <a
-                    href="#materials"
-                    onClick={() => {
-                      setRunTrackId(t.trackId);
-                      setPriceTrackId(t.trackId);
-                    }}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                  >
-                    Milestones
-                  </a>
-                  <a
-                    href="#assign"
-                    onClick={() => setAssignTrackId(t.trackId)}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                  >
-                    Assign
-                  </a>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>
 
-      <section id="cms" className="rounded-2xl border border-border/70 bg-card/40 p-5">
-        <CatalogCmsPanel user={user} schoolId={schoolId} selectedTrackId={cmsTrackId} />
+      <section id="cockpit" className="space-y-4 rounded-2xl border border-border/70 bg-card/40 p-5">
+        <h2 className="font-display text-xl font-semibold">Course cockpit</h2>
+        {!cmsTrackId ? (
+          <p className="text-sm text-muted-foreground">
+            Open a course above to see students and assignment completion.
+          </p>
+        ) : overviewBusy ? (
+          <p className="text-sm text-muted-foreground">Loading overview…</p>
+        ) : overviewErr ? (
+          <p className="text-sm text-destructive">{overviewErr}</p>
+        ) : overview ? (
+          <>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <p className="font-display text-lg font-semibold">{overview.title}</p>
+                <p className="text-sm text-muted-foreground">
+                  {overview.studentCount} students · avg {overview.avgProgress}%
+                </p>
+              </div>
+              <a
+                href="#add"
+                className="text-sm font-medium text-ember hover:underline"
+              >
+                Add content →
+              </a>
+            </div>
+
+            <div>
+              <h3 className="font-medium">Students</h3>
+              {overview.students.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No enrollments yet.
+                </p>
+              ) : (
+                <ul className="mt-2 divide-y divide-border/60 rounded-xl border border-border/60">
+                  {overview.students.map((s) => (
+                    <li
+                      key={s.uid}
+                      className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-sm"
+                    >
+                      <span className="font-medium">{s.displayName}</span>
+                      <span className="font-semibold text-ember">
+                        {s.trackPercent}%
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <h3 className="font-medium">Assignments</h3>
+              {overview.assignments.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No course assignments yet — use Add to course.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-4">
+                  {overview.assignments.map((a) => (
+                    <li
+                      key={a.id}
+                      className="rounded-xl border border-border/60 px-4 py-3"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="font-medium">{a.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {a.completedCount} done · {a.missingCount} missing
+                        </p>
+                      </div>
+                      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {a.students.map((row) => (
+                          <li
+                            key={`${a.id}-${row.uid}`}
+                            className="flex justify-between gap-2"
+                          >
+                            <span>{row.displayName}</span>
+                            <span
+                              className={
+                                row.status === "missing"
+                                  ? "text-destructive"
+                                  : "text-ember"
+                              }
+                            >
+                              {row.status}
+                              {row.score != null ? ` · ${row.score}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Select Open on a course to load the cockpit.
+          </p>
+        )}
       </section>
 
       <AddToCoursePanel
@@ -254,8 +389,15 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
         tracks={tracks}
         runId={runId || undefined}
         initialTrackId={cmsTrackId || undefined}
-        onDone={() => void load()}
+        onDone={() => {
+          void load();
+          if (cmsTrackId) void openTrack(cmsTrackId);
+        }}
       />
+
+      <section id="cms" className="rounded-2xl border border-border/70 bg-card/40 p-5">
+        <CatalogCmsPanel user={user} schoolId={schoolId} selectedTrackId={cmsTrackId} />
+      </section>
 
       <section id="queue">
         <h2 className="font-display text-xl font-semibold">Marking queue</h2>

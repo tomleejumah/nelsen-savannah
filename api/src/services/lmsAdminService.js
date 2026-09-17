@@ -11,7 +11,7 @@ import {
   mirrorRole,
 } from "./lmsMirror.js";
 import { setUserRole } from "./lmsMeService.js";
-import { normalizeRole, isSuperAdmin } from "../constants/lmsRoles.js";
+import { normalizeRole, isSuperAdmin, canMarkAssignments } from "../constants/lmsRoles.js";
 import { patchLessonProgress } from "./lmsEnrollmentService.js";
 import { maybeIssueCertificate } from "./lmsCertificateService.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
@@ -415,6 +415,111 @@ export async function adminMenteeProgress(mentorId, actorUid) {
         trackPercent: Number(r.track_percent),
         lastActiveAt: Number(r.last_active_at),
       })),
+    },
+  };
+}
+
+/** Mentor course cockpit: roster + assignment completion for one track. */
+export async function adminTrackOverview(actorUid, trackId) {
+  const role = await loadUserRole(actorUid);
+  if (!canMarkAssignments(role) && !isSuperAdmin(role)) {
+    const err = new Error("Mentor required");
+    err.status = 403;
+    throw err;
+  }
+  const tid = String(trackId || "").trim();
+  if (!tid) {
+    const err = new Error("trackId required");
+    err.status = 400;
+    throw err;
+  }
+  const track = await dbGet("SELECT track_id, title FROM tracks WHERE track_id = ?", [
+    tid,
+  ]);
+  if (!track) {
+    const err = new Error("Track not found");
+    err.status = 404;
+    throw err;
+  }
+
+  const students = await dbAll(
+    `SELECT e.uid, e.track_percent, e.last_active_at, e.status,
+            u.display_name, u.photo_url, u.email
+     FROM enrollments e
+     LEFT JOIN users_mirror u ON u.uid = e.uid
+     WHERE e.track_id = ?
+     ORDER BY e.track_percent DESC, u.display_name ASC`,
+    [tid],
+  );
+  const assignments = await dbAll(
+    `SELECT assignment_id, title, lesson_id, created_at, due_at
+     FROM assignments WHERE track_id = ?
+     ORDER BY created_at DESC`,
+    [tid],
+  );
+  const submissions = await dbAll(
+    `SELECT assignment_id, uid, status, score, submitted_at, marked_at
+     FROM submissions
+     WHERE track_id = ? AND assignment_id IS NOT NULL`,
+    [tid],
+  );
+  const subByKey = new Map();
+  for (const s of submissions) {
+    const key = `${s.assignment_id}:${s.uid}`;
+    const prev = subByKey.get(key);
+    if (!prev || Number(s.submitted_at) > Number(prev.submitted_at)) {
+      subByKey.set(key, s);
+    }
+  }
+
+  const avgProgress =
+    students.length === 0
+      ? 0
+      : Math.round(
+          students.reduce((a, s) => a + Number(s.track_percent || 0), 0) /
+            students.length,
+        );
+
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      trackId: tid,
+      title: track.title,
+      studentCount: students.length,
+      avgProgress,
+      students: students.map((s) => ({
+        uid: s.uid,
+        displayName: s.display_name || s.email || s.uid,
+        photoUrl: s.photo_url || "",
+        trackPercent: Number(s.track_percent || 0),
+        status: s.status || "in_progress",
+        lastActiveAt: Number(s.last_active_at || 0),
+      })),
+      assignments: assignments.map((a) => {
+        const rows = students.map((s) => {
+          const sub = subByKey.get(`${a.assignment_id}:${s.uid}`);
+          return {
+            uid: s.uid,
+            displayName: s.display_name || s.email || s.uid,
+            status: sub ? String(sub.status) : "missing",
+            score: sub?.score == null ? null : Number(sub.score),
+            submittedAt: sub ? Number(sub.submitted_at) : null,
+          };
+        });
+        const completed = rows.filter((r) =>
+          ["submitted", "passed", "failed", "marked"].includes(r.status),
+        ).length;
+        return {
+          id: a.assignment_id,
+          title: a.title,
+          lessonId: a.lesson_id || null,
+          createdAt: Number(a.created_at),
+          dueAt: a.due_at ? Number(a.due_at) : null,
+          completedCount: completed,
+          missingCount: Math.max(0, students.length - completed),
+          students: rows,
+        };
+      }),
     },
   };
 }
