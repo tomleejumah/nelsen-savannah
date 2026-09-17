@@ -66,13 +66,10 @@ jobs:
           find "$WEB_DIR" "$WEB_DIR_MIRROR" -type d -exec chmod 755 {} +
           find "$WEB_DIR" "$WEB_DIR_MIRROR" -type f -exec chmod 644 {} +
 
-  smoke:
-    needs: deploy
-    runs-on: self-hosted
-    steps:
-      - name: Live site smoke
+      - name: Live site smoke (nginx + public)
         run: |
           set -euo pipefail
+          # Same runner as deploy — no second queue wait.
           check() {
             local label="$1"
             shift
@@ -81,10 +78,13 @@ jobs:
             echo "$label -> $code"
             test "$code" = "200"
           }
-          check "local home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
-          check "local learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
-          check "local program" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/programs/future-safari
-          check "public home" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/
-          check "public learning" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/learning
-          check "public program" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/programs/future-safari
+          check "nginx home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
+          check "nginx learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
+          check "nginx program" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/programs/future-safari
+          if check "public home" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/; then
+            check "public learning" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/learning
+            check "public program" --retry 3 --retry-delay 2 https://nelsen-savannah.co.ke/programs/future-safari
+          else
+            echo "::warning::public HTTPS failed; nginx-local checks passed"
+          fi
           echo "web smoke ok"

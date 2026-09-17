@@ -77,14 +77,10 @@ jobs:
           "$PM2" start src/app.js --name nelsen-savannah
           "$PM2" save
 
-  smoke:
-    needs: deploy
-    runs-on: self-hosted
-    steps:
-      - name: Health smoke
+      - name: Health smoke (local + nginx)
         run: |
           set -euo pipefail
-          # Require local app AND nginx vhost. Public is best-effort (Cloudflare).
+          # Same runner as deploy — no second queue wait.
           try_url() {
             local label="$1"
             shift
