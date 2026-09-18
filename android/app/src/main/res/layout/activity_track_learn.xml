@@ -62,6 +62,39 @@
                     android:textColor="#E8D5D9"
                     android:textSize="13sp" />
 
+                <LinearLayout
+                    android:id="@+id/tutorRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvTutorName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/font_ui"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBookTutor"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:paddingHorizontal="12dp"
+                        android:text="Book now"
+                        android:textAllCaps="false"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/tvProgressLabel"
                     android:layout_width="wrap_content"

@@ -1,6 +1,7 @@
 package com.app.nisisiafrica;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -50,6 +51,8 @@ public class TrackLearnActivity extends AppCompatActivity {
     public static final String EXTRA_TITLE = "extra_title";
     public static final String EXTRA_DESC = "extra_desc";
     public static final String EXTRA_FALLBACK_URL = "extra_fallback_url";
+    public static final String EXTRA_TUTOR_ID = "extra_tutor_id";
+    public static final String EXTRA_TUTOR_NAME = "extra_tutor_name";
 
     private ProgressBar progress;
     private ProgressBar trackProgress;
@@ -60,12 +63,17 @@ public class TrackLearnActivity extends AppCompatActivity {
     private TextView tvStatProgress;
     private TextView tvStatLocked;
     private TextView tvPlayerPlaceholder;
+    private TextView tvTutorName;
+    private View tutorRow;
+    private MaterialButton btnBookTutor;
     private VideoView videoView;
     private View playerFrame;
     private LinearLayout modulesContainer;
     private MaterialButton btnEnroll;
     private String trackId;
     private String fallbackUrl;
+    private String tutorId;
+    private String tutorName;
     private final List<LmsModels.LessonDto> flatLessons = new ArrayList<>();
     private LmsModels.LessonDto resumeLesson;
     private LmsModels.CohortRunDto cohortRun;
@@ -86,6 +94,8 @@ public class TrackLearnActivity extends AppCompatActivity {
         fallbackUrl = getIntent().getStringExtra(EXTRA_FALLBACK_URL);
         String title = getIntent().getStringExtra(EXTRA_TITLE);
         String desc = getIntent().getStringExtra(EXTRA_DESC);
+        tutorId = getIntent().getStringExtra(EXTRA_TUTOR_ID);
+        tutorName = getIntent().getStringExtra(EXTRA_TUTOR_NAME);
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
         toolbar.setNavigationOnClickListener(v -> finish());
@@ -103,9 +113,13 @@ public class TrackLearnActivity extends AppCompatActivity {
         playerFrame = findViewById(R.id.playerFrame);
         modulesContainer = findViewById(R.id.modulesContainer);
         btnEnroll = findViewById(R.id.btnEnroll);
+        tutorRow = findViewById(R.id.tutorRow);
+        tvTutorName = findViewById(R.id.tvTutorName);
+        btnBookTutor = findViewById(R.id.btnBookTutor);
 
         if (!TextUtils.isEmpty(title)) tvTitle.setText(title);
         if (!TextUtils.isEmpty(desc)) tvDesc.setText(desc);
+        bindTutorRow(tutorId, tutorName);
 
         btnEnroll.setOnClickListener(v -> {
             if (resumeLesson != null) {
@@ -115,6 +129,44 @@ public class TrackLearnActivity extends AppCompatActivity {
             }
         });
         loadTrack();
+    }
+
+    private void bindTutorRow(String id, String name) {
+        if (tutorRow == null || tvTutorName == null) return;
+        if (TextUtils.isEmpty(id) && TextUtils.isEmpty(name)) {
+            tutorRow.setVisibility(View.GONE);
+            return;
+        }
+        tutorRow.setVisibility(View.VISIBLE);
+        String label = !TextUtils.isEmpty(name) ? name : "Tutor";
+        tvTutorName.setText(label);
+        tvTutorName.setOnClickListener(v -> openTutorProfile(id, label));
+        if (btnBookTutor != null) {
+            boolean canBook = com.app.nisisiafrica.Utils.Roles.browsesMentors()
+                    && !TextUtils.isEmpty(id);
+            btnBookTutor.setVisibility(canBook ? View.VISIBLE : View.GONE);
+            btnBookTutor.setOnClickListener(v -> {
+                if (TextUtils.isEmpty(id)) return;
+                Intent book = new Intent(this, BookMentor.class);
+                book.putExtra(Constants.MENTOR_ID, id);
+                book.putExtra(Constants.MENTOR_NAME, label);
+                startActivity(book);
+            });
+        }
+    }
+
+    private void openTutorProfile(String id, String name) {
+        if (TextUtils.isEmpty(id)) {
+            Toast.makeText(this, "Tutor profile unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent profile = new Intent(this, ProfileActivity.class);
+        profile.putExtra(Constants.IS_MENTOR, true);
+        profile.putExtra(Constants.MENTOR_ID, id);
+        if (!TextUtils.isEmpty(name)) {
+            profile.putExtra(Constants.MENTOR_NAME, name);
+        }
+        startActivity(profile);
     }
 
     private void withBearer(BearerCallback cb) {
@@ -198,8 +250,11 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (track != null) {
             trackPrice = track.price;
             if (!TextUtils.isEmpty(track.courseTitle)) tvTitle.setText(track.courseTitle);
+            if (!TextUtils.isEmpty(track.tutorId)) tutorId = track.tutorId;
+            if (!TextUtils.isEmpty(track.tutorName)) tutorName = track.tutorName;
+            bindTutorRow(tutorId, tutorName);
             String meta = "";
-            if (!TextUtils.isEmpty(track.tutorName)) meta = track.tutorName;
+            if (!TextUtils.isEmpty(track.does)) meta = track.does;
             if (!TextUtils.isEmpty(track.lessonsString())) {
                 meta += (meta.isEmpty() ? "" : " · ") + track.lessonsString() + " lessons";
             }
@@ -210,7 +265,6 @@ public class TrackLearnActivity extends AppCompatActivity {
                 meta += (meta.isEmpty() ? "" : " · ") + formatPrice(track.price);
             }
             if (!meta.isEmpty()) tvDesc.setText(meta);
-            else if (!TextUtils.isEmpty(track.does)) tvDesc.setText(track.does);
             int pct = Math.round(track.trackPercent);
             trackProgress.setProgress(pct);
             tvProgressLabel.setText(
