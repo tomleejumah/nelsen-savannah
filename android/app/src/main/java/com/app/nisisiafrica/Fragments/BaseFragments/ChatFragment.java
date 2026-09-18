@@ -942,9 +942,12 @@ public class ChatFragment extends Fragment {
         if (binding.bottomChatBar != null) {
             ViewCompat.setOnApplyWindowInsetsListener(binding.bottomChatBar, (v, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-                v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), dp(8) + Math.max(0, bars.bottom / 4));
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                int bottom = Math.max(bars.bottom, ime.bottom);
+                v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), dp(8) + bottom);
                 return insets;
             });
+            ViewCompat.requestApplyInsets(binding.bottomChatBar);
         }
         if (binding.chatDetailContainer != null) {
             ViewCompat.requestApplyInsets(binding.chatDetailContainer);

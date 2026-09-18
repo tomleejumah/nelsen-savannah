@@ -15,10 +15,15 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
+import com.app.nisisiafrica.Utils.StoryViewsStore;
 import com.app.nisisiafrica.data.Model.Story;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
@@ -57,6 +62,7 @@ public class StoryViewerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_story_viewer);
 
         stories = getIntent().getParcelableArrayListExtra(EXTRA_STORIES);
@@ -75,6 +81,20 @@ public class StoryViewerActivity extends AppCompatActivity {
         cta = findViewById(R.id.storyCta);
         viewsLabel = findViewById(R.id.storyViews);
         menuButton = findViewById(R.id.storyMenu);
+
+        View topChrome = findViewById(R.id.storyTopChrome);
+        View bottomChrome = findViewById(R.id.storyBottomChrome);
+        ViewCompat.setOnApplyWindowInsetsListener(topChrome, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(dp(12) + bars.left, bars.top + dp(8), dp(12) + bars.right, v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(bottomChrome, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            v.setPadding(dp(18) + bars.left, v.getPaddingTop(), dp(18) + bars.right, bars.bottom + dp(18));
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(topChrome);
 
         findViewById(R.id.storyClose).setOnClickListener(v -> finish());
 
@@ -172,6 +192,7 @@ public class StoryViewerActivity extends AppCompatActivity {
     /** Counts one view per story per viewing session and shows the tally to the owner. */
     private void registerView(Story story) {
         if (story == null || TextUtils.isEmpty(story.storyId)) return;
+        StoryViewsStore.markSeen(this, story.storyId);
         String me = FirebaseAuth.getInstance().getUid();
         boolean isOwner = me != null && me.equals(story.ownerId);
 

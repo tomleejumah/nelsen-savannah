@@ -32,8 +32,8 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="8dp"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="10dp"
             android:paddingBottom="10dp">
 
             <TextView

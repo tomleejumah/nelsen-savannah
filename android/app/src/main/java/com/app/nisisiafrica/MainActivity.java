@@ -133,10 +133,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
             insetLeft = systemBars.left;
             insetTop = systemBars.top;
             insetRight = systemBars.right;
-            insetBottom = systemBars.bottom;
+            // Edge-to-edge + keyboard: lift content by the larger of nav-bar / IME.
+            insetBottom = Math.max(systemBars.bottom, ime.bottom);
             applyMainInsets();
             return insets;
         });
@@ -296,13 +298,15 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             navBlur.setBackgroundColor(solid);
             topBlur.setBackgroundColor(solid);
         }
+        // Pad the glass bar itself (BlurView often swallows child inset listeners).
+        ViewCompat.setOnApplyWindowInsetsListener(topBlur, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(bars.left, bars.top, bars.right, 0);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(topBlur);
         if (topBarInner != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(topBarInner, (v, insets) -> {
-                Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), bars.top + dp(8), v.getPaddingRight(), dp(10));
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(topBarInner);
+            topBarInner.setPadding(dp(16), dp(10), dp(16), dp(10));
         }
 
         if (btnHomeNotifications != null) {

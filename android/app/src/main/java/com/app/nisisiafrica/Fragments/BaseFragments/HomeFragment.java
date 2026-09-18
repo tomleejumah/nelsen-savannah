@@ -61,6 +61,7 @@ import com.app.nisisiafrica.AllMentorsActivity;
 import com.app.nisisiafrica.SchoolsListActivity;
 import com.app.nisisiafrica.StoryViewerActivity;
 import com.app.nisisiafrica.Adapters.StoryAdapter;
+import com.app.nisisiafrica.data.Model.StoryBucket;
 import com.app.nisisiafrica.data.Model.Story;
 import com.app.nisisiafrica.ViewAllActivity;
 import com.app.nisisiafrica.ViewModel.EventViewModel;
@@ -153,6 +154,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     private ValueEventListener storiesListener;
     private StoryAdapter storyAdapter;
     private final ArrayList<Story> storyList = new ArrayList<>();
+    private final ArrayList<StoryBucket> storyBuckets = new ArrayList<>();
     private View storiesContainer;
     private Handler autoScrollHandler;
     private Runnable autoScrollRunnable;
@@ -229,10 +231,16 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         storiesContainer = view.findViewById(R.id.storiesContainer);
         RecyclerView rvStories = view.findViewById(R.id.rvStories);
         rvStories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        storyAdapter = new StoryAdapter(getContext(), position -> {
+        storyAdapter = new StoryAdapter(getContext(), bucketIndex -> {
+            if (bucketIndex < 0 || bucketIndex >= storyBuckets.size()) return;
+            StoryBucket bucket = storyBuckets.get(bucketIndex);
             Intent storyIntent = new Intent(getActivity(), StoryViewerActivity.class);
-            storyIntent.putParcelableArrayListExtra(StoryViewerActivity.EXTRA_STORIES, storyList);
-            storyIntent.putExtra(StoryViewerActivity.EXTRA_START_INDEX, position);
+            storyIntent.putParcelableArrayListExtra(
+                    StoryViewerActivity.EXTRA_STORIES, bucket.stories);
+            storyIntent.putExtra(
+                    StoryViewerActivity.EXTRA_START_INDEX,
+                    bucket.firstUnseenIndex(
+                            com.app.nisisiafrica.Utils.StoryViewsStore.seenIds(requireContext())));
             startActivity(storyIntent);
         });
         storyAdapter.setOnAddClick(() ->
@@ -599,14 +607,16 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                         storyList.add(story);
                     }
                 }
-                if (storyAdapter != null) storyAdapter.submit(storyList);
+                storyBuckets.clear();
+                storyBuckets.addAll(StoryBucket.fromStories(storyList));
+                if (storyAdapter != null) storyAdapter.submit(storyBuckets);
                 if (storiesContainer != null) {
                     storiesContainer.setVisibility(View.VISIBLE);
                 }
                 View emptyHint = getView() != null
                         ? getView().findViewById(R.id.tvStoriesEmptyHint) : null;
                 if (emptyHint != null) {
-                    emptyHint.setVisibility(storyList.isEmpty() ? View.VISIBLE : View.GONE);
+                    emptyHint.setVisibility(storyBuckets.isEmpty() ? View.VISIBLE : View.GONE);
                 }
             }
 
@@ -656,6 +666,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     @Override
     public void onResume() {
         super.onResume();
+        if (storyAdapter != null) {
+            storyAdapter.refreshSeenState();
+        }
         if (coursesAdapter != null) {
             coursesAdapter.refresh();
         }
@@ -881,6 +894,20 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         View sheet = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_reserve_seat, null, false);
         dialog.setContentView(sheet);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        dialog.setOnShowListener(d -> {
+            View bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                com.google.android.material.bottomsheet.BottomSheetBehavior<?> behavior =
+                        com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet);
+                behavior.setSkipCollapsed(true);
+                behavior.setState(
+                        com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
+            }
+        });
 
         TextView tvTitle = sheet.findViewById(R.id.tvReserveTitle);
         TextView tvSeats = sheet.findViewById(R.id.tvSeatsRemaining);
