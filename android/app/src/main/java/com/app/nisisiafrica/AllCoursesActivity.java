@@ -345,6 +345,9 @@ public class AllCoursesActivity extends AppCompatActivity {
                     if (!TextUtils.isEmpty(tutor)) {
                         learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, tutor);
                     }
+                    if (!TextUtils.isEmpty(c.getTutorAvatarUrl())) {
+                        learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_AVATAR, c.getTutorAvatarUrl());
+                    }
                     startActivity(learn);
                 });
                 meta.setOnClickListener(v -> {
@@ -356,6 +359,9 @@ public class AllCoursesActivity extends AppCompatActivity {
                     Intent profile = new Intent(AllCoursesActivity.this, ProfileActivity.class);
                     profile.putExtra(Constants.IS_MENTOR, true);
                     profile.putExtra(Constants.MENTOR_ID, tid);
+                    if (!TextUtils.isEmpty(tutor)) {
+                        profile.putExtra(Constants.MENTOR_NAME, tutor);
+                    }
                     startActivity(profile);
                 });
             }

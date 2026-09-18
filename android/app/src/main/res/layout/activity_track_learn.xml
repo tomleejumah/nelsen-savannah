@@ -71,15 +71,34 @@
                     android:orientation="horizontal"
                     android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/tvTutorName"
+                    <LinearLayout
+                        android:id="@+id/tutorIdentity"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:fontFamily="@font/font_ui"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
+
+                        <de.hdodenhof.circleimageview.CircleImageView
+                            android:id="@+id/ivTutorAvatar"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_person" />
+
+                        <TextView
+                            android:id="@+id/tvTutorName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/font_ui"
+                            android:textColor="@color/white"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnBookTutor"
