@@ -14,8 +14,8 @@ import androidx.core.content.ContextCompat;
 import com.app.nisisiafrica.R;
 
 /**
- * Avatar ring: one arc per story — maroon = not viewed, white = viewed.
- * Full maroon only when every segment is unseen; full white when all viewed.
+ * Avatar ring: one arc per story — maroon = not viewed, muted grey = viewed
+ * (grey stays visible on the light home background).
  */
 public class StoryRingView extends FrameLayout {
 
@@ -74,7 +74,7 @@ public class StoryRingView extends FrameLayout {
         arcBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
 
         int unseenColor = ContextCompat.getColor(getContext(), R.color.maroon_500);
-        int seenColor = ContextCompat.getColor(getContext(), R.color.white);
+        int seenColor = ContextCompat.getColor(getContext(), R.color.muted);
         int n = segmentSeen.length;
 
         if (n == 1) {
