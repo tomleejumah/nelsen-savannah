@@ -229,14 +229,20 @@ public class StoryViewerActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isCancelled = false;
+    /** Skip resume-on-dismiss when Close/Delete is in flight. */
+    private boolean ownerActionPending = false;
+
     /** Shows the three-dots menu (Close / Delete) only to the story's owner. */
     private void setupOwnerControls(Story story) {
         String me = FirebaseAuth.getInstance().getUid();
         boolean isOwner = me != null && me.equals(story.ownerId);
-        if (!isOwner) {
+        if (!isOwner || TextUtils.isEmpty(story.storyId)) {
             menuButton.setVisibility(View.GONE);
+            menuButton.setOnClickListener(null);
             return;
         }
+        final String storyId = story.storyId;
         menuButton.setVisibility(View.VISIBLE);
         menuButton.setOnClickListener(v -> {
             if (currentAnimator != null) {
@@ -244,28 +250,90 @@ public class StoryViewerActivity extends AppCompatActivity {
                 currentAnimator.cancel();
             }
             androidx.appcompat.widget.PopupMenu popup =
-                    new androidx.appcompat.widget.PopupMenu(this, menuButton);
+                    new androidx.appcompat.widget.PopupMenu(this, menuButton, Gravity.END);
             popup.getMenu().add(0, 1, 0, "Close story");
             popup.getMenu().add(0, 2, 1, "Delete story");
             popup.setOnMenuItemClickListener(item -> {
                 DatabaseReference ref = FirebaseDatabase.getInstance()
-                        .getReference("stories").child(story.storyId);
+                        .getReference("stories").child(storyId);
                 if (item.getItemId() == 1) {
-                    ref.child("active").setValue(false);
-                    android.widget.Toast.makeText(this, "Story closed", android.widget.Toast.LENGTH_SHORT).show();
-                    finish();
+                    ownerActionPending = true;
+                    ref.child("active").setValue(false)
+                            .addOnSuccessListener(unused -> {
+                                android.widget.Toast.makeText(this, "Story closed",
+                                        android.widget.Toast.LENGTH_SHORT).show();
+                                removeCurrentAndContinue(storyId);
+                            })
+                            .addOnFailureListener(e -> {
+                                ownerActionPending = false;
+                                android.widget.Toast.makeText(this,
+                                        "Could not close story",
+                                        android.widget.Toast.LENGTH_SHORT).show();
+                                if (!isFinishing()) startProgress(currentIndex);
+                            });
                 } else {
-                    ref.removeValue();
-                    android.widget.Toast.makeText(this, "Story deleted", android.widget.Toast.LENGTH_SHORT).show();
-                    finish();
+                    ownerActionPending = true;
+                    new androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("Delete story?")
+                            .setMessage("This removes the story for everyone.")
+                            .setPositiveButton("Delete", (d, w) ->
+                                    ref.removeValue()
+                                            .addOnSuccessListener(unused -> {
+                                                android.widget.Toast.makeText(this,
+                                                        "Story deleted",
+                                                        android.widget.Toast.LENGTH_SHORT).show();
+                                                removeCurrentAndContinue(storyId);
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                ownerActionPending = false;
+                                                android.widget.Toast.makeText(this,
+                                                        "Could not delete story",
+                                                        android.widget.Toast.LENGTH_SHORT).show();
+                                                if (!isFinishing()) startProgress(currentIndex);
+                                            }))
+                            .setNegativeButton("Cancel", (d, w) -> {
+                                ownerActionPending = false;
+                                if (!isFinishing()) startProgress(currentIndex);
+                            })
+                            .setOnCancelListener(d -> {
+                                ownerActionPending = false;
+                                if (!isFinishing()) startProgress(currentIndex);
+                            })
+                            .show();
                 }
                 return true;
             });
             popup.setOnDismissListener(menu -> {
-                if (!isFinishing()) startProgress(currentIndex);
+                if (!isFinishing() && !ownerActionPending) {
+                    startProgress(currentIndex);
+                }
             });
             popup.show();
         });
+    }
+
+    /** Drop a closed/deleted story from this session and show the next, or exit. */
+    private void removeCurrentAndContinue(String storyId) {
+        ownerActionPending = false;
+        if (stories == null) {
+            finish();
+            return;
+        }
+        int removeAt = -1;
+        for (int i = 0; i < stories.size(); i++) {
+            if (storyId.equals(stories.get(i).storyId)) {
+                removeAt = i;
+                break;
+            }
+        }
+        if (removeAt >= 0) stories.remove(removeAt);
+        if (stories.isEmpty()) {
+            finish();
+            return;
+        }
+        buildProgressBars();
+        int next = Math.min(Math.max(removeAt, 0), stories.size() - 1);
+        showStory(next);
     }
 
     private void startProgress(int index) {
@@ -286,8 +354,6 @@ public class StoryViewerActivity extends AppCompatActivity {
         });
         currentAnimator.start();
     }
-
-    private boolean isCancelled = false;
 
     private void goToNext() {
         if (currentAnimator != null) {
