@@ -86,7 +86,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
         if (getItemViewType(position) == TYPE_ADD) {
             holder.company.setText("+ Add");
             holder.logo.setImageResource(R.drawable.ic_add_circle);
-            holder.ring.setRingState(1, false);
+            holder.ring.setSegmentSeen(new boolean[]{true});
             holder.itemView.setOnClickListener(v -> {
                 if (addListener != null) addListener.onAddClick();
             });
@@ -106,8 +106,13 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
             holder.logo.setImageResource(R.drawable.ic_image_placeholder);
         }
 
-        boolean unseen = bucket.hasUnseen(seenIds);
-        holder.ring.setRingState(bucket.stories.size(), unseen);
+        // One ring segment per story — white if viewed, maroon if not.
+        boolean[] seen = new boolean[bucket.stories.size()];
+        for (int i = 0; i < bucket.stories.size(); i++) {
+            String id = bucket.stories.get(i).storyId;
+            seen[i] = id != null && seenIds != null && seenIds.contains(id);
+        }
+        holder.ring.setSegmentSeen(seen);
 
         holder.itemView.setOnClickListener(v -> {
             int idx = holder.getBindingAdapterPosition() - 1;
