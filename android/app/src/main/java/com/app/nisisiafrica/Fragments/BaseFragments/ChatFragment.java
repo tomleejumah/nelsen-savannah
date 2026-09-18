@@ -943,8 +943,9 @@ public class ChatFragment extends Fragment {
             ViewCompat.setOnApplyWindowInsetsListener(binding.bottomChatBar, (v, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
                 Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                int bottom = Math.max(bars.bottom, ime.bottom);
-                v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), dp(8) + bottom);
+                // MainActivity already lifts the root by IME height — only pad nav bar when keyboard is closed.
+                int bottomPad = ime.bottom > 0 ? dp(8) : dp(8) + bars.bottom;
+                v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), bottomPad);
                 return insets;
             });
             ViewCompat.requestApplyInsets(binding.bottomChatBar);
