@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Pure white light mode. Brand accents stay chocolate.
+      Pure white light mode. Brand accents are red maroon (buttons / CTAs).
       Layouts should prefer MentUI names (maroon_*, bg, surface, ink, …).
     -->
 
-    <!-- Chocolate scale (name kept as maroon_* for layout compatibility) -->
-    <color name="maroon_900">#3D2A1F</color>
-    <color name="maroon_700">#5C3D2A</color>
-    <color name="maroon_600">#6B4A32</color>
-    <color name="maroon_500">#7A5640</color>
-    <color name="maroon_100">#F0EBE4</color>
-    <color name="maroon_050">#F7F5F2</color>
+    <!-- Maroon / red brand scale -->
+    <color name="maroon_900">#4C0F1E</color>
+    <color name="maroon_700">#7C1F32</color>
+    <color name="maroon_600">#93283F</color>
+    <color name="maroon_500">#A8324B</color>
+    <color name="maroon_100">#F6E7EA</color>
+    <color name="maroon_050">#FBF2F3</color>
 
-    <!-- Surfaces / text / line (light white) -->
+    <!-- Surfaces / text / line (white light mode) -->
     <color name="bg">#FFFFFF</color>
     <color name="surface">#FFFFFF</color>
     <color name="surface_2">#F4F4F5</color>
@@ -27,7 +27,7 @@
     <color name="status_pending_bg">#F7E3D0</color>
     <color name="status_pending_text">#8A5A17</color>
 
-    <color name="shadow_maroon">#1A3D2A1F</color>
+    <color name="shadow_maroon">#1A4C0F1E</color>
 
     <!-- Legacy brand constants (logo / third-party) -->
     <color name="brand_navy">#112555</color>
@@ -49,7 +49,7 @@
     <color name="text_strong">@color/ink</color>
     <color name="text_body">@color/ink_soft</color>
     <color name="text_muted">@color/muted</color>
-    <color name="text_on_action">#FFF5F2EB</color>
+    <color name="text_on_action">#FFFFFFFF</color>
     <color name="text_primary">@color/ink</color>
     <color name="text_secondary">@color/ink_soft</color>
     <color name="text_tertiary">@color/muted</color>
@@ -59,7 +59,7 @@
 
     <color name="bubble_sent">@color/maroon_700</color>
     <color name="bubble_received">@color/surface_2</color>
-    <color name="bubble_quote_bg">#1A5C3D2A</color>
+    <color name="bubble_quote_bg">#1A7C1F32</color>
 
     <color name="blur_overlay">#99FFFFFF</color>
 
@@ -118,7 +118,7 @@
     <color name="black_overlay">#66000000</color>
 
     <color name="primary_gradient_start">@color/maroon_900</color>
-    <color name="primary_gradient_end">@color/maroon_600</color>
+    <color name="primary_gradient_end">@color/maroon_500</color>
     <color name="primary_dark">@color/maroon_900</color>
 
     <color name="background_primary">@color/bg</color>
