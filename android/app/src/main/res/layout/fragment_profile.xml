@@ -139,7 +139,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Media &amp; courses"
+                    android:text="My courses"
                     android:textAllCaps="false"
                     android:textColor="@color/maroon_600" />
             </LinearLayout>
