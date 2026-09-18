@@ -16,6 +16,7 @@ import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
@@ -53,6 +54,7 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     private static final int TYPE_COMPACT = 0;
     private static final int TYPE_EXPANDED = 1;
     private static final int TYPE_UPDATE_PROFILE = 2;
+    private static final int TYPE_ADD_MORE = 3;
     private final Context mContext;
 
     private static final DiffUtil.ItemCallback<CourseItem> DIFF_CALLBACK = new DiffUtil.ItemCallback<CourseItem>() {
@@ -78,6 +80,8 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     @Override
     public int getItemViewType(int position) {
         if (mContext instanceof MainActivity) {
+            int shown = Math.min(super.getItemCount(), 5);
+            if (shown == 1 && position == 1) return TYPE_ADD_MORE;
             return TYPE_COMPACT;
         } else if (mContext instanceof ViewAllActivity) {
             return TYPE_EXPANDED;
@@ -92,7 +96,9 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
-        if (viewType == TYPE_COMPACT) {
+        if (viewType == TYPE_ADD_MORE) {
+            return new AddMoreViewHolder(inflater.inflate(R.layout.item_course_add_more, parent, false));
+        } else if (viewType == TYPE_COMPACT) {
             View view = inflater.inflate(R.layout.item_course, parent, false);
             return new CompactViewHolder(view);
         } else if (viewType == TYPE_EXPANDED) {
@@ -106,25 +112,27 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof AddMoreViewHolder) {
+            holder.itemView.setOnClickListener(v ->
+                    mContext.startActivity(new Intent(mContext, AllCoursesActivity.class)));
+            return;
+        }
+
         CourseItem item = getItem(position);
         if (item == null) return;
         if (holder instanceof CompactViewHolder ) {
-            ((CompactViewHolder) holder).bind(item);
-            isLiked(item.getCourseId(),((CompactViewHolder) holder).likeBtn);
-            ((CompactViewHolder) holder).likeBtn.setOnClickListener(v -> {
+            CompactViewHolder vh = (CompactViewHolder) holder;
+            vh.bind(item, position);
+            isLiked(item.getCourseId(), vh.likeBtn);
+            vh.likeBtn.setOnClickListener(v -> {
                 if (v.getTag().equals("Like")){
                     FirebaseDatabase.getInstance().getReference().child("Likes").
                             child((item.getCourseId())).child(Util.
                                     getState(Constants.CURRENT_USER_ID, "")).setValue(true);
 
-//                    addNotification(item.getCourseId(),Util.getState(Constants.CURRENT_USER_ID,
-//                            ""),"Liked your Post", item.getTutorId());
                     addNotification(item.getCourseId(), item.getTutorId(), "Liked your Course: ");
 
                     notifyItemChanged(position);
-
-//                    saveLikedPost(item.getCourseId(), posts.getUserName(), posts.getDescription(),
-//                            posts.getPrice(), posts.getImageUrl(), posts.getPublisherID());
                 }else {
                     notifyItemChanged(position);
                     FirebaseDatabase.getInstance().getReference().child("Likes").
@@ -168,10 +176,10 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 }
                 mContext.startActivity(profile);
             };
-            ((CompactViewHolder) holder).tv_tutor_name.setOnClickListener(openTutor);
-            ((CompactViewHolder) holder).iv_tutor_avatar.setOnClickListener(openTutor);
-            if (((CompactViewHolder) holder).tutorClickRow != null) {
-                ((CompactViewHolder) holder).tutorClickRow.setOnClickListener(openTutor);
+            vh.tv_tutor_name.setOnClickListener(openTutor);
+            vh.iv_tutor_avatar.setOnClickListener(openTutor);
+            if (vh.tutorClickRow != null) {
+                vh.tutorClickRow.setOnClickListener(openTutor);
             }
         } else if (holder instanceof UpdateProfileViewHolder) {
             ((UpdateProfileViewHolder) holder).bind(item);
@@ -183,11 +191,20 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
 
     @Override
     public int getItemCount() {
-        if (super.getItemCount() == 0) return 0;
-        int viewType = getItemViewType(0);
-        return (viewType == TYPE_COMPACT)
-                ? Math.min(super.getItemCount(), 5)
-                : super.getItemCount();
+        int n = super.getItemCount();
+        if (n == 0) return 0;
+        if (mContext instanceof MainActivity) {
+            int shown = Math.min(n, 5);
+            // Exactly one active course → append "enroll more" polaroid.
+            return shown == 1 ? 2 : shown;
+        }
+        return n;
+    }
+
+    class AddMoreViewHolder extends RecyclerView.ViewHolder {
+        AddMoreViewHolder(@NonNull View itemView) {
+            super(itemView);
+        }
     }
 
     class CompactViewHolder extends RecyclerView.ViewHolder {
@@ -210,22 +227,41 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             likeBtn = itemView.findViewById(R.id.likeBtn);
         }
 
-        void bind(CourseItem courseItem) {
-            tv_duration.setText(courseItem.getDuration() + " Hours");
-            tv_lessons.setText(courseItem.getLessons() + " Lessons");
+        void bind(CourseItem courseItem, int position) {
+            // Alternating polaroid tilt on home rail.
+            if (mContext instanceof MainActivity) {
+                itemView.setRotation(position % 2 == 0 ? -2.2f : 1.6f);
+            } else {
+                itemView.setRotation(0f);
+            }
+
             tv_course_title.setText(courseItem.getCourseTitle());
+            String lessons = courseItem.getLessons() != null ? courseItem.getLessons().trim() : "";
+            if (tv_duration != null) {
+                tv_duration.setText(courseItem.getDuration() != null ? courseItem.getDuration() : "");
+            }
+            if (tv_lessons != null) {
+                tv_lessons.setText(lessons);
+            }
 
             String tutor = courseItem.getTutorName();
             boolean showTutor = hasRealTutor(tutor);
-            if (tutorClickRow != null) {
-                tutorClickRow.setVisibility(showTutor ? View.VISIBLE : View.GONE);
+            String meta;
+            if (showTutor && !lessons.isEmpty()) {
+                meta = tutor.toUpperCase() + " · " + lessons.toUpperCase();
+            } else if (showTutor) {
+                meta = tutor.toUpperCase();
+            } else if (!lessons.isEmpty()) {
+                meta = lessons.toUpperCase();
             } else {
-                tv_tutor_name.setVisibility(showTutor ? View.VISIBLE : View.GONE);
-                iv_tutor_avatar.setVisibility(showTutor ? View.VISIBLE : View.GONE);
+                meta = "";
             }
-            if (showTutor) {
-                tv_tutor_name.setText(tutor);
-                Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
+            if (tutorClickRow != null) {
+                tutorClickRow.setVisibility(meta.isEmpty() ? View.GONE : View.VISIBLE);
+            }
+            if (tv_tutor_name != null) {
+                tv_tutor_name.setText(meta);
+                tv_tutor_name.setVisibility(meta.isEmpty() ? View.GONE : View.VISIBLE);
             }
 
             Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);

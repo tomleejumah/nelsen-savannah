@@ -23,4 +23,19 @@
     <dimen name="bottom_nav_margin_h">16dp</dimen>
     <dimen name="course_card_width">160dp</dimen>
     <dimen name="course_card_height">220dp</dimen>
+
+    <!-- Field Journal spacing / stamps -->
+    <dimen name="ns_space_xs">4dp</dimen>
+    <dimen name="ns_space_sm">8dp</dimen>
+    <dimen name="ns_space_md">14dp</dimen>
+    <dimen name="ns_space_lg">20dp</dimen>
+    <dimen name="ns_space_xl">28dp</dimen>
+    <dimen name="ns_stamp_size">46dp</dimen>
+    <dimen name="ns_stamp_ring_stroke">2.5dp</dimen>
+    <dimen name="ns_arc_stamp_size">44dp</dimen>
+    <dimen name="ns_fab_size">42dp</dimen>
+    <dimen name="ns_polaroid_width">150dp</dimen>
+    <dimen name="ns_polaroid_photo_height">96dp</dimen>
+    <dimen name="ns_ticket_notch">14dp</dimen>
+    <dimen name="ns_rule_stroke">1dp</dimen>
 </resources>

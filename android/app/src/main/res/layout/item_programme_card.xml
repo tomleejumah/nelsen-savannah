@@ -1,75 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="260dp"
+<!-- Field Journal programme row — keep ProgrammesAdapter IDs. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginEnd="10dp"
-    android:minHeight="168dp"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="@dimen/radius_card_lg"
-    app:cardElevation="2dp"
-    app:strokeColor="@color/line"
-    app:strokeWidth="1dp">
+    android:background="@drawable/bg_row_bottom_divider"
+    android:gravity="top"
+    android:orientation="horizontal"
+    android:paddingVertical="12dp">
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/dot_notification_indicator" />
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tvAudienceTag"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/tvAudienceTag"
-                style="@style/Nelsen.Tag.Maroon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:id="@+id/tvProgramIndex"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="end"
-                android:fontFamily="@font/font_ui"
-                android:textColor="@color/muted"
-                android:textSize="12sp" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvProgramIndex"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvProgramTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:fontFamily="@font/font_display"
-            android:textColor="@color/ink"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/font_fraunces"
+            android:textColor="@color/ns_ink"
+            android:textSize="14sp"
+            tools:text="Rural Youth Fellowship" />
 
         <TextView
             android:id="@+id/tvProgramBlurb"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
-            android:fontFamily="@font/font_ui"
-            android:maxLines="3"
-            android:textColor="@color/ink_soft"
-            android:textSize="13sp" />
+            android:fontFamily="@font/font_inter"
+            android:maxLines="2"
+            android:textColor="@color/ns_grey"
+            android:textSize="11.5sp"
+            tools:text="12-week mentorship for students outside major towns." />
 
-        <TextView
-            android:id="@+id/tvApply"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/checklistContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:fontFamily="@font/font_ui"
-            android:text="Apply to this program →"
-            android:textColor="@color/maroon_600"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:visibility="gone" />
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tvApply"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:fontFamily="@font/font_plex_mono"
+        android:text="Apply"
+        android:textColor="@color/ns_maroon"
+        android:textSize="10sp" />
+</LinearLayout>

@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.Adapters;
 
+import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -101,6 +102,8 @@ public class ProgrammesAdapter extends RecyclerView.Adapter<ProgrammesAdapter.VH
             };
             itemView.setOnClickListener(click);
             apply.setOnClickListener(click);
+            apply.setPaintFlags(apply.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+            apply.setText("Apply");
         }
     }
 }

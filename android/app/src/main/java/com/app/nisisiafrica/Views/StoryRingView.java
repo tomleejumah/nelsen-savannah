@@ -73,8 +73,8 @@ public class StoryRingView extends FrameLayout {
         float inset = strokeWidthPx / 2f;
         arcBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
 
-        int unseenColor = ContextCompat.getColor(getContext(), R.color.maroon_500);
-        int seenColor = ContextCompat.getColor(getContext(), R.color.muted);
+        int unseenColor = ContextCompat.getColor(getContext(), R.color.ns_maroon);
+        int seenColor = ContextCompat.getColor(getContext(), R.color.ns_grey);
         int n = segmentSeen.length;
 
         if (n == 1) {

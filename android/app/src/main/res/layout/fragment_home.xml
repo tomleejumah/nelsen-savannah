@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_2">
+    android:background="@color/ns_paper">
 
     <LinearLayout
         android:id="@+id/main"
@@ -43,8 +43,8 @@
                 android:id="@+id/homeSheet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_home_sheet"
-                android:elevation="2dp"
+                android:background="@color/ns_paper"
+                android:elevation="0dp"
                 android:orientation="vertical"
                 android:paddingBottom="96dp">
 
@@ -62,9 +62,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:clipToPadding="false"
-                        android:paddingHorizontal="6dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="6dp" />
+                        android:paddingHorizontal="@dimen/ns_space_lg"
+                        android:paddingTop="@dimen/ns_space_md"
+                        android:paddingBottom="@dimen/ns_space_sm" />
 
                     <TextView
                         android:id="@+id/tvStoriesEmptyHint"
@@ -109,51 +109,42 @@
                     android:id="@+id/cardFindMyPath"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:background="@android:color/transparent"
+                    android:layout_marginHorizontal="@dimen/ns_space_lg"
+                    android:layout_marginTop="@dimen/ns_space_md"
+                    android:background="@drawable/bg_ledger_row_borders"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
-                    android:gravity="center_vertical"
+                    android:gravity="bottom"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="10dp">
+                    android:paddingVertical="12dp">
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="@font/font_fraunces"
+                        android:text="Enroll Schools"
+                        android:textColor="@color/ns_ink"
+                        android:textSize="15sp" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="8dp"
+                        android:layout_marginBottom="4dp"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:background="@drawable/shape_divider_dashed" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/font_display"
-                            android:text="Enroll Schools"
-                            android:textColor="@color/ink"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvFindMyPathBlurb"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:fontFamily="@font/font_ui"
-                            android:text="Pick a school, then browse and enroll in their courses."
-                            android:textColor="@color/muted"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginStart="8dp"
-                        android:contentDescription="@null"
-                        android:rotation="-45"
-                        android:scaleX="-1"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/maroon_700" />
+                    <TextView
+                        android:id="@+id/tvFindMyPathBlurb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/font_plex_mono"
+                        android:gravity="end"
+                        android:maxWidth="140dp"
+                        android:text="browse schools →"
+                        android:textColor="@color/ns_maroon"
+                        android:textSize="9.5sp" />
                 </LinearLayout>
 
                 <RelativeLayout
@@ -172,12 +163,10 @@
                         android:drawablePadding="12dp"
                         android:fontFamily="@font/font_ui"
                         android:gravity="center_vertical"
-                        android:text="Upcoming schedules"
-                        android:textColor="@color/ink"
-                        android:textSize="19sp"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_clock"
-                        app:drawableTint="@color/ink" />
+                        android:text="Upcoming schedule"
+                        android:textColor="@color/ns_ink"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/font_fraunces" />
 
                     <TextView
                         android:id="@+id/tvSeeMore"
@@ -189,8 +178,9 @@
                         android:paddingHorizontal="4dp"
                         android:paddingVertical="4dp"
                         android:text="See more"
-                        android:textColor="@color/maroon_600"
-                        android:textSize="14sp"
+                        android:textColor="@color/ns_maroon"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/font_plex_mono"
                         android:visibility="gone" />
                 </RelativeLayout>
 
@@ -212,7 +202,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:src="@drawable/ic_add_circle"
-                        app:tint="@color/maroon_700" />
+                        app:tint="@color/ns_ink" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -243,7 +233,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
-                    android:paddingTop="4dp"
+                    android:paddingTop="1dp"
                     tools:itemCount="1" />
 
                 <androidx.cardview.widget.CardView
@@ -284,11 +274,9 @@
                         android:fontFamily="@font/font_ui"
                         android:gravity="center_vertical"
                         android:text="Active courses"
-                        android:textColor="@color/ink"
-                        android:textSize="19sp"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_play"
-                        app:drawableTint="@color/ink" />
+                        android:textColor="@color/ns_ink"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/font_fraunces" />
 
                     <TextView
                         android:id="@+id/seeAll"
@@ -296,10 +284,10 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:fontFamily="@font/font_ui"
-                        android:text="See all"
-                        android:textColor="@color/maroon_600"
-                        android:textSize="14sp" />
+                        android:fontFamily="@font/font_plex_mono"
+                        android:text="see all"
+                        android:textColor="@color/ns_maroon"
+                        android:textSize="12sp" />
                 </RelativeLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -362,10 +350,9 @@
                         android:drawablePadding="6dp"
                         android:fontFamily="@font/font_ui"
                         android:text="Other programmes"
-                        android:textColor="@color/ink"
-                        android:textSize="19sp"
-                        android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_trophy" />
+                        android:textColor="@color/ns_ink"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/font_fraunces" />
 
                     <TextView
                         android:id="@+id/seeAllProgrammes"
@@ -384,8 +371,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="8dp"
+                    android:paddingHorizontal="@dimen/ns_space_lg"
+                    android:paddingVertical="4dp"
                     tools:itemCount="3" />
 
                 <!-- Quick actions -->
@@ -394,6 +381,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
+                    android:layout_marginHorizontal="@dimen/ns_space_lg"
                     app:cardBackgroundColor="@android:color/transparent"
                     app:cardCornerRadius="0dp"
                     app:cardElevation="0dp"
@@ -422,11 +410,11 @@
                                     android:id="@+id/btnBeMentor"
                                     android:layout_width="48dp"
                                     android:layout_height="48dp"
-                                    android:background="@drawable/bg_chip_circle"
+                                    android:background="@drawable/shape_arc_stamp_circle"
                                     android:contentDescription="@null"
                                     android:padding="10dp"
                                     android:src="@drawable/ic_mentor"
-                                    app:tint="@color/maroon_700" />
+                                    app:tint="@color/ns_ink" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -435,8 +423,10 @@
                                     android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Be a\nMentor"
-                                    android:textColor="@color/ink"
-                                    android:textSize="12sp" />
+                                    android:textColor="@color/ns_grey"
+                                    android:textSize="8sp"
+                                    android:fontFamily="@font/font_plex_mono"
+                                    android:textAllCaps="true" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -450,11 +440,11 @@
                                     android:id="@+id/btnOurShop"
                                     android:layout_width="48dp"
                                     android:layout_height="48dp"
-                                    android:background="@drawable/bg_chip_circle"
+                                    android:background="@drawable/shape_arc_stamp_circle"
                                     android:contentDescription="@null"
                                     android:padding="10dp"
                                     android:src="@drawable/ic_shopping"
-                                    app:tint="@color/maroon_700" />
+                                    app:tint="@color/ns_ink" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -463,8 +453,10 @@
                                     android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Our\nShop"
-                                    android:textColor="@color/ink"
-                                    android:textSize="12sp" />
+                                    android:textColor="@color/ns_grey"
+                                    android:textSize="8sp"
+                                    android:fontFamily="@font/font_plex_mono"
+                                    android:textAllCaps="true" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -478,11 +470,11 @@
                                     android:id="@+id/btnRecMe"
                                     android:layout_width="48dp"
                                     android:layout_height="48dp"
-                                    android:background="@drawable/bg_chip_circle"
+                                    android:background="@drawable/shape_arc_stamp_circle"
                                     android:contentDescription="@null"
                                     android:padding="10dp"
                                     android:src="@drawable/ic_who_am_i"
-                                    app:tint="@color/maroon_700" />
+                                    app:tint="@color/ns_ink" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -491,8 +483,10 @@
                                     android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Who\nI'm I"
-                                    android:textColor="@color/ink"
-                                    android:textSize="12sp" />
+                                    android:textColor="@color/ns_grey"
+                                    android:textSize="8sp"
+                                    android:fontFamily="@font/font_plex_mono"
+                                    android:textAllCaps="true" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -506,11 +500,11 @@
                                     android:id="@+id/btnDonate"
                                     android:layout_width="48dp"
                                     android:layout_height="48dp"
-                                    android:background="@drawable/bg_chip_circle"
+                                    android:background="@drawable/shape_arc_stamp_circle"
                                     android:contentDescription="@null"
                                     android:padding="10dp"
                                     android:src="@drawable/ic_donate"
-                                    app:tint="@color/maroon_700" />
+                                    app:tint="@color/ns_ink" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
@@ -519,8 +513,10 @@
                                     android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Donate\nto Us"
-                                    android:textColor="@color/ink"
-                                    android:textSize="12sp" />
+                                    android:textColor="@color/ns_grey"
+                                    android:textSize="8sp"
+                                    android:fontFamily="@font/font_plex_mono"
+                                    android:textAllCaps="true" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>

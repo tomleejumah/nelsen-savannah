@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="52dp"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="@dimen/ns_stamp_size"
+        android:layout_height="@dimen/ns_stamp_size"
+        android:background="@drawable/shape_add_circle_dashed">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="@font/font_fraunces"
+            android:text="+"
+            android:textColor="@color/ns_ink"
+            android:textSize="19sp" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/storyCompany"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/font_plex_mono"
+        android:text="Add"
+        android:textColor="@color/ns_grey"
+        android:textSize="8.5sp" />
+</LinearLayout>

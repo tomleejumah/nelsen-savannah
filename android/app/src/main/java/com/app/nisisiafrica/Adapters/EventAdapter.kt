@@ -102,7 +102,7 @@ class EventAdapter(
             }
 
             val online = "online".equals(event.mode, ignoreCase = true)
-            tvFormatTag.text = if (online) "Online" else "In person"
+            tvFormatTag.text = if (online) "ONLINE" else "IN PERSON"
 
             val time = when {
                 event.startTime.isNotBlank() && event.endTime.isNotBlank() ->
@@ -110,18 +110,14 @@ class EventAdapter(
                 event.startTime.isNotBlank() -> event.startTime
                 else -> ""
             }
-            tvEventTime.text = time
-            tvEventTime.visibility = if (time.isBlank()) View.GONE else View.VISIBLE
-
             val place = if (online) {
                 if (event.meetingLink.isNotBlank()) "Online meeting" else "Online"
             } else event.location
-            if (!compact && place.isNotBlank()) {
-                tvEventPlace.visibility = View.VISIBLE
-                tvEventPlace.text = place
-            } else {
-                tvEventPlace.visibility = View.GONE
-            }
+            val whenWhere = listOf(time, place).filter { it.isNotBlank() }.joinToString(" · ")
+            tvEventTime.text = whenWhere
+            tvEventTime.visibility = if (whenWhere.isBlank()) View.GONE else View.VISIBLE
+            tvEventPlace.visibility = View.GONE
+            tvEventPlace.text = place
 
             if (!compact && event.price.isNotBlank()) {
                 tvEventPrice.visibility = View.VISIBLE

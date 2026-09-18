@@ -379,8 +379,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         RecyclerView rcProgrammes = view.findViewById(R.id.rcProgrammes);
         if (rcProgrammes != null) {
-            rcProgrammes.setLayoutManager(new LinearLayoutManager(getContext(),
-                    LinearLayoutManager.HORIZONTAL, false));
+            rcProgrammes.setLayoutManager(new LinearLayoutManager(getContext()));
             ProgrammesAdapter programmesAdapter = new ProgrammesAdapter(false);
             rcProgrammes.setAdapter(programmesAdapter);
             programmesAdapter.setOnProgrammeClick(p ->
@@ -504,8 +503,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     }
                     if (n > 0) {
                         tvFindMyPathBlurb.setText(n == 1
-                                ? "1 school track in progress — open Enroll Schools to continue."
-                                : n + " school tracks in progress — open Enroll Schools to continue.");
+                                ? "1 track in progress →"
+                                : n + " tracks in progress →");
                     } else {
                         refreshFindMyPathCatalogHint(bearer);
                     }
@@ -534,8 +533,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     n = body.data.tracks.size();
                 }
                 if (n > 0) {
-                    tvFindMyPathBlurb.setText(
-                            "Browse " + n + " schools and enroll in a course that fits you.");
+                    tvFindMyPathBlurb.setText(n + " schools →");
                 }
                 // else keep layout default copy
             }
