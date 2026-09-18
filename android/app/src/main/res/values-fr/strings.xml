@@ -98,6 +98,11 @@
     <string name="chat_messages">Messages</string>
     <string name="chat_announcements">Annonces</string>
     <string name="chat_official_updates">Mises à jour officielles</string>
+    <string name="chat_announcements_people">%d personnes · Les mentors peuvent publier</string>
+    <string name="chat_announcements_you_can_post">%d personnes · Vous pouvez publier</string>
+    <string name="chat_pick_mentor_title">Écrire à un mentor</string>
+    <string name="chat_no_mentors">Aucun mentor pour l\'instant</string>
+    <string name="chat_starting">Ouverture du chat…</string>
     <string name="chat_ai_assistant">Assistant IA Nelsen</string>
     <string name="chat_virtual_help">Aide virtuelle</string>
     <string name="chat_role_mentor">Mentor</string>

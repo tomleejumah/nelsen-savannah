@@ -1,22 +1,17 @@
 package com.app.nisisiafrica.Adapters
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
-import com.app.nisisiafrica.data.Model.ChatMessage
 import com.app.nisisiafrica.data.Model.Chatroom
-import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import de.hdodenhof.circleimageview.CircleImageView
-import java.text.SimpleDateFormat
-import androidx.recyclerview.widget.ListAdapter
 
 class PinnedChatAdapter(
     private val onChatroomClick: (Chatroom) -> Unit
@@ -38,20 +33,25 @@ class PinnedChatAdapter(
         private val tvUnread: TextView = itemView.findViewById(R.id.tvUnread)
 
         fun bind(chatroom: Chatroom) {
-            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+            FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-            // Logic for Pinned Items (Announcements / AI)
-            if (chatroom.chatroomId == "announcements") {
-                tvName.text = "Announcements"
+            // Pinned: Announcements only (AI assistant hidden until a new provider is wired).
+            if (chatroom.chatroomId == "announcements" || chatroom.type == "system") {
+                itemView.visibility = View.VISIBLE
+                tvName.text = itemView.context.getString(R.string.chat_announcements)
+                val people = chatroom.userIds.size
+                tvLastMsg.text = if (people > 0) {
+                    itemView.context.getString(R.string.chat_announcements_people, people)
+                } else {
+                    chatroom.lastMessage ?: itemView.context.getString(R.string.chat_official_updates)
+                }
                 Glide.with(tvAvatar.context).load(R.drawable.nelsen_icon).into(tvAvatar)
             } else {
-                tvName.text="Nelsen AI Assistant"
-                Glide.with(tvAvatar.context).load(R.drawable.cyborg).circleCrop().into(tvAvatar)
+                itemView.visibility = View.GONE
+                return
             }
 
-            tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
             tvUnread.visibility = View.GONE
-
             itemView.setOnClickListener { onChatroomClick(chatroom) }
         }
     }
@@ -59,7 +59,8 @@ class PinnedChatAdapter(
     companion object {
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Chatroom>() {
             override fun areItemsTheSame(old: Chatroom, new: Chatroom) = old.chatroomId == new.chatroomId
-            override fun areContentsTheSame(old: Chatroom, new: Chatroom) = old.lastMessage == new.lastMessage
+            override fun areContentsTheSame(old: Chatroom, new: Chatroom) =
+                old.lastMessage == new.lastMessage && old.userIds == new.userIds
         }
     }
 }

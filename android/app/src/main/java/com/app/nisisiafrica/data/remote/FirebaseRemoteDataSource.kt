@@ -509,23 +509,52 @@ object FirebaseRemoteDataSource {
     //chats
     fun getPinnedChatRooms(): Flow<List<Chatroom>> = callbackFlow {
         val db = FirebaseFirestore.getInstance()
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@callbackFlow
-
-        val pinnedIds = listOf("announcements", "ai_assistant_$userId")
+        FirebaseAuth.getInstance().currentUser?.uid ?: return@callbackFlow
 
         val listener = db.collection("chatRooms")
-            .whereIn(FieldPath.documentId(), pinnedIds)
+            .document("announcements")
             .addSnapshotListener { snapshot, e ->
                 if (e != null) return@addSnapshotListener
-
-                val rooms = snapshot?.toObjects(Chatroom::class.java) ?: emptyList()
-
-                // Sort: Ensure Announcements (system) is always above AI
-                val sorted = rooms.sortedByDescending { it.type == "system" }
-                trySend(sorted)
+                val room = snapshot?.toObject(Chatroom::class.java)
+                trySend(if (room != null) listOf(room) else emptyList())
             }
         awaitClose { listener.remove() }
     }
+
+    /** One-shot list of all mentors/tutors (for mentor→mentor messaging). */
+    fun fetchAllMentors(
+        onSuccess: (List<MentorItem>) -> Unit,
+        onError: ((Exception) -> Unit)? = null,
+    ) {
+        FirebaseDatabase.getInstance().reference.child("mentors")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val mentors = snapshot.children.mapNotNull { mentorSnapshot ->
+                    mentorSnapshot.key?.let { key ->
+                        MentorItem(
+                            mentorId = mentorSnapshot.child("mentorId")
+                                .getValue(String::class.java)?.takeIf { it.isNotBlank() } ?: key,
+                            mentorImageUrl = mentorSnapshot.child("mentorImageUrl")
+                                .getValue(String::class.java) ?: "",
+                            mentorName = mentorSnapshot.child("mentorName")
+                                .getValue(String::class.java) ?: "",
+                            mentorDescription = mentorSnapshot.child("mentorDescription")
+                                .getValue(String::class.java) ?: "",
+                            studentsCount = mentorSnapshot.child("studentsCount")
+                                .getValue(String::class.java),
+                            studentImages = parseStringList(mentorSnapshot.child("studentImages")),
+                            bookedDates = parseBookedDates(mentorSnapshot.child("bookedDates")),
+                            categories = parseStringList(mentorSnapshot.child("categories")),
+                            averageRating = mentorSnapshot.child("averageRating")
+                                .getValue(Double::class.java),
+                        )
+                    }
+                }.sortedBy { it.mentorName.lowercase() }
+                onSuccess(mentors)
+            }
+            .addOnFailureListener { e -> onError?.invoke(e) }
+    }
+
     fun initSpecialChatRooms() {
         val db = FirebaseFirestore.getInstance()
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -554,19 +583,7 @@ object FirebaseRemoteDataSource {
                 )
             }
         }
-
-        val aiChatId = "ai_assistant_$userId"
-        db.collection("chatRooms").document(aiChatId)
-            .set(
-                hashMapOf(
-                    "chatroomId" to aiChatId,
-                    "userIds" to listOf(userId),
-                    "lastMessage" to "How can I help you today?",
-                    "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                    "type" to "ai"
-                ),
-                SetOptions.merge()
-            )
+        // AI assistant room intentionally not created — will plug in later.
     }
 
     fun createOrGetDirectChatRoom(

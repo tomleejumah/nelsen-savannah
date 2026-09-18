@@ -14,6 +14,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -38,6 +40,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Adapters.ChatAdapter;
 import com.app.nisisiafrica.Adapters.ChatRoomAdapter;
 import com.app.nisisiafrica.Adapters.ChatSearchAdapter;
+import com.app.nisisiafrica.Adapters.MentorPickAdapter;
 import com.app.nisisiafrica.Adapters.PinnedChatAdapter;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.DataBase.AppDatabase;
@@ -256,8 +259,14 @@ public class ChatFragment extends Fragment {
 
         updateChatHeader(chatroom, type, currentUserId);
 
-        // Access Control: mentors & admins may post announcements; mentees read only.
-        if ("system".equals(type)) {
+        // Access Control: everyone reads announcements; mentors & admins can post.
+        if ("system".equals(type) || "ai".equals(type)) {
+            if ("ai".equals(type)) {
+                // AI chat hidden — bounce back to list.
+                Toast.makeText(requireContext(), "AI chat is unavailable for now", Toast.LENGTH_SHORT).show();
+                showChatList();
+                return;
+            }
             boolean canPost = Roles.canCreate(role);
             int vis = canPost ? View.VISIBLE : View.GONE;
             binding.bottomChatBar.setVisibility(vis);
@@ -302,33 +311,120 @@ public class ChatFragment extends Fragment {
                 .show();
     }
 
-    /** Bottom-sheet picker letting a mentor jump into a DM with one of their mentees. */
+    /** Bottom-sheet: mentors pick any other mentor/tutor to start a DM. */
     public void showNewChatPicker() {
-        java.util.List<Chatroom> mentees = new ArrayList<>();
-        for (Chatroom r : loadedRooms) {
-            String type = r.getType() != null ? r.getType() : "direct";
-            if ("direct".equals(type)) mentees.add(r);
-        }
-        if (mentees.isEmpty()) {
-            Toast.makeText(requireContext(),
-                    "No mentees yet — they'll appear here once they book you.",
-                    Toast.LENGTH_LONG).show();
+        if (!Roles.canCreate(role)) {
+            Toast.makeText(requireContext(), "Only mentors can start chats here", Toast.LENGTH_SHORT).show();
             return;
         }
+        String me = FirebaseAuth.getInstance().getUid();
+        if (me == null) {
+            Toast.makeText(requireContext(), "Not signed in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         com.google.android.material.bottomsheet.BottomSheetDialog dialog =
                 new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        LinearLayout sheet = new LinearLayout(requireContext());
+        sheet.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(16);
+        sheet.setPadding(pad, pad, pad, pad);
+
+        TextView title = new TextView(requireContext());
+        title.setText(R.string.chat_pick_mentor_title);
+        title.setTextSize(18f);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        title.setPadding(0, 0, 0, dp(12));
+        sheet.addView(title);
+
+        TextView status = new TextView(requireContext());
+        status.setText("Loading…");
+        status.setTextColor(ContextCompat.getColor(requireContext(), R.color.muted));
+        sheet.addView(status);
+
         RecyclerView rv = new RecyclerView(requireContext());
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-        int pad = Math.round(8 * getResources().getDisplayMetrics().density);
-        rv.setPadding(0, pad, 0, pad);
-        ChatSearchAdapter adapter = new ChatSearchAdapter(room -> {
+        rv.setVisibility(View.GONE);
+        MentorPickAdapter adapter = new MentorPickAdapter(mentor -> {
             dialog.dismiss();
-            openChat(room);
+            startMentorDirectChat(mentor);
         });
         rv.setAdapter(adapter);
-        adapter.submit(mentees);
-        dialog.setContentView(rv);
+        sheet.addView(rv, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        dialog.setContentView(sheet);
         dialog.show();
+
+        FirebaseRemoteDataSource.INSTANCE.fetchAllMentors(mentors -> {
+            if (binding == null || !isAdded()) return Unit.INSTANCE;
+            java.util.List<com.app.nisisiafrica.data.Model.MentorItem> others = new ArrayList<>();
+            for (com.app.nisisiafrica.data.Model.MentorItem m : mentors) {
+                if (m == null || m.getMentorId() == null) continue;
+                if (me.equals(m.getMentorId())) continue;
+                others.add(m);
+            }
+            if (others.isEmpty()) {
+                status.setText(R.string.chat_no_mentors);
+                return Unit.INSTANCE;
+            }
+            status.setVisibility(View.GONE);
+            rv.setVisibility(View.VISIBLE);
+            adapter.submit(others);
+            return Unit.INSTANCE;
+        }, e -> {
+            if (binding == null || !isAdded()) return Unit.INSTANCE;
+            status.setText(R.string.chat_no_mentors);
+            return Unit.INSTANCE;
+        });
+    }
+
+    private void startMentorDirectChat(com.app.nisisiafrica.data.Model.MentorItem mentor) {
+        if (mentor == null || mentor.getMentorId() == null) return;
+        String me = FirebaseAuth.getInstance().getUid();
+        if (me == null) return;
+        String otherName = mentor.getMentorName() != null && !mentor.getMentorName().isEmpty()
+                ? mentor.getMentorName() : "Mentor";
+        String myName = resolveMyDisplayName();
+
+        Toast.makeText(requireContext(), R.string.chat_starting, Toast.LENGTH_SHORT).show();
+        FirebaseRemoteDataSource.INSTANCE.createOrGetDirectChatRoom(
+                mentor.getMentorId(), otherName, myName, chatId -> {
+                    if (binding == null || !isAdded()) return Unit.INSTANCE;
+                    if (chatId == null) {
+                        Toast.makeText(requireContext(), "Couldn't start chat", Toast.LENGTH_SHORT).show();
+                        return Unit.INSTANCE;
+                    }
+                    java.util.Map<String, String> names = new java.util.HashMap<>();
+                    names.put(me, myName);
+                    names.put(mentor.getMentorId(), otherName);
+                    Chatroom room = new Chatroom(
+                            chatId,
+                            java.util.Arrays.asList(me, mentor.getMentorId()),
+                            names,
+                            "No Messages Yet",
+                            null,
+                            "",
+                            java.util.Collections.emptyMap(),
+                            "direct"
+                    );
+                    openChat(room);
+                    return Unit.INSTANCE;
+                });
+    }
+
+    private String resolveMyDisplayName() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null && user.getDisplayName() != null && !user.getDisplayName().trim().isEmpty()) {
+            return user.getDisplayName().trim();
+        }
+        if (user != null && user.getEmail() != null) {
+            String email = user.getEmail();
+            int at = email.indexOf('@');
+            return at > 0 ? email.substring(0, at) : email;
+        }
+        return "Mentor";
     }
 
     /** Lets the user attach a photo, document, or audio file to the open chat. */
@@ -403,15 +499,23 @@ public class ChatFragment extends Fragment {
         switch (type) {
             case "system":
                 binding.tvChatName.setText(R.string.chat_announcements);
-                binding.tvChatRole.setText(R.string.chat_official_updates);
+                int people = chatroom.getUserIds() != null ? chatroom.getUserIds().size() : 0;
+                boolean canPost = Roles.canCreate(role);
+                if (people > 0) {
+                    binding.tvChatRole.setText(canPost
+                            ? getString(R.string.chat_announcements_you_can_post, people)
+                            : getString(R.string.chat_announcements_people, people));
+                } else {
+                    binding.tvChatRole.setText(R.string.chat_official_updates);
+                }
                 Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
                 break;
             case "ai":
+                // Should not open — AI is disabled.
                 binding.tvChatName.setText(R.string.chat_ai_assistant);
                 binding.tvChatRole.setText(R.string.chat_virtual_help);
-                //todo update
                 Glide.with(this).load(R.drawable.cyborg).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
