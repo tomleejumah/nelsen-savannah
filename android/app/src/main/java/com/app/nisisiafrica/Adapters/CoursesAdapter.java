@@ -20,6 +20,7 @@ import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
 import com.app.nisisiafrica.MainActivity;
+import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.TrackLearnActivity;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.Model.CourseItem;
@@ -139,8 +140,27 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 learn.putExtra(TrackLearnActivity.EXTRA_DESC,
                         item.getTutorName() != null ? "with " + item.getTutorName() : "");
                 learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, item.getCourseLink());
+                if (item.getTutorId() != null) {
+                    learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, item.getTutorId());
+                }
+                if (item.getTutorName() != null) {
+                    learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, item.getTutorName());
+                }
                 mContext.startActivity(learn);
             });
+            View.OnClickListener openTutor = v -> {
+                String tid = item.getTutorId();
+                if (tid == null || tid.isEmpty()) {
+                    Toast.makeText(mContext, "Tutor profile unavailable", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent profile = new Intent(mContext, ProfileActivity.class);
+                profile.putExtra(Constants.IS_MENTOR, true);
+                profile.putExtra(Constants.MENTOR_ID, tid);
+                mContext.startActivity(profile);
+            };
+            ((CompactViewHolder) holder).tv_tutor_name.setOnClickListener(openTutor);
+            ((CompactViewHolder) holder).iv_tutor_avatar.setOnClickListener(openTutor);
 //            ((CompactViewHolder) holder.courseBody.setOnClickListener(v -> {
 //
 //            });

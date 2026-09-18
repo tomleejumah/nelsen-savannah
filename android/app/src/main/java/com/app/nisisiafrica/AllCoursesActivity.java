@@ -339,7 +339,24 @@ public class AllCoursesActivity extends AppCompatActivity {
                     learn.putExtra(TrackLearnActivity.EXTRA_DESC,
                             !TextUtils.isEmpty(tutor) ? "with " + tutor : "");
                     learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, c.getCourseLink());
+                    if (!TextUtils.isEmpty(c.getTutorId())) {
+                        learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, c.getTutorId());
+                    }
+                    if (!TextUtils.isEmpty(tutor)) {
+                        learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, tutor);
+                    }
                     startActivity(learn);
+                });
+                meta.setOnClickListener(v -> {
+                    String tid = c.getTutorId();
+                    if (TextUtils.isEmpty(tid)) {
+                        Toast.makeText(AllCoursesActivity.this, "Tutor profile unavailable", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    Intent profile = new Intent(AllCoursesActivity.this, ProfileActivity.class);
+                    profile.putExtra(Constants.IS_MENTOR, true);
+                    profile.putExtra(Constants.MENTOR_ID, tid);
+                    startActivity(profile);
                 });
             }
         }
