@@ -28,8 +28,12 @@ import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.DiditVerificationHandler;
 import com.app.nisisiafrica.Interfaces.KYCCallBack;
 import com.app.nisisiafrica.LockScreenActivity;
+import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.PinManager;
+import com.app.nisisiafrica.AllProgrammesActivity;
+import com.app.nisisiafrica.AppLifecycleObserver;
 import com.app.nisisiafrica.BannerAdminActivity;
+import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.SetpinActivity;
 import com.app.nisisiafrica.Utils.LocaleHelper;
@@ -37,6 +41,7 @@ import com.app.nisisiafrica.Utils.ThemeManager;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.data.remote.ApiClient;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -76,6 +81,11 @@ public class SettingsFragment extends Fragment {
                         lockSwitch.setOnCheckedChangeListener(null);
                         lockSwitch.setChecked(false);
                         lockSwitch.setOnCheckedChangeListener(lockListener);
+                        refreshLockAfterRow(getView());
+                    } else {
+                        LockScreenActivity.AppLockState.setUnlocked(true);
+                        LockScreenActivity.AppLockState.markUnlockGrace(2500L);
+                        refreshLockAfterRow(getView());
                     }
                 }
         );
@@ -144,7 +154,10 @@ public class SettingsFragment extends Fragment {
             if (isChecked) {
                 try {
                     if (PinManager.hasPin(getContext(), uid)) {
+                        LockScreenActivity.AppLockState.setUnlocked(true);
+                        LockScreenActivity.AppLockState.markUnlockGrace(2500L);
                         Toast.makeText(getContext(), "Lock enabled", Toast.LENGTH_SHORT).show();
+                        refreshLockAfterRow(view);
                     } else {
                         setPinLauncher.launch(new Intent(getContext(), SetpinActivity.class));
                     }
@@ -156,6 +169,7 @@ public class SettingsFragment extends Fragment {
                     PinManager.clearPin(getContext(), uid);
                     LockScreenActivity.AppLockState.lock();
                     Toast.makeText(getContext(), "Lock disabled", Toast.LENGTH_SHORT).show();
+                    refreshLockAfterRow(view);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -169,7 +183,105 @@ public class SettingsFragment extends Fragment {
         }
         lockSwitch.setOnCheckedChangeListener(lockListener);
 
+        setupLockAfterRow(view);
+
+        View logoutRow = view.findViewById(R.id.cl_logout);
+        if (logoutRow != null) {
+            logoutRow.setOnClickListener(v -> confirmLogout());
+        }
+
+        View programmes = view.findViewById(R.id.cl_programmes);
+        if (programmes != null) {
+            programmes.setOnClickListener(v ->
+                    startActivity(new Intent(requireContext(), AllProgrammesActivity.class)));
+        }
+
+        TextView tvVersion = view.findViewById(R.id.tv_version);
+        if (tvVersion != null) {
+            try {
+                String name = requireContext().getPackageManager()
+                        .getPackageInfo(requireContext().getPackageName(), 0).versionName;
+                tvVersion.setText(name != null ? name : BuildConfig.VERSION_NAME);
+            } catch (Exception e) {
+                tvVersion.setText(BuildConfig.VERSION_NAME);
+            }
+        }
+
         return view;
+    }
+
+    private void setupLockAfterRow(View view) {
+        if (view == null) return;
+        View row = view.findViewById(R.id.cl_lock_after);
+        TextView hint = view.findViewById(R.id.tv_lock_after_hint);
+        refreshLockAfterRow(view);
+        if (row != null) {
+            row.setOnClickListener(v -> showLockAfterPicker(hint));
+        }
+    }
+
+    private void refreshLockAfterRow(View view) {
+        if (view == null) return;
+        View row = view.findViewById(R.id.cl_lock_after);
+        TextView hint = view.findViewById(R.id.tv_lock_after_hint);
+        boolean enabled = false;
+        try {
+            enabled = PinManager.hasPin(getContext(), uid);
+        } catch (Exception ignored) {}
+        if (row != null) row.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        if (hint != null) hint.setText(lockAfterLabel(Util.getState(
+                AppLifecycleObserver.PREF_LOCK_AFTER_MS,
+                AppLifecycleObserver.DEFAULT_LOCK_AFTER_MS)));
+    }
+
+    private static String lockAfterLabel(long ms) {
+        if (ms <= 0L) return "Immediately";
+        if (ms <= 30_000L) return "30 seconds";
+        if (ms <= 60_000L) return "1 minute";
+        if (ms <= 300_000L) return "5 minutes";
+        return "Immediately";
+    }
+
+    private void showLockAfterPicker(TextView hint) {
+        final String[] labels = {"Immediately", "30 seconds", "1 minute", "5 minutes"};
+        final long[] values = {0L, 30_000L, 60_000L, 300_000L};
+        long current = Util.getState(
+                AppLifecycleObserver.PREF_LOCK_AFTER_MS,
+                AppLifecycleObserver.DEFAULT_LOCK_AFTER_MS);
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == current) { checked = i; break; }
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Lock after")
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    Util.saveState(AppLifecycleObserver.PREF_LOCK_AFTER_MS, values[which]);
+                    if (hint != null) hint.setText(labels[which]);
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void confirmLogout() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Log out")
+                .setMessage("Are you sure you want to log out?")
+                .setPositiveButton("Log out", (d, w) -> {
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).performLogout();
+                    } else {
+                        FirebaseRemoteDataSource.INSTANCE.signOutAll(requireContext(), () -> {
+                            LockScreenActivity.AppLockState.lock();
+                            startActivity(new Intent(requireContext(),
+                                    com.app.nisisiafrica.Auth.LoginSignUpActivity.class));
+                            requireActivity().finish();
+                            return Unit.INSTANCE;
+                        });
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     /**

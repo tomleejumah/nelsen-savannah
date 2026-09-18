@@ -20,6 +20,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.app.nisisiafrica.Utils.Util;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -242,15 +243,30 @@ public class LockScreenActivity extends AppCompatActivity {
 
     private void unlockSuccess() {
         AppLockState.setUnlocked(true);
+        AppLockState.markUnlockGrace(2500L);
+        // Don't count this transition as "backgrounded" for lock-after delay.
+        Util.saveState("lastAppBackground", System.currentTimeMillis());
         startActivity(new Intent(this, MainActivity.class));
         finish();
     }
 
     public static class AppLockState {
         private static boolean unlocked = false;
+        private static long unlockGraceUntilMs = 0L;
 
         public static boolean isUnlocked() { return unlocked; }
         public static void setUnlocked(boolean val) { unlocked = val; }
-        public static void lock() { unlocked = false; }
+        public static void lock() {
+            unlocked = false;
+            unlockGraceUntilMs = 0L;
+        }
+
+        public static void markUnlockGrace(long durationMs) {
+            unlockGraceUntilMs = System.currentTimeMillis() + Math.max(0L, durationMs);
+        }
+
+        public static boolean isWithinUnlockGrace() {
+            return System.currentTimeMillis() < unlockGraceUntilMs;
+        }
     }
 }

@@ -92,9 +92,12 @@ public class SetpinActivity extends AppCompatActivity {
             if (entered.equals(firstPin)) {
                 try {
                     PinManager.savePin(this, uid, entered);
+                    LockScreenActivity.AppLockState.setUnlocked(true);
+                    LockScreenActivity.AppLockState.markUnlockGrace(2500L);
                     if (tvSubtitle != null) tvSubtitle.setText("PIN saved");
                     setResult(RESULT_OK);
                     finish();
+                    // noHistory=true in manifest also drops this activity from the back stack.
                 } catch (Exception e) {
                     e.printStackTrace();
                     if (tvSubtitle != null) tvSubtitle.setText("Failed to save PIN — try again");
