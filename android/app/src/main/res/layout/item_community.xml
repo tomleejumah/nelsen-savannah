@@ -1,34 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Group row — cream ledger slip with stamp logo (keep CommunityAdapter IDs). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginTop="10dp"
-    android:checkable="false"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="@dimen/radius_card_md"
-    app:cardElevation="2dp"
-    app:strokeColor="@color/line"
-    app:strokeWidth="1dp">
+    android:paddingVertical="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/shape_journal_slip"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="14dp">
+        android:padding="12dp">
 
         <FrameLayout
-            android:layout_width="46dp"
-            android:layout_height="46dp"
-            android:background="@drawable/bg_chip_circle">
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/shape_arc_stamp_circle">
 
             <ImageView
                 android:id="@+id/imgCommunityLogo"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="2dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:padding="1dp"
                 android:scaleType="centerCrop"
                 android:src="@mipmap/ic_launcher" />
         </FrameLayout>
@@ -45,11 +42,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
+                android:fontFamily="@font/font_fraunces"
                 android:maxLines="1"
-                android:textColor="@color/ink"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/ns_ink"
+                android:textSize="15sp"
+                tools:text="Trailblazers circle" />
 
             <TextView
                 android:id="@+id/tvCommunityDesc"
@@ -57,10 +54,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
+                android:fontFamily="@font/font_inter"
                 android:maxLines="2"
-                android:textColor="@color/ink_soft"
-                android:textSize="13sp" />
+                android:textColor="@color/ns_grey"
+                android:textSize="12sp"
+                tools:text="Ask questions and share wins with mentors." />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -75,20 +73,22 @@
                     android:layout_height="26dp"
                     android:visibility="gone"
                     app:circleCount="3"
-                    app:fillColor="@color/surface_2"
-                    app:strokeColor="@color/surface"
-                    app:strokeWidth="3dp" />
+                    app:fillColor="@color/ns_paper_2"
+                    app:strokeColor="@color/ns_cream"
+                    app:strokeWidth="2dp" />
 
                 <TextView
                     android:id="@+id/tvCommunityMeta"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:fontFamily="@font/font_ui"
-                    android:textColor="@color/maroon_600"
-                    android:textSize="12sp" />
+                    android:fontFamily="@font/font_plex_mono"
+                    android:textAllCaps="true"
+                    android:textColor="@color/ns_maroon"
+                    android:textSize="10sp"
+                    tools:text="12 members" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+</FrameLayout>

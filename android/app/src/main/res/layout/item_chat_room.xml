@@ -1,30 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Chat room — cream correspondence slip (keep ChatRoomAdapter IDs). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
-    android:orientation="vertical">
+    android:paddingHorizontal="@dimen/ns_space_lg"
+    android:paddingVertical="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/shape_journal_slip"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="12dp">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/tvAvatar"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@drawable/ic_person"
-            app:civ_border_color="@color/line"
-            app:civ_border_width="2dp" />
+            app:civ_border_color="@color/ns_ink"
+            app:civ_border_width="1.5dp" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -40,47 +43,42 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
-                    android:fontFamily="@font/font_ui"
+                    android:fontFamily="@font/font_fraunces"
                     android:maxLines="1"
-                    android:textColor="@color/ink"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/ns_ink"
+                    android:textSize="15sp"
+                    tools:text="Eden Pulp" />
 
                 <TextView
                     android:id="@+id/tvUnread"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
+                    android:layout_marginStart="8dp"
                     android:background="@drawable/unread_badge_bg"
                     android:gravity="center"
-                    android:minWidth="24dp"
-                    android:minHeight="24dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
+                    android:minWidth="22dp"
+                    android:minHeight="22dp"
+                    android:paddingHorizontal="6dp"
                     android:text="0"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:visibility="visible" />
+                    android:textColor="@color/ns_cream"
+                    android:textSize="11sp"
+                    android:fontFamily="@font/font_plex_mono"
+                    android:visibility="gone"
+                    tools:text="2"
+                    tools:visibility="visible" />
             </LinearLayout>
 
             <TextView
                 android:id="@+id/tvLastMsg"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="4dp"
                 android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
-                android:lineSpacingMultiplier="1.2"
+                android:fontFamily="@font/font_inter"
                 android:maxLines="1"
-                android:textColor="@color/muted"
-                android:textSize="14sp" />
+                android:textColor="@color/ns_grey"
+                android:textSize="12.5sp"
+                tools:text="See you at the lab session…" />
         </LinearLayout>
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginStart="86dp"
-        android:background="@color/line" />
-</LinearLayout>
+</FrameLayout>

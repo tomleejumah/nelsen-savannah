@@ -57,6 +57,7 @@
     <color name="progress_background">@color/surface_2</color>
 
     <!-- Field Journal tokens (paper theme still warm on night until dedicated night art) -->
+    <color name="ns_page">#1A1612</color>
     <color name="ns_ink">#F8F2E2</color>
     <color name="ns_maroon">#C45A6A</color>
     <color name="ns_maroon_deep">#E8B4BC</color>
