@@ -10,25 +10,27 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.data.Model.Story;
+import com.app.nisisiafrica.Utils.StoryViewsStore;
+import com.app.nisisiafrica.Views.StoryRingView;
+import com.app.nisisiafrica.data.Model.StoryBucket;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
- * Stories rail with a pinned "+ Add story" cell at index 0.
- * Story click positions are offset by 1 relative to the data list.
+ * Stories rail: pinned "+ Add", then one cell per owner (multi-status compacted).
  */
 public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> {
 
     private static final int TYPE_ADD = 0;
     private static final int TYPE_STORY = 1;
 
-    public interface OnStoryClick {
-        void onStoryClick(int storyIndexInData);
+    public interface OnBucketClick {
+        void onBucketClick(int bucketIndex);
     }
 
     public interface OnAddClick {
@@ -36,23 +38,35 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
     }
 
     private final Context context;
-    private final List<Story> stories = new ArrayList<>();
-    private final OnStoryClick listener;
+    private final List<StoryBucket> buckets = new ArrayList<>();
+    private final OnBucketClick listener;
     private OnAddClick addListener;
+    private Set<String> seenIds;
 
-    public StoryAdapter(Context context, OnStoryClick listener) {
+    public StoryAdapter(Context context, OnBucketClick listener) {
         this.context = context;
         this.listener = listener;
+        this.seenIds = StoryViewsStore.seenIds(context);
     }
 
     public void setOnAddClick(OnAddClick addListener) {
         this.addListener = addListener;
     }
 
-    public void submit(List<Story> newStories) {
-        stories.clear();
-        stories.addAll(newStories);
+    public void submit(List<StoryBucket> newBuckets) {
+        buckets.clear();
+        if (newBuckets != null) buckets.addAll(newBuckets);
+        seenIds = StoryViewsStore.seenIds(context);
         notifyDataSetChanged();
+    }
+
+    public void refreshSeenState() {
+        seenIds = StoryViewsStore.seenIds(context);
+        notifyDataSetChanged();
+    }
+
+    public List<StoryBucket> getBuckets() {
+        return buckets;
     }
 
     @Override
@@ -72,6 +86,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
         if (getItemViewType(position) == TYPE_ADD) {
             holder.company.setText("+ Add");
             holder.logo.setImageResource(R.drawable.ic_add_circle);
+            holder.ring.setRingState(1, false);
             holder.itemView.setOnClickListener(v -> {
                 if (addListener != null) addListener.onAddClick();
             });
@@ -79,39 +94,40 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
         }
 
         int dataIndex = position - 1;
-        Story story = stories.get(dataIndex);
-        holder.company.setText(story.displayLabel());
-        if (story.logoUrl != null && !story.logoUrl.isEmpty()) {
+        StoryBucket bucket = buckets.get(dataIndex);
+        holder.company.setText(bucket.label);
+        String cover = bucket.coverUrl();
+        if (cover != null && !cover.isEmpty()) {
             Glide.with(context)
-                    .load(story.logoUrl)
-                    .placeholder(R.drawable.ic_image_placeholder)
-                    .into(holder.logo);
-        } else if (story.mediaUrl != null && !story.mediaUrl.isEmpty()) {
-            Glide.with(context)
-                    .load(story.mediaUrl)
+                    .load(cover)
                     .placeholder(R.drawable.ic_image_placeholder)
                     .into(holder.logo);
         } else {
             holder.logo.setImageResource(R.drawable.ic_image_placeholder);
         }
 
+        boolean unseen = bucket.hasUnseen(seenIds);
+        holder.ring.setRingState(bucket.stories.size(), unseen);
+
         holder.itemView.setOnClickListener(v -> {
             int idx = holder.getBindingAdapterPosition() - 1;
-            if (listener != null && idx >= 0) listener.onStoryClick(idx);
+            if (listener != null && idx >= 0) listener.onBucketClick(idx);
         });
     }
 
     @Override
     public int getItemCount() {
-        return stories.size() + 1; // pinned + Add
+        return buckets.size() + 1;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
+        StoryRingView ring;
         CircleImageView logo;
         TextView company;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
+            ring = itemView.findViewById(R.id.storyRing);
             logo = itemView.findViewById(R.id.storyLogo);
             company = itemView.findViewById(R.id.storyCompany);
         }

@@ -158,7 +158,7 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="10dp"
+                    android:paddingHorizontal="16dp"
                     android:paddingTop="12dp">
 
                     <TextView
@@ -166,13 +166,15 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:drawablePadding="8dp"
+                        android:drawablePadding="12dp"
                         android:fontFamily="@font/font_ui"
+                        android:gravity="center_vertical"
                         android:text="Your schedule"
                         android:textColor="@color/ink"
                         android:textSize="19sp"
                         android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_clock" />
+                        app:drawableStartCompat="@drawable/ic_clock"
+                        app:drawableTint="@color/ink" />
 
                     <TextView
                         android:id="@+id/tvSeeMore"
@@ -264,7 +266,7 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="10dp"
+                    android:paddingHorizontal="16dp"
                     android:paddingTop="12dp">
 
                     <TextView
@@ -273,13 +275,15 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:drawablePadding="8dp"
+                        android:drawablePadding="12dp"
                         android:fontFamily="@font/font_ui"
+                        android:gravity="center_vertical"
                         android:text="Active course"
                         android:textColor="@color/ink"
                         android:textSize="19sp"
                         android:textStyle="bold"
-                        app:drawableStartCompat="@drawable/ic_play" />
+                        app:drawableStartCompat="@drawable/ic_play"
+                        app:drawableTint="@color/ink" />
 
                     <TextView
                         android:id="@+id/seeAll"
