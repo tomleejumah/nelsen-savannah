@@ -98,6 +98,11 @@
     <string name="chat_messages">Ujumbe</string>
     <string name="chat_announcements">Matangazo</string>
     <string name="chat_official_updates">Sasisho rasmi</string>
+    <string name="chat_announcements_people">watu %d · Washauri wanaweza kuchapisha</string>
+    <string name="chat_announcements_you_can_post">watu %d · Unaweza kuchapisha</string>
+    <string name="chat_pick_mentor_title">Tuma ujumbe kwa mshauri</string>
+    <string name="chat_no_mentors">Hakuna washauri bado</string>
+    <string name="chat_starting">Inafungua mazungumzo…</string>
     <string name="chat_ai_assistant">Msaidizi wa AI Nelsen</string>
     <string name="chat_virtual_help">Msaada wa mtandaoni</string>
     <string name="chat_role_mentor">Mshauri</string>
