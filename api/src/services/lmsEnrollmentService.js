@@ -22,6 +22,10 @@ import {
   PASS_THRESHOLD,
 } from "./lmsProgressMath.js";
 import admin from "../config/firebase.js";
+import {
+  formatTutorLabel,
+  mentorsForTrack,
+} from "./lmsCatalogService.js";
 
 function mapEnrollment(row, extras = {}) {
   return {
@@ -273,16 +277,19 @@ export async function listMyEnrollments(uid) {
       const enrollments = [];
       for (const row of rows) {
         const next = await nextLessonId(uid, row.track_id);
+        const mentors = await mentorsForTrack(row.track_id);
+        const tutorName = formatTutorLabel(mentors, row.tutor_name || "");
         enrollments.push(
           mapEnrollment(row, {
             courseTitle: row.course_title,
             courseImageUrl: row.course_image_url || "",
             nextLessonId: next,
-            tutorId: row.tutor_id || "",
-            tutorName: row.tutor_name || "",
-            tutorAvatarUrl: row.tutor_avatar_url || "",
+            tutorId: tutorName ? row.tutor_id || "" : "",
+            tutorName,
+            tutorAvatarUrl: tutorName ? row.tutor_avatar_url || "" : "",
             duration: row.duration || "",
             programSlug: row.program_slug || "",
+            mentors,
           }),
         );
       }

@@ -19,8 +19,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEED_PATH = join(__dirname, "../data/lmsSeed.json");
 
 const DEFAULT_TUTOR = {
-  tutorId: "nelsen-org",
-  tutorName: "Nelsen Savannah",
+  tutorId: "",
+  tutorName: "",
   tutorAvatarUrl: "",
   courseImageUrl: "",
 };

@@ -20,6 +20,34 @@ function parseAudience(json) {
   }
 }
 
+/** Org placeholders are not real tutors — treat as blank. */
+function isOrgTutorName(name) {
+  const n = String(name || "")
+    .trim()
+    .toLowerCase();
+  return (
+    !n ||
+    n === "nelsen savannah" ||
+    n === "nelsen savannah innovation hub"
+  );
+}
+
+/**
+ * Blank when no mentors; otherwise first linked name, or "Name + n more".
+ */
+export function formatTutorLabel(mentors, fallbackName = "") {
+  const list = Array.isArray(mentors) ? mentors : [];
+  if (list.length > 0) {
+    const first =
+      String(list[0].displayName || list[0].display_name || "").trim() ||
+      "Mentor";
+    if (list.length === 1) return first;
+    return `${first} + ${list.length - 1} more`;
+  }
+  if (isOrgTutorName(fallbackName)) return "";
+  return String(fallbackName || "").trim();
+}
+
 function mapTrackCard(
   row,
   {
@@ -51,12 +79,18 @@ function mapTrackCard(
     : Array.isArray(row.mentors)
       ? row.mentors
       : [];
+  const rawTutorName = row.tutor_name || row.tutorName || "";
+  const tutorName = formatTutorLabel(mentorList, rawTutorName);
+  const hasMentors = mentorList.length > 0;
   return {
     courseId: trackId,
-    tutorId: row.tutor_id || row.tutorId || "",
+    tutorId: hasMentors || tutorName ? row.tutor_id || row.tutorId || "" : "",
     courseImageUrl: row.course_image_url || row.courseImageUrl || "",
-    tutorAvatarUrl: row.tutor_avatar_url || row.tutorAvatarUrl || "",
-    tutorName: row.tutor_name || row.tutorName || "Nelsen Savannah",
+    tutorAvatarUrl:
+      hasMentors || tutorName
+        ? row.tutor_avatar_url || row.tutorAvatarUrl || ""
+        : "",
+    tutorName,
     mentors: mentorList,
     courseTitle: row.title || row.courseTitle || "",
     duration: String(hours),
@@ -80,7 +114,7 @@ function mapTrackCard(
   };
 }
 
-async function mentorsForTrack(trackId) {
+export async function mentorsForTrack(trackId) {
   if (!trackId) return [];
   try {
     const rows = await dbAll(
