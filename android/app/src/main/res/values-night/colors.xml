@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Pure black dark mode. Chocolate accents stay from values/colors.xml.
+      Pure black dark mode. Maroon accents inherit from values/colors.xml.
     -->
 
     <color name="bg">#000000</color>
@@ -12,8 +12,8 @@
     <color name="muted">#A3A3A3</color>
     <color name="line">#2A2A2A</color>
 
-    <color name="maroon_100">#1F1A17</color>
-    <color name="maroon_050">#141414</color>
+    <color name="maroon_100">#2A1218</color>
+    <color name="maroon_050">#1A0C10</color>
 
     <color name="tag_blue_bg">#0A1528</color>
     <color name="tag_blue_text">#9DB6EC</color>
@@ -41,9 +41,9 @@
 
     <color name="bubble_sent">@color/maroon_600</color>
     <color name="bubble_received">@color/surface_2</color>
-    <color name="bubble_quote_bg">#336B4A32</color>
+    <color name="bubble_quote_bg">#3393283F</color>
 
-    <color name="blur_overlay">#99000000</color>
+    <color name="blur_overlay">#66000000</color>
 
     <color name="nav_home">@color/maroon_500</color>
     <color name="nav_communities">@color/maroon_600</color>
