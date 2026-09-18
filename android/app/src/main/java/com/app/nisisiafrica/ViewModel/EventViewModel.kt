@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.app.nisisiafrica.data.Model.Event
 import com.app.nisisiafrica.data.Repository.EventRepository
 import kotlinx.coroutines.launch
+import java.util.function.Consumer
 
 class EventViewModel(private val repository: EventRepository) : ViewModel() {
 //    fun getUserEvents() = repository.events
@@ -24,9 +25,10 @@ class EventViewModel(private val repository: EventRepository) : ViewModel() {
         }
     }
 
-    fun fetchHubEvents(filter: String, onResult: (List<Event>) -> Unit) {
+    /** Use Consumer so Java callers don't need to return Kotlin Unit. */
+    fun fetchHubEvents(filter: String, onResult: Consumer<List<Event>>) {
         viewModelScope.launch {
-            onResult(repository.fetchHubEvents(filter))
+            onResult.accept(repository.fetchHubEvents(filter))
         }
     }
 
