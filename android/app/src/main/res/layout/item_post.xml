@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Group post — cream correspondence card (keep CommunityPostAdapter IDs). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginTop="10dp"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="@dimen/radius_card_md"
-    app:cardElevation="2dp"
-    app:strokeColor="@color/line"
-    app:strokeWidth="1dp">
+    android:paddingHorizontal="@dimen/ns_space_lg"
+    android:paddingTop="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/shape_journal_slip"
         android:orientation="vertical"
         android:padding="14dp">
 
@@ -21,19 +18,19 @@
             android:id="@+id/tvPostMeta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/font_ui"
-            android:textColor="@color/muted"
-            android:textSize="12sp" />
+            android:fontFamily="@font/font_plex_mono"
+            android:textAllCaps="true"
+            android:textColor="@color/ns_maroon"
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/tvPostTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/font_display"
-            android:textColor="@color/ink"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:fontFamily="@font/font_fraunces"
+            android:textColor="@color/ns_ink"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvPostBody"
@@ -41,10 +38,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:ellipsize="end"
-            android:fontFamily="@font/font_ui"
+            android:fontFamily="@font/font_inter"
             android:maxLines="4"
-            android:textColor="@color/ink_soft"
-            android:textSize="14sp" />
+            android:textColor="@color/ns_grey"
+            android:textSize="13sp" />
 
         <ImageView
             android:id="@+id/ivPostImage"
@@ -52,6 +49,8 @@
             android:layout_height="170dp"
             android:layout_marginTop="10dp"
             android:adjustViewBounds="true"
+            android:background="@drawable/shape_polaroid_bg"
+            android:padding="3dp"
             android:scaleType="centerCrop"
             android:visibility="gone" />
 
@@ -66,11 +65,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:drawablePadding="4dp"
+                android:fontFamily="@font/font_plex_mono"
                 android:gravity="center_vertical"
-                android:textColor="@color/maroon_600"
-                android:textSize="13sp"
+                android:textColor="@color/ns_maroon"
+                android:textSize="12sp"
                 app:drawableStartCompat="@drawable/ic_like"
-                app:drawableTint="@color/maroon_600" />
+                app:drawableTint="@color/ns_maroon" />
 
             <TextView
                 android:id="@+id/tvPostComments"
@@ -78,11 +78,12 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:drawablePadding="4dp"
+                android:fontFamily="@font/font_plex_mono"
                 android:gravity="center_vertical"
-                android:textColor="@color/muted"
-                android:textSize="13sp"
+                android:textColor="@color/ns_grey"
+                android:textSize="12sp"
                 app:drawableStartCompat="@drawable/ic_chat"
-                app:drawableTint="@color/muted" />
+                app:drawableTint="@color/ns_grey" />
         </LinearLayout>
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+</FrameLayout>

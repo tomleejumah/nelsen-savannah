@@ -1,34 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Field Journal notifications — white page, cream memo slips. -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/ns_page">
 
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/bg"
-        android:elevation="0dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/font_display"
-            android:text="Notifications"
-            android:textColor="@color/ink"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </androidx.appcompat.widget.Toolbar>
+        android:background="@color/ns_page"
+        android:elevation="0dp"
+        app:navigationIcon="@drawable/ic_back"
+        app:navigationIconTint="@color/ns_maroon"
+        app:title="Notifications"
+        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display"
+        app:titleTextColor="@color/ns_ink" />
 
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:indeterminateTint="@color/maroon_700"
+        android:indeterminateTint="@color/ns_maroon"
         android:visibility="gone" />
 
     <LinearLayout
@@ -41,26 +37,26 @@
         android:visibility="gone">
 
         <FrameLayout
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:background="@drawable/bg_chip_circle">
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/shape_arc_stamp_circle">
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_notifications"
-                app:tint="@color/maroon_700" />
+                app:tint="@color/ns_maroon" />
         </FrameLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:fontFamily="@font/font_ui"
+            android:fontFamily="@font/font_inter"
             android:text="No notifications yet"
-            android:textColor="@color/muted"
-            android:textSize="16sp" />
+            android:textColor="@color/ns_grey"
+            android:textSize="15sp" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -68,5 +64,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
-        android:background="@color/bg" />
+        android:background="@color/ns_page"
+        android:clipToPadding="false"
+        android:paddingTop="4dp"
+        android:paddingBottom="24dp" />
 </RelativeLayout>

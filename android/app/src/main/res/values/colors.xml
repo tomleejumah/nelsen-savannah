@@ -138,7 +138,8 @@
     <color name="dark_text_primary">#FFFFFF</color>
     <color name="dark_text_secondary">#E5E5E5</color>
 
-    <!-- Field Journal (Concept B) — home only; do not replace MentUI tokens -->
+    <!-- Field Journal — app-wide paper UI (white page, cream cards, maroon ink) -->
+    <color name="ns_page">#FFFFFF</color>
     <color name="ns_ink">#241A14</color>
     <color name="ns_maroon">#7C2430</color>
     <color name="ns_maroon_deep">#511019</color>

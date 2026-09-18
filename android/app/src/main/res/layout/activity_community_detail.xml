@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Field Journal group detail — white page, cream hero slip. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
+    android:background="@color/ns_page"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/bg"
+        android:background="@color/ns_page"
         app:navigationIcon="@drawable/ic_back"
+        app:navigationIconTint="@color/ns_maroon"
         app:title="Community"
-        app:titleTextColor="@color/ink" />
+        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display"
+        app:titleTextColor="@color/ns_ink" />
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -29,92 +32,99 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingBottom="24dp">
 
-                <com.google.android.material.card.MaterialCardView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="12dp"
-                    app:cardBackgroundColor="@color/surface"
-                    app:cardCornerRadius="@dimen/radius_card_md"
-                    app:cardElevation="1dp"
-                    app:strokeColor="@color/line"
-                    app:strokeWidth="1dp">
+                    android:layout_marginHorizontal="@dimen/ns_space_lg"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/shape_journal_slip"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <FrameLayout
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:layout_gravity="center_horizontal"
+                        android:background="@drawable/shape_arc_stamp_circle">
+
+                        <ImageView
+                            android:id="@+id/imgGroupLogo"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="4dp"
+                            android:scaleType="centerCrop"
+                            android:src="@mipmap/ic_launcher" />
+                    </FrameLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangeLogo"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:fontFamily="@font/font_inter"
+                        android:text="@string/group_change_logo"
+                        android:textAllCaps="false"
+                        android:textColor="@color/ns_maroon"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/font_inter"
+                        android:gravity="center"
+                        android:textColor="@color/ns_grey"
+                        android:textSize="14sp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <FrameLayout
-                            android:layout_width="72dp"
-                            android:layout_height="72dp"
-                            android:layout_gravity="center_horizontal"
-                            android:background="@drawable/bg_chip_circle">
-
-                            <ImageView
-                                android:id="@+id/imgGroupLogo"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:padding="2dp"
-                                android:scaleType="centerCrop"
-                                android:src="@mipmap/ic_launcher" />
-                        </FrameLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnChangeLogo"
-                            style="@style/Widget.Material3.Button.TextButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center_horizontal"
-                            android:text="@string/group_change_logo"
-                            android:textAllCaps="false"
-                            android:visibility="gone" />
+                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <TextView
-                            android:id="@+id/tvDescription"
-                            android:layout_width="match_parent"
+                            android:id="@+id/tvMembers"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:textColor="@color/ink_soft"
-                            android:textSize="14sp" />
+                            android:layout_weight="1"
+                            android:fontFamily="@font/font_plex_mono"
+                            android:textAllCaps="true"
+                            android:textColor="@color/ns_maroon"
+                            android:textSize="11sp" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:id="@+id/tvMembers"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="?attr/colorSecondary"
-                                android:textSize="13sp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnJoin"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Join"
-                                app:cornerRadius="20dp" />
-                        </LinearLayout>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnJoin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:fontFamily="@font/font_inter"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:paddingHorizontal="18dp"
+                            android:text="Join"
+                            android:textAllCaps="false"
+                            android:textColor="@color/ns_cream"
+                            app:backgroundTint="@color/ns_maroon"
+                            app:cornerRadius="2dp" />
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginStart="@dimen/ns_space_lg"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/font_fraunces"
                     android:text="Posts"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/ns_ink"
+                    android:textSize="18sp"
+                    android:textStyle="italic" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvPosts"
@@ -128,9 +138,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="40dp"
-                    android:alpha="0.6"
+                    android:fontFamily="@font/font_inter"
                     android:gravity="center"
                     android:text="No posts yet. Be the first to post."
+                    android:textColor="@color/ns_grey"
                     android:visibility="gone" />
 
             </LinearLayout>
@@ -143,8 +154,8 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="20dp"
             android:src="@drawable/ic_add_circle"
-            app:backgroundTint="?attr/colorPrimary"
-            app:tint="@color/white" />
+            app:backgroundTint="@color/ns_maroon"
+            app:tint="@color/ns_cream" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
