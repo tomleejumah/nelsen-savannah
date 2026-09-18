@@ -118,7 +118,7 @@ public final class ProgrammeEnquiryDialog {
                     ? String.valueOf(programme.getSelectedItem()) : "";
 
             if (fullName.isEmpty() || mail.isEmpty()) {
-                Toast.makeText(context, "Name and email are required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, R.string.enquiry_name_email_required, Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -136,7 +136,7 @@ public final class ProgrammeEnquiryDialog {
             if (!body.isEmpty()) fields.put("Message", body);
 
             send.setEnabled(false);
-            send.setText("Sending…");
+            send.setText(R.string.enquiry_sending);
 
             ApiClient.getInquiryService()
                     .postInquiry(new InquiryApiService.InquiryBody(desk, subject, mail, fields))
@@ -145,15 +145,14 @@ public final class ProgrammeEnquiryDialog {
                         public void onResponse(@NonNull Call<InquiryApiService.InquiryResponse> call,
                                                @NonNull Response<InquiryApiService.InquiryResponse> response) {
                             send.setEnabled(true);
-                            send.setText("Send message");
+                            send.setText(R.string.enquiry_send);
                             InquiryApiService.InquiryResponse body = response.body();
                             if (response.isSuccessful() && body != null && body.ok) {
-                                Toast.makeText(context, "Inquiry sent — we’ll reply by email",
-                                        Toast.LENGTH_LONG).show();
+                                Toast.makeText(context, R.string.enquiry_sent, Toast.LENGTH_LONG).show();
                                 dialog.dismiss();
                             } else {
                                 String err = body != null && body.error != null ? body.error
-                                        : ("Send failed (" + response.code() + ")");
+                                        : context.getString(R.string.enquiry_send_failed, response.code());
                                 Toast.makeText(context, err, Toast.LENGTH_LONG).show();
                             }
                         }
@@ -162,10 +161,8 @@ public final class ProgrammeEnquiryDialog {
                         public void onFailure(@NonNull Call<InquiryApiService.InquiryResponse> call,
                                               @NonNull Throwable t) {
                             send.setEnabled(true);
-                            send.setText("Send message");
-                            Toast.makeText(context,
-                                    t.getMessage() != null ? t.getMessage() : "Network error",
-                                    Toast.LENGTH_LONG).show();
+                            send.setText(R.string.enquiry_send);
+                            Toast.makeText(context, R.string.enquiry_network_error, Toast.LENGTH_LONG).show();
                         }
                     });
         });

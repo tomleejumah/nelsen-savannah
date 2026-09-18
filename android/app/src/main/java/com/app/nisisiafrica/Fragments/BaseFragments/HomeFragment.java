@@ -505,8 +505,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     }
                     if (n > 0) {
                         tvFindMyPathBlurb.setText(n == 1
-                                ? "1 track in progress →"
-                                : n + " tracks in progress →");
+                                ? getString(R.string.home_one_track_in_progress)
+                                : getString(R.string.home_tracks_in_progress, n));
                     } else {
                         refreshFindMyPathCatalogHint(bearer);
                     }
@@ -535,7 +535,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                     n = body.data.tracks.size();
                 }
                 if (n > 0) {
-                    tvFindMyPathBlurb.setText(n + " schools →");
+                    tvFindMyPathBlurb.setText(getString(R.string.home_schools_count, n));
                 }
                 // else keep layout default copy
             }
