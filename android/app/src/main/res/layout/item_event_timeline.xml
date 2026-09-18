@@ -67,12 +67,14 @@
 
                 <TextView
                     android:id="@+id/tvFormatTag"
-                    style="@style/Nelsen.Tag.Blue"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:textSize="10sp" />
+                    android:background="@null"
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
 
                 <LinearLayout
                     android:id="@+id/seatsBlock"
