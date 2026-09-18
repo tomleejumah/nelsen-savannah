@@ -44,6 +44,7 @@ import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Roles;
+import com.app.nisisiafrica.Utils.LocaleHelper;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.Worker.BookingWorker;
@@ -356,15 +357,15 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
             if (imgDp != null) imgDp.setVisibility(View.GONE);
         } else if (tabId == R.id.communitiesFragment) {
-            topBarTitle.setText("Groups");
+            topBarTitle.setText(R.string.topbar_groups);
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
             if (imgDp != null) imgDp.setVisibility(View.GONE);
         } else if (tabId == R.id.chatFragment) {
-            topBarTitle.setText("Messages");
+            topBarTitle.setText(R.string.topbar_messages);
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.GONE);
             if (imgDp != null) imgDp.setVisibility(View.GONE);
         } else if (tabId == R.id.profileFragment) {
-            topBarTitle.setText("Profile");
+            topBarTitle.setText(R.string.topbar_profile);
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.GONE);
             if (imgDp != null) imgDp.setVisibility(View.GONE);
         }

@@ -17,7 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/font_inter"
-            android:text="I am enquiring as"
+            android:text="@string/enquiry_as"
             android:textColor="@color/ns_ink"
             android:textSize="13sp" />
 
@@ -45,8 +45,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="8dp"
-                    android:selected="true"
-                    android:text="Join programme"
+                    android:text="@string/enquiry_role_learner"
                     android:textColor="@color/ns_cream"
                     android:textSize="12sp" />
 
@@ -60,7 +59,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="8dp"
-                    android:text="Host on campus"
+                    android:text="@string/enquiry_role_campus"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -74,7 +73,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="8dp"
-                    android:text="Partner"
+                    android:text="@string/enquiry_role_partner"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -95,7 +94,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="8dp"
-                    android:text="Work with us"
+                    android:text="@string/enquiry_role_careers"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -109,7 +108,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="8dp"
-                    android:text="Facilitator"
+                    android:text="@string/enquiry_role_facilitator"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -137,7 +136,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/font_inter"
-                    android:text="Full name"
+                    android:text="@string/enquiry_full_name"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -148,7 +147,7 @@
                     android:layout_marginTop="4dp"
                     android:background="@drawable/bg_enquiry_field"
                     android:fontFamily="@font/font_inter"
-                    android:hint="Your full name"
+                    android:hint="@string/enquiry_name_hint"
                     android:inputType="textPersonName"
                     android:paddingHorizontal="12dp"
                     android:textColor="@color/ns_ink"
@@ -167,7 +166,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/font_inter"
-                    android:text="Email"
+                    android:text="@string/enquiry_email"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -178,7 +177,7 @@
                     android:layout_marginTop="4dp"
                     android:background="@drawable/bg_enquiry_field"
                     android:fontFamily="@font/font_inter"
-                    android:hint="you@email.com"
+                    android:hint="@string/enquiry_email_hint"
                     android:inputType="textEmailAddress"
                     android:paddingHorizontal="12dp"
                     android:textColor="@color/ns_ink"
@@ -204,7 +203,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/font_inter"
-                    android:text="Phone (optional)"
+                    android:text="@string/enquiry_phone"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -215,7 +214,7 @@
                     android:layout_marginTop="4dp"
                     android:background="@drawable/bg_enquiry_field"
                     android:fontFamily="@font/font_inter"
-                    android:hint="+254 7…"
+                    android:hint="@string/enquiry_phone_hint"
                     android:inputType="phone"
                     android:paddingHorizontal="12dp"
                     android:textColor="@color/ns_ink"
@@ -234,7 +233,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/font_inter"
-                    android:text="Programme of interest"
+                    android:text="@string/enquiry_programme"
                     android:textColor="@color/ns_ink"
                     android:textSize="12sp" />
 
@@ -253,7 +252,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:fontFamily="@font/font_inter"
-            android:text="What would you like to know?"
+            android:text="@string/enquiry_message_label"
             android:textColor="@color/ns_ink"
             android:textSize="12sp" />
 
@@ -265,7 +264,7 @@
             android:background="@drawable/bg_enquiry_field"
             android:fontFamily="@font/font_inter"
             android:gravity="top|start"
-            android:hint="Your background, preferred intake, and what you hope to build or learn."
+            android:hint="@string/enquiry_message_hint"
             android:inputType="textMultiLine"
             android:padding="12dp"
             android:textColor="@color/ns_ink"
@@ -280,7 +279,7 @@
             android:background="@drawable/bg_enquiry_send"
             android:fontFamily="@font/font_fraunces"
             android:gravity="center"
-            android:text="Send message"
+            android:text="@string/enquiry_send"
             android:textColor="@color/ns_cream"
             android:textSize="16sp" />
 
@@ -290,7 +289,7 @@
             android:layout_marginTop="12dp"
             android:fontFamily="@font/font_inter"
             android:gravity="center"
-            android:text="Or email hello@nelsen-savannah.co.ke"
+            android:text="@string/enquiry_or_email"
             android:textColor="@color/ns_ink"
             android:textSize="12sp" />
     </LinearLayout>

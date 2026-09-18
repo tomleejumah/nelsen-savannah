@@ -20,9 +20,61 @@
     <string name="story_create_personal">Your story</string>
     <string name="story_create_corporate">Corporate story</string>
     <string name="story_publish">Publish story</string>
+    <string name="story_add">Add</string>
+    <string name="stories_empty_hint">Be the first to share</string>
+
     <string name="groups_title">Groups</string>
     <string name="groups_empty_title">No groups yet</string>
     <string name="groups_empty_body">Join topic spaces, ask questions, and share with mentors and peers.</string>
     <string name="group_change_logo">Change logo</string>
     <string name="group_delete">Delete group</string>
+
+    <!-- Home -->
+    <string name="home_enroll_schools">Enroll Schools</string>
+    <string name="home_browse_schools">browse schools →</string>
+    <string name="home_tracks_in_progress">%d tracks in progress →</string>
+    <string name="home_one_track_in_progress">1 track in progress →</string>
+    <string name="home_schools_count">%d schools →</string>
+    <string name="home_upcoming_schedule">Upcoming schedule</string>
+    <string name="home_see_more">See more</string>
+    <string name="home_see_all">see all</string>
+    <string name="home_no_events">No events yet — open a course to meet your tutor.</string>
+    <string name="home_book">Book</string>
+    <string name="home_active_courses">Active courses</string>
+    <string name="home_other_programmes">Other programmes</string>
+    <string name="home_apply">Apply</string>
+    <string name="home_enroll_more">ENROLL IN\nMORE COURSES</string>
+    <string name="home_qa_mentor">Be a\nMentor</string>
+    <string name="home_qa_shop">Our\nShop</string>
+    <string name="home_qa_who">Who\nI\'m I</string>
+    <string name="home_qa_donate">Donate\nto Us</string>
+    <string name="home_admit_one">admit one mentee</string>
+    <string name="home_reserve">Reserve</string>
+    <string name="topbar_profile">Profile</string>
+    <string name="topbar_groups">Groups</string>
+    <string name="topbar_messages">Messages</string>
+
+    <!-- Enquiry dialog -->
+    <string name="enquiry_as">I am enquiring as</string>
+    <string name="enquiry_role_learner">Join programme</string>
+    <string name="enquiry_role_campus">Host on campus</string>
+    <string name="enquiry_role_partner">Partner</string>
+    <string name="enquiry_role_careers">Work with us</string>
+    <string name="enquiry_role_facilitator">Facilitator</string>
+    <string name="enquiry_full_name">Full name</string>
+    <string name="enquiry_name_hint">Your full name</string>
+    <string name="enquiry_email">Email</string>
+    <string name="enquiry_email_hint">you@email.com</string>
+    <string name="enquiry_phone">Phone (optional)</string>
+    <string name="enquiry_phone_hint">+254 7…</string>
+    <string name="enquiry_programme">Programme of interest</string>
+    <string name="enquiry_message_label">What would you like to know?</string>
+    <string name="enquiry_message_hint">Your background, preferred intake, and what you hope to build or learn.</string>
+    <string name="enquiry_send">Send message</string>
+    <string name="enquiry_sending">Sending…</string>
+    <string name="enquiry_or_email">Or email hello@nelsen-savannah.co.ke</string>
+    <string name="enquiry_name_email_required">Name and email are required</string>
+    <string name="enquiry_sent">Inquiry sent — we\'ll reply by email</string>
+    <string name="enquiry_send_failed">Send failed (%d)</string>
+    <string name="enquiry_network_error">Network error</string>
 </resources>

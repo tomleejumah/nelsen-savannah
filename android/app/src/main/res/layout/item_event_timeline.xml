@@ -165,7 +165,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:fontFamily="@font/font_plex_mono"
-                    android:text="admit one mentee"
+                    android:text="@string/home_admit_one"
                     android:textColor="@color/ns_grey"
                     android:textSize="8.5sp" />
 
@@ -179,7 +179,7 @@
                     android:insetBottom="0dp"
                     android:minWidth="0dp"
                     android:paddingHorizontal="14dp"
-                    android:text="Reserve"
+                    android:text="@string/home_reserve"
                     android:textAllCaps="false"
                     android:textColor="@color/ns_cream"
                     android:textSize="10.5sp"
