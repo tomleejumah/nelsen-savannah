@@ -357,7 +357,11 @@ router.post(
 );
 
 // Hub events — public catalogue + reservations (web + Android)
-router.get("/events/public", lmsController.getPublicHubEvents);
+router.get(
+  "/events/public",
+  optionalAuthenticate,
+  lmsController.getPublicHubEvents,
+);
 router.get("/events/public/:eventId", lmsController.getPublicHubEvent);
 router.post(
   "/events",

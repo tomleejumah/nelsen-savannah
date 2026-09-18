@@ -24,10 +24,7 @@ object LmsEventsDataSource {
     fun deleteHubEventBlocking(bearer: String, eventId: String): Pair<Boolean, String?> =
         runBlocking { deleteHubEvent(bearer, eventId) }
 
-    @JvmStatic
-    fun fetchPublicEventsBlocking(): List<Event> = runBlocking { fetchPublicEvents() }
-
-    private fun HubEventDto.toEvent() = Event(
+    private fun LmsModels.HubEventDto.toEvent() = Event(
         eventId = eventId.orEmpty(),
         title = title.orEmpty(),
         date = date,
@@ -48,19 +45,30 @@ object LmsEventsDataSource {
         seats = seats,
         seatsTaken = seatsTaken,
         price = price.orEmpty(),
+        reservedByMe = reservedByMe,
     )
 
-    suspend fun fetchPublicEvents(): List<Event> = withContext(Dispatchers.IO) {
-        try {
-            val res = ApiClient.getLmsService().publicHubEvents().execute()
-            if (!res.isSuccessful) return@withContext emptyList()
-            val body = res.body() ?: return@withContext emptyList()
-            if (!body.ok || body.data?.events == null) return@withContext emptyList()
-            body.data.events.map { it.toEvent() }
-        } catch (_: Exception) {
-            emptyList()
+    suspend fun fetchPublicEvents(filter: String = "upcoming", bearer: String? = null): List<Event> =
+        withContext(Dispatchers.IO) {
+            try {
+                val call = if (!bearer.isNullOrBlank()) {
+                    ApiClient.getLmsService().publicHubEvents(bearer, filter)
+                } else {
+                    ApiClient.getLmsService().publicHubEvents(filter)
+                }
+                val res = call.execute()
+                if (!res.isSuccessful) return@withContext emptyList()
+                val body = res.body() ?: return@withContext emptyList()
+                if (!body.ok || body.data?.events == null) return@withContext emptyList()
+                body.data.events.map { it.toEvent() }
+            } catch (_: Exception) {
+                emptyList()
+            }
         }
-    }
+
+    @JvmStatic
+    fun fetchPublicEventsBlocking(filter: String = "upcoming"): List<Event> =
+        runBlocking { fetchPublicEvents(filter, null) }
 
     suspend fun createHubEvent(bearer: String, payload: LmsModels.CreateHubEventBody): Boolean =
         withContext(Dispatchers.IO) {

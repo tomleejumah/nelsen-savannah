@@ -17,7 +17,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
+class EventAdapter(
+    private val compact: Boolean = false,
+) : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
     private val events = mutableListOf<Event>()
 
     fun interface OnEventClick {
@@ -93,7 +95,7 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
             // Keep home schedule compact — description only on detail.
             tvEventDesc.visibility = View.GONE
 
-            if (event.program.isNotBlank()) {
+            if (!compact && event.program.isNotBlank()) {
                 tvProgramTag.visibility = View.VISIBLE
                 tvProgramTag.text = event.program
             } else {
@@ -115,28 +117,32 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
             val place = if (online) {
                 if (event.meetingLink.isNotBlank()) "Online meeting" else "Online"
             } else event.location
-            if (place.isNotBlank()) {
+            if (!compact && place.isNotBlank()) {
                 tvEventPlace.visibility = View.VISIBLE
                 tvEventPlace.text = place
             } else {
                 tvEventPlace.visibility = View.GONE
             }
 
-            if (event.price.isNotBlank()) {
+            if (!compact && event.price.isNotBlank()) {
                 tvEventPrice.visibility = View.VISIBLE
                 tvEventPrice.text = event.price
             } else {
                 tvEventPrice.visibility = View.GONE
             }
 
-            if (event.seats > 0) {
-                seatsBlock.visibility = View.VISIBLE
+            if (event.reservedByMe) {
+                seatsBlock.visibility = View.GONE
+                btnReserve.isEnabled = false
+                btnReserve.text = "Reserved"
+            } else if (event.seats > 0) {
+                seatsBlock.visibility = if (compact) View.GONE else View.VISIBLE
                 val left = (event.seats - event.seatsTaken).coerceAtLeast(0)
                 val pct = ((event.seatsTaken.toFloat() / event.seats) * 100f).toInt().coerceIn(0, 100)
                 tvSeatsLeft.text = "$left left"
                 tvSeatsPct.text = "$pct%"
                 seatsProgress.progress = pct
-                if (event.seats > 0 && event.eventType != "announcement") {
+                if (event.eventType != "announcement") {
                     btnReserve.isEnabled = left > 0
                     btnReserve.text = if (left > 0) "Reserve" else "Full"
                 } else {
@@ -149,10 +155,16 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                 btnReserve.text = "Reserve"
             }
 
+            if (compact) {
+                timelineView.visibility = View.GONE
+            }
+
             val open = { onEventClick?.onClick(event) }
             eventCard.setOnClickListener { open() }
             btnReserve.setOnClickListener {
-                if (event.seats > 0 && event.eventType != "announcement") {
+                if (event.reservedByMe) {
+                    open()
+                } else if (event.seats > 0 && event.eventType != "announcement") {
                     onReserveClick?.onClick(event) ?: open()
                 } else {
                     open()
