@@ -17,19 +17,24 @@ import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.Booking;
 import com.app.nisisiafrica.data.Model.Event;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import kotlin.Unit;
 
@@ -40,6 +45,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
     private BookMentorStepAdapter adapter;
     private UserData userData;
     private String mentorId, mentorName;
+    private ValueEventListener bookedDatesListener;
 
 
     @Override
@@ -77,6 +83,39 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
 
         setupRecyclerView();
         setupNextButton();
+        observeMentorBookedDates();
+    }
+
+    private void observeMentorBookedDates() {
+        if (mentorId == null || mentorId.isEmpty()) return;
+        bookedDatesListener = FirebaseRemoteDataSource.INSTANCE.observeBookedDates(
+                mentorId,
+                bookings -> {
+                    Set<LocalDate> days = new HashSet<>();
+                    if (bookings != null) {
+                        for (Booking b : bookings) {
+                            if (b.getDate() == null || b.getDate().isEmpty()) continue;
+                            try {
+                                days.add(LocalDate.parse(b.getDate()));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                    runOnUiThread(() -> {
+                        if (adapter != null) adapter.setBookedDates(days);
+                    });
+                    return Unit.INSTANCE;
+                });
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (bookedDatesListener != null && mentorId != null) {
+            FirebaseRemoteDataSource.INSTANCE.removeBookedDatesListener(
+                    mentorId, bookedDatesListener);
+            bookedDatesListener = null;
+        }
+        super.onDestroy();
     }
 
     private void setupRecyclerView() {

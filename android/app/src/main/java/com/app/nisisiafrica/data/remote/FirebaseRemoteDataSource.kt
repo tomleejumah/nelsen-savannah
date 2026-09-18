@@ -116,29 +116,60 @@ object FirebaseRemoteDataSource {
 
         datesRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val dates = mutableListOf<Booking>()
-                for (dateSnapshot in snapshot.children) {
-                    val booking = Booking(
-                        id = dateSnapshot.child("id").getValue(Int::class.java) ?: 0,
-                        mentorId = dateSnapshot.child("mentorId").getValue(String::class.java)
-                            ?: "",
-                        studentId = dateSnapshot.child("studentId").getValue(String::class.java)
-                            ?: "",
-                        date = dateSnapshot.child("date").getValue(String::class.java) ?: "",
-                        time = dateSnapshot.child("time").getValue(String::class.java) ?: ""
-                    )
-
-                    dates.add(booking)
-                }
-                cont.resume(dates)
+                cont.resume(parseBookingList(snapshot))
             }
 
             override fun onCancelled(error: DatabaseError) {
-//                cont.resumeWithException(error.toException())
                 Log.e("FirebaseRemoteDS", "Database Error: ${error.message}")
                 cont.resume(emptyList())
             }
         })
+    }
+
+    /**
+     * Live mentor calendar — emits whenever [bookedDates]/mentorId} changes.
+     * Caller must remove the returned listener.
+     */
+    fun observeBookedDates(
+        mentorId: String,
+        onChange: (List<Booking>) -> Unit,
+    ): ValueEventListener {
+        val datesRef = db.child("bookedDates").child(mentorId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                onChange(parseBookingList(snapshot))
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FirebaseRemoteDS", "bookedDates observe: ${error.message}")
+                onChange(emptyList())
+            }
+        }
+        datesRef.addValueEventListener(listener)
+        return listener
+    }
+
+    fun removeBookedDatesListener(mentorId: String, listener: ValueEventListener) {
+        db.child("bookedDates").child(mentorId).removeEventListener(listener)
+    }
+
+    private fun parseBookingList(snapshot: DataSnapshot): List<Booking> {
+        val dates = mutableListOf<Booking>()
+        for (dateSnapshot in snapshot.children) {
+            val booking = Booking(
+                id = dateSnapshot.child("id").getValue(Int::class.java)
+                    ?: dateSnapshot.key.hashCode(),
+                mentorId = dateSnapshot.child("mentorId").getValue(String::class.java)
+                    ?: "",
+                studentId = dateSnapshot.child("studentId").getValue(String::class.java)
+                    ?: "",
+                date = dateSnapshot.child("date").getValue(String::class.java)
+                    ?: dateSnapshot.key.orEmpty(),
+                time = dateSnapshot.child("time").getValue(String::class.java) ?: "",
+            )
+            dates.add(booking)
+        }
+        return dates
     }
 
 
@@ -840,10 +871,19 @@ object FirebaseRemoteDataSource {
         val finalEvent = event.copy(eventId = eventId)
 
         // Atomic multi-path update
+        val bookedDay = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            .format(java.util.Date(finalEvent.date))
         val updates = hashMapOf<String, Any>(
             "/Events/$eventId" to finalEvent.toMap(),
             "/UserEvents/$mentorId/$eventId" to finalEvent.date,
-            "/UserEvents/$menteeId/$eventId" to finalEvent.date
+            "/UserEvents/$menteeId/$eventId" to finalEvent.date,
+            "/bookedDates/$mentorId/$eventId" to mapOf(
+                "id" to eventId.hashCode(),
+                "mentorId" to mentorId,
+                "studentId" to menteeId,
+                "date" to bookedDay,
+                "time" to finalEvent.startTime,
+            ),
         )
 
         db.updateChildren(updates)

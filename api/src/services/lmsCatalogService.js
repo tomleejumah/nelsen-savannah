@@ -30,6 +30,7 @@ function mapTrackCard(
     moduleCount,
     estimatedMinutes,
     price,
+    mentors,
   } = {},
 ) {
   const trackId = row.track_id || row.trackId;
@@ -45,12 +46,18 @@ function mapTrackCard(
       : Number(row.estimated_minutes ?? row.estimatedMinutes ?? 0);
   // Hours derived from lesson minutes — never a stale tracks.duration column.
   const hours = minutes > 0 ? Math.max(1, Math.round(minutes / 60)) : 0;
+  const mentorList = Array.isArray(mentors)
+    ? mentors
+    : Array.isArray(row.mentors)
+      ? row.mentors
+      : [];
   return {
     courseId: trackId,
-    tutorId: row.tutor_id || row.tutorId || "nelsen-org",
+    tutorId: row.tutor_id || row.tutorId || "",
     courseImageUrl: row.course_image_url || row.courseImageUrl || "",
     tutorAvatarUrl: row.tutor_avatar_url || row.tutorAvatarUrl || "",
     tutorName: row.tutor_name || row.tutorName || "Nelsen Savannah",
+    mentors: mentorList,
     courseTitle: row.title || row.courseTitle || "",
     duration: String(hours),
     estimatedMinutes: minutes,
@@ -71,6 +78,25 @@ function mapTrackCard(
     schoolId: row.school_id || row.schoolId || "",
     price: price || { isPaid: false, amountMinor: 0, currency: "USD" },
   };
+}
+
+async function mentorsForTrack(trackId) {
+  if (!trackId) return [];
+  try {
+    const rows = await dbAll(
+      `SELECT uid, display_name, avatar_url, linked_at
+       FROM track_mentors WHERE track_id = ? ORDER BY linked_at ASC`,
+      [trackId],
+    );
+    return (rows || []).map((r) => ({
+      uid: r.uid,
+      displayName: r.display_name || "Mentor",
+      avatarUrl: r.avatar_url || "",
+      linkedAt: Number(r.linked_at) || 0,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function mapModule(row, { modulePercent = 0, status = "available", lessonCount } = {}) {
@@ -211,19 +237,23 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
       pricingByTrack(),
     ]);
 
-  let tracks = rows.map((row) => {
-    const trackId = row.track_id;
-    const isEnrolled = enrollMap.has(trackId);
-    return mapTrackCard(row, {
-      enrolled: isEnrolled,
-      trackPercent: enrollMap.get(trackId) || 0,
-      isLiked: likes.has(trackId),
-      lessonCount: lessonCounts.get(trackId) || 0,
-      moduleCount: moduleCounts.get(trackId) || 0,
-      estimatedMinutes: minuteTotals.get(trackId) || 0,
-      price: pricing.get(trackId),
-    });
-  });
+  let tracks = await Promise.all(
+    rows.map(async (row) => {
+      const trackId = row.track_id;
+      const isEnrolled = enrollMap.has(trackId);
+      const mentors = await mentorsForTrack(trackId);
+      return mapTrackCard(row, {
+        enrolled: isEnrolled,
+        trackPercent: enrollMap.get(trackId) || 0,
+        isLiked: likes.has(trackId),
+        lessonCount: lessonCounts.get(trackId) || 0,
+        moduleCount: moduleCounts.get(trackId) || 0,
+        estimatedMinutes: minuteTotals.get(trackId) || 0,
+        price: pricing.get(trackId),
+        mentors,
+      });
+    }),
+  );
 
   // attach moduleCount properly
   tracks = tracks.map((t) => ({
@@ -306,6 +336,7 @@ export async function getTrackById(uid, trackId) {
           minutesByTrack(),
           pricingByTrack(),
         ]);
+      const mentors = await mentorsForTrack(trackId);
       const track = mapTrackCard(row, {
         enrolled: enrollMap.has(trackId),
         trackPercent: enrollMap.get(trackId) || 0,
@@ -314,6 +345,7 @@ export async function getTrackById(uid, trackId) {
         moduleCount: mods.length,
         estimatedMinutes: minuteTotals.get(trackId) || 0,
         price: pricing.get(trackId),
+        mentors,
       });
       track.moduleCount = mods.length;
       const modules = mods.map((m) =>

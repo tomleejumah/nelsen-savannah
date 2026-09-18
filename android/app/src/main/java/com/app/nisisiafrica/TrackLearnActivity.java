@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -26,6 +27,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
+import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -53,6 +55,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     public static final String EXTRA_FALLBACK_URL = "extra_fallback_url";
     public static final String EXTRA_TUTOR_ID = "extra_tutor_id";
     public static final String EXTRA_TUTOR_NAME = "extra_tutor_name";
+    public static final String EXTRA_TUTOR_AVATAR = "extra_tutor_avatar";
 
     private ProgressBar progress;
     private ProgressBar trackProgress;
@@ -64,6 +67,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private TextView tvStatLocked;
     private TextView tvPlayerPlaceholder;
     private TextView tvTutorName;
+    private ImageView ivTutorAvatar;
     private View tutorRow;
     private MaterialButton btnBookTutor;
     private VideoView videoView;
@@ -74,6 +78,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private String fallbackUrl;
     private String tutorId;
     private String tutorName;
+    private String tutorAvatarUrl;
     private final List<LmsModels.LessonDto> flatLessons = new ArrayList<>();
     private LmsModels.LessonDto resumeLesson;
     private LmsModels.CohortRunDto cohortRun;
@@ -96,6 +101,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         String desc = getIntent().getStringExtra(EXTRA_DESC);
         tutorId = getIntent().getStringExtra(EXTRA_TUTOR_ID);
         tutorName = getIntent().getStringExtra(EXTRA_TUTOR_NAME);
+        tutorAvatarUrl = getIntent().getStringExtra(EXTRA_TUTOR_AVATAR);
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
         toolbar.setNavigationOnClickListener(v -> finish());
@@ -115,11 +121,12 @@ public class TrackLearnActivity extends AppCompatActivity {
         btnEnroll = findViewById(R.id.btnEnroll);
         tutorRow = findViewById(R.id.tutorRow);
         tvTutorName = findViewById(R.id.tvTutorName);
+        ivTutorAvatar = findViewById(R.id.ivTutorAvatar);
         btnBookTutor = findViewById(R.id.btnBookTutor);
 
         if (!TextUtils.isEmpty(title)) tvTitle.setText(title);
         if (!TextUtils.isEmpty(desc)) tvDesc.setText(desc);
-        bindTutorRow(tutorId, tutorName);
+        bindTutorRow(tutorId, tutorName, tutorAvatarUrl);
 
         btnEnroll.setOnClickListener(v -> {
             if (resumeLesson != null) {
@@ -131,7 +138,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         loadTrack();
     }
 
-    private void bindTutorRow(String id, String name) {
+    private void bindTutorRow(String id, String name, String avatarUrl) {
         if (tutorRow == null || tvTutorName == null) return;
         if (TextUtils.isEmpty(id) && TextUtils.isEmpty(name)) {
             tutorRow.setVisibility(View.GONE);
@@ -140,19 +147,41 @@ public class TrackLearnActivity extends AppCompatActivity {
         tutorRow.setVisibility(View.VISIBLE);
         String label = !TextUtils.isEmpty(name) ? name : "Tutor";
         tvTutorName.setText(label);
-        tvTutorName.setOnClickListener(v -> openTutorProfile(id, label));
+        if (ivTutorAvatar != null) {
+            if (!TextUtils.isEmpty(avatarUrl)) {
+                Glide.with(this).load(avatarUrl).circleCrop().into(ivTutorAvatar);
+            } else {
+                ivTutorAvatar.setImageResource(R.drawable.ic_person);
+            }
+        }
+        View.OnClickListener openProfile = v -> openTutorProfile(id, label);
+        tvTutorName.setOnClickListener(openProfile);
+        if (ivTutorAvatar != null) ivTutorAvatar.setOnClickListener(openProfile);
+        View identity = findViewById(R.id.tutorIdentity);
+        if (identity != null) identity.setOnClickListener(openProfile);
         if (btnBookTutor != null) {
+            boolean brandTutor = isBrandTutor(id, name);
             boolean canBook = com.app.nisisiafrica.Utils.Roles.browsesMentors()
-                    && !TextUtils.isEmpty(id);
+                    && !TextUtils.isEmpty(id)
+                    && !brandTutor;
             btnBookTutor.setVisibility(canBook ? View.VISIBLE : View.GONE);
             btnBookTutor.setOnClickListener(v -> {
-                if (TextUtils.isEmpty(id)) return;
+                if (TextUtils.isEmpty(id) || isBrandTutor(id, name)) return;
                 Intent book = new Intent(this, BookMentor.class);
                 book.putExtra(Constants.MENTOR_ID, id);
                 book.putExtra(Constants.MENTOR_NAME, label);
                 startActivity(book);
             });
         }
+    }
+
+    /** Org placeholder tutors are not bookable people. */
+    private static boolean isBrandTutor(String id, String name) {
+        if (TextUtils.isEmpty(id) || "nelsen-org".equalsIgnoreCase(id)) return true;
+        if (TextUtils.isEmpty(name)) return false;
+        String n = name.trim();
+        return n.equalsIgnoreCase("Nelsen Savannah")
+                || n.equalsIgnoreCase("Nelsen Savannah Innovation Hub");
     }
 
     private void openTutorProfile(String id, String name) {
@@ -252,7 +281,8 @@ public class TrackLearnActivity extends AppCompatActivity {
             if (!TextUtils.isEmpty(track.courseTitle)) tvTitle.setText(track.courseTitle);
             if (!TextUtils.isEmpty(track.tutorId)) tutorId = track.tutorId;
             if (!TextUtils.isEmpty(track.tutorName)) tutorName = track.tutorName;
-            bindTutorRow(tutorId, tutorName);
+            if (!TextUtils.isEmpty(track.tutorAvatarUrl)) tutorAvatarUrl = track.tutorAvatarUrl;
+            bindTutorRow(tutorId, tutorName, tutorAvatarUrl);
             String meta = "";
             if (!TextUtils.isEmpty(track.does)) meta = track.does;
             if (!TextUtils.isEmpty(track.lessonsString())) {

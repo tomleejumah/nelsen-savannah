@@ -34,6 +34,46 @@ async function assertCanEditTrack(actorUid, trackId) {
     err.status = 403;
     throw err;
   }
+  await linkTrackMentor(trackId, actorUid);
+}
+
+/** Mentors/school admins who edit a track get linked (multi-tutor); creators alone do not. */
+export async function linkTrackMentor(trackId, actorUid) {
+  if (!trackId || !actorUid) return;
+  const role = normalizeRole(await loadUserRole(actorUid));
+  if (role !== "Mentor" && role !== "SchoolAdmin") return;
+  const now = Date.now();
+  const displayName = await actorDisplayName(actorUid);
+  const actorRow = await dbGet(
+    "SELECT photo_url FROM users_mirror WHERE uid = ?",
+    [actorUid],
+  );
+  const avatarUrl = actorRow?.photo_url || "";
+  await dbRun(
+    `INSERT OR REPLACE INTO track_mentors (track_id, uid, display_name, avatar_url, linked_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [trackId, actorUid, displayName, avatarUrl, now],
+  );
+  // Latest updater is the primary bookable tutor shown on cards.
+  await dbRun(
+    `UPDATE tracks SET tutor_id = ?, tutor_name = ?, tutor_avatar_url = ?, updated_at = ?
+     WHERE track_id = ?`,
+    [actorUid, displayName, avatarUrl, now, trackId],
+  );
+}
+
+export async function listTrackMentors(trackId) {
+  const rows = await dbAll(
+    `SELECT uid, display_name, avatar_url, linked_at
+     FROM track_mentors WHERE track_id = ? ORDER BY linked_at ASC`,
+    [trackId],
+  );
+  return (rows || []).map((r) => ({
+    uid: r.uid,
+    displayName: r.display_name || "Mentor",
+    avatarUrl: r.avatar_url || "",
+    linkedAt: Number(r.linked_at) || 0,
+  }));
 }
 
 export async function adminCreateTrack(actorUid, body = {}) {
@@ -49,15 +89,10 @@ export async function adminCreateTrack(actorUid, body = {}) {
   if (!isSuperAdmin(role)) schoolId = actorSchool;
   const now = Date.now();
   const audienceJson = JSON.stringify(body.audience || ["Mentee"]);
-  const tutorId = body.tutorId || actorUid;
-  const tutorName =
-    body.tutorName || (await actorDisplayName(actorUid));
-  const actorRow = await dbGet(
-    "SELECT photo_url FROM users_mirror WHERE uid = ?",
-    [actorUid],
-  );
-  const tutorAvatarUrl =
-    body.tutorAvatarUrl || actorRow?.photo_url || "";
+  // Creator is not auto-listed as tutor — mentors link when they edit content.
+  const tutorId = body.tutorId || "";
+  const tutorName = body.tutorName || "";
+  const tutorAvatarUrl = body.tutorAvatarUrl || "";
   await dualWrite({
     label: `admin-track:${trackId}`,
     writeFn: async () => {
@@ -123,6 +158,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
         tutorId,
         tutorName,
         tutorAvatarUrl,
+        mentors: [],
       },
     },
   };
@@ -140,6 +176,7 @@ async function actorDisplayName(uid) {
 
 export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   await assertCanEditTrack(actorUid, trackId);
+  await linkTrackMentor(trackId, actorUid);
   const row = await dbGet("SELECT * FROM tracks WHERE track_id = ?", [trackId]);
   if (!row) {
     const err = new Error("Track not found");
@@ -156,15 +193,13 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   const audienceJson = body.audience
     ? JSON.stringify(body.audience)
     : row.audience_json;
-  const tutorName = await actorDisplayName(actorUid);
 
   await dualWrite({
     label: `admin-track-upd:${trackId}`,
     writeFn: async () => {
       await dbRun(
         `UPDATE tracks SET title = ?, does = ?, program_slug = ?,
-         course_image_url = ?, audience_json = ?, published = ?,
-         tutor_id = ?, tutor_name = ?, updated_at = ?
+         course_image_url = ?, audience_json = ?, published = ?, updated_at = ?
          WHERE track_id = ?`,
         [
           title,
@@ -173,8 +208,6 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
           imageUrl,
           audienceJson,
           published,
-          actorUid,
-          tutorName,
           now,
           trackId,
         ],
@@ -188,11 +221,13 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
         programSlug,
         courseImageUrl: imageUrl,
         published: Boolean(published),
-        tutorId: actorUid,
-        tutorName,
+        tutorId: row.tutor_id || "",
+        tutorName: row.tutor_name || "",
       });
     },
   });
+  const mentors = await listTrackMentors(trackId);
+  const primary = mentors.length ? mentors[mentors.length - 1] : null;
   return {
     source: getPrimaryEngine(),
     data: {
@@ -201,8 +236,9 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
         courseTitle: title,
         does,
         published: Boolean(published),
-        tutorId: actorUid,
-        tutorName,
+        tutorId: primary?.uid || row.tutor_id || "",
+        tutorName: primary?.displayName || row.tutor_name || "",
+        mentors,
       },
     },
   };
