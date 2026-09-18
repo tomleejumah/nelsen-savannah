@@ -58,14 +58,22 @@ jobs:
         run: |
           set -euo pipefail
           # Avoid actions/download-artifact set_output flake on this self-hosted runner.
+          # Prefer curl over `gh` — the CLI is not installed on the runner host.
           mkdir -p "${GITHUB_WORKSPACE}/web-dist"
-          ARTIFACT_ID=$(gh api \
-            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
-            --jq '.artifacts[] | select(.name=="web-dist") | .id' | head -n1)
+          API="https://api.github.com/repos/${{ github.repository }}"
+          ARTIFACT_ID=$(curl -sS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${API}/actions/runs/${{ github.run_id }}/artifacts" \
+            | python3 -c "import json,sys; arts=json.load(sys.stdin).get('artifacts') or []; print(next((str(a['id']) for a in arts if a.get('name')=='web-dist'), ''))")
           test -n "$ARTIFACT_ID"
-          gh api \
-            "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" \
-            > /tmp/web-dist.zip
+          curl -sSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${API}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            -o /tmp/web-dist.zip
           unzip -qo /tmp/web-dist.zip -d "${GITHUB_WORKSPACE}/web-dist"
           rm -f /tmp/web-dist.zip
           test -n "$(ls -A "${GITHUB_WORKSPACE}/web-dist")"
