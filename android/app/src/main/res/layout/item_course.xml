@@ -54,7 +54,6 @@
             android:maxLines="2"
             android:textColor="@color/ns_ink"
             android:textSize="12.5sp"
-            android:textStyle="italic"
             tools:text="Foundations of Public Speaking" />
 
         <!-- Tutor + lessons as one meta line (avatar kept for profile tap). -->
