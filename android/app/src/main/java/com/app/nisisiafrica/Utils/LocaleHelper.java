@@ -1,6 +1,7 @@
 package com.app.nisisiafrica.Utils;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.LocaleList;
@@ -19,11 +20,16 @@ public final class LocaleHelper {
     public static final String LANG_EN = "en";
     public static final String LANG_FR = "fr";
     public static final String LANG_SW = "sw";
+    private static final String PREFS = "MyPrefs";
 
     private LocaleHelper() {}
 
+    private static SharedPreferences prefs(Context ctx) {
+        return ctx.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
     public static String current(Context ctx) {
-        return Util.getState(PREF_LANG, LANG_EN);
+        return prefs(ctx).getString(PREF_LANG, LANG_EN);
     }
 
     public static String displayLabel(Context ctx) {
@@ -47,7 +53,13 @@ public final class LocaleHelper {
 
     private static void apply(Context ctx, String langTag, boolean recreate) {
         if (langTag == null || langTag.isEmpty()) langTag = LANG_EN;
-        Util.saveState(PREF_LANG, langTag);
+        prefs(ctx).edit().putString(PREF_LANG, langTag).apply();
+        // Keep Util prefs in sync when available
+        try {
+            Util.saveState(PREF_LANG, langTag);
+        } catch (IllegalStateException ignored) {
+            // Util not initialised yet (Application.attachBaseContext)
+        }
         LocaleListCompat locales = LocaleListCompat.forLanguageTags(langTag);
         AppCompatDelegate.setApplicationLocales(locales);
         if (recreate && ctx instanceof android.app.Activity) {
@@ -55,7 +67,7 @@ public final class LocaleHelper {
         }
     }
 
-    /** For pre-API-33 attachBaseContext if needed. */
+    /** Wrap context so layouts inflate with the persisted locale before AppCompat applies. */
     public static Context wrap(Context context) {
         String tag = current(context);
         Locale locale = Locale.forLanguageTag(tag);

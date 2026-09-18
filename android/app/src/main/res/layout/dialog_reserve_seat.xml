@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/font_ui"
-            android:text="Reserve a seat"
+            android:text="@string/reserve_title"
             android:textColor="@color/ink"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -99,7 +99,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:text="Cancel"
+                android:text="@string/action_cancel"
                 android:textColor="@color/ink" />
 
             <com.google.android.material.button.MaterialButton
@@ -107,7 +107,7 @@
                 style="@style/Nelsen.Button.Primary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Confirm"
+                android:text="@string/action_confirm"
                 android:textAllCaps="false" />
         </LinearLayout>
     </LinearLayout>

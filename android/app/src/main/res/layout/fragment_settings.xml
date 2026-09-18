@@ -6,18 +6,19 @@
     tools:context=".Fragments.BaseFragments.SettingsFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/ns_page">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar_settings"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/bg"
+        android:background="@color/ns_page"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:title="Settings"
-        app:titleTextColor="@color/ink" />
+        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display"
+        app:titleTextColor="@color/ns_ink" />
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -56,7 +57,7 @@
                     android:id="@+id/text_verification"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Verification progress"
+                    android:text="@string/settings_verification_progress"
                     android:textSize="16sp"
                     android:textColor="?attr/colorOnSurface"
                     android:layout_toEndOf="@id/icon_verification"
@@ -66,7 +67,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Not verified"
+                    android:text="@string/settings_not_verified"
                     android:id="@+id/txtVerificationStatus"
                     android:textSize="12sp"
                     android:textColor="@color/status_pending_text"
@@ -93,7 +94,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="DISPLAY"
+                android:text="@string/settings_section_display"
                 android:textAllCaps="true"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
@@ -109,7 +110,7 @@
                 android:id="@+id/darkModeSwitch"
                 android:textSize="16sp"
                 android:drawableLeft="@drawable/ic_dark_mode"
-                android:text="Dark mode" />
+                android:text="@string/settings_dark_mode" />
 
             <Switch
                 android:layout_marginVertical="10dp"
@@ -123,7 +124,7 @@
                 android:id="@+id/lockApp"
                 android:textSize="16sp"
                 android:drawableLeft="@drawable/ic_lock_nelsen_savannah"
-                android:text="Lock app" />
+                android:text="@string/settings_lock_app" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/cl_lock_after"
@@ -139,7 +140,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="Lock after"
+                    android:text="@string/settings_lock_after"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toTopOf="@+id/tv_lock_after_hint"
                     app:layout_constraintEnd_toStartOf="@+id/iv_lock_after_go"
@@ -154,7 +155,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="44dp"
-                    android:text="Immediately"
+                    android:text="@string/settings_immediately"
                     android:textColor="@color/muted"
                     android:textSize="11sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -186,7 +187,7 @@
                 android:drawableLeft="@drawable/ic_image_placeholder"
                 android:drawablePadding="19dp"
                 android:gravity="center_vertical"
-                android:text="Manage home banners"
+                android:text="@string/settings_manage_banners"
                 android:textSize="16sp"
                 android:visibility="gone" />
 
@@ -212,7 +213,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="56dp"
-                    android:text="Language"
+                    android:text="@string/settings_language"
                     app:layout_constraintHorizontal_bias="0"
                     app:layout_constraintHorizontal_chainStyle="packed"
                     app:layout_constraintStart_toStartOf="parent"
@@ -228,7 +229,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="44dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="English"
+                    android:text="@string/settings_language_hint"
                     android:textAlignment="viewStart"
                     android:textSize="11sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -253,7 +254,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="GENERAL"
+                android:text="@string/settings_section_general"
                 android:textAllCaps="true"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
@@ -284,7 +285,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Share"
+                    android:text="@string/settings_share"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -318,7 +319,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Rate us"
+                    android:text="@string/settings_rate_us"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -351,7 +352,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="start|center_vertical"
-                    android:text="Our programmes"
+                    android:text="@string/settings_our_programmes"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -366,7 +367,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="HELP"
+                android:text="@string/settings_section_help"
                 android:textAllCaps="true"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
@@ -396,7 +397,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Share feedback"
+                    android:text="@string/settings_share_feedback"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -432,7 +433,7 @@
                     android:layout_marginStart="56dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="left|center_vertical|center_horizontal|center|start"
-                    android:text="Privacy policy"
+                    android:text="@string/settings_privacy_policy"
                     android:textAlignment="viewStart"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -453,7 +454,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Connect with us"
+                        android:text="@string/settings_connect"
                         android:fontFamily="@font/font_display"
                         android:textSize="22sp"
                         android:textStyle="bold"
@@ -464,7 +465,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Follow our journey and engage with the community"
+                        android:text="@string/settings_connect_body"
                         android:textColor="@color/muted"
                         android:textSize="14sp"
                         android:gravity="center"
@@ -554,7 +555,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginEnd="20dp"
                     android:gravity="start|center_vertical"
-                    android:text="Log out"
+                    android:text="@string/settings_log_out"
                     android:textAlignment="viewStart"
                     android:textColor="@color/accent_error"
                     android:textSize="14sp"
@@ -576,7 +577,7 @@
                     style="@style/FontMedium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Version "
+                    android:text="@string/settings_version"
                     android:textSize="12sp" />
 
                 <androidx.appcompat.widget.AppCompatTextView

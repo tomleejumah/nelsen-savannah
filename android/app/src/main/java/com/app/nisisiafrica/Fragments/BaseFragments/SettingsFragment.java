@@ -407,15 +407,15 @@ public class SettingsFragment extends Fragment {
                     verifyCard.setEnabled(false);
                     break;
                 case "pending":
-                    statusText.setText("Pending review");
+                    statusText.setText(R.string.settings_pending_review);
                     verifyCard.setEnabled(false);
                     break;
                 case "rejected":
-                    statusText.setText("Rejected - Retry");
+                    statusText.setText(R.string.settings_rejected_retry);
                     verifyCard.setEnabled(true);
                     break;
                 default:
-                    statusText.setText("Not verified");
+                    statusText.setText(R.string.settings_not_verified);
                     verifyCard.setEnabled(true);
             }
         });

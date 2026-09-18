@@ -274,7 +274,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (emptyRow != null && emptyRow.getChildCount() >= 2
                     && emptyRow.getChildAt(1) instanceof TextView) {
                 emptyHint = (TextView) emptyRow.getChildAt(1);
-                emptyHint.setText("No events yet — open a course to meet your tutor.");
+                emptyHint.setText(R.string.home_no_events);
             }
         }
 
@@ -289,7 +289,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         TextView tvMonthTitle = monthHeader != null ? monthHeader.findViewById(R.id.tvMonthTitle) : null;
         TextView dateHeader = calendarLayout.findViewById(R.id.dateHeader);
         txtDateInfo = calendarLayout.findViewById(R.id.txtDateInfo);
-        if (dateHeader != null) dateHeader.setText("Your Calendar");
+        if (dateHeader != null) dateHeader.setText(R.string.home_your_calendar);
         YearMonth currentMonth = YearMonth.now();
         if (tvMonthTitle != null) {
             tvMonthTitle.setText(currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
@@ -922,13 +922,13 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 dialog.dismiss();
             });
         } else {
-            btnPrimaryText.setText("Add to Google Calendar");
+            btnPrimaryText.setText(R.string.event_add_calendar);
             btnPrimary.setOnClickListener(v -> {
                 com.app.nisisiafrica.Utils.EventActions.addToCalendar(requireContext(), event);
                 dialog.dismiss();
             });
             btnCalendar.setVisibility(View.VISIBLE);
-            ((TextView) sheet.findViewById(R.id.btnAddCalendarText)).setText("View location");
+            ((TextView) sheet.findViewById(R.id.btnAddCalendarText)).setText(R.string.event_view_location);
             btnCalendar.setOnClickListener(v -> {
                 com.app.nisisiafrica.Utils.EventActions.openLocation(requireContext(), event);
                 dialog.dismiss();
@@ -1001,9 +1001,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         // Empty-state CTA: mentors/admins create events; mentees browse courses (not mentor list).
         if (btnBookMentor != null) {
             if (hideMentorsRail && Roles.browsesMentors()) {
-                btnBookMentor.setText("Courses");
+                btnBookMentor.setText(R.string.home_btn_courses);
             } else if (!Roles.browsesMentors()) {
-                btnBookMentor.setText("Create");
+                btnBookMentor.setText(R.string.home_btn_create);
             }
         }
     }

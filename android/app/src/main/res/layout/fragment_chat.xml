@@ -12,7 +12,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
+    android:background="@color/ns_page"
     tools:context=".Fragments.BaseFragments.ChatFragment">
 
     <!-- Conversation list -->
@@ -20,7 +20,7 @@
         android:id="@+id/chatListContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/bg">
+        android:background="@color/ns_page">
 
         <TextView
             android:id="@+id/tvTitle"
@@ -28,11 +28,10 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="0dp"
-            android:fontFamily="@font/font_display"
-            android:text="Messages"
-            android:textColor="@color/ink"
+            android:fontFamily="@font/font_fraunces"
+            android:text="@string/chat_messages"
+            android:textColor="@color/ns_ink"
             android:textSize="26sp"
-            android:textStyle="bold"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -49,18 +48,19 @@
             android:id="@+id/etSearch"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
+            android:layout_marginHorizontal="@dimen/ns_space_lg"
             android:layout_marginTop="8dp"
-            android:background="@drawable/input_bg"
+            android:background="@drawable/shape_journal_slip"
             android:drawableStart="@drawable/ic_search"
             android:drawablePadding="12dp"
-            android:drawableTint="@color/muted"
+            android:drawableTint="@color/ns_grey"
+            android:fontFamily="@font/font_inter"
             android:hint="Search conversations..."
             android:importantForAutofill="no"
             android:inputType="text"
             android:padding="12dp"
-            android:textColor="@color/ink"
-            android:textColorHint="@color/muted"
+            android:textColor="@color/ns_ink"
+            android:textColorHint="@color/ns_grey"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -70,7 +70,6 @@
             android:id="@+id/rvChats"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_marginHorizontal="10dp"
             android:layout_marginTop="8dp"
             android:clipToPadding="false"
             android:paddingBottom="96dp"
@@ -101,7 +100,7 @@
         android:id="@+id/chatDetailContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/bg"
+        android:background="@color/ns_page"
         android:visibility="gone">
 
         <!-- Translucent header (not BlurView — nested BlurView inside activity BlurTarget crashes). -->

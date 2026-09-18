@@ -73,4 +73,74 @@
     <string name="enquiry_sent">Demande envoyée — nous répondrons par e-mail</string>
     <string name="enquiry_send_failed">Échec de l\'envoi (%d)</string>
     <string name="enquiry_network_error">Erreur réseau</string>
+
+    <string name="home_mentors">Mentors</string>
+    <string name="home_show_more">Voir plus</string>
+    <string name="home_other_resources">Autres ressources</string>
+    <string name="home_recognize_me">Me reconnaître</string>
+    <string name="home_your_calendar">Votre calendrier</string>
+    <string name="fab_group">Groupe</string>
+    <string name="fab_story">Story</string>
+    <string name="fab_event">Événement</string>
+    <string name="home_full">Complet</string>
+    <string name="home_reserved">Réservé</string>
+    <string name="home_seats_left">%d restants</string>
+    <string name="event_add_calendar">Ajouter à Google Agenda</string>
+    <string name="event_view_location">Voir le lieu</string>
+    <string name="home_btn_courses">Cours</string>
+    <string name="home_btn_create">Créer</string>
+    <string name="home_apply_programme">Postuler à ce programme →</string>
+
+    <string name="profile_your_name">Votre nom</string>
+    <string name="profile_role_mentee">Mentoré</string>
+    <string name="profile_edit">Modifier le profil</string>
+    <string name="profile_my_courses">Mes cours</string>
+    <string name="chat_messages">Messages</string>
+    <string name="chat_announcements">Annonces</string>
+    <string name="chat_official_updates">Mises à jour officielles</string>
+    <string name="chat_ai_assistant">Assistant IA Nelsen</string>
+    <string name="chat_virtual_help">Aide virtuelle</string>
+    <string name="chat_role_mentor">Mentor</string>
+    <string name="communities_empty_title">Aucune communauté pour l\'instant</string>
+    <string name="communities_empty_body">Rejoignez des espaces thématiques, posez des questions et partagez avec mentors et pairs.</string>
+
+    <string name="schedules_upcoming">À venir</string>
+    <string name="schedules_past">Passés</string>
+    <string name="schedules_no_events">Aucun événement</string>
+    <string name="reserve_title">Réserver une place</string>
+    <string name="reserve_title_named">Réserver — %1$s</string>
+    <string name="reserve_confirm_details">Confirmez vos informations pour réserver</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_confirm">Confirmer</string>
+
+    <string name="settings_verification_progress">Progression de la vérification</string>
+    <string name="settings_not_verified">Non vérifié</string>
+    <string name="settings_pending_review">En attente d\'examen</string>
+    <string name="settings_rejected_retry">Refusé - Réessayer</string>
+    <string name="settings_section_display">AFFICHAGE</string>
+    <string name="settings_dark_mode">Mode sombre</string>
+    <string name="settings_lock_app">Verrouiller l\'app</string>
+    <string name="settings_lock_after">Verrouiller après</string>
+    <string name="settings_immediately">Immédiatement</string>
+    <string name="settings_manage_banners">Gérer les bannières d\'accueil</string>
+    <string name="settings_section_general">GÉNÉRAL</string>
+    <string name="settings_share">Partager</string>
+    <string name="settings_rate_us">Nous noter</string>
+    <string name="settings_our_programmes">Nos programmes</string>
+    <string name="settings_section_help">AIDE</string>
+    <string name="settings_share_feedback">Donner votre avis</string>
+    <string name="settings_privacy_policy">Politique de confidentialité</string>
+    <string name="settings_connect">Connectez-vous avec nous</string>
+    <string name="settings_connect_body">Suivez notre parcours et échangez avec la communauté</string>
+    <string name="settings_log_out">Se déconnecter</string>
+    <string name="settings_version">Version </string>
+
+    <string name="schools_pick_hint">Choisissez une école pour voir les cours — ou explorez d\'autres à tout moment.</string>
+    <string name="schools_empty">Aucune école pour l\'instant</string>
+    <string name="courses_all">Tous les cours</string>
+    <string name="courses_from_school">Cours de cette école — inscrivez-vous pour rejoindre</string>
+    <string name="courses_loading">Chargement des parcours…</string>
+    <string name="courses_sign_in_required">Connexion requise</string>
+    <string name="courses_load_failed">Impossible de charger les parcours</string>
+    <string name="courses_with_tutor">avec %1$s</string>
 </resources>

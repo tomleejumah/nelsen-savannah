@@ -83,11 +83,11 @@ public final class EventSeatReservation {
         if (eventTitle == null || eventTitle.trim().isEmpty()) {
             eventTitle = "this event";
         }
-        tvTitle.setText("Reserve — " + eventTitle);
+        tvTitle.setText(context.getString(R.string.reserve_title_named, eventTitle));
         if (event.getSeats() > 0) {
             tvSeats.setText(seatsLeft + " seat" + (seatsLeft == 1 ? "" : "s") + " remaining");
         } else {
-            tvSeats.setText("Confirm your details to reserve");
+            tvSeats.setText(R.string.reserve_confirm_details);
         }
 
         etFullName.setText(resolveName(profile, user));

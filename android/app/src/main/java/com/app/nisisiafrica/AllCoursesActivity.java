@@ -96,14 +96,14 @@ public class AllCoursesActivity extends AppCompatActivity {
             } else {
                 String shell = Roles.lmsShell();
                 if (Roles.SHELL_STUDENT.equals(shell)) {
-                    tvTitle.setText("All Courses");
+                    tvTitle.setText(R.string.courses_all);
                 } else {
                     tvTitle.setText(Roles.lmsShellLabel() + " · Courses");
                 }
             }
         }
         if (tvSubtitle != null && !schoolIdFilter.isEmpty()) {
-            tvSubtitle.setText("Courses from this school — enroll to join");
+            tvSubtitle.setText(R.string.courses_from_school);
             tvSubtitle.setOnClickListener(null);
         } else if (tvSubtitle != null && !Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
             tvSubtitle.setText("Tap here for teach board (queue · mark · assign)");
@@ -163,10 +163,10 @@ public class AllCoursesActivity extends AppCompatActivity {
     }
 
     private void loadTracksForSchool(String schoolId) {
-        tvResultCount.setText("Loading tracks…");
+        tvResultCount.setText(R.string.courses_loading);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
-            tvResultCount.setText("Sign in required");
+            tvResultCount.setText(R.string.courses_sign_in_required);
             return;
         }
         user.getIdToken(false).addOnSuccessListener(r ->
@@ -205,7 +205,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                             @Override
                             public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call,
                                                   @NonNull Throwable t) {
-                                tvResultCount.setText("Could not load tracks");
+                                tvResultCount.setText(R.string.courses_load_failed);
                                 emptyState.setVisibility(View.VISIBLE);
                             }
                         }));
@@ -220,7 +220,7 @@ public class AllCoursesActivity extends AppCompatActivity {
         listAdapter.submit(filtered);
         int n = filtered.size();
         if (allCourses.isEmpty()) {
-            tvResultCount.setText("Loading tracks…");
+            tvResultCount.setText(R.string.courses_loading);
             emptyState.setVisibility(View.GONE);
         } else if (n == 0) {
             tvResultCount.setText("0 matches");
@@ -306,7 +306,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                         && !tutor.trim().equalsIgnoreCase("Nelsen Savannah Innovation Hub");
                 if (showTutor) {
                     meta.setVisibility(View.VISIBLE);
-                    meta.setText("with " + tutor);
+                    meta.setText(itemView.getContext().getString(R.string.courses_with_tutor, tutor));
                 } else {
                     meta.setVisibility(View.GONE);
                     meta.setText("");
@@ -346,7 +346,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                     learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, c.getCourseId());
                     learn.putExtra(TrackLearnActivity.EXTRA_TITLE, c.getCourseTitle());
                     learn.putExtra(TrackLearnActivity.EXTRA_DESC,
-                            showTutor ? "with " + tutor : "");
+                            showTutor ? getString(R.string.courses_with_tutor, tutor) : "");
                     learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, c.getCourseLink());
                     if (showTutor && !TextUtils.isEmpty(c.getTutorId())) {
                         learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, c.getTutorId());

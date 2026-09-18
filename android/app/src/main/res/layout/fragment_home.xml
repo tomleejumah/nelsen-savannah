@@ -321,13 +321,13 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Mentors" />
+                        android:text="@string/home_mentors" />
 
                     <TextView
                         android:id="@+id/showMoreMentors"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show more" />
+                        android:text="@string/home_show_more" />
                 </RelativeLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -534,7 +534,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Other Resources" />
+                        android:text="@string/home_other_resources" />
                 </RelativeLayout>
 
                 <LinearLayout
@@ -548,7 +548,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="10dp"
-                        android:text="Recognize me" />
+                        android:text="@string/home_recognize_me" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
@@ -579,7 +579,7 @@
                 android:background="@drawable/bg_date_chip"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="Group"
+                android:text="@string/fab_group"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="13sp" />
 
@@ -607,7 +607,7 @@
                 android:background="@drawable/bg_date_chip"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="Story"
+                android:text="@string/fab_story"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="13sp" />
 
@@ -634,7 +634,7 @@
                 android:background="@drawable/bg_date_chip"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="Event"
+                android:text="@string/fab_event"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="13sp" />
 
