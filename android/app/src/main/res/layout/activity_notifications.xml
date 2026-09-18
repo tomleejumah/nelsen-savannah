@@ -1,30 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Field Journal notifications — white page, cream memo slips. -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ns_page">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/ns_page"
+        android:background="?attr/colorSurface"
         android:elevation="0dp"
         app:navigationIcon="@drawable/ic_back"
-        app:navigationIconTint="@color/ns_maroon"
+        app:navigationIconTint="?attr/colorOnSurface"
         app:title="Notifications"
-        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display"
-        app:titleTextColor="@color/ns_ink" />
+        app:titleTextColor="?attr/colorOnSurface" />
 
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:indeterminateTint="@color/ns_maroon"
         android:visibility="gone" />
 
     <LinearLayout
@@ -36,26 +33,19 @@
         android:orientation="vertical"
         android:visibility="gone">
 
-        <FrameLayout
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:background="@drawable/shape_arc_stamp_circle">
-
-            <ImageView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_notifications"
-                app:tint="@color/ns_maroon" />
-        </FrameLayout>
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_notifications"
+            app:tint="@color/muted" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:fontFamily="@font/font_inter"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/font_ui"
             android:text="No notifications yet"
-            android:textColor="@color/ns_grey"
+            android:textColor="@color/muted"
             android:textSize="15sp" />
     </LinearLayout>
 
@@ -64,8 +54,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
-        android:background="@color/ns_page"
         android:clipToPadding="false"
-        android:paddingTop="4dp"
         android:paddingBottom="24dp" />
 </RelativeLayout>

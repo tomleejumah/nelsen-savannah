@@ -1,33 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Chat room — cream correspondence slip (keep ChatRoomAdapter IDs). -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="@dimen/ns_space_lg"
-    android:paddingVertical="6dp">
+    android:background="?attr/selectableItemBackground"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/shape_journal_slip"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="12dp">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/tvAvatar"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_person"
-            app:civ_border_color="@color/ns_ink"
-            app:civ_border_width="1.5dp" />
+            android:src="@drawable/ic_person" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -43,10 +40,11 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ellipsize="end"
-                    android:fontFamily="@font/font_fraunces"
+                    android:fontFamily="@font/font_ui"
                     android:maxLines="1"
-                    android:textColor="@color/ns_ink"
+                    android:textColor="@color/ink"
                     android:textSize="15sp"
+                    android:textStyle="bold"
                     tools:text="Eden Pulp" />
 
                 <TextView
@@ -56,13 +54,12 @@
                     android:layout_marginStart="8dp"
                     android:background="@drawable/unread_badge_bg"
                     android:gravity="center"
-                    android:minWidth="22dp"
-                    android:minHeight="22dp"
-                    android:paddingHorizontal="6dp"
+                    android:minWidth="20dp"
+                    android:minHeight="20dp"
+                    android:paddingHorizontal="5dp"
                     android:text="0"
-                    android:textColor="@color/ns_cream"
+                    android:textColor="@color/white"
                     android:textSize="11sp"
-                    android:fontFamily="@font/font_plex_mono"
                     android:visibility="gone"
                     tools:text="2"
                     tools:visibility="visible" />
@@ -72,13 +69,19 @@
                 android:id="@+id/tvLastMsg"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
-                android:fontFamily="@font/font_inter"
+                android:fontFamily="@font/font_ui"
                 android:maxLines="1"
-                android:textColor="@color/ns_grey"
-                android:textSize="12.5sp"
+                android:textColor="@color/muted"
+                android:textSize="13sp"
                 tools:text="See you at the lab session…" />
         </LinearLayout>
     </LinearLayout>
-</FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="82dp"
+        android:background="@drawable/ns_list_divider" />
+</LinearLayout>
