@@ -6,16 +6,13 @@
     android:viewportHeight="24">
     <path
         android:fillColor="@android:color/transparent"
-        android:pathData="M12,3 L21,7.5 L12,12 L3,7.5 Z"
+        android:pathData="M15.4,11.4 A3.4,3.4 0 1,1 8.6,11.4 A3.4,3.4 0 1,1 15.4,11.4"
         android:strokeWidth="1.6"
-        android:strokeColor="@color/ns_maroon_deep"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        android:strokeColor="@color/ns_maroon_deep" />
     <path
         android:fillColor="@android:color/transparent"
-        android:pathData="M6,10.5 L6,16 C6,17.5 8.7,19 12,19 C15.3,19 18,17.5 18,16 L18,10.5"
+        android:pathData="M4.8,20 C6.1,16.5 8.8,14.7 12,14.7 C15.2,14.7 17.9,16.5 19.2,20"
         android:strokeWidth="1.6"
         android:strokeColor="@color/ns_maroon_deep"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        android:strokeLineCap="round" />
 </vector>
