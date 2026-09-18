@@ -124,9 +124,17 @@ public class StoryViewerActivity extends AppCompatActivity {
     private void setupTouch() {
         View root = findViewById(R.id.storyRoot);
         root.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
+            // Don't steal taps from chrome buttons (close / CTA / menu).
+            View top = findViewById(R.id.storyTopChrome);
+            View bottom = findViewById(R.id.storyBottomChrome);
+            if (hit(top, event) || hit(bottom, event)) return false;
+
+            int action = event.getAction();
+            if (action == MotionEvent.ACTION_DOWN) return true;
+            if (action == MotionEvent.ACTION_UP) {
                 float x = event.getX();
-                if (x < v.getWidth() / 3f) {
+                // Left half → previous, right half → next (WhatsApp / IG).
+                if (x < v.getWidth() / 2f) {
                     goToPrevious();
                 } else {
                     goToNext();
@@ -135,6 +143,16 @@ public class StoryViewerActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    private static boolean hit(View child, MotionEvent event) {
+        if (child == null || child.getVisibility() != View.VISIBLE) return false;
+        int[] loc = new int[2];
+        child.getLocationOnScreen(loc);
+        float rawX = event.getRawX();
+        float rawY = event.getRawY();
+        return rawX >= loc[0] && rawX <= loc[0] + child.getWidth()
+                && rawY >= loc[1] && rawY <= loc[1] + child.getHeight();
     }
 
     private void showStory(int index) {
