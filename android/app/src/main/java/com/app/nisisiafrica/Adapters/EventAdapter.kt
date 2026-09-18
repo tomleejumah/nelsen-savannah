@@ -129,25 +129,27 @@ class EventAdapter(
             if (event.reservedByMe) {
                 seatsBlock.visibility = View.GONE
                 btnReserve.isEnabled = false
-                btnReserve.text = "Reserved"
+                btnReserve.text = itemView.context.getString(R.string.home_reserved)
             } else if (event.seats > 0) {
                 seatsBlock.visibility = if (compact) View.GONE else View.VISIBLE
                 val left = (event.seats - event.seatsTaken).coerceAtLeast(0)
                 val pct = ((event.seatsTaken.toFloat() / event.seats) * 100f).toInt().coerceIn(0, 100)
-                tvSeatsLeft.text = "$left left"
+                tvSeatsLeft.text = itemView.context.getString(R.string.home_seats_left, left)
                 tvSeatsPct.text = "$pct%"
                 seatsProgress.progress = pct
                 if (event.eventType != "announcement") {
                     btnReserve.isEnabled = left > 0
-                    btnReserve.text = if (left > 0) "Reserve" else "Full"
+                    btnReserve.text = itemView.context.getString(
+                        if (left > 0) R.string.home_reserve else R.string.home_full
+                    )
                 } else {
                     btnReserve.isEnabled = true
-                    btnReserve.text = "Reserve"
+                    btnReserve.text = itemView.context.getString(R.string.home_reserve)
                 }
             } else {
                 seatsBlock.visibility = View.GONE
                 btnReserve.isEnabled = true
-                btnReserve.text = "Reserve"
+                btnReserve.text = itemView.context.getString(R.string.home_reserve)
             }
 
             if (compact) {

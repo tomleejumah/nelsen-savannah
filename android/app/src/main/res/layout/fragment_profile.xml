@@ -5,19 +5,19 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/ns_page">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bg"
+        android:background="@color/ns_page"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:contentScrim="@color/bg"
+            app:contentScrim="@color/ns_page"
             app:titleEnabled="false"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
@@ -67,7 +67,7 @@
                     android:fontFamily="@font/font_display"
                     android:gravity="center"
                     android:maxLines="1"
-                    android:text="Your Name"
+                    android:text="@string/profile_your_name"
                     android:textColor="@color/maroon_900"
                     android:textSize="24sp"
                     android:textStyle="bold" />
@@ -80,7 +80,7 @@
                     android:background="@drawable/bg_tag_maroon"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="3dp"
-                    android:text="Mentee"
+                    android:text="@string/profile_role_mentee"
                     android:textColor="@color/maroon_700"
                     android:textSize="12sp" />
 
@@ -103,7 +103,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:minWidth="160dp"
-                    android:text="Edit profile"
+                    android:text="@string/profile_edit"
                     android:textAllCaps="false"
                     android:textColor="@color/maroon_700"
                     app:cornerRadius="12dp"
@@ -141,7 +141,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="My courses"
+                    android:text="@string/profile_my_courses"
                     android:textAllCaps="false"
                     android:textColor="@color/maroon_600" />
             </LinearLayout>

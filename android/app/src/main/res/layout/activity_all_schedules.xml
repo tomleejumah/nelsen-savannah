@@ -32,7 +32,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Upcoming"
+            android:text="@string/schedules_upcoming"
             android:textAllCaps="false" />
 
         <com.google.android.material.button.MaterialButton
@@ -41,7 +41,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Past"
+            android:text="@string/schedules_past"
             android:textAllCaps="false" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="24dp"
-        android:text="No events"
+        android:text="@string/schedules_no_events"
         android:textColor="@color/muted"
         android:visibility="gone" />
 

@@ -73,4 +73,74 @@
     <string name="enquiry_sent">Ombi limetumwa — tutajibu kwa barua pepe</string>
     <string name="enquiry_send_failed">Imeshindwa kutuma (%d)</string>
     <string name="enquiry_network_error">Hitilafu ya mtandao</string>
+
+    <string name="home_mentors">Washauri</string>
+    <string name="home_show_more">Ona zaidi</string>
+    <string name="home_other_resources">Rasilimali zingine</string>
+    <string name="home_recognize_me">Nitambue</string>
+    <string name="home_your_calendar">Kalenda yako</string>
+    <string name="fab_group">Kikundi</string>
+    <string name="fab_story">Hadithi</string>
+    <string name="fab_event">Tukio</string>
+    <string name="home_full">Imejaa</string>
+    <string name="home_reserved">Imehifadhiwa</string>
+    <string name="home_seats_left">%d zimebaki</string>
+    <string name="event_add_calendar">Ongeza kwenye Google Calendar</string>
+    <string name="event_view_location">Angalia eneo</string>
+    <string name="home_btn_courses">Kozi</string>
+    <string name="home_btn_create">Unda</string>
+    <string name="home_apply_programme">Omba programu hii →</string>
+
+    <string name="profile_your_name">Jina lako</string>
+    <string name="profile_role_mentee">Mwanafunzi</string>
+    <string name="profile_edit">Hariri wasifu</string>
+    <string name="profile_my_courses">Kozi zangu</string>
+    <string name="chat_messages">Ujumbe</string>
+    <string name="chat_announcements">Matangazo</string>
+    <string name="chat_official_updates">Sasisho rasmi</string>
+    <string name="chat_ai_assistant">Msaidizi wa AI Nelsen</string>
+    <string name="chat_virtual_help">Msaada wa mtandaoni</string>
+    <string name="chat_role_mentor">Mshauri</string>
+    <string name="communities_empty_title">Hakuna jamii bado</string>
+    <string name="communities_empty_body">Jiunge na nafasi za mada, uliza maswali, na shiriki na washauri na wenzako.</string>
+
+    <string name="schedules_upcoming">Zijazo</string>
+    <string name="schedules_past">Zilizopita</string>
+    <string name="schedules_no_events">Hakuna matukio</string>
+    <string name="reserve_title">Weka nafasi</string>
+    <string name="reserve_title_named">Weka nafasi — %1$s</string>
+    <string name="reserve_confirm_details">Thibitisha maelezo yako kuweka nafasi</string>
+    <string name="action_cancel">Ghairi</string>
+    <string name="action_confirm">Thibitisha</string>
+
+    <string name="settings_verification_progress">Maendeleo ya uthibitisho</string>
+    <string name="settings_not_verified">Haijathibitishwa</string>
+    <string name="settings_pending_review">Inasubiri ukaguzi</string>
+    <string name="settings_rejected_retry">Imekataliwa - Jaribu tena</string>
+    <string name="settings_section_display">ONESHO</string>
+    <string name="settings_dark_mode">Hali ya giza</string>
+    <string name="settings_lock_app">Funga programu</string>
+    <string name="settings_lock_after">Funga baada ya</string>
+    <string name="settings_immediately">Mara moja</string>
+    <string name="settings_manage_banners">Simamia mabango ya nyumbani</string>
+    <string name="settings_section_general">JUMLA</string>
+    <string name="settings_share">Shiriki</string>
+    <string name="settings_rate_us">Tupe alama</string>
+    <string name="settings_our_programmes">Programu zetu</string>
+    <string name="settings_section_help">MSAADA</string>
+    <string name="settings_share_feedback">Toa maoni</string>
+    <string name="settings_privacy_policy">Sera ya faragha</string>
+    <string name="settings_connect">Ungana nasi</string>
+    <string name="settings_connect_body">Fuata safari yetu na shiriki na jamii</string>
+    <string name="settings_log_out">Toka</string>
+    <string name="settings_version">Toleo </string>
+
+    <string name="schools_pick_hint">Chagua shule kuona kozi — au chunguza zingine wakati wowote.</string>
+    <string name="schools_empty">Hakuna shule bado</string>
+    <string name="courses_all">Kozi zote</string>
+    <string name="courses_from_school">Kozi kutoka shule hii — jiandikishe kujiunga</string>
+    <string name="courses_loading">Inapakia kozi…</string>
+    <string name="courses_sign_in_required">Ingia inahitajika</string>
+    <string name="courses_load_failed">Imeshindwa kupakia kozi</string>
+    <string name="courses_with_tutor">na %1$s</string>
 </resources>

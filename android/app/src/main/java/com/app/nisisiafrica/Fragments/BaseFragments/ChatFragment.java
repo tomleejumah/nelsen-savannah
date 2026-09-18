@@ -402,15 +402,15 @@ public class ChatFragment extends Fragment {
 
         switch (type) {
             case "system":
-                binding.tvChatName.setText("Announcements");
-                binding.tvChatRole.setText("Official Updates");
+                binding.tvChatName.setText(R.string.chat_announcements);
+                binding.tvChatRole.setText(R.string.chat_official_updates);
                 Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
                 break;
             case "ai":
-                binding.tvChatName.setText("Nelsen AI Assistant");
-                binding.tvChatRole.setText("Virtual Help");
+                binding.tvChatName.setText(R.string.chat_ai_assistant);
+                binding.tvChatRole.setText(R.string.chat_virtual_help);
                 //todo update
                 Glide.with(this).load(R.drawable.cyborg).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
@@ -467,7 +467,7 @@ public class ChatFragment extends Fragment {
             String name = mentor.getMentorName() != null && !mentor.getMentorName().isEmpty()
                     ? mentor.getMentorName() : fallbackName;
             binding.tvChatName.setText(name != null ? name : "");
-            binding.tvChatRole.setText("Mentor");
+            binding.tvChatRole.setText(R.string.chat_role_mentor);
             Glide.with(this).load(mentor.getMentorImageUrl())
                     .placeholder(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
             return Unit.INSTANCE;

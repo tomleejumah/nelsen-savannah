@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:fontFamily="@font/font_ui"
-            android:text="Apply to this program →"
+            android:text="@string/home_apply_programme"
             android:textColor="@color/maroon_600"
             android:textSize="14sp"
             android:textStyle="bold" />

@@ -113,6 +113,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private int insetLeft, insetTop, insetRight, insetBottom;
 
     @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -353,7 +358,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         }
         topBarRow.setVisibility(View.VISIBLE);
         if (tabId == R.id.homeFragment) {
-            topBarTitle.setText("Nelsen Savannah");
+            topBarTitle.setText(R.string.app_name);
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
             if (imgDp != null) imgDp.setVisibility(View.GONE);
         } else if (tabId == R.id.communitiesFragment) {

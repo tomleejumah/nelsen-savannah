@@ -23,7 +23,7 @@
         android:fontFamily="@font/font_ui"
         android:paddingHorizontal="16dp"
         android:paddingBottom="8dp"
-        android:text="Pick a school to see courses — or explore others anytime."
+        android:text="@string/schools_pick_hint"
         android:textColor="@color/muted"
         android:textSize="13sp" />
 
@@ -42,7 +42,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="32dp"
-        android:text="No schools yet"
+        android:text="@string/schools_empty"
         android:textColor="@color/muted"
         android:visibility="gone" />
 </LinearLayout>

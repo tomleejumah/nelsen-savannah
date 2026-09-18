@@ -77,4 +77,79 @@
     <string name="enquiry_sent">Inquiry sent — we\'ll reply by email</string>
     <string name="enquiry_send_failed">Send failed (%d)</string>
     <string name="enquiry_network_error">Network error</string>
+
+    <!-- Home extras / FAB -->
+    <string name="home_mentors">Mentors</string>
+    <string name="home_show_more">Show more</string>
+    <string name="home_other_resources">Other Resources</string>
+    <string name="home_recognize_me">Recognize me</string>
+    <string name="home_your_calendar">Your Calendar</string>
+    <string name="fab_group">Group</string>
+    <string name="fab_story">Story</string>
+    <string name="fab_event">Event</string>
+    <string name="home_full">Full</string>
+    <string name="home_reserved">Reserved</string>
+    <string name="home_seats_left">%d left</string>
+    <string name="event_add_calendar">Add to Google Calendar</string>
+    <string name="event_view_location">View location</string>
+    <string name="home_btn_courses">Courses</string>
+    <string name="home_btn_create">Create</string>
+    <string name="home_apply_programme">Apply to this program →</string>
+
+    <!-- Profile / chat / groups -->
+    <string name="profile_your_name">Your Name</string>
+    <string name="profile_role_mentee">Mentee</string>
+    <string name="profile_edit">Edit profile</string>
+    <string name="profile_my_courses">My courses</string>
+    <string name="chat_messages">Messages</string>
+    <string name="chat_announcements">Announcements</string>
+    <string name="chat_official_updates">Official Updates</string>
+    <string name="chat_ai_assistant">Nelsen AI Assistant</string>
+    <string name="chat_virtual_help">Virtual Help</string>
+    <string name="chat_role_mentor">Mentor</string>
+    <string name="communities_empty_title">No communities yet</string>
+    <string name="communities_empty_body">Join topic spaces, ask questions, and share with mentors and peers.</string>
+
+    <!-- Schedules / reserve -->
+    <string name="schedules_upcoming">Upcoming</string>
+    <string name="schedules_past">Past</string>
+    <string name="schedules_no_events">No events</string>
+    <string name="reserve_title">Reserve a seat</string>
+    <string name="reserve_title_named">Reserve — %1$s</string>
+    <string name="reserve_confirm_details">Confirm your details to reserve</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_confirm">Confirm</string>
+
+    <!-- Settings -->
+    <string name="settings_verification_progress">Verification progress</string>
+    <string name="settings_not_verified">Not verified</string>
+    <string name="settings_pending_review">Pending review</string>
+    <string name="settings_rejected_retry">Rejected - Retry</string>
+    <string name="settings_section_display">DISPLAY</string>
+    <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_lock_app">Lock app</string>
+    <string name="settings_lock_after">Lock after</string>
+    <string name="settings_immediately">Immediately</string>
+    <string name="settings_manage_banners">Manage home banners</string>
+    <string name="settings_section_general">GENERAL</string>
+    <string name="settings_share">Share</string>
+    <string name="settings_rate_us">Rate us</string>
+    <string name="settings_our_programmes">Our programmes</string>
+    <string name="settings_section_help">HELP</string>
+    <string name="settings_share_feedback">Share feedback</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_connect">Connect with us</string>
+    <string name="settings_connect_body">Follow our journey and engage with the community</string>
+    <string name="settings_log_out">Log out</string>
+    <string name="settings_version">Version </string>
+
+    <!-- Schools / courses -->
+    <string name="schools_pick_hint">Pick a school to see courses — or explore others anytime.</string>
+    <string name="schools_empty">No schools yet</string>
+    <string name="courses_all">All Courses</string>
+    <string name="courses_from_school">Courses from this school — enroll to join</string>
+    <string name="courses_loading">Loading tracks…</string>
+    <string name="courses_sign_in_required">Sign in required</string>
+    <string name="courses_load_failed">Could not load tracks</string>
+    <string name="courses_with_tutor">with %1$s</string>
 </resources>
