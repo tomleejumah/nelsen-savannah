@@ -55,6 +55,7 @@ import com.app.nisisiafrica.Utils.CalendarBinder;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
+import com.app.nisisiafrica.Utils.ProgrammeEnquiryDialog;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.AllMentorsActivity;
@@ -383,7 +384,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             ProgrammesAdapter programmesAdapter = new ProgrammesAdapter(false);
             rcProgrammes.setAdapter(programmesAdapter);
             programmesAdapter.setOnProgrammeClick(p ->
-                    startActivity(new Intent(getActivity(), AllProgrammesActivity.class)));
+                    ProgrammeEnquiryDialog.show(requireContext(),
+                            p != null ? p.title : null));
             ProgrammesDataSource.fetch(programmesAdapter::submit);
         }
         View seeAllProgrammes = view.findViewById(R.id.seeAllProgrammes);

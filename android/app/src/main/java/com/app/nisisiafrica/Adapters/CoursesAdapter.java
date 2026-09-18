@@ -16,6 +16,7 @@ import androidx.paging.PagingDataAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.app.nisisiafrica.SchoolsListActivity;
 import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
@@ -114,7 +115,7 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof AddMoreViewHolder) {
             holder.itemView.setOnClickListener(v ->
-                    mContext.startActivity(new Intent(mContext, AllCoursesActivity.class)));
+                    mContext.startActivity(new Intent(mContext, SchoolsListActivity.class)));
             return;
         }
 

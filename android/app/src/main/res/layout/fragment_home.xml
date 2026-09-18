@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ns_paper">
+    android:background="@color/surface">
 
     <LinearLayout
         android:id="@+id/main"
@@ -38,12 +38,12 @@
             android:paddingTop="0dp"
             android:scrollbars="none">
 
-            <!-- One continuous sheet — sections sit flush on this surface. -->
+            <!-- White page for now; cream stays on tickets / polaroids / stamps. -->
             <LinearLayout
                 android:id="@+id/homeSheet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/ns_paper"
+                android:background="@color/surface"
                 android:elevation="0dp"
                 android:orientation="vertical"
                 android:paddingBottom="96dp">
@@ -161,7 +161,6 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:drawablePadding="12dp"
-                        android:fontFamily="@font/font_ui"
                         android:gravity="center_vertical"
                         android:text="Upcoming schedule"
                         android:textColor="@color/ns_ink"
@@ -174,7 +173,6 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:fontFamily="@font/font_ui"
                         android:paddingHorizontal="4dp"
                         android:paddingVertical="4dp"
                         android:text="See more"
@@ -271,7 +269,6 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:drawablePadding="12dp"
-                        android:fontFamily="@font/font_ui"
                         android:gravity="center_vertical"
                         android:text="Active courses"
                         android:textColor="@color/ns_ink"
@@ -294,6 +291,11 @@
                     android:id="@+id/rcCourses"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="@dimen/ns_space_lg"
+                    android:paddingEnd="@dimen/ns_space_sm"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="8dp"
                     tools:itemCount="5" />
 
                 <LinearLayout
@@ -348,7 +350,6 @@
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:drawablePadding="6dp"
-                        android:fontFamily="@font/font_ui"
                         android:text="Other programmes"
                         android:textColor="@color/ns_ink"
                         android:textSize="16sp"
@@ -380,12 +381,14 @@
                     android:id="@+id/eventCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="12dp"
                     android:layout_marginHorizontal="@dimen/ns_space_lg"
-                    app:cardBackgroundColor="@android:color/transparent"
-                    app:cardCornerRadius="0dp"
+                    android:layout_marginBottom="8dp"
+                    app:cardBackgroundColor="@color/ns_cream"
+                    app:cardCornerRadius="28dp"
                     app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="@color/ns_line"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -420,7 +423,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="8dp"
-                                    android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Be a\nMentor"
                                     android:textColor="@color/ns_grey"
@@ -450,7 +452,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="8dp"
-                                    android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Our\nShop"
                                     android:textColor="@color/ns_grey"
@@ -480,7 +481,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="8dp"
-                                    android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Who\nI'm I"
                                     android:textColor="@color/ns_grey"
@@ -510,7 +510,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="8dp"
-                                    android:fontFamily="@font/font_ui"
                                     android:gravity="center"
                                     android:text="Donate\nto Us"
                                     android:textColor="@color/ns_grey"
