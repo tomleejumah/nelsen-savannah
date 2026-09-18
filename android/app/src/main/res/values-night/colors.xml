@@ -55,4 +55,16 @@
     <color name="background_secondary">@color/surface</color>
     <color name="card_background">@color/surface</color>
     <color name="progress_background">@color/surface_2</color>
+
+    <!-- Field Journal tokens (paper theme still warm on night until dedicated night art) -->
+    <color name="ns_ink">#F8F2E2</color>
+    <color name="ns_maroon">#C45A6A</color>
+    <color name="ns_maroon_deep">#E8B4BC</color>
+    <color name="ns_paper">#1A1612</color>
+    <color name="ns_paper_2">#241E18</color>
+    <color name="ns_cream">#2A241C</color>
+    <color name="ns_grey">#A89880</color>
+    <color name="ns_gold">#B9862E</color>
+    <color name="ns_line">#40F8F2E2</color>
+    <color name="ns_transparent">#00000000</color>
 </resources>

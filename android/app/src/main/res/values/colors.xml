@@ -137,4 +137,16 @@
     <color name="dark_card_background">#121212</color>
     <color name="dark_text_primary">#FFFFFF</color>
     <color name="dark_text_secondary">#E5E5E5</color>
+
+    <!-- Field Journal (Concept B) — home only; do not replace MentUI tokens -->
+    <color name="ns_ink">#241A14</color>
+    <color name="ns_maroon">#7C2430</color>
+    <color name="ns_maroon_deep">#511019</color>
+    <color name="ns_paper">#EFE6D1</color>
+    <color name="ns_paper_2">#E7DBC0</color>
+    <color name="ns_cream">#F8F2E2</color>
+    <color name="ns_grey">#8A7D6C</color>
+    <color name="ns_gold">#B9862E</color>
+    <color name="ns_line">#2E241A14</color>
+    <color name="ns_transparent">#00000000</color>
 </resources>

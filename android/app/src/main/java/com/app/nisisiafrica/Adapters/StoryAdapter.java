@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.StoryViewsStore;
-import com.app.nisisiafrica.Views.StoryRingView;
+import com.app.nisisiafrica.Views.RingStateView;
 import com.app.nisisiafrica.data.Model.StoryBucket;
 import com.bumptech.glide.Glide;
 
@@ -22,9 +22,9 @@ import java.util.Set;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
- * Stories rail: pinned "+ Add", then one cell per owner (multi-status compacted).
+ * Stories rail: pinned "+ Add", then Field Journal stamps per owner.
  */
-public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> {
+public class StoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int TYPE_ADD = 0;
     private static final int TYPE_STORY = 1;
@@ -76,46 +76,46 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_story, parent, false);
-        return new ViewHolder(v);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        if (viewType == TYPE_ADD) {
+            return new AddVH(inflater.inflate(R.layout.item_story_add, parent, false));
+        }
+        return new StoryVH(inflater.inflate(R.layout.item_story, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        if (getItemViewType(position) == TYPE_ADD) {
-            holder.company.setText("+ Add");
-            holder.logo.setImageResource(R.drawable.ic_add_circle);
-            holder.ring.setSegmentSeen(new boolean[]{true});
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof AddVH) {
             holder.itemView.setOnClickListener(v -> {
                 if (addListener != null) addListener.onAddClick();
             });
             return;
         }
 
+        StoryVH h = (StoryVH) holder;
         int dataIndex = position - 1;
         StoryBucket bucket = buckets.get(dataIndex);
-        holder.company.setText(bucket.label);
+        h.company.setText(bucket.label);
         String cover = bucket.coverUrl();
         if (cover != null && !cover.isEmpty()) {
             Glide.with(context)
                     .load(cover)
                     .placeholder(R.drawable.ic_image_placeholder)
-                    .into(holder.logo);
+                    .into(h.logo);
         } else {
-            holder.logo.setImageResource(R.drawable.ic_image_placeholder);
+            h.logo.setImageResource(R.drawable.ic_image_placeholder);
         }
 
-        // One ring segment per story — muted grey if viewed, maroon if not.
         boolean[] seen = new boolean[bucket.stories.size()];
         for (int i = 0; i < bucket.stories.size(); i++) {
             String id = bucket.stories.get(i).storyId;
             seen[i] = id != null && seenIds != null && seenIds.contains(id);
         }
-        holder.ring.setSegmentSeen(seen);
+        h.ring.setSegmentSeen(seen);
 
-        holder.itemView.setOnClickListener(v -> {
-            int idx = holder.getBindingAdapterPosition() - 1;
+        h.itemView.setOnClickListener(v -> {
+            int idx = h.getBindingAdapterPosition() - 1;
             if (listener != null && idx >= 0) listener.onBucketClick(idx);
         });
     }
@@ -125,12 +125,18 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
         return buckets.size() + 1;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        StoryRingView ring;
-        CircleImageView logo;
-        TextView company;
+    static class AddVH extends RecyclerView.ViewHolder {
+        AddVH(@NonNull View itemView) {
+            super(itemView);
+        }
+    }
 
-        ViewHolder(@NonNull View itemView) {
+    static class StoryVH extends RecyclerView.ViewHolder {
+        final RingStateView ring;
+        final CircleImageView logo;
+        final TextView company;
+
+        StoryVH(@NonNull View itemView) {
             super(itemView);
             ring = itemView.findViewById(R.id.storyRing);
             logo = itemView.findViewById(R.id.storyLogo);
