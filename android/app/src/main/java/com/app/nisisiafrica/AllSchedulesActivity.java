@@ -14,8 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.EventAdapter;
+import com.app.nisisiafrica.Utils.EventSeatReservation;
 import com.app.nisisiafrica.ViewModel.EventViewModel;
 import com.app.nisisiafrica.ViewModel.EventViewModelFactory;
+import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.Repository.EventRepository;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -26,6 +29,7 @@ public class AllSchedulesActivity extends AppCompatActivity {
     private EventAdapter adapter;
     private TextView tvEmpty;
     private String filter = "upcoming";
+    private UserData userData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +49,13 @@ public class AllSchedulesActivity extends AppCompatActivity {
         RecyclerView rv = findViewById(R.id.rvSchedules);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new EventAdapter(false);
+        adapter.setOnReserveClick(event ->
+                EventSeatReservation.show(this, event, userData, e -> load()));
         rv.setAdapter(adapter);
+
+        new ViewModelProvider(this).get(UserViewModel.class)
+                .getUserData()
+                .observe(this, data -> userData = data);
 
         eventViewModel = new ViewModelProvider(this, new EventViewModelFactory(new EventRepository()))
                 .get(EventViewModel.class);
