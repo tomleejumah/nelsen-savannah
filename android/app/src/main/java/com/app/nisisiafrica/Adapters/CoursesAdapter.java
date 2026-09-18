@@ -133,7 +133,8 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 }
             });
 
-            ((CompactViewHolder) holder).courseBody.setOnClickListener(v -> {
+            // Whole card (incl. cover) opens the course; only tutor avatar/name open Profile.
+            holder.itemView.setOnClickListener(v -> {
                 Intent learn = new Intent(mContext, TrackLearnActivity.class);
                 learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, item.getCourseId());
                 learn.putExtra(TrackLearnActivity.EXTRA_TITLE, item.getCourseTitle());
@@ -146,6 +147,9 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 if (item.getTutorName() != null) {
                     learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, item.getTutorName());
                 }
+                if (item.getTutorAvatarUrl() != null) {
+                    learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_AVATAR, item.getTutorAvatarUrl());
+                }
                 mContext.startActivity(learn);
             });
             View.OnClickListener openTutor = v -> {
@@ -157,13 +161,16 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 Intent profile = new Intent(mContext, ProfileActivity.class);
                 profile.putExtra(Constants.IS_MENTOR, true);
                 profile.putExtra(Constants.MENTOR_ID, tid);
+                if (item.getTutorName() != null) {
+                    profile.putExtra(Constants.MENTOR_NAME, item.getTutorName());
+                }
                 mContext.startActivity(profile);
             };
             ((CompactViewHolder) holder).tv_tutor_name.setOnClickListener(openTutor);
             ((CompactViewHolder) holder).iv_tutor_avatar.setOnClickListener(openTutor);
-//            ((CompactViewHolder) holder.courseBody.setOnClickListener(v -> {
-//
-//            });
+            if (((CompactViewHolder) holder).tutorClickRow != null) {
+                ((CompactViewHolder) holder).tutorClickRow.setOnClickListener(openTutor);
+            }
         } else if (holder instanceof UpdateProfileViewHolder) {
             ((UpdateProfileViewHolder) holder).bind(item);
             holder.itemView.setOnClickListener(v -> {
@@ -186,10 +193,12 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
         CircleImageView iv_tutor_avatar, likeBtn;
         ImageView iv_course_image;
         LinearLayout courseBody;
+        View tutorClickRow;
 
         public CompactViewHolder(@NonNull View itemView) {
             super(itemView);
             courseBody = itemView.findViewById(R.id.courseBody);
+            tutorClickRow = itemView.findViewById(R.id.tutorClickRow);
             tv_duration = itemView.findViewById(R.id.tv_duration);
             tv_lessons = itemView.findViewById(R.id.tv_lessons);
             tv_course_title = itemView.findViewById(R.id.tv_course_title);
