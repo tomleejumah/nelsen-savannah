@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -48,6 +50,14 @@ public class CommunitiesFragment extends Fragment {
         emptyState = view.findViewById(R.id.emptyState);
         RecyclerView rv = view.findViewById(R.id.rvCommunities);
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
+        ViewCompat.setOnApplyWindowInsetsListener(rv, (v, insets) -> {
+            int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            int bottom = v.getPaddingBottom();
+            v.setPadding(v.getPaddingLeft(), status + Math.round(52 * getResources().getDisplayMetrics().density),
+                    v.getPaddingRight(), bottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(rv);
         adapter = new CommunityAdapter(community -> {
             Intent intent = new Intent(requireContext(), CommunityDetailActivity.class);
             intent.putExtra(CommunityDetailActivity.EXTRA_COMMUNITY_ID, community.getId());

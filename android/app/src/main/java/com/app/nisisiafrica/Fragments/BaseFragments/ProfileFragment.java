@@ -10,6 +10,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -50,6 +52,17 @@ public class ProfileFragment extends Fragment {
         TextView name = view.findViewById(R.id.profileName);
         TextView role = view.findViewById(R.id.profileRole);
         TextView email = view.findViewById(R.id.profileEmail);
+
+        View header = view.findViewById(R.id.profileHeader);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                int extra = Math.round(52 * getResources().getDisplayMetrics().density);
+                v.setPadding(v.getPaddingLeft(), status + extra, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         view.findViewById(R.id.btnEditProfile).setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), EditProfileActivity.class);

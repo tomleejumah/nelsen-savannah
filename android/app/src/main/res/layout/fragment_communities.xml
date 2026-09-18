@@ -13,18 +13,12 @@
         android:visibility="gone"
         app:title="Groups" />
 
-    <!-- Clears shared glass top bar in MainActivity -->
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_gravity="top" />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCommunities"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingTop="8dp"
+        android:paddingTop="0dp"
         android:paddingBottom="96dp" />
 
     <LinearLayout

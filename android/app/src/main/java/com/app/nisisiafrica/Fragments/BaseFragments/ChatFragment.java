@@ -214,6 +214,7 @@ public class ChatFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (binding == null) return;
                 String query = s.toString().trim().toLowerCase(Locale.getDefault());
                 if (query.isEmpty()) {
                     binding.rvChats.setAdapter(concatAdapter);
@@ -222,6 +223,7 @@ public class ChatFragment extends Fragment {
                 String currentUserId = FirebaseAuth.getInstance().getUid();
                 ArrayList<Chatroom> filtered = new ArrayList<>();
                 for (Chatroom room : loadedRooms) {
+                    if (room == null) continue;
                     String name = room.getOtherUserName(currentUserId);
                     if (name != null && name.toLowerCase(Locale.getDefault()).contains(query)) {
                         filtered.add(room);
@@ -926,6 +928,17 @@ public class ChatFragment extends Fragment {
                 return insets;
             });
         }
+        View chatSpacer = binding.getRoot().findViewById(R.id.chatTopSpacer);
+        if (chatSpacer != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(chatSpacer, (v, insets) -> {
+                int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                ViewGroup.LayoutParams lp = v.getLayoutParams();
+                lp.height = status + dp(52);
+                v.setLayoutParams(lp);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(chatSpacer);
+        }
         if (binding.bottomChatBar != null) {
             ViewCompat.setOnApplyWindowInsetsListener(binding.bottomChatBar, (v, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
@@ -1024,6 +1037,7 @@ public class ChatFragment extends Fragment {
         if (chatRepository != null) {
             chatRepository.clearSyncListener();
         }
+        binding = null;
         super.onDestroyView();
     }
 }

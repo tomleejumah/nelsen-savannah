@@ -21,12 +21,13 @@
             app:titleEnabled="false">
 
             <LinearLayout
+                android:id="@+id/profileHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
                 android:paddingHorizontal="20dp"
-                android:paddingTop="72dp"
+                android:paddingTop="0dp"
                 android:paddingBottom="8dp"
                 app:layout_collapseMode="parallax">
 
