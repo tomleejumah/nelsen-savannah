@@ -59,8 +59,7 @@ class PinnedChatAdapter(
     companion object {
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Chatroom>() {
             override fun areItemsTheSame(old: Chatroom, new: Chatroom) = old.chatroomId == new.chatroomId
-            override fun areContentsTheSame(old: Chatroom, new: Chatroom) =
-                old.lastMessage == new.lastMessage && old.userIds == new.userIds
+            override fun areContentsTheSame(old: Chatroom, new: Chatroom) = old == new
         }
     }
 }
