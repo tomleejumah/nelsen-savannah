@@ -39,6 +39,9 @@ jobs:
     needs: check
     if: github.event_name != 'pull_request'
     runs-on: self-hosted
+    concurrency:
+      group: nelsen-self-hosted
+      cancel-in-progress: false
     timeout-minutes: 20
     steps:
       - name: Checkout code
@@ -96,6 +99,9 @@ jobs:
     needs: deploy
     if: github.event_name != 'pull_request'
     runs-on: self-hosted
+    concurrency:
+      group: nelsen-self-hosted
+      cancel-in-progress: false
     timeout-minutes: 5
     steps:
       - name: Health smoke (local + nginx)
