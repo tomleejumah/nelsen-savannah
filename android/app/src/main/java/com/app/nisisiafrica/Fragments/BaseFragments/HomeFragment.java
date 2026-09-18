@@ -23,6 +23,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.paging.LoadState;
@@ -201,9 +203,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 plusIcon.setVisibility(Roles.canCreate(userData.getUserRole()) ? View.VISIBLE : View.GONE);
             }
 
-            // Mentors + Admins: no mentor browse/book — Chats for mentees.
-            // Mentees: full mentor list + Book mentor.
-            applyMentorListVisibility(false, view); // TEMP: always show mentors list
+            // Mentors are shown in-course only (tutor on a track), not as a home rail.
+            applyMentorListVisibility(true, view);
 
             getEvents(data, view);
 
@@ -244,15 +245,21 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (!Roles.browsesMentors()) {
                 showCreateSheet();
             } else {
-                startActivity(new Intent(getActivity(), AllMentorsActivity.class));
+                startActivity(new Intent(getActivity(), AllCoursesActivity.class));
             }
         });
 
-        // Mentors/Admins never land on "Book a mentor" from the empty calendar state.
+        // Mentors/Admins use Create from empty calendar; mentees go to courses.
         View emptyState = view.findViewById(R.id.emptyStateView);
-        View emptyBook = emptyState != null ? emptyState.findViewById(R.id.btnBookMentor) : null;
-        if (emptyBook != null && !Roles.browsesMentors()) {
-            emptyBook.setVisibility(View.GONE);
+        if (emptyState != null) {
+            TextView emptyHint = null;
+            // first TextView in empty row after icon — update copy if present
+            ViewGroup emptyRow = emptyState instanceof ViewGroup ? (ViewGroup) emptyState : null;
+            if (emptyRow != null && emptyRow.getChildCount() >= 2
+                    && emptyRow.getChildAt(1) instanceof TextView) {
+                emptyHint = (TextView) emptyRow.getChildAt(1);
+                emptyHint.setText("No events yet — open a course to meet your tutor.");
+            }
         }
 
         if (plusIcon != null) {
@@ -328,23 +335,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         });
         SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
-        if (emptyBook != null) {
-            emptyBook.setOnClickListener(v -> {
-                if (!Roles.browsesMentors()) {
-                    showCreateSheet();
-                } else {
-                    startActivity(new Intent(getActivity(), AllMentorsActivity.class));
-                }
-            });
-        }
-
         View tvSeeMore = view.findViewById(R.id.tvSeeMore);
         if (tvSeeMore != null) {
-            tvSeeMore.setOnClickListener(v -> {
-                if (Roles.browsesMentors()) {
-                    startActivity(new Intent(getActivity(), AllMentorsActivity.class));
-                }
-            });
+            tvSeeMore.setVisibility(View.GONE);
         }
 
         rcCourses = view.findViewById(R.id.rcCourses);
@@ -418,8 +411,20 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
 
         view.findViewById(R.id.scrollView).setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-            scrollChangeListener.onParentScroll(oldScrollY, scrollY);
+            if (scrollChangeListener != null) {
+                scrollChangeListener.onParentScroll(oldScrollY, scrollY);
+            }
         });
+
+        View scroll = view.findViewById(R.id.scrollView);
+        if (scroll != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(scroll, (v, insets) -> {
+                int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                v.setPadding(v.getPaddingLeft(), status + dp(52), v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(scroll);
+        }
 
         view.findViewById(R.id.txtRecognizeMe).setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), QuestionnaireActivity.class);
@@ -870,24 +875,19 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             return;
         }
 
-        android.app.Dialog dialog = new android.app.Dialog(requireContext());
-        dialog.setContentView(R.layout.dialog_reserve_seat);
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setLayout(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            dialog.getWindow().setBackgroundDrawable(
-                    ContextCompat.getDrawable(requireContext(), R.drawable.bg_card));
-        }
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        View sheet = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_reserve_seat, null, false);
+        dialog.setContentView(sheet);
 
-        TextView tvTitle = dialog.findViewById(R.id.tvReserveTitle);
-        TextView tvSeats = dialog.findViewById(R.id.tvSeatsRemaining);
-        android.widget.EditText etFullName = dialog.findViewById(R.id.etFullName);
-        android.widget.EditText etEmail = dialog.findViewById(R.id.etEmail);
-        android.widget.EditText etPhone = dialog.findViewById(R.id.etPhone);
-        android.widget.EditText etProgram = dialog.findViewById(R.id.etProgram);
-        com.google.android.material.button.MaterialButton btnCancel = dialog.findViewById(R.id.btnCancel);
-        com.google.android.material.button.MaterialButton btnConfirm = dialog.findViewById(R.id.btnConfirm);
+        TextView tvTitle = sheet.findViewById(R.id.tvReserveTitle);
+        TextView tvSeats = sheet.findViewById(R.id.tvSeatsRemaining);
+        android.widget.EditText etFullName = sheet.findViewById(R.id.etFullName);
+        android.widget.EditText etEmail = sheet.findViewById(R.id.etEmail);
+        android.widget.EditText etPhone = sheet.findViewById(R.id.etPhone);
+        android.widget.EditText etProgram = sheet.findViewById(R.id.etProgram);
+        com.google.android.material.button.MaterialButton btnCancel = sheet.findViewById(R.id.btnCancel);
+        com.google.android.material.button.MaterialButton btnConfirm = sheet.findViewById(R.id.btnConfirm);
 
         String eventTitle = event.getTitle();
         if (eventTitle == null || eventTitle.trim().isEmpty()) {
@@ -1121,14 +1121,20 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         topBar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blur_overlay));
     }
 
-    private void applyMentorListVisibility(boolean isMentorOrAdmin, View view) {
-        int vis = isMentorOrAdmin ? View.GONE : View.VISIBLE;
+    private void applyMentorListVisibility(boolean hideMentorsRail, View view) {
+        int vis = View.GONE;
         View header = view.findViewById(R.id.mentorsSectionHeader);
         if (header != null) header.setVisibility(vis);
         if (rcMentors != null) rcMentors.setVisibility(vis);
-        // Empty-state CTA: mentors get Create, mentees get Book.
-        if (btnBookMentor != null && isMentorOrAdmin) {
-            btnBookMentor.setText("Create");
+        View showMore = view.findViewById(R.id.showMoreMentors);
+        if (showMore != null) showMore.setVisibility(View.GONE);
+        // Empty-state CTA: mentors/admins create events; mentees browse courses (not mentor list).
+        if (btnBookMentor != null) {
+            if (hideMentorsRail && Roles.browsesMentors()) {
+                btnBookMentor.setText("Courses");
+            } else if (!Roles.browsesMentors()) {
+                btnBookMentor.setText("Create");
+            }
         }
     }
 
@@ -1142,7 +1148,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 if (rvUpcomingEvents != null) rvUpcomingEvents.setVisibility(View.GONE);
                 if (btnBookMentor != null) {
                     btnBookMentor.setText(!Roles.browsesMentors(userData.getUserRole())
-                            ? "Create" : "Book a mentor");
+                            ? "Create" : "Courses");
                 }
             } else {
                 if (empty != null) empty.setVisibility(View.GONE);
@@ -1205,5 +1211,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
     public interface onScrollChangeListener {
         void onParentScroll(int oldY, int newY);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

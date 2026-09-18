@@ -284,16 +284,25 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         eightbitlab.com.blurview.BlurTarget target = findViewById(R.id.blurTarget);
         eightbitlab.com.blurview.BlurView navBlur = findViewById(R.id.navBlur);
-        eightbitlab.com.blurview.BlurView topBlur = findViewById(R.id.topBlur);
+        eightbitlab.com.blurview.BlurView topBlur = findViewById(R.id.topBarRow);
+        View topBarInner = findViewById(R.id.topBarInner);
         int overlay = ContextCompat.getColor(this, R.color.blur_overlay);
         try {
             navBlur.setupWith(target).setBlurRadius(22f).setOverlayColor(overlay);
-            topBlur.setupWith(target).setBlurRadius(22f).setOverlayColor(overlay);
+            topBlur.setupWith(target).setBlurRadius(18f).setOverlayColor(overlay);
         } catch (Exception e) {
             Log.w(TAG, "Blur setup failed; falling back to solid bars", e);
             int solid = ContextCompat.getColor(this, R.color.surface_card);
             navBlur.setBackgroundColor(solid);
             topBlur.setBackgroundColor(solid);
+        }
+        if (topBarInner != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(topBarInner, (v, insets) -> {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), bars.top + dp(8), v.getPaddingRight(), dp(10));
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(topBarInner);
         }
 
         if (btnHomeNotifications != null) {
@@ -341,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (tabId == R.id.homeFragment) {
             topBarTitle.setText("Nelsen Savannah");
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
-            if (imgDp != null) imgDp.setVisibility(View.VISIBLE);
+            if (imgDp != null) imgDp.setVisibility(View.GONE);
         } else if (tabId == R.id.communitiesFragment) {
             topBarTitle.setText("Groups");
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
@@ -409,9 +418,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void applyMainInsets() {
         View main = findViewById(R.id.main);
         if (main == null) return;
-        // Chat detail paints under the status bar for a continuous glass header.
-        int top = chatConversationOpen ? 0 : insetTop;
-        main.setPadding(insetLeft, top, insetRight, insetBottom);
+        // Top stays 0 so content + glass draw under the status bar; blur absorbs insets.
+        main.setPadding(insetLeft, 0, insetRight, insetBottom);
     }
 
     /** Called by ChatFragment when entering/leaving a conversation. */
@@ -580,9 +588,19 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                         error -> Log.e(TAG, "Failed to delete user cache", error)
                 ));
         FirebaseRemoteDataSource.INSTANCE.signOutAll(this, () -> {
+            LockScreenActivity.AppLockState.lock();
             redirectToLogin();
             return Unit.INSTANCE;
         });
+    }
+
+    /** Settings log-out — same path as session expiry. */
+    public void performLogout() {
+        logoutAndRedirect();
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     //todo create multiple channels based with action also migrate them to enum class

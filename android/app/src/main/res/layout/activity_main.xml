@@ -18,86 +18,77 @@
             android:layout_height="match_parent" />
     </eightbitlab.com.blurview.BlurTarget>
 
-    <!-- Glass top chrome (same BlurView pattern as bottom nav; outside BlurTarget). -->
-    <androidx.cardview.widget.CardView
+    <!-- Full-bleed glass wash only (not a floating card like the bottom bar). -->
+    <eightbitlab.com.blurview.BlurView
         android:id="@+id/topBarRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="8dp"
-        android:visibility="gone"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="6dp">
+        android:visibility="gone">
 
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/topBlur"
+        <LinearLayout
+            android:id="@+id/topBarInner"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp">
 
-            <LinearLayout
-                android:id="@+id/topBarInner"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/homeTopTitle"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="10dp">
+                android:layout_weight="1"
+                android:fontFamily="@font/font_display"
+                android:text="Nelsen Savannah"
+                android:textColor="@color/maroon_700"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <FrameLayout
+                android:id="@+id/btnHomeNotifications"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_chip_circle"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgNotification"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    app:srcCompat="@drawable/ic_notifications"
+                    app:tint="@color/maroon_700" />
 
                 <TextView
-                    android:id="@+id/homeTopTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/font_display"
-                    android:text="Nelsen Savannah"
-                    android:textColor="@color/maroon_700"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
+                    android:id="@+id/notifCounter"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="top|end"
+                    android:background="@drawable/circle"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textColor="@color/white"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
 
-                <FrameLayout
-                    android:id="@+id/btnHomeNotifications"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/bg_chip_circle"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:id="@+id/imgNotification"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        app:srcCompat="@drawable/ic_notifications"
-                        app:tint="@color/maroon_700" />
-
-                    <TextView
-                        android:id="@+id/notifCounter"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_gravity="top|end"
-                        android:background="@drawable/circle"
-                        android:gravity="center"
-                        android:text="0"
-                        android:textColor="@color/white"
-                        android:textSize="9sp"
-                        android:textStyle="bold"
-                        android:visibility="gone" />
-                </FrameLayout>
-
-                <de.hdodenhof.circleimageview.CircleImageView
-                    android:id="@+id/imgDp"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginStart="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:src="@drawable/ic_person" />
-            </LinearLayout>
-        </eightbitlab.com.blurview.BlurView>
-    </androidx.cardview.widget.CardView>
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imgDp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_person"
+                android:visibility="gone" />
+        </LinearLayout>
+    </eightbitlab.com.blurview.BlurView>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/bottomBarRow"
