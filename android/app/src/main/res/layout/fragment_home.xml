@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/surface_2">
 
     <LinearLayout
         android:id="@+id/main"
@@ -35,13 +35,18 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:overScrollMode="never"
-            android:paddingTop="0dp">
+            android:paddingTop="0dp"
+            android:scrollbars="none">
 
+            <!-- One continuous sheet — sections sit flush on this surface. -->
             <LinearLayout
+                android:id="@+id/homeSheet"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_home_sheet"
+                android:elevation="2dp"
                 android:orientation="vertical"
-                android:paddingBottom="8dp">
+                android:paddingBottom="96dp">
 
                 <!-- Stories: always visible; + Add pinned in adapter -->
                 <LinearLayout
@@ -49,6 +54,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
+                    android:paddingTop="4dp"
                     android:visibility="visible">
 
                     <androidx.recyclerview.widget.RecyclerView
@@ -57,7 +63,8 @@
                         android:layout_height="wrap_content"
                         android:clipToPadding="false"
                         android:paddingHorizontal="6dp"
-                        android:paddingVertical="8dp" />
+                        android:paddingTop="4dp"
+                        android:paddingBottom="6dp" />
 
                     <TextView
                         android:id="@+id/tvStoriesEmptyHint"
@@ -70,11 +77,6 @@
                         android:textColor="@color/muted"
                         android:textSize="12sp"
                         android:visibility="gone" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/line" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -107,16 +109,15 @@
                     android:id="@+id/cardFindMyPath"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="4dp"
-                    android:layout_marginTop="8dp"
-                    android:background="@color/bg"
+                    android:layout_marginTop="2dp"
+                    android:background="@android:color/transparent"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="12dp">
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="10dp">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -158,9 +159,10 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="4dp"
                     android:paddingHorizontal="16dp"
-                    android:paddingTop="16dp">
+                    android:paddingTop="10dp"
+                    android:paddingBottom="2dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -196,9 +198,9 @@
                     android:id="@+id/emptyStateView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginHorizontal="16dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/bg_card_lg"
+                    android:background="@drawable/bg_card_md"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingHorizontal="14dp"
@@ -267,9 +269,10 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="4dp"
                     android:paddingHorizontal="16dp"
-                    android:paddingTop="16dp">
+                    android:paddingTop="10dp"
+                    android:paddingBottom="2dp">
 
                     <TextView
                         android:id="@+id/tvTopCoursesHeader"
@@ -347,8 +350,9 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="10dp"
-                    android:paddingTop="12dp">
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="2dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -389,13 +393,11 @@
                     android:id="@+id/eventCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="10dp"
-                    android:layout_marginVertical="8dp"
-                    app:cardBackgroundColor="@color/surface"
-                    app:cardCornerRadius="@dimen/radius_card_md"
+                    android:layout_marginTop="4dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="0dp"
                     app:cardElevation="0dp"
-                    app:strokeColor="@color/line"
-                    app:strokeWidth="1dp">
+                    app:strokeWidth="0dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -526,7 +528,7 @@
 
                 <Space
                     android:layout_width="match_parent"
-                    android:layout_height="70dp" />
+                    android:layout_height="24dp" />
 
                 <!-- Kept for existing findViewById callers -->
                 <RelativeLayout
