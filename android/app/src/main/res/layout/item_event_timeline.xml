@@ -15,8 +15,11 @@
         android:layout_height="match_parent"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="8dp"
+        app:lineStyle="dash"
         app:lineWidth="2dp"
-        app:markerSize="10dp" />
+        app:markerSize="10dp"
+        app:startLineColor="@color/maroon_600"
+        app:endLineColor="@color/maroon_600" />
 
     <View
         android:id="@+id/dottedLine"

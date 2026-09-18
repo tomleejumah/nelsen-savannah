@@ -76,14 +76,13 @@ class EventAdapter(
         fun bind(event: Event, position: Int) {
             val ctx = itemView.context
             val active = ContextCompat.getColor(ctx, R.color.maroon_600)
-            val inactive = ContextCompat.getColor(ctx, R.color.line)
             timelineView.setMarker(ContextCompat.getDrawable(ctx, R.drawable.marker_active))
-            timelineView.setStartLineColor(if (position == 0) active else inactive, position)
-            timelineView.setEndLineColor(
-                if (position == events.lastIndex) inactive else active,
-                position,
-            )
+            // Same stroke for every segment so the rail reads as one continuous timeline.
+            timelineView.setStartLineColor(active, position)
+            timelineView.setEndLineColor(active, position)
             timelineView.lineStyle = TimelineView.LineStyle.DASHED
+            timelineView.lineWidth =
+                (2 * ctx.resources.displayMetrics.density).toInt().coerceAtLeast(2)
 
             val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
             tvEventDate.text = dateFormat.format(Date(event.date))

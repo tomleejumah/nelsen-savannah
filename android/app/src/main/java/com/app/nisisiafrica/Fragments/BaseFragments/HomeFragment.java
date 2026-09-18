@@ -183,7 +183,13 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
         eventAdapter = new EventAdapter(true);
         eventAdapter.setOnEventClick(this::showEventActions);
-        eventAdapter.setOnReserveClick(this::reserveEventSeat);
+        eventAdapter.setOnReserveClick(event ->
+                com.app.nisisiafrica.Utils.EventSeatReservation.show(
+                        requireContext(),
+                        event,
+                        userData,
+                        e -> eventViewModel.fetchEvents(
+                                Util.getState(Constants.CURRENT_USER_ID, ""))));
         rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
         rvUpcomingEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvUpcomingEvents.setAdapter(eventAdapter);
@@ -872,171 +878,6 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 //            txtDateInfo.setText("• Blue Underline: Your schedules");
 //        }
 
-    }
-
-    /**
-     * Free seat reservation — confirm dialog (autofill) then same API as the public website.
-     */
-    private void reserveEventSeat(Event event) {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
-            Toast.makeText(requireContext(), "Sign in to reserve a seat", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        int seatsLeft = Math.max(0, event.getSeats() - event.getSeatsTaken());
-        if (event.getSeats() > 0 && seatsLeft <= 0) {
-            Toast.makeText(requireContext(), "No seats left", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
-        View sheet = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_reserve_seat, null, false);
-        dialog.setContentView(sheet);
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setSoftInputMode(
-                    android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        }
-        dialog.setOnShowListener(d -> {
-            View bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
-            if (bottomSheet != null) {
-                com.google.android.material.bottomsheet.BottomSheetBehavior<?> behavior =
-                        com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet);
-                behavior.setSkipCollapsed(true);
-                behavior.setState(
-                        com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
-            }
-        });
-
-        TextView tvTitle = sheet.findViewById(R.id.tvReserveTitle);
-        TextView tvSeats = sheet.findViewById(R.id.tvSeatsRemaining);
-        android.widget.EditText etFullName = sheet.findViewById(R.id.etFullName);
-        android.widget.EditText etEmail = sheet.findViewById(R.id.etEmail);
-        android.widget.EditText etPhone = sheet.findViewById(R.id.etPhone);
-        android.widget.EditText etProgram = sheet.findViewById(R.id.etProgram);
-        com.google.android.material.button.MaterialButton btnCancel = sheet.findViewById(R.id.btnCancel);
-        com.google.android.material.button.MaterialButton btnConfirm = sheet.findViewById(R.id.btnConfirm);
-
-        String eventTitle = event.getTitle();
-        if (eventTitle == null || eventTitle.trim().isEmpty()) {
-            eventTitle = "this event";
-        }
-        tvTitle.setText("Reserve — " + eventTitle);
-        if (event.getSeats() > 0) {
-            tvSeats.setText(seatsLeft + " seat" + (seatsLeft == 1 ? "" : "s") + " remaining");
-        } else {
-            tvSeats.setText("Confirm your details to reserve");
-        }
-
-        String name = "";
-        if (userData != null) {
-            if (userData.getDisplayName() != null && !userData.getDisplayName().trim().isEmpty()) {
-                name = userData.getDisplayName().trim();
-            } else {
-                String fn = userData.getFirstName() != null ? userData.getFirstName().trim() : "";
-                String ln = userData.getLastName() != null ? userData.getLastName().trim() : "";
-                name = (fn + " " + ln).trim();
-            }
-        }
-        if (name.isEmpty() && user.getDisplayName() != null) {
-            name = user.getDisplayName().trim();
-        }
-        etFullName.setText(name);
-
-        String email = "";
-        if (userData != null && userData.getEmail() != null) {
-            email = userData.getEmail().trim();
-        }
-        if (email.isEmpty() && user.getEmail() != null) {
-            email = user.getEmail().trim();
-        }
-        etEmail.setText(email);
-
-        if (user.getPhoneNumber() != null) {
-            etPhone.setText(user.getPhoneNumber());
-        }
-        if (event.getProgram() != null) {
-            etProgram.setText(event.getProgram());
-        }
-
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-        btnConfirm.setOnClickListener(v -> {
-            String fullName = etFullName.getText() != null
-                    ? etFullName.getText().toString().trim() : "";
-            String mail = etEmail.getText() != null
-                    ? etEmail.getText().toString().trim() : "";
-            String phone = etPhone.getText() != null
-                    ? etPhone.getText().toString().trim() : "";
-            String program = etProgram.getText() != null
-                    ? etProgram.getText().toString().trim() : "";
-            if (fullName.length() < 2) {
-                Toast.makeText(requireContext(), "Enter your full name", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (mail.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(mail).matches()) {
-                Toast.makeText(requireContext(), "Enter a valid email", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            dialog.dismiss();
-            submitEventReservation(event, fullName, mail, phone, program);
-        });
-        dialog.show();
-    }
-
-    private void submitEventReservation(
-            Event event, String fullName, String email, String phone, String program) {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
-            Toast.makeText(requireContext(), "Sign in to reserve a seat", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        LmsModels.ReserveEventBody body = new LmsModels.ReserveEventBody();
-        body.fullName = fullName;
-        body.email = email;
-        body.phone = phone.isEmpty() ? null : phone;
-        body.program = program.isEmpty() ? event.getProgram() : program;
-
-        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
-            String bearer = "Bearer " + tokenResult.getToken();
-            Executors.newSingleThreadExecutor().execute(() -> {
-                kotlin.Pair<Boolean, String> result =
-                        LmsEventsDataSource.reserveSeatBlocking(bearer, event.getEventId(), body);
-                requireActivity().runOnUiThread(() -> {
-                    if (result.getFirst()) {
-                        Toast.makeText(requireContext(), "Seat reserved", Toast.LENGTH_SHORT).show();
-                        scheduleReservationReminder(event);
-                        com.app.nisisiafrica.Utils.EventActions.addToCalendar(requireContext(), event);
-                        eventViewModel.fetchEvents(Util.getState(Constants.CURRENT_USER_ID, ""));
-                    } else {
-                        String msg = result.getSecond() != null ? result.getSecond() : "Could not reserve";
-                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
-                    }
-                });
-            });
-        });
-    }
-
-    private void scheduleReservationReminder(Event event) {
-        long startMs = com.app.nisisiafrica.Utils.EventActions.startMillis(event);
-        long now = System.currentTimeMillis();
-        if (startMs <= now) return;
-        long triggerAt = startMs - com.app.nisisiafrica.Worker.EventReminderWorker.REMINDER_LEAD_MS;
-        if (triggerAt < now) triggerAt = startMs;
-        String title = event.getTitle();
-        if (title == null || title.trim().isEmpty()) {
-            title = event.getMentorName() != null && !event.getMentorName().isEmpty()
-                    ? "Session with " + event.getMentorName() : "Upcoming event";
-        }
-        String timeSuffix = event.getStartTime() != null && !event.getStartTime().isEmpty()
-                ? " at " + event.getStartTime() : "";
-        String idKey = event.getEventId() != null ? event.getEventId() : title;
-        com.app.nisisiafrica.Worker.EventReminderWorker.scheduleAlarm(
-                requireContext().getApplicationContext(),
-                idKey.hashCode(),
-                triggerAt,
-                title,
-                "Reminder: " + title + timeSuffix);
     }
 
     /**
