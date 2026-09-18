@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.data.remote;
 
+import com.app.nisisiafrica.Interfaces.InquiryApiService;
 import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
 
@@ -40,5 +41,9 @@ public class ApiClient {
 
     public static LmsApiService getLmsService() {
         return getClient().create(LmsApiService.class);
+    }
+
+    public static InquiryApiService getInquiryService() {
+        return getClient().create(InquiryApiService.class);
     }
 }
