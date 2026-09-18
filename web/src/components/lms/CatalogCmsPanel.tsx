@@ -108,7 +108,7 @@ export function CatalogCmsPanel({
   const [chStart, setChStart] = useState("");
   const [chEnd, setChEnd] = useState("");
 
-  // Add lesson
+  // Add lesson / optional first lesson on new chapter
   const [lesTitle, setLesTitle] = useState("");
   const [lesDoes, setLesDoes] = useState("");
   const [lesType, setLesType] = useState<"text" | "video" | "pdf">("text");
@@ -117,8 +117,33 @@ export function CatalogCmsPanel({
   const [quizOptions, setQuizOptions] = useState("A|Correct option\nB|Wrong option");
   const [quizCorrect, setQuizCorrect] = useState("A");
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  /** Side panel: list + add shell, or drill into a chapter's content. */
+  const [panelView, setPanelView] = useState<"add" | "edit">("add");
+  const [includeFirstLesson, setIncludeFirstLesson] = useState(false);
 
   const selected = chapters.find((c) => c.moduleId === selectedChapterId) || null;
+
+  function resetLessonForm() {
+    setLesTitle("");
+    setLesDoes("");
+    setLesFile(null);
+    setQuizPrompt("");
+    setUploadPct(null);
+    setLesType("text");
+    setIncludeFirstLesson(false);
+  }
+
+  function openAddChapter() {
+    setSelectedChapterId(null);
+    setPanelView("add");
+    resetLessonForm();
+  }
+
+  function openChapter(moduleId: string) {
+    setSelectedChapterId(moduleId);
+    setPanelView("edit");
+    resetLessonForm();
+  }
 
   const loadSyllabus = useCallback(async () => {
     const tid = selectedTrackId || editTrackId;
@@ -238,6 +263,16 @@ export function CatalogCmsPanel({
       setMsg("Chapter needs title, start, and end");
       return;
     }
+    if (includeFirstLesson) {
+      if (!lesTitle.trim()) {
+        setMsg("First lesson needs a title (or uncheck optional media)");
+        return;
+      }
+      if ((lesType === "video" || lesType === "pdf") && !lesFile) {
+        setMsg("Choose a file for video/PDF, or pick Text");
+        return;
+      }
+    }
     setMsg(null);
     const token = await user.getIdToken();
     const id = slugId("mod", newChapterTitle);
@@ -249,16 +284,30 @@ export function CatalogCmsPanel({
       releaseAt,
       dueAt,
     });
-    setMsg(result.ok ? `Chapter saved` : result.error || "Failed");
-    if (result.ok) {
-      setNewChapterTitle("");
-      setNewChapterDoes("");
-      setNewChapterStart("");
-      setNewChapterEnd("");
-      setSelectedChapterId(id);
-      await loadSyllabus();
-      onChanged?.();
+    if (!result.ok) {
+      setMsg(result.error || "Failed");
+      return;
     }
+    setNewChapterTitle("");
+    setNewChapterDoes("");
+    setNewChapterStart("");
+    setNewChapterEnd("");
+    if (includeFirstLesson) {
+      const ok = await persistLesson(token, id, tid);
+      if (!ok) {
+        setSelectedChapterId(id);
+        setPanelView("edit");
+        await loadSyllabus();
+        onChanged?.();
+        return;
+      }
+    }
+    setMsg(includeFirstLesson ? "Chapter + first lesson saved" : "Chapter saved");
+    resetLessonForm();
+    setSelectedChapterId(id);
+    setPanelView("edit");
+    await loadSyllabus();
+    onChanged?.();
   }
 
   async function saveChapter(e: React.FormEvent) {
@@ -294,33 +343,31 @@ export function CatalogCmsPanel({
     setMsg(result.ok ? "Chapter deleted" : result.error || "Failed");
     if (result.ok) {
       setSelectedChapterId(null);
+      setPanelView("add");
       await loadSyllabus();
       onChanged?.();
     }
   }
 
-  async function addLesson(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selected) {
-      setMsg("Select a chapter first");
-      return;
-    }
-    const tid = selected.trackId;
+  /** Shared create + optional upload/quiz for a lesson inside a module. */
+  async function persistLesson(
+    token: string,
+    moduleId: string,
+    trackId: string,
+  ): Promise<boolean> {
     if (!lesTitle.trim()) {
       setMsg("Lesson title required");
-      return;
+      return false;
     }
     if ((lesType === "video" || lesType === "pdf") && !lesFile) {
       setMsg("Choose a file for video/PDF lessons");
-      return;
+      return false;
     }
-    setMsg(null);
-    const token = await user.getIdToken();
     const id = slugId(lessonSlugPrefix(lesType), lesTitle);
     const create = await adminCreateLesson(token, {
       lessonId: id,
-      moduleId: selected.moduleId,
-      trackId: tid,
+      moduleId,
+      trackId,
       title: lesTitle.trim(),
       type: lesType,
       does: lesDoes.trim(),
@@ -328,7 +375,7 @@ export function CatalogCmsPanel({
     });
     if (!create.ok) {
       setMsg(create.error || "Failed to create lesson");
-      return;
+      return false;
     }
     try {
       if (lesFile && (lesType === "video" || lesType === "pdf")) {
@@ -346,8 +393,8 @@ export function CatalogCmsPanel({
           .filter(Boolean);
         const options = lines.map((line) => {
           const [oid, ...rest] = line.split("|");
-          const id = (oid || "").trim();
-          return { id, text: rest.join("|").trim() || id };
+          const oidTrim = (oid || "").trim();
+          return { id: oidTrim, text: rest.join("|").trim() || oidTrim };
         });
         if (options.length >= 2 && quizCorrect.trim()) {
           await authorLessonQuiz(token, schoolId, id, {
@@ -358,18 +405,28 @@ export function CatalogCmsPanel({
           await adminUpdateLesson(token, id, { hasQuiz: true });
         }
       }
-      setMsg(`Lesson “${lesTitle.trim()}” saved`);
-      setLesTitle("");
-      setLesDoes("");
-      setLesFile(null);
-      setQuizPrompt("");
-      setUploadPct(null);
-      await loadSyllabus();
-      onChanged?.();
+      return true;
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Lesson save failed");
       setUploadPct(null);
+      return false;
     }
+  }
+
+  async function addLesson(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) {
+      setMsg("Select a chapter first");
+      return;
+    }
+    setMsg(null);
+    const token = await user.getIdToken();
+    const ok = await persistLesson(token, selected.moduleId, selected.trackId);
+    if (!ok) return;
+    setMsg(`Lesson “${lesTitle.trim()}” saved`);
+    resetLessonForm();
+    await loadSyllabus();
+    onChanged?.();
   }
 
   async function deleteLesson(lessonId: string, title: string) {
@@ -383,6 +440,96 @@ export function CatalogCmsPanel({
     }
   }
 
+  function renderLessonFields(opts?: { optional?: boolean }) {
+    const show = !opts?.optional || includeFirstLesson;
+    return (
+      <div className="space-y-3">
+        {opts?.optional ? (
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={includeFirstLesson}
+              onChange={(e) => setIncludeFirstLesson(e.target.checked)}
+            />
+            Add first lesson / media (optional)
+          </label>
+        ) : null}
+        {show ? (
+          <>
+            <input
+              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              placeholder="Lesson title"
+              value={lesTitle}
+              onChange={(e) => setLesTitle(e.target.value)}
+              required={!opts?.optional || includeFirstLesson}
+            />
+            <label className="block space-y-1 text-xs">
+              <span className="text-muted-foreground">Media type</span>
+              <select
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                value={lesType}
+                onChange={(e) =>
+                  setLesType(e.target.value as "text" | "video" | "pdf")
+                }
+              >
+                <option value="text">Text (write & submit)</option>
+                <option value="video">Video (watch time)</option>
+                <option value="pdf">PDF (doc + questions)</option>
+              </select>
+            </label>
+            <textarea
+              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+              rows={3}
+              placeholder={
+                lesType === "text"
+                  ? "Prompts — what mentees should write / submit"
+                  : "Description"
+              }
+              value={lesDoes}
+              onChange={(e) => setLesDoes(e.target.value)}
+            />
+            {lesType === "video" || lesType === "pdf" ? (
+              <>
+                <input
+                  type="file"
+                  accept={lesType === "video" ? "video/*" : "application/pdf"}
+                  onChange={(e) => setLesFile(e.target.files?.[0] || null)}
+                />
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                  rows={2}
+                  placeholder="Optional question prompt"
+                  value={quizPrompt}
+                  onChange={(e) => setQuizPrompt(e.target.value)}
+                />
+                {quizPrompt.trim() ? (
+                  <>
+                    <textarea
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                      rows={3}
+                      placeholder={"id|option text (one per line)"}
+                      value={quizOptions}
+                      onChange={(e) => setQuizOptions(e.target.value)}
+                    />
+                    <input
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                      placeholder="Correct option id"
+                      value={quizCorrect}
+                      onChange={(e) => setQuizCorrect(e.target.value)}
+                    />
+                  </>
+                ) : null}
+              </>
+            ) : null}
+            {uploadPct != null ? (
+              <p className="text-xs text-muted-foreground">Upload {uploadPct}%</p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
   const activeTrackId = selectedTrackId || editTrackId;
 
   return (
@@ -393,7 +540,8 @@ export function CatalogCmsPanel({
             {allowCreateTrack && !selectedTrackId ? "Catalog CMS" : "Edit course"}
           </h3>
           <p className="text-muted-foreground">
-            Chapters share one date window; lessons inside are text, video, or PDF.
+            Side panel: pick a chapter to edit content, or + Add for a new shell
+            (optional text / video / PDF).
           </p>
         </div>
         {allowCreateTrack ? (
@@ -499,250 +647,213 @@ export function CatalogCmsPanel({
             </button>
           </form>
 
-          <section className="space-y-3">
-            <h4 className="font-medium">Chapters</h4>
-            {busy ? (
-              <p className="text-muted-foreground">Loading syllabus…</p>
-            ) : chapters.length === 0 ? (
-              <p className="text-muted-foreground">No chapters yet.</p>
-            ) : (
-              <ul className="divide-y divide-border/60 rounded-2xl border border-border/70">
-                {chapters.map((c) => (
-                  <li key={c.moduleId}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedChapterId(c.moduleId)}
-                      className={`flex w-full flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-left hover:bg-secondary/40 ${
-                        selectedChapterId === c.moduleId ? "bg-secondary/50" : ""
-                      }`}
-                    >
-                      <span className="font-medium">{c.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {c.lessons.length} lesson{c.lessons.length === 1 ? "" : "s"}
-                        {c.releaseAt && c.dueAt
-                          ? ` · ${new Date(c.releaseAt).toLocaleDateString()} → ${new Date(c.dueAt).toLocaleDateString()}`
-                          : " · dates missing"}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <form
-            onSubmit={addChapter}
-            className="space-y-3 rounded-2xl border border-dashed border-border p-4"
-          >
-            <h4 className="font-medium">Add chapter</h4>
-            <input
-              className="w-full rounded-lg border border-border bg-background px-3 py-2"
-              placeholder="Title (e.g. Introduction)"
-              value={newChapterTitle}
-              onChange={(e) => setNewChapterTitle(e.target.value)}
-              required
-            />
-            <textarea
-              className="w-full rounded-lg border border-border bg-background px-3 py-2"
-              placeholder="Description"
-              rows={2}
-              value={newChapterDoes}
-              onChange={(e) => setNewChapterDoes(e.target.value)}
-            />
-            <div className="grid gap-2 sm:grid-cols-2">
-              <label className="space-y-1 text-xs">
-                <span className="text-muted-foreground">Start</span>
-                <input
-                  type="datetime-local"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  value={newChapterStart}
-                  onChange={(e) => setNewChapterStart(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="space-y-1 text-xs">
-                <span className="text-muted-foreground">End</span>
-                <input
-                  type="datetime-local"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  value={newChapterEnd}
-                  onChange={(e) => setNewChapterEnd(e.target.value)}
-                  required
-                />
-              </label>
-            </div>
-            <button
-              type="submit"
-              className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
-            >
-              Save chapter
-            </button>
-          </form>
-
-          {selected ? (
-            <div className="space-y-4 rounded-2xl border border-border/70 p-4">
-              <form onSubmit={saveChapter} className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="font-medium">Edit chapter</h4>
-                  <button
-                    type="button"
-                    onClick={() => void deleteChapter()}
-                    className="text-xs text-destructive underline"
-                  >
-                    Delete chapter
-                  </button>
-                </div>
-                <input
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                  value={chTitle}
-                  onChange={(e) => setChTitle(e.target.value)}
-                  required
-                />
-                <textarea
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                  rows={2}
-                  value={chDoes}
-                  onChange={(e) => setChDoes(e.target.value)}
-                />
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="space-y-1 text-xs">
-                    <span className="text-muted-foreground">Start</span>
-                    <input
-                      type="datetime-local"
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      value={chStart}
-                      onChange={(e) => setChStart(e.target.value)}
-                      required
-                    />
-                  </label>
-                  <label className="space-y-1 text-xs">
-                    <span className="text-muted-foreground">End</span>
-                    <input
-                      type="datetime-local"
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      value={chEnd}
-                      onChange={(e) => setChEnd(e.target.value)}
-                      required
-                    />
-                  </label>
-                </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,11rem)_1fr]">
+            <aside className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="font-medium">Chapters</h4>
                 <button
-                  type="submit"
-                  className="rounded-full bg-ember px-4 py-1.5 font-medium text-white"
+                  type="button"
+                  onClick={openAddChapter}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                    panelView === "add"
+                      ? "bg-ember text-white"
+                      : "border border-border hover:bg-secondary"
+                  }`}
                 >
-                  Save
+                  + Add
                 </button>
-              </form>
-
-              <div className="space-y-2">
-                <h5 className="font-medium">Lessons in this chapter</h5>
-                {selected.lessons.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">None yet.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {selected.lessons.map((l) => (
-                      <li
-                        key={l.lessonId}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2"
-                      >
-                        <span>
-                          <span className="font-medium">{l.title}</span>
-                          <span className="ml-2 text-xs uppercase text-muted-foreground">
-                            {l.type === "read" ? "text" : l.type}
-                          </span>
-                        </span>
-                        <button
-                          type="button"
-                          className="text-xs text-destructive underline"
-                          onClick={() => void deleteLesson(l.lessonId, l.title)}
-                        >
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
+              {busy ? (
+                <p className="text-xs text-muted-foreground">Loading…</p>
+              ) : chapters.length === 0 ? (
+                <p className="text-xs text-muted-foreground">None yet.</p>
+              ) : (
+                <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70">
+                  {chapters.map((c) => (
+                    <li key={c.moduleId}>
+                      <button
+                        type="button"
+                        onClick={() => openChapter(c.moduleId)}
+                        className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left text-xs hover:bg-secondary/40 ${
+                          panelView === "edit" && selectedChapterId === c.moduleId
+                            ? "bg-secondary/50"
+                            : ""
+                        }`}
+                      >
+                        <span className="font-medium text-sm">{c.title}</span>
+                        <span className="text-muted-foreground">
+                          {c.lessons.length} lesson
+                          {c.lessons.length === 1 ? "" : "s"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </aside>
 
-              <form onSubmit={addLesson} className="space-y-3 border-t border-border/60 pt-4">
-                <h5 className="font-medium">Add lesson</h5>
-                <input
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                  placeholder="Title"
-                  value={lesTitle}
-                  onChange={(e) => setLesTitle(e.target.value)}
-                  required
-                />
-                <label className="space-y-1 text-xs block">
-                  <span className="text-muted-foreground">Media type</span>
-                  <select
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    value={lesType}
-                    onChange={(e) =>
-                      setLesType(e.target.value as "text" | "video" | "pdf")
-                    }
+            <div className="min-w-0 space-y-4">
+              {panelView === "add" ? (
+                <form
+                  onSubmit={addChapter}
+                  className="space-y-3 rounded-2xl border border-dashed border-border p-4"
+                >
+                  <h4 className="font-medium">Add chapter</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Shell first — title, window, then optional first media.
+                  </p>
+                  <input
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                    placeholder="Title (e.g. Introduction)"
+                    value={newChapterTitle}
+                    onChange={(e) => setNewChapterTitle(e.target.value)}
+                    required
+                  />
+                  <textarea
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                    placeholder="Description"
+                    rows={2}
+                    value={newChapterDoes}
+                    onChange={(e) => setNewChapterDoes(e.target.value)}
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">Start</span>
+                      <input
+                        type="datetime-local"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        value={newChapterStart}
+                        onChange={(e) => setNewChapterStart(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">End</span>
+                      <input
+                        type="datetime-local"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        value={newChapterEnd}
+                        onChange={(e) => setNewChapterEnd(e.target.value)}
+                        required
+                      />
+                    </label>
+                  </div>
+                  <div className="border-t border-border/60 pt-3">
+                    {renderLessonFields({ optional: true })}
+                  </div>
+                  <button
+                    type="submit"
+                    className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
                   >
-                    <option value="text">Text (write & submit)</option>
-                    <option value="video">Video (watch time)</option>
-                    <option value="pdf">PDF (doc + questions)</option>
-                  </select>
-                </label>
-                <textarea
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                  rows={3}
-                  placeholder={
-                    lesType === "text"
-                      ? "Prompts — what mentees should write / submit"
-                      : "Description"
-                  }
-                  value={lesDoes}
-                  onChange={(e) => setLesDoes(e.target.value)}
-                />
-                {lesType === "video" || lesType === "pdf" ? (
-                  <>
+                    Save chapter
+                  </button>
+                </form>
+              ) : selected ? (
+                <div className="space-y-4 rounded-2xl border border-border/70 p-4">
+                  <form onSubmit={saveChapter} className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="font-medium">Inside chapter</h4>
+                      <button
+                        type="button"
+                        onClick={() => void deleteChapter()}
+                        className="text-xs text-destructive underline"
+                      >
+                        Delete chapter
+                      </button>
+                    </div>
                     <input
-                      type="file"
-                      accept={lesType === "video" ? "video/*" : "application/pdf"}
-                      onChange={(e) => setLesFile(e.target.files?.[0] || null)}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                      value={chTitle}
+                      onChange={(e) => setChTitle(e.target.value)}
+                      required
                     />
                     <textarea
                       className="w-full rounded-lg border border-border bg-background px-3 py-2"
                       rows={2}
-                      placeholder="Optional question prompt"
-                      value={quizPrompt}
-                      onChange={(e) => setQuizPrompt(e.target.value)}
+                      value={chDoes}
+                      onChange={(e) => setChDoes(e.target.value)}
                     />
-                    {quizPrompt.trim() ? (
-                      <>
-                        <textarea
-                          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                          rows={3}
-                          placeholder={"id|option text (one per line)"}
-                          value={quizOptions}
-                          onChange={(e) => setQuizOptions(e.target.value)}
-                        />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <label className="space-y-1 text-xs">
+                        <span className="text-muted-foreground">Start</span>
                         <input
-                          className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                          placeholder="Correct option id"
-                          value={quizCorrect}
-                          onChange={(e) => setQuizCorrect(e.target.value)}
+                          type="datetime-local"
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                          value={chStart}
+                          onChange={(e) => setChStart(e.target.value)}
+                          required
                         />
-                      </>
-                    ) : null}
-                  </>
-                ) : null}
-                {uploadPct != null ? (
-                  <p className="text-xs text-muted-foreground">Upload {uploadPct}%</p>
-                ) : null}
-                <button
-                  type="submit"
-                  className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
-                >
-                  Save lesson
-                </button>
-              </form>
+                      </label>
+                      <label className="space-y-1 text-xs">
+                        <span className="text-muted-foreground">End</span>
+                        <input
+                          type="datetime-local"
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                          value={chEnd}
+                          onChange={(e) => setChEnd(e.target.value)}
+                          required
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      className="rounded-full bg-ember px-4 py-1.5 font-medium text-white"
+                    >
+                      Save chapter
+                    </button>
+                  </form>
+
+                  <div className="space-y-2">
+                    <h5 className="font-medium">Content in this chapter</h5>
+                    {selected.lessons.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">None yet.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {selected.lessons.map((l) => (
+                          <li
+                            key={l.lessonId}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2"
+                          >
+                            <span>
+                              <span className="font-medium">{l.title}</span>
+                              <span className="ml-2 text-xs uppercase text-muted-foreground">
+                                {l.type === "read" ? "text" : l.type}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              className="text-xs text-destructive underline"
+                              onClick={() => void deleteLesson(l.lessonId, l.title)}
+                            >
+                              Delete
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <form
+                    onSubmit={addLesson}
+                    className="space-y-3 border-t border-border/60 pt-4"
+                  >
+                    <h5 className="font-medium">Add content</h5>
+                    {renderLessonFields()}
+                    <button
+                      type="submit"
+                      className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
+                    >
+                      Save lesson
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Select a chapter or add one.
+                </p>
+              )}
             </div>
-          ) : null}
+          </div>
         </>
       )}
     </div>
