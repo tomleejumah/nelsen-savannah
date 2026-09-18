@@ -138,7 +138,7 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.ViewHolder>() {
                 seatsProgress.progress = pct
                 if (event.seats > 0 && event.eventType != "announcement") {
                     btnReserve.isEnabled = left > 0
-                    btnReserve.text = if (left > 0) "Reserve · $left left" else "Full"
+                    btnReserve.text = if (left > 0) "Reserve" else "Full"
                 } else {
                     btnReserve.isEnabled = true
                     btnReserve.text = "Reserve"
