@@ -125,6 +125,55 @@
                 android:drawableLeft="@drawable/ic_lock_nelsen_savannah"
                 android:text="Lock app" />
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_lock_after"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="?attr/selectableItemBackground"
+                android:visibility="gone">
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_lock_after"
+                    style="@style/FontMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Lock after"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toTopOf="@+id/tv_lock_after_hint"
+                    app:layout_constraintEnd_toStartOf="@+id/iv_lock_after_go"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_chainStyle="packed" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_lock_after_hint"
+                    style="@style/FontMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="44dp"
+                    android:text="Immediately"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_lock_after" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/iv_lock_after_go"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="20dp"
+                    android:rotation="180"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_back" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
             <!-- Admin-only; hidden for everyone else in SettingsFragment. -->
             <TextView
                 android:id="@+id/tvManageBanners"
@@ -288,7 +337,7 @@
                 <androidx.appcompat.widget.AppCompatImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:scaleType="fitXY"
+                    android:scaleType="fitCenter"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@+id/tv_programmes"
                     app:layout_constraintStart_toStartOf="parent"
@@ -304,41 +353,6 @@
                     android:gravity="start|center_vertical"
                     android:text="Our programmes"
                     android:textAlignment="viewStart"
-                    android:textSize="14sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/cl_logout"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:background="?attr/selectableItemBackground">
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:scaleType="fitXY"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@+id/tv_logout"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/ic_back"
-                    app:tint="@color/accent_error" />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/tv_logout"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="56dp"
-                    android:layout_marginEnd="20dp"
-                    android:gravity="start|center_vertical"
-                    android:text="Log out"
-                    android:textAlignment="viewStart"
-                    android:textColor="@color/accent_error"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -526,6 +540,30 @@
                 </LinearLayout>
 
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_logout"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="24dp"
+                android:background="?attr/selectableItemBackground">
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/tv_logout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="20dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Log out"
+                    android:textAlignment="viewStart"
+                    android:textColor="@color/accent_error"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
             <LinearLayout
                 android:id="@+id/cl_version"
                 android:layout_width="wrap_content"
@@ -538,14 +576,7 @@
                     style="@style/FontMedium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Version 0.0.1"
-                    android:textSize="12sp" />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    style="@style/FontMedium"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=":"
+                    android:text="Version "
                     android:textSize="12sp" />
 
                 <androidx.appcompat.widget.AppCompatTextView
@@ -553,7 +584,8 @@
                     style="@style/FontMedium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    tools:text="1.0.1" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

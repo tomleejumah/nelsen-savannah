@@ -11,7 +11,16 @@ import com.app.nisisiafrica.Utils.Util;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+/**
+ * Relocks after the user-selected background delay (not immediately on every
+ * activity transition). A short grace window after unlock avoids the Lock→Main
+ * handoff re-locking instantly.
+ */
 public class AppLifecycleObserver implements DefaultLifecycleObserver {
+    public static final String PREF_LOCK_AFTER_MS = "lock_after_ms";
+    /** Default: Immediate once the unlock grace ends. */
+    public static final long DEFAULT_LOCK_AFTER_MS = 0L;
+
     private final Context appContext;
 
     public AppLifecycleObserver(Context context) {
@@ -24,8 +33,19 @@ public class AppLifecycleObserver implements DefaultLifecycleObserver {
         if (user == null) return;
 
         try {
-            if (PinManager.hasPin(appContext, user.getUid())
-                    && !LockScreenActivity.AppLockState.isUnlocked()) {
+            if (!PinManager.hasPin(appContext, user.getUid())) return;
+            if (LockScreenActivity.AppLockState.isWithinUnlockGrace()) return;
+
+            long delayMs = Util.getState(PREF_LOCK_AFTER_MS, DEFAULT_LOCK_AFTER_MS);
+            long lastBg = Util.getState("lastAppBackground", 0L);
+            long away = lastBg > 0 ? System.currentTimeMillis() - lastBg : Long.MAX_VALUE;
+
+            if (LockScreenActivity.AppLockState.isUnlocked()) {
+                if (away < delayMs) return;
+                LockScreenActivity.AppLockState.lock();
+            }
+
+            if (!LockScreenActivity.AppLockState.isUnlocked()) {
                 Intent intent = new Intent(appContext, LockScreenActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 appContext.startActivity(intent);
@@ -37,7 +57,8 @@ public class AppLifecycleObserver implements DefaultLifecycleObserver {
 
     @Override
     public void onStop(@NonNull LifecycleOwner owner) {
-        LockScreenActivity.AppLockState.lock();
+        // Record background time only — do not flip unlocked=false here.
+        // That was locking immediately on Lock→Main / login transitions.
         Util.saveState("lastAppBackground", System.currentTimeMillis());
     }
 }

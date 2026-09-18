@@ -12,6 +12,32 @@ if (localPropertiesFile.exists()) {
     }
 }
 
+def versionProperties = new Properties()
+def versionPropertiesFile = rootProject.file('version.properties')
+if (versionPropertiesFile.exists()) {
+    versionPropertiesFile.withInputStream { versionProperties.load(it) }
+}
+
+// Optional: ./gradlew bumpVersion  (or assembleRelease -PincVersion)
+if (project.hasProperty('incVersion')) {
+    def code = (versionProperties['VERSION_CODE'] ?: '1').toInteger() + 1
+    def name = versionProperties['VERSION_NAME'] ?: '1.0'
+    def parts = name.tokenize('.')
+    if (parts.size() >= 2) {
+        parts[parts.size() - 1] = (parts.last().toInteger() + 1).toString()
+        name = parts.join('.')
+    } else {
+        name = "${name}.1"
+    }
+    versionProperties['VERSION_CODE'] = code.toString()
+    versionProperties['VERSION_NAME'] = name
+    versionPropertiesFile.withWriter { versionProperties.store(it, 'Bump before Play upload') }
+    println "Bumped to versionName=${name} versionCode=${code}"
+}
+
+def versionCodeValue = (versionProperties['VERSION_CODE'] ?: '1').toInteger()
+def versionNameValue = versionProperties['VERSION_NAME'] ?: '1.0'
+
 // Web OAuth client (type 3) from Firebase — required for Google → Firebase idToken.
 def rawWebClientId = (localProperties.getProperty('WEB_CLIENT_ID')
         ?: '209820622367-4frpduthbniq2qpiki1adc8qq0boasr0.apps.googleusercontent.com')
@@ -29,8 +55,8 @@ android {
         applicationId "com.app.nisisiafrica"
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName "1.0"
+        versionCode versionCodeValue
+        versionName versionNameValue
 
 //        buildConfigField "String", "WEB_CLIENT_ID", "\"${WEB_CLIENT_ID}\""
         buildConfigField "String", "WEB_CLIENT_ID", webClientId
@@ -177,4 +203,27 @@ dependencies {
 
     //kyc sdk
     implementation 'me.didit:didit-sdk:3.2.0'
+}
+
+tasks.register('bumpVersion') {
+    group = 'versioning'
+    description = 'Increment VERSION_CODE and patch VERSION_NAME in version.properties'
+    doLast {
+        def file = rootProject.file('version.properties')
+        def props = new Properties()
+        if (file.exists()) file.withInputStream { props.load(it) }
+        def code = (props['VERSION_CODE'] ?: '1').toInteger() + 1
+        def name = props['VERSION_NAME'] ?: '1.0'
+        def parts = name.tokenize('.')
+        if (parts.size() >= 2) {
+            parts[parts.size() - 1] = (parts.last().toInteger() + 1).toString()
+            name = parts.join('.')
+        } else {
+            name = "${name}.1"
+        }
+        props['VERSION_CODE'] = code.toString()
+        props['VERSION_NAME'] = name
+        file.withWriter { props.store(it, 'Bump before Play upload') }
+        println "Bumped to versionName=${name} versionCode=${code}"
+    }
 }
