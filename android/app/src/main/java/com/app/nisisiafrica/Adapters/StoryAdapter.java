@@ -106,7 +106,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.ViewHolder> 
             holder.logo.setImageResource(R.drawable.ic_image_placeholder);
         }
 
-        // One ring segment per story — white if viewed, maroon if not.
+        // One ring segment per story — muted grey if viewed, maroon if not.
         boolean[] seen = new boolean[bucket.stories.size()];
         for (int i = 0; i < bucket.stories.size(); i++) {
             String id = bucket.stories.get(i).storyId;
