@@ -24,6 +24,12 @@ class EventViewModel(private val repository: EventRepository) : ViewModel() {
         }
     }
 
+    fun fetchHubEvents(filter: String, onResult: (List<Event>) -> Unit) {
+        viewModelScope.launch {
+            onResult(repository.fetchHubEvents(filter))
+        }
+    }
+
 //    fun loadMore() = repository.loadMore()
 
     /*fun bookMentor(mentorId: String, date: Long, startTime: String, endTime: String) {

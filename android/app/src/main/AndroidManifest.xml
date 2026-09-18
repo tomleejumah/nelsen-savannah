@@ -134,6 +134,9 @@
             android:name=".AllProgrammesActivity"
             android:exported="false" />
         <activity
+            android:name=".AllSchedulesActivity"
+            android:exported="false" />
+        <activity
             android:name=".AllCoursesActivity"
             android:exported="false" />
         <activity

@@ -94,16 +94,39 @@ export async function deleteHubEvent(eventId) {
   };
 }
 
-export async function listPublicHubEvents() {
+export async function listPublicHubEvents({ filter = "upcoming", uid = null } = {}) {
   const now = Date.now();
-  const rows = await dbAll(
-    `SELECT * FROM hub_events WHERE is_public = 1 AND date_ms >= ? ORDER BY date_ms ASC`,
-    [now],
-  );
+  let rows;
+  if (filter === "past") {
+    rows = await dbAll(
+      `SELECT * FROM hub_events WHERE is_public = 1 AND date_ms < ? ORDER BY date_ms DESC`,
+      [now],
+    );
+  } else if (filter === "all") {
+    rows = await dbAll(
+      `SELECT * FROM hub_events WHERE is_public = 1 ORDER BY date_ms ASC`,
+    );
+  } else {
+    rows = await dbAll(
+      `SELECT * FROM hub_events WHERE is_public = 1 AND date_ms >= ? ORDER BY date_ms ASC`,
+      [now],
+    );
+  }
   const ids = rows.map((r) => r.event_id);
   const taken = await seatsTakenMap(ids);
+  let reservedIds = new Set();
+  if (uid) {
+    const rsv = await dbAll(
+      `SELECT event_id FROM event_reservations WHERE uid = ?`,
+      [uid],
+    );
+    reservedIds = new Set(rsv.map((r) => r.event_id));
+  }
   return {
-    events: rows.map((row) => rowToEvent(row, taken[row.event_id] || 0)),
+    events: rows.map((row) => ({
+      ...rowToEvent(row, taken[row.event_id] || 0),
+      reservedByMe: reservedIds.has(row.event_id),
+    })),
     source: getPrimaryEngine() || "sqlite",
   };
 }

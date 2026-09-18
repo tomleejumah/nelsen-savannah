@@ -819,11 +819,17 @@ export const adminPurgeCatalog = handle(
   },
 );
 
-/** Public hub events — shared by web and Android. */
-export async function getPublicHubEvents(_req, res) {
+/** Public hub events — shared by web and Android. Optional auth marks reservedByMe. */
+export async function getPublicHubEvents(req, res) {
   try {
     const svc = await import("../services/lmsHubEventService.js");
-    const result = await svc.listPublicHubEvents();
+    const raw = String(req.query.filter || "upcoming").toLowerCase();
+    const filter =
+      raw === "past" || raw === "all" || raw === "upcoming" ? raw : "upcoming";
+    const result = await svc.listPublicHubEvents({
+      filter,
+      uid: req.user?.uid || null,
+    });
     return lmsOk(res, { events: result.events }, result.source);
   } catch (err) {
     console.error("[GET /lms/events/public]", err);

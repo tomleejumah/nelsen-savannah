@@ -564,6 +564,7 @@ public final class LmsModels {
         public int seats;
         public int seatsTaken;
         public String price;
+        public boolean reservedByMe;
     }
 
     public static class HubEventsData {

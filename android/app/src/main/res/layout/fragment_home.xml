@@ -155,19 +155,39 @@
                         app:tint="@color/maroon_700" />
                 </LinearLayout>
 
-                <!-- Your schedule -->
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="10dp"
-                    android:layout_marginTop="12dp"
-                    android:drawablePadding="8dp"
-                    android:fontFamily="@font/font_ui"
-                    android:text="Your schedule"
-                    android:textColor="@color/ink"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    app:drawableStartCompat="@drawable/ic_clock" />
+                    android:paddingHorizontal="10dp"
+                    android:paddingTop="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:drawablePadding="8dp"
+                        android:fontFamily="@font/font_ui"
+                        android:text="Your schedule"
+                        android:textColor="@color/ink"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/ic_clock" />
+
+                    <TextView
+                        android:id="@+id/tvSeeMore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:fontFamily="@font/font_ui"
+                        android:paddingHorizontal="4dp"
+                        android:paddingVertical="4dp"
+                        android:text="See more"
+                        android:textColor="@color/maroon_600"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+                </RelativeLayout>
 
                 <LinearLayout
                     android:id="@+id/emptyStateView"
@@ -213,29 +233,13 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvSeeMore"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_btn_ghost"
-                    android:drawablePadding="8dp"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="6dp"
-                    android:text="See more"
-                    android:textColor="@color/ink"
-                    android:textSize="14sp"
-                    android:visibility="gone"
-                    app:drawableStartCompat="@drawable/ic_down_circle" />
-
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvUpcomingEvents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
                     android:paddingTop="4dp"
-                    tools:itemCount="3" />
+                    tools:itemCount="1" />
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"

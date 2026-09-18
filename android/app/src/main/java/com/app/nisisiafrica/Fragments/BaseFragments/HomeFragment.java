@@ -37,6 +37,7 @@ import com.app.nisisiafrica.Adapters.CoursesAdapter;
 import com.app.nisisiafrica.Adapters.EventAdapter;
 import com.app.nisisiafrica.Adapters.ProgrammesAdapter;
 import com.app.nisisiafrica.Adapters.MentorsAdapter;
+import com.app.nisisiafrica.AllSchedulesActivity;
 import com.app.nisisiafrica.AllProgrammesActivity;
 import com.app.nisisiafrica.Adapters.SearchHistoryAdapter;
 import com.app.nisisiafrica.Auth.LoginSignUpActivity;
@@ -178,7 +179,7 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         EventRepository repository = new EventRepository();
         EventViewModelFactory factory = new EventViewModelFactory(repository);
         eventViewModel = new ViewModelProvider(this, factory).get(EventViewModel.class);
-        eventAdapter = new EventAdapter();
+        eventAdapter = new EventAdapter(true);
         eventAdapter.setOnEventClick(this::showEventActions);
         eventAdapter.setOnReserveClick(this::reserveEventSeat);
         rvUpcomingEvents = view.findViewById(R.id.rvUpcomingEvents);
@@ -337,7 +338,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
 
         View tvSeeMore = view.findViewById(R.id.tvSeeMore);
         if (tvSeeMore != null) {
-            tvSeeMore.setVisibility(View.GONE);
+            tvSeeMore.setOnClickListener(v ->
+                    startActivity(new Intent(requireContext(), AllSchedulesActivity.class)));
         }
 
         rcCourses = view.findViewById(R.id.rcCourses);
@@ -1142,10 +1144,25 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         eventViewModel.getEvents().observe(getViewLifecycleOwner(), events -> {
             View empty = view.findViewById(R.id.emptyStateView);
             View seeMore = view.findViewById(R.id.tvSeeMore);
+            long now = System.currentTimeMillis();
+            String uid = Util.getState(Constants.CURRENT_USER_ID, "");
 
-            if (events == null || events.isEmpty()) {
+            List<Event> bookable = events == null ? java.util.Collections.emptyList()
+                    : events.stream()
+                    .filter(e -> e.getDate() >= now)
+                    .filter(e -> !e.getReservedByMe())
+                    .filter(e -> {
+                        // Skip 1:1 sessions already assigned to this mentee.
+                        String mentee = e.getMenteeId();
+                        return mentee == null || mentee.isEmpty() || !mentee.equals(uid);
+                    })
+                    .sorted(java.util.Comparator.comparingLong(Event::getDate))
+                    .collect(Collectors.toList());
+
+            if (bookable.isEmpty()) {
                 if (empty != null) empty.setVisibility(View.VISIBLE);
                 if (rvUpcomingEvents != null) rvUpcomingEvents.setVisibility(View.GONE);
+                if (seeMore != null) seeMore.setVisibility(View.VISIBLE);
                 if (btnBookMentor != null) {
                     btnBookMentor.setText(!Roles.browsesMentors(userData.getUserRole())
                             ? "Create" : "Courses");
@@ -1153,14 +1170,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             } else {
                 if (empty != null) empty.setVisibility(View.GONE);
                 if (rvUpcomingEvents != null) rvUpcomingEvents.setVisibility(View.VISIBLE);
-
-                List<Event> upcoming = events.stream()
-                        .filter(e -> e.getDate() >= System.currentTimeMillis())
-                        .limit(3)
-                        .collect(Collectors.toList());
-
-                eventAdapter.submitList(upcoming);
-                if (seeMore != null) seeMore.setVisibility(View.GONE);
+                eventAdapter.submitList(bookable.subList(0, 1));
+                if (seeMore != null) seeMore.setVisibility(View.VISIBLE);
             }
         });
 
