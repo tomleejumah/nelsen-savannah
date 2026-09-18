@@ -74,6 +74,8 @@ public class TrackLearnActivity extends AppCompatActivity {
     private View playerFrame;
     private LinearLayout modulesContainer;
     private MaterialButton btnEnroll;
+    private MaterialButton btnLeaveCourse;
+    private boolean enrolledOnTrack = false;
     private String trackId;
     private String fallbackUrl;
     private String tutorId;
@@ -119,6 +121,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         playerFrame = findViewById(R.id.playerFrame);
         modulesContainer = findViewById(R.id.modulesContainer);
         btnEnroll = findViewById(R.id.btnEnroll);
+        btnLeaveCourse = findViewById(R.id.btnLeaveCourse);
         tutorRow = findViewById(R.id.tutorRow);
         tvTutorName = findViewById(R.id.tvTutorName);
         ivTutorAvatar = findViewById(R.id.ivTutorAvatar);
@@ -135,6 +138,9 @@ public class TrackLearnActivity extends AppCompatActivity {
                 enroll();
             }
         });
+        if (btnLeaveCourse != null) {
+            btnLeaveCourse.setOnClickListener(v -> confirmLeaveCourse());
+        }
         loadTrack();
     }
 
@@ -300,9 +306,16 @@ public class TrackLearnActivity extends AppCompatActivity {
             tvProgressLabel.setText(
                     String.format(Locale.getDefault(), "Overall progress · %d%%", pct));
             if (track.enrolled) {
+                enrolledOnTrack = true;
                 btnEnroll.setText("Continue learning");
+                if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.VISIBLE);
             } else if (track.price != null && track.price.isPaid) {
+                enrolledOnTrack = false;
                 btnEnroll.setText("Unlock · " + formatPrice(track.price));
+                if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
+            } else {
+                enrolledOnTrack = false;
+                if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
             }
         }
         if (cohortRun != null && cohortRun.milestones != null && !cohortRun.milestones.isEmpty()) {
@@ -753,7 +766,9 @@ public class TrackLearnActivity extends AppCompatActivity {
                             body = parseEnrollmentError(response);
                         }
                         if (response.isSuccessful() && body != null && body.ok) {
+                            enrolledOnTrack = true;
                             btnEnroll.setText("Continue learning");
+                            if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.VISIBLE);
                             Toast.makeText(TrackLearnActivity.this, "Enrolled", Toast.LENGTH_SHORT).show();
                             loadTrack();
                             return;
@@ -775,6 +790,47 @@ public class TrackLearnActivity extends AppCompatActivity {
                     public void onFailure(Call<LmsModels.EnrollmentEnvelope> call, Throwable t) {
                         Toast.makeText(TrackLearnActivity.this,
                                 "LMS not ready — try again later", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+    }
+
+    private void confirmLeaveCourse() {
+        if (TextUtils.isEmpty(trackId) || !enrolledOnTrack) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Leave this course?")
+                .setMessage("You’ll be removed from the course. Your lesson progress is kept if you re-enroll later.")
+                .setPositiveButton("Leave course", (d, w) -> unenroll())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void unenroll() {
+        if (TextUtils.isEmpty(trackId)) return;
+        withBearer(bearer -> ApiClient.getLmsService()
+                .unenroll(bearer, trackId)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<Void> call, Response<Void> response) {
+                        if (response.isSuccessful()) {
+                            enrolledOnTrack = false;
+                            resumeLesson = null;
+                            if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
+                            btnEnroll.setText(trackPrice != null && trackPrice.isPaid
+                                    ? "Unlock · " + formatPrice(trackPrice)
+                                    : "Enroll");
+                            Toast.makeText(TrackLearnActivity.this, "Left course", Toast.LENGTH_SHORT).show();
+                            loadTrack();
+                            return;
+                        }
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Couldn’t leave course (" + response.code() + ")",
+                                Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Couldn’t leave course", Toast.LENGTH_SHORT).show();
                     }
                 }));
     }
