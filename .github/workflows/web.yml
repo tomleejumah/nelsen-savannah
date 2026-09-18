@@ -46,13 +46,29 @@ jobs:
     needs: build
     if: github.event_name != 'pull_request'
     runs-on: self-hosted
+    # Share the machine with API deploy — one job at a time avoids runner _diag collisions.
+    concurrency:
+      group: nelsen-self-hosted
+      cancel-in-progress: false
     timeout-minutes: 15
     steps:
       - name: Download static site
-        uses: actions/download-artifact@v4
-        with:
-          name: web-dist
-          path: web-dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Avoid actions/download-artifact set_output flake on this self-hosted runner.
+          mkdir -p "${GITHUB_WORKSPACE}/web-dist"
+          ARTIFACT_ID=$(gh api \
+            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+            --jq '.artifacts[] | select(.name=="web-dist") | .id' | head -n1)
+          test -n "$ARTIFACT_ID"
+          gh api \
+            "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            > /tmp/web-dist.zip
+          unzip -qo /tmp/web-dist.zip -d "${GITHUB_WORKSPACE}/web-dist"
+          rm -f /tmp/web-dist.zip
+          test -n "$(ls -A "${GITHUB_WORKSPACE}/web-dist")"
 
       - name: Deploy to nginx root
         env:
@@ -74,6 +90,9 @@ jobs:
     needs: deploy
     if: github.event_name != 'pull_request'
     runs-on: self-hosted
+    concurrency:
+      group: nelsen-self-hosted
+      cancel-in-progress: false
     timeout-minutes: 5
     steps:
       - name: Live site smoke (nginx + public)

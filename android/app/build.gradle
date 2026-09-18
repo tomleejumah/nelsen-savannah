@@ -94,12 +94,15 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    packagingOptions {
+    packaging {
         resources {
-            // ignore the duplicates
             excludes += [
                     "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
             ]
+        }
+        jniLibs {
+            // AGP 8.5.1+: keep .so uncompressed + 16 KB zip-aligned (Play / Android 15+).
+            useLegacyPackaging = false
         }
     }
 }
@@ -196,13 +199,29 @@ dependencies {
     implementation(libs.room.rxjava3)
     implementation("androidx.room:room-paging:$room_version")
 
-    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
+    implementation("io.github.oothp:android-pdf-viewer:3.2.0-beta06")
 
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
 
     //kyc sdk
     implementation 'me.didit:didit-sdk:3.2.0'
+}
+
+// Didit pulls older CameraX / MediaPipe .so builds that are only 4 KB aligned.
+configurations.configureEach {
+    exclude group: "com.github.mhiew", module: "pdfium-android"
+    exclude group: "com.github.mhiew", module: "android-pdf-viewer"
+    resolutionStrategy {
+        force(
+                "androidx.camera:camera-core:1.5.3",
+                "androidx.camera:camera-camera2:1.5.3",
+                "androidx.camera:camera-lifecycle:1.5.3",
+                "androidx.camera:camera-view:1.5.3",
+                "com.google.mediapipe:tasks-vision:0.10.26.1",
+                "io.github.oothp:pdfium-android:1.9.5-beta01",
+        )
+    }
 }
 
 tasks.register('bumpVersion') {
