@@ -25,7 +25,10 @@ public final class LocaleHelper {
     private LocaleHelper() {}
 
     private static SharedPreferences prefs(Context ctx) {
-        return ctx.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        // Application.attachBaseContext runs before getApplicationContext() is ready.
+        Context store = ctx.getApplicationContext();
+        if (store == null) store = ctx;
+        return store.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
     public static String current(Context ctx) {

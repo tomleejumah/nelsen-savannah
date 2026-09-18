@@ -1,7 +1,6 @@
 package com.app.nisisiafrica;
 
 import android.app.Application;
-import android.content.Context;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
 
@@ -16,11 +15,6 @@ import me.didit.sdk.DiditSdk;
 public class App extends Application {
 
     private static AppDatabase appDatabase;
-
-    @Override
-    protected void attachBaseContext(Context base) {
-        super.attachBaseContext(LocaleHelper.wrap(base));
-    }
 
     @Override
     public void onCreate() {
