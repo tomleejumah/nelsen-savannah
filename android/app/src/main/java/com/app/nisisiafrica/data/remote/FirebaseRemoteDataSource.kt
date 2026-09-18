@@ -217,12 +217,9 @@ object FirebaseRemoteDataSource {
                             .getValue(String::class.java) ?: "",
                         studentsCount = snapshot.child("studentsCount").getValue(String::class.java)
                             ?: "",
-                        studentImages = snapshot.child("studentImages")
-                            .getValue(List::class.java) as? List<String> ?: listOf(),
-                        bookedDates = snapshot.child("bookedDates")
-                            .getValue(Set::class.java) as? Set<LocalDate> ?: setOf(),
-                        categories = (snapshot.child("categories").getValue(List::class.java)
-                                as? List<*>)?.mapNotNull { it as? String } ?: listOf(),
+                        studentImages = parseStringList(snapshot.child("studentImages")),
+                        bookedDates = parseBookedDates(snapshot.child("bookedDates")),
+                        categories = parseStringList(snapshot.child("categories")),
                         averageRating = snapshot.child("averageRating").getValue(Double::class.java),
                     )
                     onSuccess?.invoke(mentorData)
@@ -450,15 +447,7 @@ object FirebaseRemoteDataSource {
                                 studentsCount = mentorSnapshot.child("studentsCount")
                                     .getValue(String::class.java),
                                 studentImages = parseStringList(mentorSnapshot.child("studentImages")),
-                                bookedDates = mentorSnapshot.child("bookedDates")
-                                    .getValue(Map::class.java)
-                                    ?.values?.mapNotNull {
-                                        try {
-                                            LocalDate.parse(it.toString())
-                                        } catch (_: Exception) {
-                                            null
-                                        }
-                                    }?.toSet(),
+                                bookedDates = parseBookedDates(mentorSnapshot.child("bookedDates")),
                                 categories = parseStringList(mentorSnapshot.child("categories")),
                                 averageRating = mentorSnapshot.child("averageRating")
                                     .getValue(Double::class.java),
@@ -919,11 +908,26 @@ object FirebaseRemoteDataSource {
     }
 
     private fun parseStringList(snapshot: DataSnapshot): List<String> {
-        val asList = snapshot.getValue(List::class.java)
-        if (asList != null) return asList.mapNotNull { it?.toString() }.filter { it.isNotBlank() }
-        val asMap = snapshot.getValue(Map::class.java)
-        if (asMap != null) return asMap.values.mapNotNull { it?.toString() }.filter { it.isNotBlank() }
-        return emptyList()
+        if (!snapshot.exists()) return emptyList()
+        // Never use getValue(List::class.java) — Firebase rejects generic List.
+        return snapshot.children.mapNotNull { child ->
+            child.getValue(String::class.java)?.takeIf { it.isNotBlank() }
+                ?: child.value?.toString()?.takeIf { it.isNotBlank() && it != "null" }
+        }
+    }
+
+    private fun parseBookedDates(snapshot: DataSnapshot): Set<LocalDate> {
+        if (!snapshot.exists()) return emptySet()
+        return snapshot.children.mapNotNull { child ->
+            val raw = child.getValue(String::class.java)
+                ?: child.key
+                ?: child.value?.toString()
+            try {
+                raw?.let { LocalDate.parse(it) }
+            } catch (_: Exception) {
+                null
+            }
+        }.toSet()
     }
 
     fun updateEvent(eventId: String, updates: Map<String, Any>, onComplete: (Boolean) -> Unit) {
