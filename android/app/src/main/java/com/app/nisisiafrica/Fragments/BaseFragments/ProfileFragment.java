@@ -15,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.R;
@@ -28,8 +29,8 @@ import java.util.Locale;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
- * Current-user profile screen. Hosts the existing SettingsFragment below an
- * enhanced profile header so all account actions stay in one place.
+ * Account tab: identity header + settings. Learning rails stay on Home
+ * (Upcoming schedules / Active courses); My courses opens the full list.
  */
 public class ProfileFragment extends Fragment {
 
@@ -52,6 +53,7 @@ public class ProfileFragment extends Fragment {
         TextView name = view.findViewById(R.id.profileName);
         TextView role = view.findViewById(R.id.profileRole);
         TextView email = view.findViewById(R.id.profileEmail);
+        TextView about = view.findViewById(R.id.profileAbout);
 
         View header = view.findViewById(R.id.profileHeader);
         if (header != null) {
@@ -71,10 +73,13 @@ public class ProfileFragment extends Fragment {
             startActivity(intent);
         });
 
+        view.findViewById(R.id.btnViewFullProfile).setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), AllCoursesActivity.class)));
+
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         userViewModel.getUserData().observe(getViewLifecycleOwner(), user -> {
             if (user == null) return;
-            bindHeader(user, avatar, avatarInitial, name, role, email);
+            bindHeader(user, avatar, avatarInitial, name, role, email, about);
         });
 
         UserData current = userViewModel.getUserData().getValue();
@@ -84,7 +89,7 @@ public class ProfileFragment extends Fragment {
                 userViewModel.fetchingCurrentUserDataFromDB(uid);
             }
         } else {
-            bindHeader(current, avatar, avatarInitial, name, role, email);
+            bindHeader(current, avatar, avatarInitial, name, role, email, about);
         }
 
         if (getChildFragmentManager().findFragmentById(R.id.profileSettingsContainer) == null) {
@@ -102,7 +107,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void bindHeader(UserData user, CircleImageView avatar, TextView avatarInitial,
-                            TextView name, TextView role, TextView email) {
+                            TextView name, TextView role, TextView email, TextView about) {
         isMentor = "Mentor".equals(user.getUserRole());
 
         String displayName = user.getDisplayName();
@@ -118,6 +123,16 @@ public class ProfileFragment extends Fragment {
             email.setVisibility(View.VISIBLE);
         } else {
             email.setVisibility(View.GONE);
+        }
+
+        if (about != null) {
+            String bio = user.getBio();
+            if (!TextUtils.isEmpty(bio)) {
+                about.setText(bio);
+                about.setVisibility(View.VISIBLE);
+            } else {
+                about.setVisibility(View.GONE);
+            }
         }
 
         String photo = user.getPhotoUrl();
