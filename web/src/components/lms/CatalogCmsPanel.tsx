@@ -66,6 +66,13 @@ type ChapterState = ModuleDto & {
   lessons: LessonDto[];
 };
 
+function chapterRowMeta(c: ChapterState) {
+  const n = c.lessons.length;
+  const lessons = `${n} lesson${n === 1 ? "" : "s"}`;
+  const hasDates = Boolean(c.releaseAt && c.dueAt);
+  return hasDates ? lessons : `${lessons} · dates missing`;
+}
+
 export function CatalogCmsPanel({
   user,
   schoolId,
@@ -117,8 +124,8 @@ export function CatalogCmsPanel({
   const [quizOptions, setQuizOptions] = useState("A|Correct option\nB|Wrong option");
   const [quizCorrect, setQuizCorrect] = useState("A");
   const [uploadPct, setUploadPct] = useState<number | null>(null);
-  /** Side panel: list + add shell, or drill into a chapter's content. */
-  const [panelView, setPanelView] = useState<"add" | "edit">("add");
+  /** Accordion: at most one of add-form or a chapter editor is open. */
+  const [addingChapter, setAddingChapter] = useState(false);
   const [includeFirstLesson, setIncludeFirstLesson] = useState(false);
 
   const selected = chapters.find((c) => c.moduleId === selectedChapterId) || null;
@@ -135,14 +142,14 @@ export function CatalogCmsPanel({
 
   function openAddChapter() {
     setSelectedChapterId(null);
-    setPanelView("add");
     resetLessonForm();
+    setAddingChapter((open) => !open);
   }
 
   function openChapter(moduleId: string) {
-    setSelectedChapterId(moduleId);
-    setPanelView("edit");
+    setAddingChapter(false);
     resetLessonForm();
+    setSelectedChapterId((prev) => (prev === moduleId ? null : moduleId));
   }
 
   const loadSyllabus = useCallback(async () => {
@@ -296,7 +303,7 @@ export function CatalogCmsPanel({
       const ok = await persistLesson(token, id, tid);
       if (!ok) {
         setSelectedChapterId(id);
-        setPanelView("edit");
+        setAddingChapter(false);
         await loadSyllabus();
         onChanged?.();
         return;
@@ -304,8 +311,8 @@ export function CatalogCmsPanel({
     }
     setMsg(includeFirstLesson ? "Chapter + first lesson saved" : "Chapter saved");
     resetLessonForm();
+    setAddingChapter(false);
     setSelectedChapterId(id);
-    setPanelView("edit");
     await loadSyllabus();
     onChanged?.();
   }
@@ -343,7 +350,7 @@ export function CatalogCmsPanel({
     setMsg(result.ok ? "Chapter deleted" : result.error || "Failed");
     if (result.ok) {
       setSelectedChapterId(null);
-      setPanelView("add");
+      setAddingChapter(false);
       await loadSyllabus();
       onChanged?.();
     }
@@ -540,8 +547,8 @@ export function CatalogCmsPanel({
             {allowCreateTrack && !selectedTrackId ? "Catalog CMS" : "Edit course"}
           </h3>
           <p className="text-muted-foreground">
-            Side panel: pick a chapter to edit content, or + Add for a new shell
-            (optional text / video / PDF).
+            Tap a chapter to expand it; + Add opens a new chapter form. Only one
+            form is open at a time.
           </p>
         </div>
         {allowCreateTrack ? (
@@ -647,212 +654,232 @@ export function CatalogCmsPanel({
             </button>
           </form>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,11rem)_1fr]">
-            <aside className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="font-medium">Chapters</h4>
-                <button
-                  type="button"
-                  onClick={openAddChapter}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    panelView === "add"
-                      ? "bg-ember text-white"
-                      : "border border-border hover:bg-secondary"
-                  }`}
-                >
-                  + Add
-                </button>
-              </div>
-              {busy ? (
-                <p className="text-xs text-muted-foreground">Loading…</p>
-              ) : chapters.length === 0 ? (
-                <p className="text-xs text-muted-foreground">None yet.</p>
-              ) : (
-                <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70">
-                  {chapters.map((c) => (
-                    <li key={c.moduleId}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="font-medium">Chapters</h4>
+              <button
+                type="button"
+                onClick={openAddChapter}
+                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                  addingChapter
+                    ? "bg-ember text-white"
+                    : "border border-border hover:bg-secondary"
+                }`}
+                aria-expanded={addingChapter}
+              >
+                + Add
+              </button>
+            </div>
+
+            {busy ? (
+              <p className="text-xs text-muted-foreground">Loading…</p>
+            ) : (
+              <ul className="space-y-2">
+                {chapters.length === 0 && !addingChapter ? (
+                  <li className="text-xs text-muted-foreground">None yet.</li>
+                ) : null}
+
+                {chapters.map((c) => {
+                  const expanded = selectedChapterId === c.moduleId;
+                  return (
+                    <li
+                      key={c.moduleId}
+                      className="overflow-hidden rounded-xl border border-border/70"
+                    >
                       <button
                         type="button"
                         onClick={() => openChapter(c.moduleId)}
-                        className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left text-xs hover:bg-secondary/40 ${
-                          panelView === "edit" && selectedChapterId === c.moduleId
-                            ? "bg-secondary/50"
-                            : ""
+                        className={`flex w-full items-baseline justify-between gap-3 px-3 py-2.5 text-left hover:bg-secondary/40 ${
+                          expanded ? "bg-secondary/40" : ""
                         }`}
+                        aria-expanded={expanded}
                       >
-                        <span className="font-medium text-sm">{c.title}</span>
-                        <span className="text-muted-foreground">
-                          {c.lessons.length} lesson
-                          {c.lessons.length === 1 ? "" : "s"}
+                        <span className="min-w-0 font-medium text-sm">
+                          {c.title}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {chapterRowMeta(c)}
                         </span>
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </aside>
 
-            <div className="min-w-0 space-y-4">
-              {panelView === "add" ? (
-                <form
-                  onSubmit={addChapter}
-                  className="space-y-3 rounded-2xl border border-dashed border-border p-4"
-                >
-                  <h4 className="font-medium">Add chapter</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Shell first — title, window, then optional first media.
-                  </p>
-                  <input
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                    placeholder="Title (e.g. Introduction)"
-                    value={newChapterTitle}
-                    onChange={(e) => setNewChapterTitle(e.target.value)}
-                    required
-                  />
-                  <textarea
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                    placeholder="Description"
-                    rows={2}
-                    value={newChapterDoes}
-                    onChange={(e) => setNewChapterDoes(e.target.value)}
-                  />
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <label className="space-y-1 text-xs">
-                      <span className="text-muted-foreground">Start</span>
-                      <input
-                        type="datetime-local"
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        value={newChapterStart}
-                        onChange={(e) => setNewChapterStart(e.target.value)}
-                        required
-                      />
-                    </label>
-                    <label className="space-y-1 text-xs">
-                      <span className="text-muted-foreground">End</span>
-                      <input
-                        type="datetime-local"
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        value={newChapterEnd}
-                        onChange={(e) => setNewChapterEnd(e.target.value)}
-                        required
-                      />
-                    </label>
-                  </div>
-                  <div className="border-t border-border/60 pt-3">
-                    {renderLessonFields({ optional: true })}
-                  </div>
-                  <button
-                    type="submit"
-                    className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
-                  >
-                    Save chapter
-                  </button>
-                </form>
-              ) : selected ? (
-                <div className="space-y-4 rounded-2xl border border-border/70 p-4">
-                  <form onSubmit={saveChapter} className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4 className="font-medium">Inside chapter</h4>
-                      <button
-                        type="button"
-                        onClick={() => void deleteChapter()}
-                        className="text-xs text-destructive underline"
-                      >
-                        Delete chapter
-                      </button>
-                    </div>
-                    <input
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                      value={chTitle}
-                      onChange={(e) => setChTitle(e.target.value)}
-                      required
-                    />
-                    <textarea
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                      rows={2}
-                      value={chDoes}
-                      onChange={(e) => setChDoes(e.target.value)}
-                    />
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <label className="space-y-1 text-xs">
-                        <span className="text-muted-foreground">Start</span>
-                        <input
-                          type="datetime-local"
-                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                          value={chStart}
-                          onChange={(e) => setChStart(e.target.value)}
-                          required
-                        />
-                      </label>
-                      <label className="space-y-1 text-xs">
-                        <span className="text-muted-foreground">End</span>
-                        <input
-                          type="datetime-local"
-                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                          value={chEnd}
-                          onChange={(e) => setChEnd(e.target.value)}
-                          required
-                        />
-                      </label>
-                    </div>
-                    <button
-                      type="submit"
-                      className="rounded-full bg-ember px-4 py-1.5 font-medium text-white"
-                    >
-                      Save chapter
-                    </button>
-                  </form>
-
-                  <div className="space-y-2">
-                    <h5 className="font-medium">Content in this chapter</h5>
-                    {selected.lessons.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">None yet.</p>
-                    ) : (
-                      <ul className="space-y-2">
-                        {selected.lessons.map((l) => (
-                          <li
-                            key={l.lessonId}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2"
-                          >
-                            <span>
-                              <span className="font-medium">{l.title}</span>
-                              <span className="ml-2 text-xs uppercase text-muted-foreground">
-                                {l.type === "read" ? "text" : l.type}
-                              </span>
-                            </span>
+                      {expanded && selected ? (
+                        <div className="space-y-4 border-t border-border/60 bg-background/60 p-4">
+                          <form onSubmit={saveChapter} className="space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h4 className="font-medium">Edit chapter</h4>
+                              <button
+                                type="button"
+                                onClick={() => void deleteChapter()}
+                                className="text-xs text-destructive underline"
+                              >
+                                Delete chapter
+                              </button>
+                            </div>
+                            <input
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                              value={chTitle}
+                              onChange={(e) => setChTitle(e.target.value)}
+                              required
+                            />
+                            <textarea
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                              rows={2}
+                              placeholder="Description"
+                              value={chDoes}
+                              onChange={(e) => setChDoes(e.target.value)}
+                            />
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="space-y-1 text-xs">
+                                <span className="text-muted-foreground">Start</span>
+                                <input
+                                  type="datetime-local"
+                                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                                  value={chStart}
+                                  onChange={(e) => setChStart(e.target.value)}
+                                  required
+                                />
+                              </label>
+                              <label className="space-y-1 text-xs">
+                                <span className="text-muted-foreground">End</span>
+                                <input
+                                  type="datetime-local"
+                                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                                  value={chEnd}
+                                  onChange={(e) => setChEnd(e.target.value)}
+                                  required
+                                />
+                              </label>
+                            </div>
                             <button
-                              type="button"
-                              className="text-xs text-destructive underline"
-                              onClick={() => void deleteLesson(l.lessonId, l.title)}
+                              type="submit"
+                              className="rounded-full bg-ember px-4 py-1.5 font-medium text-white"
                             >
-                              Delete
+                              Save
                             </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+                          </form>
 
-                  <form
-                    onSubmit={addLesson}
-                    className="space-y-3 border-t border-border/60 pt-4"
-                  >
-                    <h5 className="font-medium">Add content</h5>
-                    {renderLessonFields()}
-                    <button
-                      type="submit"
-                      className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
+                          <div className="space-y-2">
+                            <h5 className="font-medium">Lessons in this chapter</h5>
+                            {selected.lessons.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                None yet.
+                              </p>
+                            ) : (
+                              <ul className="space-y-2">
+                                {selected.lessons.map((l) => (
+                                  <li
+                                    key={l.lessonId}
+                                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2"
+                                  >
+                                    <span>
+                                      <span className="font-medium">{l.title}</span>
+                                      <span className="ml-2 text-xs uppercase text-muted-foreground">
+                                        {l.type === "read" ? "text" : l.type}
+                                      </span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="text-xs text-destructive underline"
+                                      onClick={() =>
+                                        void deleteLesson(l.lessonId, l.title)
+                                      }
+                                    >
+                                      Delete
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+
+                          <form
+                            onSubmit={addLesson}
+                            className="space-y-3 border-t border-border/60 pt-4"
+                          >
+                            <h5 className="font-medium">Add lesson</h5>
+                            {renderLessonFields()}
+                            <button
+                              type="submit"
+                              className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
+                            >
+                              Save lesson
+                            </button>
+                          </form>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+
+                {addingChapter ? (
+                  <li className="list-none">
+                    <form
+                      onSubmit={addChapter}
+                      className="space-y-3 rounded-2xl border border-dashed border-border p-4"
                     >
-                      Save lesson
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Select a chapter or add one.
-                </p>
-              )}
-            </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-medium">Add chapter</h4>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground underline"
+                          onClick={() => {
+                            setAddingChapter(false);
+                            resetLessonForm();
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <input
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                        placeholder="Title (e.g. Introduction)"
+                        value={newChapterTitle}
+                        onChange={(e) => setNewChapterTitle(e.target.value)}
+                        required
+                      />
+                      <textarea
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2"
+                        placeholder="Description"
+                        rows={2}
+                        value={newChapterDoes}
+                        onChange={(e) => setNewChapterDoes(e.target.value)}
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <label className="space-y-1 text-xs">
+                          <span className="text-muted-foreground">Start</span>
+                          <input
+                            type="datetime-local"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            value={newChapterStart}
+                            onChange={(e) => setNewChapterStart(e.target.value)}
+                            required
+                          />
+                        </label>
+                        <label className="space-y-1 text-xs">
+                          <span className="text-muted-foreground">End</span>
+                          <input
+                            type="datetime-local"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            value={newChapterEnd}
+                            onChange={(e) => setNewChapterEnd(e.target.value)}
+                            required
+                          />
+                        </label>
+                      </div>
+                      <div className="border-t border-border/60 pt-3">
+                        {renderLessonFields({ optional: true })}
+                      </div>
+                      <button
+                        type="submit"
+                        className="rounded-full border border-border px-4 py-1.5 font-medium hover:bg-secondary"
+                      >
+                        Save chapter
+                      </button>
+                    </form>
+                  </li>
+                ) : null}
+              </ul>
+            )}
           </div>
         </>
       )}
