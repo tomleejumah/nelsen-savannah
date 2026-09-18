@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Field Journal groups — white page, ledger list. Keep view IDs for CommunitiesFragment. -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ns_page">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarCommunities"
@@ -19,8 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingHorizontal="@dimen/ns_space_lg"
-        android:paddingTop="@dimen/ns_space_sm"
+        android:paddingTop="4dp"
         android:paddingBottom="96dp" />
 
     <LinearLayout
@@ -30,40 +28,34 @@
         android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="24dp"
+        android:padding="32dp"
         android:visibility="gone">
 
-        <FrameLayout
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:background="@drawable/shape_arc_stamp_circle">
-
-            <ImageView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_people"
-                app:tint="@color/ns_maroon" />
-        </FrameLayout>
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_people"
+            app:tint="@color/muted" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:fontFamily="@font/font_fraunces"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/font_ui"
             android:text="@string/groups_empty_title"
-            android:textColor="@color/ns_ink"
-            android:textSize="18sp" />
+            android:textColor="@color/ink"
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:fontFamily="@font/font_inter"
+            android:fontFamily="@font/font_ui"
             android:gravity="center"
             android:text="@string/groups_empty_body"
-            android:textColor="@color/ns_grey"
-            android:textSize="13sp" />
+            android:textColor="@color/muted"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -76,6 +68,6 @@
         android:contentDescription="@string/groups_title"
         android:src="@drawable/ic_add_circle"
         android:visibility="gone"
-        app:backgroundTint="@color/ns_maroon"
-        app:tint="@color/ns_cream" />
+        app:backgroundTint="?attr/colorPrimary"
+        app:tint="@color/white" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

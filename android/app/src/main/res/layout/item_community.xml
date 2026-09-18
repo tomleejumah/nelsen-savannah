@@ -1,34 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Group row — cream ledger slip with stamp logo (keep CommunityAdapter IDs). -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Reddit/Facebook-style group row — logo, name, members; keep CommunityAdapter IDs. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="6dp">
+    android:background="?attr/selectableItemBackground"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/shape_journal_slip"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
 
-        <FrameLayout
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/shape_arc_stamp_circle">
-
-            <ImageView
-                android:id="@+id/imgCommunityLogo"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_gravity="center"
-                android:padding="1dp"
-                android:scaleType="centerCrop"
-                android:src="@mipmap/ic_launcher" />
-        </FrameLayout>
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgCommunityLogo"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_launcher"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Rounded12" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -42,53 +36,52 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:fontFamily="@font/font_fraunces"
+                android:fontFamily="@font/font_ui"
                 android:maxLines="1"
-                android:textColor="@color/ns_ink"
-                android:textSize="15sp"
+                android:textColor="@color/ink"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 tools:text="Trailblazers circle" />
+
+            <TextView
+                android:id="@+id/tvCommunityMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/font_ui"
+                android:textColor="@color/muted"
+                android:textSize="12sp"
+                tools:text="12 members" />
 
             <TextView
                 android:id="@+id/tvCommunityDesc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:ellipsize="end"
-                android:fontFamily="@font/font_inter"
+                android:fontFamily="@font/font_ui"
                 android:maxLines="2"
-                android:textColor="@color/ns_grey"
-                android:textSize="12sp"
+                android:textColor="@color/ink_soft"
+                android:textSize="13sp"
                 tools:text="Ask questions and share wins with mentors." />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <com.zen.overlapimagelistview.OverlapImageListView
-                    android:id="@+id/overlapImage"
-                    android:layout_width="48dp"
-                    android:layout_height="26dp"
-                    android:visibility="gone"
-                    app:circleCount="3"
-                    app:fillColor="@color/ns_paper_2"
-                    app:strokeColor="@color/ns_cream"
-                    app:strokeWidth="2dp" />
-
-                <TextView
-                    android:id="@+id/tvCommunityMeta"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/font_plex_mono"
-                    android:textAllCaps="true"
-                    android:textColor="@color/ns_maroon"
-                    android:textSize="10sp"
-                    tools:text="12 members" />
-            </LinearLayout>
+            <!-- Kept for adapter; stacked avatars unused in list. -->
+            <com.zen.overlapimagelistview.OverlapImageListView
+                android:id="@+id/overlapImage"
+                android:layout_width="48dp"
+                android:layout_height="26dp"
+                android:visibility="gone"
+                app:circleCount="3"
+                app:fillColor="@color/line"
+                app:strokeColor="?attr/colorSurface"
+                app:strokeWidth="2dp" />
         </LinearLayout>
     </LinearLayout>
-</FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginStart="80dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/ns_list_divider" />
+</LinearLayout>

@@ -30,6 +30,11 @@
     </style>
 
     <!-- MentUI typography -->
+    <style name="ShapeAppearance.Nelsen.Rounded12" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <style name="TextAppearance.Nelsen.Display" parent="TextAppearance.Material3.HeadlineMedium">
         <item name="android:fontFamily">@font/font_display</item>
         <item name="android:textColor">@color/ink</item>
