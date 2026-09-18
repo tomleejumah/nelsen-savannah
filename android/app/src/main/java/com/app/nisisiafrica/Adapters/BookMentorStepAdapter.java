@@ -45,11 +45,6 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public BookMentorStepAdapter(Context context, StepCompleteListener listener) {
         this.context = context;
         this.stepCompleteListener = listener;
-        //todo pass dates fetched from mentor(from database)
-        // Example booked dates - replace with actual data
-        bookedDates.add(LocalDate.now().plusDays(2));
-        bookedDates.add(LocalDate.now().plusDays(5));
-        bookedDates.add(LocalDate.now().plusDays(8));
     }
 
     @NonNull
@@ -155,7 +150,8 @@ public class BookMentorStepAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
     // Setter for booked dates
     public void setBookedDates(Set<LocalDate> bookedDates) {
-        this.bookedDates = bookedDates;
+        this.bookedDates = bookedDates != null ? new HashSet<>(bookedDates) : new HashSet<>();
+        notifyDataSetChanged();
     }
 
     // Public methods to get booking data

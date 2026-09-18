@@ -629,9 +629,28 @@ async function ensureMigrations() {
       created_at BIGINT NOT NULL,
       updated_at BIGINT NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS track_mentors (
+      track_id TEXT NOT NULL,
+      uid TEXT NOT NULL,
+      display_name TEXT,
+      avatar_url TEXT,
+      linked_at INTEGER NOT NULL,
+      PRIMARY KEY (track_id, uid)
+    )`,
   ];
   for (const sql of additiveTables) {
     await dbRun(sql);
+  }
+
+  try {
+    await dbRun(`
+INSERT OR IGNORE INTO track_mentors (track_id, uid, display_name, avatar_url, linked_at)
+SELECT track_id, tutor_id, tutor_name, tutor_avatar_url, COALESCE(updated_at, created_at, 0)
+FROM tracks
+WHERE tutor_id IS NOT NULL AND tutor_id != '' AND tutor_id != 'nelsen-org'
+`);
+  } catch (err) {
+    console.warn(`[lms-db] track_mentors seed: ${err.message}`);
   }
 
   try {

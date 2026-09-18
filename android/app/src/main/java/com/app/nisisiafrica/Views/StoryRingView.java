@@ -14,7 +14,7 @@ import androidx.core.content.ContextCompat;
 import com.app.nisisiafrica.R;
 
 /**
- * Avatar ring: maroon (optionally segmented) while unseen; muted when fully seen.
+ * Avatar ring: maroon (optionally segmented) while unseen; white when fully seen.
  */
 public class StoryRingView extends FrameLayout {
 
@@ -61,7 +61,7 @@ public class StoryRingView extends FrameLayout {
         arcBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
 
         if (!unseen) {
-            ringPaint.setColor(ContextCompat.getColor(getContext(), R.color.line));
+            ringPaint.setColor(ContextCompat.getColor(getContext(), R.color.white));
             canvas.drawOval(arcBounds, ringPaint);
             return;
         }
