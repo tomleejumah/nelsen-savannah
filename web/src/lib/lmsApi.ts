@@ -350,6 +350,14 @@ export async function enrollInTrack(idToken: string, trackId: string) {
   });
 }
 
+export async function unenrollFromTrack(idToken: string, trackId: string) {
+  return lmsFetch<{ unenrolled?: boolean; trackId?: string }>(
+    `/lms/enrollments/${encodeURIComponent(trackId)}`,
+    idToken,
+    { method: "DELETE" },
+  );
+}
+
 export async function checkoutTrack(idToken: string, trackId: string) {
   return lmsFetch<{
     purchaseId: string;

@@ -18,6 +18,7 @@ import {
   fetchLmsModule,
   fetchLmsTrack,
   fetchMyProgress,
+  unenrollFromTrack,
   type LessonDto,
   type TrackDetailDto,
 } from "@/lib/lmsApi";
@@ -139,6 +140,24 @@ function TrackDetailPage() {
 
   async function onEnroll() {
     await paywall.enroll(trackId, track?.courseTitle);
+  }
+
+  async function onLeaveCourse() {
+    if (!user) return;
+    if (!window.confirm("Leave this course? Progress is kept if you re-enroll later.")) {
+      return;
+    }
+    try {
+      const token = await user.getIdToken();
+      const result = await unenrollFromTrack(token, trackId);
+      if (!result.ok) {
+        setError(result.error || "Couldn’t leave course");
+        return;
+      }
+      await load(user);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn’t leave course");
+    }
   }
 
   const continueLessonId = useMemo(() => {
@@ -275,6 +294,14 @@ function TrackDetailPage() {
                     Continue learning <ArrowRight className="h-4 w-4" />
                   </Link>
                 ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => void onLeaveCourse()}
+                  className="mt-4 block text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Leave course
+                </button>
 
                 {detail.cohortRun?.milestones?.length ? (
                   <section className="mt-12">
