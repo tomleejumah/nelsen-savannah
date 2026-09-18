@@ -301,7 +301,16 @@ public class AllCoursesActivity extends AppCompatActivity {
             void bind(CourseItem c) {
                 title.setText(c.getCourseTitle());
                 String tutor = c.getTutorName();
-                meta.setText(TextUtils.isEmpty(tutor) ? "Nelsen Savannah" : "with " + tutor);
+                boolean showTutor = !TextUtils.isEmpty(tutor)
+                        && !tutor.trim().equalsIgnoreCase("Nelsen Savannah")
+                        && !tutor.trim().equalsIgnoreCase("Nelsen Savannah Innovation Hub");
+                if (showTutor) {
+                    meta.setVisibility(View.VISIBLE);
+                    meta.setText("with " + tutor);
+                } else {
+                    meta.setVisibility(View.GONE);
+                    meta.setText("");
+                }
 
                 String lessons = c.getLessons() != null ? c.getLessons().trim() : "";
                 String duration = c.getDuration() != null ? c.getDuration().trim() : "";
@@ -337,22 +346,22 @@ public class AllCoursesActivity extends AppCompatActivity {
                     learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, c.getCourseId());
                     learn.putExtra(TrackLearnActivity.EXTRA_TITLE, c.getCourseTitle());
                     learn.putExtra(TrackLearnActivity.EXTRA_DESC,
-                            !TextUtils.isEmpty(tutor) ? "with " + tutor : "");
+                            showTutor ? "with " + tutor : "");
                     learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, c.getCourseLink());
-                    if (!TextUtils.isEmpty(c.getTutorId())) {
+                    if (showTutor && !TextUtils.isEmpty(c.getTutorId())) {
                         learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, c.getTutorId());
                     }
-                    if (!TextUtils.isEmpty(tutor)) {
+                    if (showTutor) {
                         learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, tutor);
                     }
-                    if (!TextUtils.isEmpty(c.getTutorAvatarUrl())) {
+                    if (showTutor && !TextUtils.isEmpty(c.getTutorAvatarUrl())) {
                         learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_AVATAR, c.getTutorAvatarUrl());
                     }
                     startActivity(learn);
                 });
                 meta.setOnClickListener(v -> {
                     String tid = c.getTutorId();
-                    if (TextUtils.isEmpty(tid)) {
+                    if (!showTutor || TextUtils.isEmpty(tid)) {
                         Toast.makeText(AllCoursesActivity.this, "Tutor profile unavailable", Toast.LENGTH_SHORT).show();
                         return;
                     }

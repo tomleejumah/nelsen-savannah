@@ -138,23 +138,25 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
                 Intent learn = new Intent(mContext, TrackLearnActivity.class);
                 learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, item.getCourseId());
                 learn.putExtra(TrackLearnActivity.EXTRA_TITLE, item.getCourseTitle());
+                String tutorLabel = item.getTutorName();
+                boolean showTutor = hasRealTutor(tutorLabel);
                 learn.putExtra(TrackLearnActivity.EXTRA_DESC,
-                        item.getTutorName() != null ? "with " + item.getTutorName() : "");
+                        showTutor ? "with " + tutorLabel : "");
                 learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, item.getCourseLink());
-                if (item.getTutorId() != null) {
+                if (showTutor && item.getTutorId() != null && !item.getTutorId().isEmpty()) {
                     learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, item.getTutorId());
                 }
-                if (item.getTutorName() != null) {
-                    learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, item.getTutorName());
+                if (showTutor) {
+                    learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, tutorLabel);
                 }
-                if (item.getTutorAvatarUrl() != null) {
+                if (showTutor && item.getTutorAvatarUrl() != null) {
                     learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_AVATAR, item.getTutorAvatarUrl());
                 }
                 mContext.startActivity(learn);
             });
             View.OnClickListener openTutor = v -> {
                 String tid = item.getTutorId();
-                if (tid == null || tid.isEmpty()) {
+                if (tid == null || tid.isEmpty() || !hasRealTutor(item.getTutorName())) {
                     Toast.makeText(mContext, "Tutor profile unavailable", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -212,10 +214,21 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             tv_duration.setText(courseItem.getDuration() + " Hours");
             tv_lessons.setText(courseItem.getLessons() + " Lessons");
             tv_course_title.setText(courseItem.getCourseTitle());
-            tv_tutor_name.setText(courseItem.getTutorName());
+
+            String tutor = courseItem.getTutorName();
+            boolean showTutor = hasRealTutor(tutor);
+            if (tutorClickRow != null) {
+                tutorClickRow.setVisibility(showTutor ? View.VISIBLE : View.GONE);
+            } else {
+                tv_tutor_name.setVisibility(showTutor ? View.VISIBLE : View.GONE);
+                iv_tutor_avatar.setVisibility(showTutor ? View.VISIBLE : View.GONE);
+            }
+            if (showTutor) {
+                tv_tutor_name.setText(tutor);
+                Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
+            }
 
             Glide.with(mContext).load(courseItem.getCourseImageUrl()).into(iv_course_image);
-            Glide.with(mContext).load(courseItem.getTutorAvatarUrl()).into(iv_tutor_avatar);
         }
     }
 
@@ -241,6 +254,16 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     }
 
     private static final String TAG = "CoursesAdapter";
+
+    /** Blank / org placeholder — hide tutor UI instead of defaulting. */
+    private static boolean hasRealTutor(String name) {
+        if (name == null) return false;
+        String n = name.trim();
+        if (n.isEmpty()) return false;
+        return !n.equalsIgnoreCase("Nelsen Savannah")
+                && !n.equalsIgnoreCase("Nelsen Savannah Innovation Hub");
+    }
+
     private void addNotification(String courseId, String tutorId, String text) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {

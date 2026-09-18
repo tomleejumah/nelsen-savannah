@@ -49,12 +49,24 @@ export async function linkTrackMentor(trackId, actorUid) {
     [actorUid],
   );
   const avatarUrl = actorRow?.photo_url || "";
-  await dbRun(
-    `INSERT OR REPLACE INTO track_mentors (track_id, uid, display_name, avatar_url, linked_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [trackId, actorUid, displayName, avatarUrl, now],
+  const existing = await dbGet(
+    "SELECT uid FROM track_mentors WHERE track_id = ? AND uid = ?",
+    [trackId, actorUid],
   );
-  // Latest updater is the primary bookable tutor shown on cards.
+  if (existing) {
+    await dbRun(
+      `UPDATE track_mentors SET display_name = ?, avatar_url = ?
+       WHERE track_id = ? AND uid = ?`,
+      [displayName, avatarUrl, trackId, actorUid],
+    );
+  } else {
+    await dbRun(
+      `INSERT INTO track_mentors (track_id, uid, display_name, avatar_url, linked_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [trackId, actorUid, displayName, avatarUrl, now],
+    );
+  }
+  // Latest updater is the primary bookable tutor shown for booking.
   await dbRun(
     `UPDATE tracks SET tutor_id = ?, tutor_name = ?, tutor_avatar_url = ?, updated_at = ?
      WHERE track_id = ?`,
@@ -228,6 +240,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   });
   const mentors = await listTrackMentors(trackId);
   const primary = mentors.length ? mentors[mentors.length - 1] : null;
+  const { formatTutorLabel } = await import("./lmsCatalogService.js");
   return {
     source: getPrimaryEngine(),
     data: {
@@ -237,7 +250,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
         does,
         published: Boolean(published),
         tutorId: primary?.uid || row.tutor_id || "",
-        tutorName: primary?.displayName || row.tutor_name || "",
+        tutorName: formatTutorLabel(mentors, primary?.displayName || row.tutor_name || ""),
         mentors,
       },
     },
