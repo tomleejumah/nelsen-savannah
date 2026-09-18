@@ -59,7 +59,8 @@ public class ProfileFragment extends Fragment {
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
                 int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-                int extra = Math.round(52 * getResources().getDisplayMetrics().density);
+                // Clear glass top bar (inner ~56dp) + gap so the DP sits below it.
+                int extra = Math.round(72 * getResources().getDisplayMetrics().density);
                 v.setPadding(v.getPaddingLeft(), status + extra, v.getPaddingRight(), v.getPaddingBottom());
                 return insets;
             });
