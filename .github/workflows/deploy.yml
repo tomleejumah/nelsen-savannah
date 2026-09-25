@@ -1,0 +1,124 @@
+name: Deploy
+
+# Trigger from the server after the runner is Listening for Jobs:
+#   gh workflow run Deploy --ref main -f target=all
+# or:
+#   bash scripts/trigger-deploy.sh
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: What to deploy
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - api
+          - web
+
+concurrency:
+  group: nelsen-self-hosted
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 25
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Deploy API
+        if: inputs.target == 'all' || inputs.target == 'api'
+        env:
+          PM2: /usr/local/bin/pm2
+          APP_DIR: /home/server/Apis/nelsen-savannah
+        run: |
+          set -euo pipefail
+          mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
+          rsync -av --delete \
+            --exclude 'node_modules' \
+            --exclude '.env' \
+            --exclude 'firebase-service-account.json' \
+            --exclude '.github' \
+            --exclude 'uploads/' \
+            --exclude '/data/' \
+            "${GITHUB_WORKSPACE}/api/" "$APP_DIR/"
+          cd "$APP_DIR"
+          if [ ! -f .env ]; then
+            echo "::error::Missing $APP_DIR/.env"
+            exit 1
+          fi
+          if [ ! -f firebase-service-account.json ]; then
+            echo "::error::Missing $APP_DIR/firebase-service-account.json"
+            exit 1
+          fi
+          rm -rf node_modules
+          npm install --omit=dev --no-audit --no-fund
+          mkdir -p data uploads uploads/_tmp
+          "$PM2" delete nelsen-savannah || true
+          "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
+          "$PM2" save
+          ok=0
+          for i in $(seq 1 20); do
+            if curl -sf --max-time 2 http://127.0.0.1:5002/lms/health \
+              | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"'; then
+              ok=1
+              echo "API ready on :5002 (attempt $i)"
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ok" != 1 ]; then
+            echo "::error::API not ready on :5002 after deploy"
+            "$PM2" status nelsen-savannah || true
+            "$PM2" logs nelsen-savannah --lines 50 --nostream || true
+            exit 1
+          fi
+
+      - name: Build and deploy web
+        if: inputs.target == 'all' || inputs.target == 'web'
+        env:
+          WEB_DIR: /var/www/nelsen-savannah
+          WEB_DIR_MIRROR: /home/server/web-projects/nelsen-savannah
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}/web"
+          npm ci
+          npm run build
+          DIST="${GITHUB_WORKSPACE}/web/dist/client"
+          test -d "$DIST"
+          mkdir -p "$WEB_DIR" "$WEB_DIR_MIRROR"
+          rsync -av --delete --exclude '.git' "$DIST/" "$WEB_DIR/"
+          rsync -av --delete --exclude '.git' "$DIST/" "$WEB_DIR_MIRROR/"
+          find "$WEB_DIR" "$WEB_DIR_MIRROR" -type d -exec chmod 755 {} +
+          find "$WEB_DIR" "$WEB_DIR_MIRROR" -type f -exec chmod 644 {} +
+
+      - name: Smoke
+        run: |
+          set -euo pipefail
+          check() {
+            local label="$1"
+            shift
+            local code
+            code=$(curl -sS -L --max-time 15 -o /dev/null -w "%{http_code}" "$@" || echo "000")
+            echo "$label -> $code"
+            test "$code" = "200"
+          }
+          if [ "${{ inputs.target }}" = "all" ] || [ "${{ inputs.target }}" = "api" ]; then
+            body=$(mktemp)
+            code=$(curl -sS -L --max-time 15 -o "$body" -w "%{http_code}" http://127.0.0.1:5002/lms/health || echo "000")
+            echo "api local -> $code"
+            test "$code" = "200"
+            grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"' "$body"
+            rm -f "$body"
+          fi
+          if [ "${{ inputs.target }}" = "all" ] || [ "${{ inputs.target }}" = "web" ]; then
+            check "nginx home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
+            check "nginx learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
+          fi
+          echo "deploy smoke ok"
