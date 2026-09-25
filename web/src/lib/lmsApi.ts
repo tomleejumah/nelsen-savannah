@@ -116,6 +116,12 @@ export type LessonDto = {
   contentPct?: number;
   lastPage?: number;
   isPdf?: boolean;
+  lab?: {
+    language: string;
+    starter: string;
+    stdin: string;
+    expectedStdout: string | null;
+  } | null;
   bodyHtml?: string | null;
   quiz?: {
     mode: string;
@@ -337,6 +343,26 @@ export async function fetchLmsLesson(idToken: string, lessonId: string) {
     `/lms/lessons/${encodeURIComponent(lessonId)}`,
     idToken,
   );
+}
+
+export async function runLessonLab(
+  idToken: string,
+  lessonId: string,
+  body: { source: string; stdin?: string },
+) {
+  return lmsFetch<{
+    language: string;
+    stdout: string;
+    stderr: string;
+    html?: string;
+    exitCode?: number;
+    passed: boolean;
+    contentPct: number;
+  }>(`/lms/lessons/${encodeURIComponent(lessonId)}/run`, idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 export async function enrollInTrack(idToken: string, trackId: string) {
@@ -1054,6 +1080,12 @@ export async function adminCreateLesson(
     hasQuiz?: boolean;
     hasAssignment?: boolean;
     mediaId?: string;
+    lab?: {
+      language?: string;
+      starter?: string;
+      stdin?: string;
+      expectedStdout?: string | null;
+    };
   },
 ) {
   return lmsFetch<{ lesson: { lessonId: string; type: string } }>(
@@ -1077,6 +1109,12 @@ export async function adminUpdateLesson(
     type?: string;
     hasQuiz?: boolean;
     mediaId?: string | null;
+    lab?: {
+      language?: string;
+      starter?: string;
+      stdin?: string;
+      expectedStdout?: string | null;
+    };
   },
 ) {
   return lmsFetch<{ lesson: { lessonId: string } }>(

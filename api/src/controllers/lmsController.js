@@ -518,6 +518,12 @@ export const likeTrack = handle("[POST /lms/tracks/:trackId/like]", async (req) 
   return toggleTrackLike(req.user.uid, req.params.trackId, req.body?.liked);
 });
 
+export const runLessonLab = handle("[POST /lms/lessons/:lessonId/run]", async (req) => {
+  const { runLessonLab: run } = await import("../services/lmsLabService.js");
+  const data = await run(req.user.uid, req.params.lessonId, req.body || {});
+  return { data, source: getPrimaryEngine() };
+});
+
 export const submitQuiz = handle("[POST /lms/lessons/:lessonId/quiz]", async (req) => {
   const { submitQuiz: submit } = await import("../services/lmsAdminService.js");
   return submit(profileFromReq(req), req.params.lessonId, req.body || {});
