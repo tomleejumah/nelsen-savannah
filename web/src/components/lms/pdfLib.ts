@@ -1,7 +1,8 @@
 import * as pdfjs from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+// Stable public path (copied from pdfjs-dist on build/install). Avoids
+// hashed /assets/pdf.worker.min-*.mjs 404s after deploy asset churn.
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 const docs = new Map<string, Promise<pdfjs.PDFDocumentProxy>>();
 

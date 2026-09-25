@@ -115,9 +115,11 @@ jobs:
             test "$code" = "200"
           }
           check "nginx home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
+          check "nginx pdf worker" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/pdf.worker.min.mjs
           check "nginx learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
           check "nginx program" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/programs/future-safari
           if check "public home" --retry 2 --retry-delay 1 https://nelsen-savannah.co.ke/; then
+            check "public pdf worker" --retry 2 --retry-delay 1 https://nelsen-savannah.co.ke/pdf.worker.min.mjs
             check "public learning" --retry 2 --retry-delay 1 https://nelsen-savannah.co.ke/learning
             check "public program" --retry 2 --retry-delay 1 https://nelsen-savannah.co.ke/programs/future-safari
           else
