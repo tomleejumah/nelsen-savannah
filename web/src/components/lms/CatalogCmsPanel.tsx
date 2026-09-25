@@ -47,6 +47,7 @@ function lessonSlugPrefix(type: string) {
   if (type === "video") return "vid";
   if (type === "pdf") return "pdf";
   if (type === "text") return "txt";
+  if (type === "code") return "lab";
   return "les";
 }
 
@@ -118,7 +119,10 @@ export function CatalogCmsPanel({
   // Add lesson / optional first lesson on new chapter
   const [lesTitle, setLesTitle] = useState("");
   const [lesDoes, setLesDoes] = useState("");
-  const [lesType, setLesType] = useState<"text" | "video" | "pdf">("text");
+  const [lesType, setLesType] = useState<"text" | "video" | "pdf" | "code">("text");
+  const [labLanguage, setLabLanguage] = useState("python");
+  const [labStarter, setLabStarter] = useState("print('hello')\n");
+  const [labExpected, setLabExpected] = useState("");
   const [lesFile, setLesFile] = useState<File | null>(null);
   const [quizPrompt, setQuizPrompt] = useState("");
   const [quizOptions, setQuizOptions] = useState("A|Correct option\nB|Wrong option");
@@ -137,6 +141,9 @@ export function CatalogCmsPanel({
     setQuizPrompt("");
     setUploadPct(null);
     setLesType("text");
+    setLabLanguage("python");
+    setLabStarter("print('hello')\n");
+    setLabExpected("");
     setIncludeFirstLesson(false);
   }
 
@@ -379,6 +386,14 @@ export function CatalogCmsPanel({
       type: lesType,
       does: lesDoes.trim(),
       hasQuiz: Boolean(quizPrompt.trim()) && (lesType === "pdf" || lesType === "video"),
+      lab:
+        lesType === "code"
+          ? {
+              language: labLanguage,
+              starter: labStarter,
+              expectedStdout: labExpected.trim() || null,
+            }
+          : undefined,
     });
     if (!create.ok) {
       setMsg(create.error || "Failed to create lesson");
@@ -476,12 +491,13 @@ export function CatalogCmsPanel({
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 value={lesType}
                 onChange={(e) =>
-                  setLesType(e.target.value as "text" | "video" | "pdf")
+                  setLesType(e.target.value as "text" | "video" | "pdf" | "code")
                 }
               >
                 <option value="text">Text (write & submit)</option>
                 <option value="video">Video (watch time)</option>
                 <option value="pdf">PDF (doc + questions)</option>
+                <option value="code">Code lab (in-browser IDE)</option>
               </select>
             </label>
             <textarea
@@ -495,6 +511,50 @@ export function CatalogCmsPanel({
               value={lesDoes}
               onChange={(e) => setLesDoes(e.target.value)}
             />
+            {lesType === "code" ? (
+              <>
+                <label className="block space-y-1 text-xs">
+                  <span className="text-muted-foreground">Language</span>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={labLanguage}
+                    onChange={(e) => {
+                      const lang = e.target.value;
+                      setLabLanguage(lang);
+                      if (!labStarter.trim() || labStarter === "print('hello')\n") {
+                        setLabStarter(
+                          lang === "javascript"
+                            ? "console.log('hello');\n"
+                            : lang === "html"
+                              ? "<h1>hello</h1>\n"
+                              : "print('hello')\n",
+                        );
+                      }
+                    }}
+                  >
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="html">HTML</option>
+                    <option value="java">Java</option>
+                    <option value="c">C</option>
+                    <option value="cpp">C++</option>
+                  </select>
+                </label>
+                <textarea
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                  rows={8}
+                  placeholder="Starter code"
+                  value={labStarter}
+                  onChange={(e) => setLabStarter(e.target.value)}
+                />
+                <input
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
+                  placeholder="Expected stdout (optional — auto-grade)"
+                  value={labExpected}
+                  onChange={(e) => setLabExpected(e.target.value)}
+                />
+              </>
+            ) : null}
             {lesType === "video" || lesType === "pdf" ? (
               <>
                 <input
