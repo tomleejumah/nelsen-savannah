@@ -1,16 +1,36 @@
 ---
-description: Always commit and push completed work to GitHub for tracking
+description: Always commit and push; new features go on a branch then merge to main
 alwaysApply: true
 ---
 
-# Commit and push for tracking
+# Commit, push, and feature branches
 
-After finishing a coherent unit of work in this repo:
+This repo’s default is **commit + push** — do not wait to be asked.
 
-1. **Commit** the related changes in focused, step-by-step commits (one concern per commit). Prefer several small commits over one mixed dump.
-2. **Push** to `origin` on the current branch after those commits so GitHub stays the source of truth for tracking.
-3. Do this without waiting to be asked again — the default for this project is commit + push when work is done.
+## After every coherent unit of work
+
+1. **Commit** related changes in focused commits (one concern each). Prefer several small commits over one mixed dump.
+2. **Push** to `origin` on the current branch so GitHub stays the source of truth.
+3. Do this as soon as the unit is done — including mid-session when a slice is complete.
 4. Never commit secrets (`.env`, `google-services.json`, service-account keys, credentials). Warn if they appear in the working tree.
-5. Skip IDE/noise paths unless the user explicitly wants them (`android/.idea/`, `android/.kotlin/`, build artifacts).
-6. Follow the existing commit-message style in `git log` (imperative, why-focused).
+5. Skip IDE/noise unless the user explicitly wants them (`android/.idea/`, `android/.kotlin/`, build artifacts, root `node_modules/`).
+6. Follow existing `git log` style (imperative, why-focused).
 7. Do not force-push `main`/`master`. Use a normal `git push` (or `-u` when setting upstream).
+
+## New features → branch, then merge
+
+For **new features** (non-trivial product work, multi-file features, API+client pairs):
+
+1. **Create and check out a branch** from up-to-date `main` before coding. Prefer `cursor/<short-description>` (e.g. `cursor/lms-coding-labs`).
+2. Commit and push on that branch as you go.
+3. When the feature is ready, **open a PR and merge into `main`** (or merge locally then push `main` if the user prefers). Do not leave finished feature work only on a local branch.
+4. After merge, delete the feature branch when appropriate.
+
+## Small fixes vs features
+
+| Kind | Workflow |
+|------|----------|
+| Tiny fix / typo / one-file polish already on `main` | Commit + push on `main` is OK |
+| New feature, multi-file change, or risky API/UI work | Branch → commit/push → merge to `main` |
+
+Hotfixes that must land immediately may commit on `main` if the user asks; otherwise prefer a short-lived branch + merge.
