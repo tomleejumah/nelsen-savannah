@@ -1,22 +1,45 @@
 import * as pdfjs from "pdfjs-dist";
 
-// Stable public path (copied from pdfjs-dist on build/install). Avoids
-// hashed /assets/pdf.worker.min-*.mjs 404s after deploy asset churn.
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-
 const docs = new Map<string, Promise<pdfjs.PDFDocumentProxy>>();
+
+let workerReady: Promise<void> | null = null;
+
+/** nginx often serves .mjs as octet-stream, which blocks `import()` of the worker. */
+function ensurePdfWorker() {
+  if (!workerReady) {
+    workerReady = (async () => {
+      const paths = ["/pdf.worker.min.js", "/pdf.worker.min.mjs"];
+      let code = "";
+      for (const path of paths) {
+        const res = await fetch(path);
+        if (!res.ok) continue;
+        code = await res.text();
+        if (code) break;
+      }
+      if (!code) throw new Error("PDF worker file missing");
+      const blob = new Blob([code], { type: "text/javascript" });
+      pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+    })().catch((err) => {
+      workerReady = null;
+      throw err;
+    });
+  }
+  return workerReady;
+}
 
 export function loadPdf(url: string) {
   let pending = docs.get(url);
   if (!pending) {
-    pending = pdfjs
-      .getDocument({
-        url,
-        withCredentials: false,
-        disableRange: true,
-        disableStream: true,
-      })
-      .promise.catch((err) => {
+    pending = ensurePdfWorker()
+      .then(() =>
+        pdfjs.getDocument({
+          url,
+          withCredentials: false,
+          disableRange: true,
+          disableStream: true,
+        }).promise,
+      )
+      .catch((err) => {
         docs.delete(url);
         throw err;
       });

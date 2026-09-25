@@ -417,7 +417,7 @@ function LessonPage() {
                       <Link
                         to="/learning/$trackId"
                         params={{ trackId }}
-                        className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+                        className="cursor-pointer rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
                       >
                         Back to chapters
                       </Link>
@@ -608,21 +608,21 @@ function LessonPage() {
                         type="button"
                         disabled={saving}
                         onClick={() => void markComplete()}
-                        className="rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
+                        className="cursor-pointer rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {saving ? "Saving…" : "Mark content complete"}
                       </button>
                     )}
                     <Link
                       to="/learning/coursework"
-                      className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+                      className="cursor-pointer rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
                     >
                       My coursework
                     </Link>
                     <Link
                       to="/learning/$trackId"
                       params={{ trackId }}
-                      className="rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+                      className="cursor-pointer rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
                     >
                       Back to modules
                     </Link>
