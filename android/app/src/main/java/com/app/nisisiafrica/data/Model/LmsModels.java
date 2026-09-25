@@ -157,7 +157,15 @@ public final class LmsModels {
         public String quizId;
         public Integer version;
         public List<QuizOptionDto> options;
+        public List<QuizQuestionDto> questions;
         public Integer passingScore;
+    }
+
+    public static class QuizQuestionDto {
+        public String id;
+        public String prompt;
+        public List<QuizOptionDto> options;
+        public String correctOptionId;
     }
 
     public static class EnrollmentListEnvelope {
@@ -359,6 +367,7 @@ public final class LmsModels {
         public Integer score;
         public Boolean passed;
         public String selectedOptionId;
+        public Map<String, String> answers;
         public String lastPlatform = "android";
         public QuizBody(int score, boolean passed) {
             this.score = score;
@@ -369,6 +378,13 @@ public final class LmsModels {
             body.score = null;
             body.passed = null;
             body.selectedOptionId = selectedOptionId;
+            return body;
+        }
+        public static QuizBody answers(Map<String, String> answers) {
+            QuizBody body = new QuizBody(0, false);
+            body.score = null;
+            body.passed = null;
+            body.answers = answers;
             return body;
         }
     }

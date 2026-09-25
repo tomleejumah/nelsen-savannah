@@ -19,6 +19,140 @@ function required(value, name) {
   return value;
 }
 
+const OPTION_IDS = ["a", "b", "c", "d", "e", "f"];
+
+function normalizeOption(option, index) {
+  const id = String(option?.id || OPTION_IDS[index] || `o${index + 1}`)
+    .trim()
+    .toLowerCase();
+  const text = String(option?.text || "").trim();
+  if (!id || !text) return null;
+  return { id, text };
+}
+
+function normalizeQuestion(raw, index) {
+  const id = String(raw?.id || `q${index + 1}`).trim();
+  const prompt = String(raw?.prompt || "").trim();
+  const options = (Array.isArray(raw?.options) ? raw.options : [])
+    .map(normalizeOption)
+    .filter(Boolean);
+  if (!id || !prompt || options.length < 2) return null;
+  const correctOptionId = String(raw?.correctOptionId || "").trim().toLowerCase();
+  if (!options.some((o) => o.id === correctOptionId)) return null;
+  return { id, prompt, options, correctOptionId };
+}
+
+/** Accept either legacy single prompt/options or questions[]. */
+function buildQuizSpec(body = {}) {
+  const fromList = Array.isArray(body.questions) ? body.questions : null;
+  if (fromList && fromList.length > 0) {
+    const questions = fromList.map(normalizeQuestion).filter(Boolean);
+    if (!questions.length) {
+      const err = new Error(
+        "each question needs a prompt, ≥2 options (A/B/C…), and a correctOptionId",
+      );
+      err.status = 400;
+      throw err;
+    }
+    return {
+      prompt:
+        String(body.prompt || "").trim() ||
+        (questions.length === 1
+          ? questions[0].prompt
+          : `Quiz (${questions.length} questions)`),
+      optionsJson: JSON.stringify({ format: "multi", questions }),
+      correctOptionId: questions.map((q) => q.correctOptionId).join(","),
+      questions,
+      mode: questions.length === 1 ? "single_answer" : "multi_answer",
+    };
+  }
+
+  const prompt = required(String(body.prompt || "").trim(), "prompt");
+  const options = (Array.isArray(body.options) ? body.options : [])
+    .map(normalizeOption)
+    .filter(Boolean);
+  if (options.length < 2) {
+    const err = new Error(
+      "options must contain at least two {id, text} choices (A, B, C…)",
+    );
+    err.status = 400;
+    throw err;
+  }
+  const correctOptionId = String(
+    required(body.correctOptionId, "correctOptionId"),
+  )
+    .trim()
+    .toLowerCase();
+  if (!options.some((option) => option.id === correctOptionId)) {
+    const err = new Error("correctOptionId must match an option");
+    err.status = 400;
+    throw err;
+  }
+  return {
+    prompt,
+    optionsJson: JSON.stringify(options),
+    correctOptionId,
+    questions: [{ id: "q1", prompt, options, correctOptionId }],
+    mode: "single_answer",
+  };
+}
+
+function parseStoredOptions(optionsJson) {
+  let raw;
+  try {
+    raw = JSON.parse(optionsJson || "[]");
+  } catch {
+    raw = [];
+  }
+  if (raw && raw.format === "multi" && Array.isArray(raw.questions)) {
+    const questions = raw.questions.map(normalizeQuestion).filter(Boolean);
+    return {
+      mode: questions.length > 1 ? "multi_answer" : "single_answer",
+      questions,
+      options: questions[0]?.options || [],
+      promptFallback: questions[0]?.prompt || "",
+    };
+  }
+  const options = (Array.isArray(raw) ? raw : [])
+    .map(normalizeOption)
+    .filter(Boolean);
+  return {
+    mode: "single_answer",
+    questions: [],
+    options,
+    promptFallback: "",
+  };
+}
+
+function mapAuthoredQuiz(base, optionsJson, prompt) {
+  const parsed = parseStoredOptions(optionsJson);
+  if (parsed.mode === "multi_answer") {
+    return {
+      ...base,
+      mode: "multi_answer",
+      prompt: prompt || `Quiz (${parsed.questions.length} questions)`,
+      questions: parsed.questions,
+      options: undefined,
+    };
+  }
+  if (parsed.questions.length === 1) {
+    return {
+      ...base,
+      mode: "single_answer",
+      prompt: prompt || parsed.questions[0].prompt,
+      options: parsed.questions[0].options,
+      questions: parsed.questions,
+    };
+  }
+  return {
+    ...base,
+    mode: "single_answer",
+    prompt: prompt || parsed.promptFallback,
+    options: parsed.options,
+  };
+}
+
+
 async function assertSchoolAuthor(actorUid, schoolId) {
   const role = normalizeRole(await loadUserRole(actorUid));
   if (isSuperAdmin(role)) return;
@@ -585,19 +719,7 @@ export async function authorQuiz(actorUid, schoolId, lessonId, body = {}) {
     throw err;
   }
   await assertTrackInSchool(lesson.track_id, schoolId);
-  const prompt = required(String(body.prompt || "").trim(), "prompt");
-  const options = Array.isArray(body.options) ? body.options : [];
-  if (options.length < 2 || options.some((option) => !option?.id || !option?.text)) {
-    const err = new Error("options must contain at least two {id, text} choices");
-    err.status = 400;
-    throw err;
-  }
-  const correctOptionId = required(body.correctOptionId, "correctOptionId");
-  if (!options.some((option) => option.id === correctOptionId)) {
-    const err = new Error("correctOptionId must match an option");
-    err.status = 400;
-    throw err;
-  }
+  const spec = buildQuizSpec(body);
   const runId = String(body.runId || "").trim() || null;
   if (runId) {
     const run = await dbGet(
@@ -627,9 +749,9 @@ export async function authorQuiz(actorUid, schoolId, lessonId, body = {}) {
         runId,
         lessonId,
         version,
-        prompt,
-        JSON.stringify(options),
-        correctOptionId,
+        spec.prompt,
+        spec.optionsJson,
+        spec.correctOptionId,
         Number(body.passingScore ?? 80),
         actorUid,
         now,
@@ -642,7 +764,16 @@ export async function authorQuiz(actorUid, schoolId, lessonId, body = {}) {
     return {
       source: source(),
       data: {
-        quiz: { runId, lessonId, version, prompt, options, scope: "cohort" },
+        quiz: {
+          runId,
+          lessonId,
+          version,
+          prompt: spec.prompt,
+          mode: spec.mode,
+          questions: spec.questions,
+          options: spec.questions[0]?.options,
+          scope: "cohort",
+        },
       },
     };
   }
@@ -667,9 +798,9 @@ export async function authorQuiz(actorUid, schoolId, lessonId, body = {}) {
     [
       quizId,
       version,
-      prompt,
-      JSON.stringify(options),
-      correctOptionId,
+      spec.prompt,
+      spec.optionsJson,
+      spec.correctOptionId,
       Number(body.passingScore ?? 80),
       actorUid,
       now,
@@ -688,7 +819,16 @@ export async function authorQuiz(actorUid, schoolId, lessonId, body = {}) {
   return {
     source: source(),
     data: {
-      quiz: { quizId, lessonId, version, prompt, options, scope: "base" },
+      quiz: {
+        quizId,
+        lessonId,
+        version,
+        prompt: spec.prompt,
+        mode: spec.mode,
+        questions: spec.questions,
+        options: spec.questions[0]?.options,
+        scope: "base",
+      },
     },
   };
 }
@@ -713,15 +853,16 @@ export async function getAuthoredQuiz(uid, lessonId, trackId) {
       [run.run_id, lessonId],
     );
     if (override) {
-      return {
-        runId: run.run_id,
-        version: Number(override.version),
-        mode: "single_answer",
-        scope: "cohort",
-        prompt: override.prompt,
-        options: JSON.parse(override.options_json),
-        passingScore: Number(override.passing_score),
-      };
+      return mapAuthoredQuiz(
+        {
+          runId: run.run_id,
+          version: Number(override.version),
+          scope: "cohort",
+          passingScore: Number(override.passing_score),
+        },
+        override.options_json,
+        override.prompt,
+      );
     }
   }
   const row = await dbGet(
@@ -733,15 +874,16 @@ export async function getAuthoredQuiz(uid, lessonId, trackId) {
     [lessonId],
   );
   if (!row) return null;
-  return {
-    quizId: row.quiz_id,
-    version: Number(row.current_version),
-    mode: "single_answer",
-    scope: "base",
-    prompt: row.prompt,
-    options: JSON.parse(row.options_json),
-    passingScore: Number(row.passing_score),
-  };
+  return mapAuthoredQuiz(
+    {
+      quizId: row.quiz_id,
+      version: Number(row.current_version),
+      scope: "base",
+      passingScore: Number(row.passing_score),
+    },
+    row.options_json,
+    row.prompt,
+  );
 }
 
 export async function submitAuthoredQuiz(profile, lesson, body = {}) {
@@ -779,14 +921,54 @@ export async function submitAuthoredQuiz(profile, lesson, body = {}) {
     );
   }
   if (!quiz) return null;
-  const selectedOptionId = required(body.selectedOptionId, "selectedOptionId");
-  const options = JSON.parse(quiz.options_json);
-  if (!options.some((option) => option.id === selectedOptionId)) {
-    const err = new Error("selectedOptionId must match an option");
-    err.status = 400;
-    throw err;
+  const parsed = parseStoredOptions(quiz.options_json);
+  const questions =
+    parsed.questions.length > 0
+      ? parsed.questions
+      : [
+          {
+            id: "q1",
+            prompt: "",
+            options: parsed.options,
+            correctOptionId: String(quiz.correct_option_id || "")
+              .split(",")[0]
+              .trim()
+              .toLowerCase(),
+          },
+        ];
+
+  let score = 0;
+  let selectedPayload = "";
+  if (questions.length > 1 || body.answers) {
+    const answers =
+      body.answers && typeof body.answers === "object" ? body.answers : {};
+    let correct = 0;
+    for (const q of questions) {
+      const picked = String(answers[q.id] || "").trim().toLowerCase();
+      if (!q.options.some((o) => o.id === picked)) {
+        const err = new Error(`Answer required for question ${q.id}`);
+        err.status = 400;
+        throw err;
+      }
+      if (picked === q.correctOptionId) correct += 1;
+    }
+    score = Math.round((correct / questions.length) * 100);
+    selectedPayload = JSON.stringify(answers);
+  } else {
+    const selectedOptionId = String(
+      required(body.selectedOptionId, "selectedOptionId"),
+    )
+      .trim()
+      .toLowerCase();
+    const q = questions[0];
+    if (!q.options.some((option) => option.id === selectedOptionId)) {
+      const err = new Error("selectedOptionId must match an option");
+      err.status = 400;
+      throw err;
+    }
+    score = selectedOptionId === q.correctOptionId ? 100 : 0;
+    selectedPayload = selectedOptionId;
   }
-  const score = selectedOptionId === quiz.correct_option_id ? 100 : 0;
   const passed = score >= Number(quiz.passing_score);
   const attemptId = id("qat");
   const now = Date.now();
@@ -802,7 +984,7 @@ export async function submitAuthoredQuiz(profile, lesson, body = {}) {
         lesson.lesson_id,
         quiz.current_version,
         profile.uid,
-        selectedOptionId,
+        selectedPayload,
         score,
         passed ? 1 : 0,
         now,
@@ -820,7 +1002,7 @@ export async function submitAuthoredQuiz(profile, lesson, body = {}) {
         quiz.current_version,
         lesson.lesson_id,
         profile.uid,
-        selectedOptionId,
+        selectedPayload,
         score,
         passed ? 1 : 0,
         now,
@@ -842,12 +1024,11 @@ export async function submitAuthoredQuiz(profile, lesson, body = {}) {
         runId: quiz.run_id || null,
         scope: isCohortQuiz ? "cohort" : "base",
         quizVersion: Number(quiz.current_version),
-        selectedOptionId,
+        selectedOptionId: selectedPayload,
         score,
         passed,
         submittedAt: now,
       },
-      lessonId: lesson.lesson_id,
       quizPct: score,
       lessonPercent: progress.data?.progress?.lessonPercent,
       trackPercent: progress.data?.progress?.trackPercent,
