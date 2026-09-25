@@ -162,6 +162,7 @@ function LessonPage() {
   const [trackPercent, setTrackPercent] = useState<number | null>(null);
   const [quizScore, setQuizScore] = useState(80);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [assignmentText, setAssignmentText] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
 
@@ -302,19 +303,39 @@ function LessonPage() {
     setError(null);
     try {
       const token = await user.getIdToken();
-      const authored = lesson?.quiz?.mode === "single_answer";
-      if (authored && !selectedOptionId) {
+      const mode = lesson?.quiz?.mode;
+      const authored =
+        mode === "single_answer" || mode === "multi_answer";
+      if (mode === "single_answer" && !selectedOptionId) {
         setError("Choose an answer first.");
         setSaving(false);
         return;
       }
-      const result = await submitLessonQuiz(token, lessonId, authored
-        ? { selectedOptionId: selectedOptionId || undefined, lastPlatform: "web" }
-        : {
-            score: passed ? Math.max(quizScore, 80) : Math.min(quizScore, 79),
-            passed,
-            lastPlatform: "web",
-          });
+      if (mode === "multi_answer") {
+        const qs = lesson?.quiz?.questions || [];
+        const missing = qs.find((q) => !quizAnswers[q.id]);
+        if (missing) {
+          setError("Answer every question before submitting.");
+          setSaving(false);
+          return;
+        }
+      }
+      const result = await submitLessonQuiz(
+        token,
+        lessonId,
+        authored
+          ? mode === "multi_answer"
+            ? { answers: quizAnswers, lastPlatform: "web" }
+            : {
+                selectedOptionId: selectedOptionId || undefined,
+                lastPlatform: "web",
+              }
+          : {
+              score: passed ? Math.max(quizScore, 80) : Math.min(quizScore, 79),
+              passed,
+              lastPlatform: "web",
+            },
+      );
       if (!result.ok || !result.data) {
         setError(result.error || "Quiz submit failed");
         return;
@@ -324,7 +345,14 @@ function LessonPage() {
         undefined,
         result.data.trackPercent ?? undefined,
       );
-      toast.success(passed ? "Quiz recorded as pass" : "Quiz score saved");
+      const pct = result.data.quizPct;
+      toast.success(
+        typeof pct === "number"
+          ? `Quiz scored ${Math.round(pct)}%`
+          : passed
+            ? "Quiz recorded as pass"
+            : "Quiz score saved",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Quiz submit failed");
     } finally {
@@ -480,36 +508,92 @@ function LessonPage() {
                     ) : null}
                   </div>
 
-                  {showQuiz && lesson.quiz?.mode === "single_answer" ? (
+                  {showQuiz &&
+                  (lesson.quiz?.mode === "single_answer" ||
+                    lesson.quiz?.mode === "multi_answer") ? (
                     <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
                       <h2 className="font-display text-lg font-semibold">Quiz</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {lesson.quiz.prompt}
-                      </p>
-                      <div className="space-y-2">
-                        {(lesson.quiz.options || []).map((option) => (
-                          <label
-                            key={option.id}
-                            className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
+                      {lesson.quiz.mode === "multi_answer" ? (
+                        <div className="space-y-6">
+                          {(lesson.quiz.questions || []).map((q, qi) => (
+                            <div key={q.id} className="space-y-2">
+                              <p className="text-sm font-medium text-foreground">
+                                {qi + 1}. {q.prompt}
+                              </p>
+                              <div className="space-y-2">
+                                {(q.options || []).map((option) => (
+                                  <label
+                                    key={option.id}
+                                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`quiz-${q.id}`}
+                                      checked={quizAnswers[q.id] === option.id}
+                                      onChange={() =>
+                                        setQuizAnswers((prev) => ({
+                                          ...prev,
+                                          [q.id]: option.id,
+                                        }))
+                                      }
+                                    />
+                                    <span className="mr-1 text-xs font-semibold uppercase text-muted-foreground">
+                                      {option.id}
+                                    </span>
+                                    {option.text}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            disabled={
+                              saving ||
+                              (lesson.quiz.questions || []).some(
+                                (q) => !quizAnswers[q.id],
+                              )
+                            }
+                            onClick={() => void onSubmitQuiz(true)}
+                            className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
                           >
-                            <input
-                              type="radio"
-                              name="quiz-option"
-                              checked={selectedOptionId === option.id}
-                              onChange={() => setSelectedOptionId(option.id)}
-                            />
-                            {option.text}
-                          </label>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        disabled={saving || !selectedOptionId}
-                        onClick={() => void onSubmitQuiz(true)}
-                        className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
-                      >
-                        Submit answer
-                      </button>
+                            Submit answers
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            {lesson.quiz.prompt}
+                          </p>
+                          <div className="space-y-2">
+                            {(lesson.quiz.options || []).map((option) => (
+                              <label
+                                key={option.id}
+                                className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
+                              >
+                                <input
+                                  type="radio"
+                                  name="quiz-option"
+                                  checked={selectedOptionId === option.id}
+                                  onChange={() => setSelectedOptionId(option.id)}
+                                />
+                                <span className="mr-1 text-xs font-semibold uppercase text-muted-foreground">
+                                  {option.id}
+                                </span>
+                                {option.text}
+                              </label>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            disabled={saving || !selectedOptionId}
+                            onClick={() => void onSubmitQuiz(true)}
+                            className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
+                          >
+                            Submit answer
+                          </button>
+                        </>
+                      )}
                     </div>
                   ) : showQuiz ? (
                     <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">

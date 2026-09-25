@@ -129,6 +129,12 @@ export type LessonDto = {
     quizId?: string;
     version?: number;
     options?: { id: string; text: string }[];
+    questions?: {
+      id: string;
+      prompt: string;
+      options: { id: string; text: string }[];
+      correctOptionId?: string;
+    }[];
     passingScore?: number;
   } | null;
   assignmentPrompt?: string | null;
@@ -531,9 +537,15 @@ export async function authorLessonQuiz(
   schoolId: string,
   lessonId: string,
   body: {
-    prompt: string;
-    options: { id: string; text: string }[];
-    correctOptionId: string;
+    prompt?: string;
+    options?: { id: string; text: string }[];
+    correctOptionId?: string;
+    questions?: {
+      id: string;
+      prompt: string;
+      options: { id: string; text: string }[];
+      correctOptionId: string;
+    }[];
     runId?: string;
   },
 ) {
@@ -597,6 +609,7 @@ export async function submitLessonQuiz(
     score?: number;
     passed?: boolean;
     selectedOptionId?: string;
+    answers?: Record<string, string>;
     lastPlatform?: "web" | "android";
   },
 ) {

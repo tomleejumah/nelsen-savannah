@@ -16,6 +16,11 @@ import {
   type MenteeProgressDto,
   type TrackCardDto,
 } from "@/lib/lmsApi";
+import {
+  emptyQuestion,
+  QuizQuestionsEditor,
+  type QuizQuestionDraft,
+} from "@/components/lms/QuizQuestionsEditor";
 
 export function CohortIntakesPanel({
   user,
@@ -42,10 +47,9 @@ export function CohortIntakesPanel({
   const [priceTrackId, setPriceTrackId] = useState("");
   const [priceAmount, setPriceAmount] = useState("0");
   const [quizLessonId, setQuizLessonId] = useState("");
-  const [quizPrompt, setQuizPrompt] = useState("");
-  const [quizA, setQuizA] = useState("");
-  const [quizB, setQuizB] = useState("");
-  const [quizCorrect, setQuizCorrect] = useState("a");
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionDraft[]>([
+    emptyQuestion(0),
+  ]);
   const [materialsMsg, setMaterialsMsg] = useState<string | null>(null);
 
   const loadCohorts = useCallback(async () => {
@@ -333,27 +337,42 @@ export function CohortIntakesPanel({
           void (async () => {
             setMaterialsMsg(null);
             const token = await user.getIdToken();
+            const questions = quizQuestions
+              .map((q, i) => ({
+                id: q.id || `q${i + 1}`,
+                prompt: q.prompt.trim(),
+                options: q.options
+                  .map((o) => ({ id: o.id, text: o.text.trim() }))
+                  .filter((o) => o.text),
+                correctOptionId: q.correctOptionId,
+              }))
+              .filter((q) => q.prompt && q.options.length >= 2);
+            if (!questions.length) {
+              setMaterialsMsg("Add at least one question with A/B/C options.");
+              return;
+            }
             const result = await authorLessonQuiz(token, schoolId, quizLessonId.trim(), {
-              prompt: quizPrompt.trim(),
-              options: [
-                { id: "a", text: quizA.trim() },
-                { id: "b", text: quizB.trim() },
-              ],
-              correctOptionId: quizCorrect,
+              questions,
+              prompt:
+                questions.length === 1
+                  ? questions[0].prompt
+                  : `Quiz (${questions.length} questions)`,
               runId: runId || undefined,
             });
             setMaterialsMsg(
               result.ok
-                ? `Quiz v${result.data?.quiz.version} published for future attempts.`
+                ? `Quiz v${result.data?.quiz.version} published (${questions.length} question${questions.length === 1 ? "" : "s"}).`
                 : result.error || "Failed",
             );
+            if (result.ok) setQuizQuestions([emptyQuestion(0)]);
           })();
         }}
         className="space-y-2"
       >
         <h3 className="font-medium">Quiz for this cohort lesson</h3>
         <p className="text-xs text-muted-foreground">
-          Uses the current runId above. New versions affect future attempts only.
+          Uses the current runId above. Add multiple questions with A/B/C (or more)
+          options. New versions affect future attempts only.
         </p>
         <input
           required
@@ -362,41 +381,13 @@ export function CohortIntakesPanel({
           placeholder="lessonId"
           className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
         />
-        <textarea
-          required
-          value={quizPrompt}
-          onChange={(e) => setQuizPrompt(e.target.value)}
-          placeholder="Question"
-          rows={2}
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        <QuizQuestionsEditor
+          questions={quizQuestions}
+          onChange={setQuizQuestions}
         />
-        <div className="flex flex-wrap gap-2">
-          <input
-            required
-            value={quizA}
-            onChange={(e) => setQuizA(e.target.value)}
-            placeholder="Option A"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            required
-            value={quizB}
-            onChange={(e) => setQuizB(e.target.value)}
-            placeholder="Option B"
-            className="min-w-[8rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <select
-            value={quizCorrect}
-            onChange={(e) => setQuizCorrect(e.target.value)}
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="a">A is correct</option>
-            <option value="b">B is correct</option>
-          </select>
-          <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
-            Publish quiz version
-          </button>
-        </div>
+        <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm">
+          Publish quiz version
+        </button>
       </form>
 
       {materialsMsg ? (
