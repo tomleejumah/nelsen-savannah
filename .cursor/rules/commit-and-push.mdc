@@ -21,7 +21,7 @@ This repo’s default is **commit + push** — do not wait to be asked.
 
 For **new features** (non-trivial product work, multi-file features, API+client pairs):
 
-1. **Create and check out a branch** from up-to-date `main` before coding. Prefer `cursor/<short-description>` (e.g. `cursor/lms-coding-labs`).
+1. **Create and check out a branch** from up-to-date `main` before coding. Use a short descriptive name (e.g. `lms-coding-labs`, `fix-pdf-worker`). Do **not** use a `cursor/` prefix.
 2. Commit and push on that branch as you go.
 3. When the feature is ready, **open a PR and merge into `main`** (or merge locally then push `main` if the user prefers). Do not leave finished feature work only on a local branch.
 4. After merge, delete the feature branch when appropriate.
