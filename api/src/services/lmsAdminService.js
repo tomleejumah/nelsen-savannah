@@ -527,9 +527,7 @@ export async function adminCreateLesson(actorUid, body = {}) {
   const hasAssignment = body.hasAssignment || type === "assignment" ? 1 : 0;
   const { serializeLab } = await import("./lmsLabService.js");
   const labJson =
-    type === "code"
-      ? serializeLab(body.lab || body)
-      : body.labJson || null;
+    type === "code" ? serializeLab(body.lab || body) : body.labJson || null;
   await dualWrite({
     label: `admin-lesson:${lessonId}`,
     writeFn: async () => {
