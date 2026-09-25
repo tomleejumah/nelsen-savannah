@@ -365,7 +365,15 @@ export async function mediaBlob(req, res) {
     if (!fs.existsSync(abs)) {
       return res.status(404).json({ error: "Object not found" });
     }
-    return res.sendFile(abs);
+    const { applyInlineHeaders, inlineHeaderMap } = await import(
+      "../services/storage/inlineHeaders.js"
+    );
+    const blobMeta = {
+      filename: path.basename(String(key)),
+      objectKey: key,
+    };
+    applyInlineHeaders(res, blobMeta);
+    return res.sendFile(abs, { headers: inlineHeaderMap(blobMeta) });
   } catch (err) {
     console.error("[/lms/media/blob]", err);
     return res
@@ -408,16 +416,49 @@ export async function playMedia(req, res) {
       return res.status(403).json({ error: "Not enrolled" });
     }
     const row = await getMediaFileRow(mediaId);
-    if (!row || !row.storage_path) {
+    if (!row) {
       return res.status(404).json({ error: "Media not found" });
     }
-    const abs = path.isAbsolute(row.storage_path)
-      ? row.storage_path
-      : path.resolve(process.cwd(), row.storage_path);
-    if (!fs.existsSync(abs)) {
-      return res.status(404).json({ error: "File missing on disk" });
+    const { applyInlineHeaders, inlineHeaderMap } = await import(
+      "../services/storage/inlineHeaders.js"
+    );
+    const assetMeta = {
+      mimeType: row.mime_type,
+      filename: row.filename,
+      objectKey: row.object_key,
+    };
+    applyInlineHeaders(res, assetMeta);
+
+    if (row.storage_path) {
+      const abs = path.isAbsolute(row.storage_path)
+        ? row.storage_path
+        : path.resolve(process.cwd(), row.storage_path);
+      if (fs.existsSync(abs)) {
+        return res.sendFile(abs, { headers: inlineHeaderMap(assetMeta) });
+      }
     }
-    return res.sendFile(abs);
+
+    if (row.object_key) {
+      const { getStorageDriver } = await import("../services/storage/index.js");
+      const driver = getStorageDriver();
+      if (typeof driver.getObject === "function") {
+        const obj = await driver.getObject({ objectKey: row.object_key });
+        if (!obj?.body) {
+          return res.status(404).json({ error: "File missing" });
+        }
+        if (obj.contentLength) {
+          res.setHeader("Content-Length", String(obj.contentLength));
+        }
+        const body = obj.body;
+        if (typeof body.pipe === "function") {
+          return body.pipe(res);
+        }
+        const { Readable } = await import("node:stream");
+        return Readable.fromWeb(body).pipe(res);
+      }
+    }
+
+    return res.status(404).json({ error: "File missing" });
   } catch (err) {
     console.error("[GET /lms/media/:id/play]", err);
     return res.status(500).json({ error: "Playback failed" });

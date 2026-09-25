@@ -442,11 +442,36 @@ export async function getModuleById(uid, moduleId) {
         "SELECT * FROM lessons WHERE module_id = ? ORDER BY sort_order ASC",
         [moduleId],
       );
+      const enrolled = uid
+        ? await dbGet(
+            "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
+            [uid, row.track_id],
+          )
+        : null;
+      const mapped = [];
+      for (const l of lessons) {
+        const lesson = mapLesson(l);
+        if (
+          enrolled &&
+          lesson.mediaId &&
+          (lesson.type === "pdf" || /\.pdf$/i.test(lesson.contentUrl || ""))
+        ) {
+          try {
+            const { resolvePlaybackUrl } = await import("./lmsMediaService.js");
+            const play = await resolvePlaybackUrl(lesson.mediaId, uid);
+            lesson.playbackUrl = play.url;
+            lesson.playbackExpiresAt = play.expiresAt;
+          } catch {
+            /* thumbnails degrade to the type label */
+          }
+        }
+        mapped.push(lesson);
+      }
       return {
         source: getPrimaryEngine(),
         data: {
           module: mapModule(row, { lessonCount: lessons.length }),
-          lessons: lessons.map((l) => mapLesson(l)),
+          lessons: mapped,
         },
       };
     } catch (err) {
@@ -541,6 +566,10 @@ export async function getLessonById(uid, lessonId) {
       const lessonType = lesson.type === "read" ? "text" : lesson.type;
       const isText = lessonType === "text";
       const isPdf = lessonType === "pdf";
+      const progressRow = await dbGet(
+        "SELECT content_pct, watch_seconds FROM progress WHERE uid = ? AND lesson_id = ?",
+        [uid, lessonId],
+      );
 
       return {
         source: getPrimaryEngine(),
@@ -551,6 +580,8 @@ export async function getLessonById(uid, lessonId) {
             contentUrl: enrolled ? lesson.contentUrl : null,
             playbackUrl,
             playbackExpiresAt,
+            contentPct: Number(progressRow?.content_pct ?? 0),
+            lastPage: Number(progressRow?.watch_seconds ?? 0),
             bodyHtml: null,
             quiz: hasQuiz
               ? authoredQuiz || {

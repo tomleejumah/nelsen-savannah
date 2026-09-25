@@ -96,6 +96,18 @@ export function createLocalDriver() {
       return blobUrl(objectKey, "get", ttlSeconds);
     },
 
+    async getObject({ objectKey }) {
+      const abs = resolveLocalPath(objectKey);
+      if (!fs.existsSync(abs)) return null;
+      const stat = fs.statSync(abs);
+      if (!stat.isFile()) return null;
+      return {
+        body: fs.createReadStream(abs),
+        contentLength: stat.size,
+        contentType: null,
+      };
+    },
+
     async head({ objectKey }) {
       const abs = resolveLocalPath(objectKey);
       if (!fs.existsSync(abs)) return null;

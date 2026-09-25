@@ -615,13 +615,24 @@ export async function resolvePlaybackUrl(mediaId, uid) {
     throw badRequest(`Media is ${row.status}`, 409);
   }
 
-  if (!row.object_key) {
+  const { isPdfAsset } = await import("./storage/inlineHeaders.js");
+  const pdf = isPdfAsset({
+    mimeType: row.mime_type,
+    filename: row.filename,
+    objectKey: row.object_key,
+  });
+
+  // PDFs always stream through this API so the site viewer can fetch them
+  // with CORS + Content-Type: application/pdf (R2 often stores octet-stream).
+  if (pdf || !row.object_key) {
     const legacy = playbackUrlFor(mediaId, uid);
     return {
       url: legacy.playbackUrl,
       expiresAt: legacy.playbackExpiresAt,
-      driver: "legacy",
+      driver: pdf ? "inline" : "legacy",
       ttlSeconds: 7200,
+      mimeType: pdf ? "application/pdf" : row.mime_type || null,
+      durationSec: row.duration_sec ?? null,
     };
   }
 
