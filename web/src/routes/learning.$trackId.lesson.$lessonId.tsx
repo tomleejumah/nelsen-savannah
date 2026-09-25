@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { getFirebaseAuth } from "@/lib/firebase";
 import { PdfReader } from "@/components/lms/PdfReader";
+import { CodeLab } from "@/components/lms/CodeLab";
 import {
   fetchLmsLesson,
   fetchMediaPlaybackUrl,
@@ -362,13 +363,13 @@ function LessonPage() {
   const showQuiz = Boolean(lesson?.hasQuiz || lesson?.quiz);
   const showAssignment = Boolean(
     lesson?.hasAssignment ||
-      lesson?.assignmentPrompt ||
-      lessonType === "text",
+      (lessonType === "text" && lesson?.assignmentPrompt) ||
+      (lessonType === "text" && !lesson?.hasQuiz),
   );
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
-      <div className="mx-auto max-w-2xl px-5 sm:px-8">
+      <div className={`mx-auto px-5 sm:px-8 ${lessonType === "code" ? "max-w-4xl" : "max-w-2xl"}`}>
         <Link
           to="/learning/$trackId"
           params={{ trackId }}
@@ -437,7 +438,9 @@ function LessonPage() {
                       {lesson.does ||
                         (lessonType === "text"
                           ? "Read the prompts below and submit your answers."
-                          : "Work through this lesson, then mark it complete.")}
+                          : lessonType === "code"
+                            ? "Write and run the program in the lab below."
+                            : "Work through this lesson, then mark it complete.")}
                     </p>
                     {lesson.bodyHtml ? (
                       <div
@@ -445,7 +448,21 @@ function LessonPage() {
                         dangerouslySetInnerHTML={{ __html: lesson.bodyHtml }}
                       />
                     ) : null}
-                    {lesson.playbackUrl || lesson.contentUrl ? (
+                    {lessonType === "code" && user ? (
+                      <CodeLab
+                        user={user}
+                        lesson={lesson}
+                        onProgress={(info) =>
+                          applyProgress(
+                            info.lessonPercent,
+                            info.status,
+                            info.trackPercent,
+                          )
+                        }
+                      />
+                    ) : null}
+                    {lessonType !== "code" &&
+                    (lesson.playbackUrl || lesson.contentUrl) ? (
                       <SignedMediaPlayer
                         user={user}
                         lesson={lesson}
