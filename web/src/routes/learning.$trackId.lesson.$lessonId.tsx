@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, LogIn } from "lucide-react";
 import { toast } from "sonner";
 
 import { getFirebaseAuth } from "@/lib/firebase";
+import { PdfReader } from "@/components/lms/PdfReader";
 import {
   fetchLmsLesson,
   fetchMediaPlaybackUrl,
@@ -27,10 +28,12 @@ function SignedMediaPlayer({
   user,
   lesson,
   onWatchProgress,
+  onPdfProgress,
 }: {
   user: User | null;
   lesson: LessonDto;
   onWatchProgress?: (info: { watchSeconds: number; watchPct: number }) => void;
+  onPdfProgress?: (info: { page: number; contentPct: number }) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [url, setUrl] = useState(lesson.playbackUrl || lesson.contentUrl || "");
@@ -40,8 +43,8 @@ function SignedMediaPlayer({
   const mediaId = lesson.mediaId ?? null;
   const isPdf =
     lesson.type === "pdf" ||
-    /\.pdf(\?|$)/i.test(url) ||
-    (lesson as { isPdf?: boolean }).isPdf === true;
+    lesson.isPdf === true ||
+    /\.pdf(\?|$)/i.test(url);
 
   useEffect(() => {
     setUrl(lesson.playbackUrl || lesson.contentUrl || "");
@@ -100,10 +103,13 @@ function SignedMediaPlayer({
   return (
     <div className="space-y-3">
       {isPdf && url ? (
-        <iframe
+        <PdfReader
+          url={url}
           title={lesson.title}
-          src={url}
-          className="h-[28rem] w-full rounded-xl border border-border bg-background"
+          initialPage={Math.max(1, lesson.lastPage || 1)}
+          onPageProgress={(info) =>
+            onPdfProgress?.({ page: info.page, contentPct: info.contentPct })
+          }
         />
       ) : null}
       {playable ? (
@@ -124,7 +130,7 @@ function SignedMediaPlayer({
         rel="noreferrer"
         className="inline-flex text-sm font-semibold text-ember hover:underline"
       >
-        {isPdf ? "Open PDF" : "Open lesson media"}
+        {isPdf ? "Open PDF in a new tab" : "Open lesson media"}
       </a>
       {expiresAt ? (
         <p className="text-xs text-muted-foreground">
@@ -211,6 +217,28 @@ function LessonPage() {
           }
         : prev,
     );
+  }
+
+  async function onPdfProgress(info: { page: number; contentPct: number }) {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const result = await patchLessonProgress(token, lessonId, {
+        opened: true,
+        contentPct: info.contentPct,
+        watchSeconds: info.page,
+        lastPlatform: "web",
+      });
+      if (result.ok && result.data) {
+        applyProgress(
+          result.data.progress.lessonPercent,
+          result.data.progress.status,
+          result.data.progress.trackPercent,
+        );
+      }
+    } catch {
+      /* ignore transient page sync errors */
+    }
   }
 
   async function onWatchProgress(info: {
@@ -424,6 +452,11 @@ function LessonPage() {
                         onWatchProgress={
                           lessonType === "video"
                             ? (info) => void onWatchProgress(info)
+                            : undefined
+                        }
+                        onPdfProgress={
+                          lessonType === "pdf"
+                            ? (info) => void onPdfProgress(info)
                             : undefined
                         }
                       />

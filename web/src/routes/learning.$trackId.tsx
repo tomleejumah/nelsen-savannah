@@ -9,6 +9,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowLeft, ArrowRight, BookOpen, Layers, LogIn } from "lucide-react";
 
 import { getFirebaseAuth } from "@/lib/firebase";
+import { PdfThumb } from "@/components/lms/PdfThumb";
 import {
   EnrollPaywallModal,
   formatTrackPrice,
@@ -387,6 +388,17 @@ function TrackDetailPage() {
                                   lesson.type === "read" ? "text" : lesson.type;
                                 const row = (
                                   <>
+                                    {lesson.type === "pdf" &&
+                                    (lesson.playbackUrl || lesson.contentUrl) ? (
+                                      <PdfThumb
+                                        url={
+                                          lesson.playbackUrl ||
+                                          lesson.contentUrl ||
+                                          ""
+                                        }
+                                        title={lesson.title}
+                                      />
+                                    ) : null}
                                     <span className="text-xs text-muted-foreground">
                                       {li + 1}.
                                     </span>
