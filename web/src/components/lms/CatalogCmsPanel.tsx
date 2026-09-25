@@ -31,6 +31,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  emptyQuestion,
+  QuizQuestionsEditor,
+  type QuizQuestionDraft,
+} from "@/components/lms/QuizQuestionsEditor";
 
 function slugId(prefix: string, title: string) {
   const base = title
@@ -124,9 +129,10 @@ export function CatalogCmsPanel({
   const [labStarter, setLabStarter] = useState("print('hello')\n");
   const [labExpected, setLabExpected] = useState("");
   const [lesFile, setLesFile] = useState<File | null>(null);
-  const [quizPrompt, setQuizPrompt] = useState("");
-  const [quizOptions, setQuizOptions] = useState("A|Correct option\nB|Wrong option");
-  const [quizCorrect, setQuizCorrect] = useState("A");
+  const [quizEnabled, setQuizEnabled] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionDraft[]>([
+    emptyQuestion(0),
+  ]);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   /** Accordion: at most one of add-form or a chapter editor is open. */
   const [addingChapter, setAddingChapter] = useState(false);
@@ -138,7 +144,8 @@ export function CatalogCmsPanel({
     setLesTitle("");
     setLesDoes("");
     setLesFile(null);
-    setQuizPrompt("");
+    setQuizEnabled(false);
+    setQuizQuestions([emptyQuestion(0)]);
     setUploadPct(null);
     setLesType("text");
     setLabLanguage("python");
@@ -385,7 +392,7 @@ export function CatalogCmsPanel({
       title: lesTitle.trim(),
       type: lesType,
       does: lesDoes.trim(),
-      hasQuiz: Boolean(quizPrompt.trim()) && (lesType === "pdf" || lesType === "video"),
+      hasQuiz: quizEnabled && (lesType === "pdf" || lesType === "video"),
       lab:
         lesType === "code"
           ? {
@@ -408,21 +415,24 @@ export function CatalogCmsPanel({
           onProgress: setUploadPct,
         });
       }
-      if (quizPrompt.trim() && (lesType === "pdf" || lesType === "video") && schoolId) {
-        const lines = quizOptions
-          .split("\n")
-          .map((l) => l.trim())
-          .filter(Boolean);
-        const options = lines.map((line) => {
-          const [oid, ...rest] = line.split("|");
-          const oidTrim = (oid || "").trim();
-          return { id: oidTrim, text: rest.join("|").trim() || oidTrim };
-        });
-        if (options.length >= 2 && quizCorrect.trim()) {
+      if (quizEnabled && (lesType === "pdf" || lesType === "video") && schoolId) {
+        const questions = quizQuestions
+          .map((q, i) => ({
+            id: q.id || `q${i + 1}`,
+            prompt: q.prompt.trim(),
+            options: q.options
+              .map((o) => ({ id: o.id, text: o.text.trim() }))
+              .filter((o) => o.text),
+            correctOptionId: q.correctOptionId,
+          }))
+          .filter((q) => q.prompt && q.options.length >= 2);
+        if (questions.length > 0) {
           await authorLessonQuiz(token, schoolId, id, {
-            prompt: quizPrompt.trim(),
-            options,
-            correctOptionId: quizCorrect.trim(),
+            questions,
+            prompt:
+              questions.length === 1
+                ? questions[0].prompt
+                : `Quiz (${questions.length} questions)`,
           });
           await adminUpdateLesson(token, id, { hasQuiz: true });
         }
@@ -562,29 +572,19 @@ export function CatalogCmsPanel({
                   accept={lesType === "video" ? "video/*" : "application/pdf"}
                   onChange={(e) => setLesFile(e.target.files?.[0] || null)}
                 />
-                <textarea
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                  rows={2}
-                  placeholder="Optional question prompt"
-                  value={quizPrompt}
-                  onChange={(e) => setQuizPrompt(e.target.value)}
-                />
-                {quizPrompt.trim() ? (
-                  <>
-                    <textarea
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                      rows={3}
-                      placeholder={"id|option text (one per line)"}
-                      value={quizOptions}
-                      onChange={(e) => setQuizOptions(e.target.value)}
-                    />
-                    <input
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2"
-                      placeholder="Correct option id"
-                      value={quizCorrect}
-                      onChange={(e) => setQuizCorrect(e.target.value)}
-                    />
-                  </>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={quizEnabled}
+                    onChange={(e) => setQuizEnabled(e.target.checked)}
+                  />
+                  Add quiz questions (A/B/C…, multiple OK)
+                </label>
+                {quizEnabled ? (
+                  <QuizQuestionsEditor
+                    questions={quizQuestions}
+                    onChange={setQuizQuestions}
+                  />
                 ) : null}
               </>
             ) : null}
