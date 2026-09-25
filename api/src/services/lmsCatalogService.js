@@ -10,6 +10,7 @@ import {
   getPrimaryEngine,
 } from "../db/lmsDb.js";
 import admin from "../config/firebase.js";
+import { parseLab } from "./lmsLabService.js";
 
 function parseAudience(json) {
   try {
@@ -155,7 +156,9 @@ function mapModule(row, { modulePercent = 0, status = "available", lessonCount }
 
 function mapLesson(row, { lessonPercent = 0, status = "available" } = {}) {
   const rawType = row.type || "text";
-  const type = rawType === "read" ? "text" : rawType;
+  let type = rawType === "read" ? "text" : rawType;
+  if (type === "lab" || type === "ide") type = "code";
+  const lab = type === "code" ? parseLab(row) : null;
   return {
     lessonId: row.lesson_id || row.lessonId,
     moduleId: row.module_id || row.moduleId,
@@ -172,6 +175,7 @@ function mapLesson(row, { lessonPercent = 0, status = "available" } = {}) {
     mediaId: row.media_id || row.mediaId || null,
     playbackUrl: row.playbackUrl || null,
     playbackExpiresAt: row.playbackExpiresAt || null,
+    lab,
   };
 }
 

@@ -281,12 +281,14 @@ function parseRequiredChapterWindow(body) {
 function normalizeLessonType(type) {
   const t = String(type || "text").toLowerCase();
   if (t === "read") return "text";
+  if (t === "lab" || t === "ide") return "code";
   if (
     t === "text" ||
     t === "video" ||
     t === "pdf" ||
     t === "quiz" ||
-    t === "assignment"
+    t === "assignment" ||
+    t === "code"
   ) {
     return t;
   }
@@ -523,6 +525,11 @@ export async function adminCreateLesson(actorUid, body = {}) {
   const does = body.blurb || body.does || "";
   const quizFlag = body.hasQuiz != null ? (body.hasQuiz ? 1 : 0) : type === "quiz" ? 1 : 0;
   const hasAssignment = body.hasAssignment || type === "assignment" ? 1 : 0;
+  const { serializeLab } = await import("./lmsLabService.js");
+  const labJson =
+    type === "code"
+      ? serializeLab(body.lab || body)
+      : body.labJson || null;
   await dualWrite({
     label: `admin-lesson:${lessonId}`,
     writeFn: async () => {
@@ -530,8 +537,8 @@ export async function adminCreateLesson(actorUid, body = {}) {
         `INSERT INTO lessons (
           lesson_id, module_id, track_id, title, does, type,
           estimated_minutes, has_quiz, has_assignment, content_url,
-          media_id, sort_order, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          media_id, lab_json, sort_order, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           lessonId,
           moduleId,
@@ -544,6 +551,7 @@ export async function adminCreateLesson(actorUid, body = {}) {
           hasAssignment,
           body.contentUrl || null,
           body.mediaId || null,
+          labJson,
           body.order || 0,
           now,
           now,
@@ -619,6 +627,11 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
     body.order != null || body.sortOrder != null
       ? Number(body.order ?? body.sortOrder) || 0
       : Number(row.sort_order || 0);
+  const { serializeLab, parseLab } = await import("./lmsLabService.js");
+  let labJson = row.lab_json || null;
+  if (type === "code" && (body.lab || body.language || body.starter != null)) {
+    labJson = serializeLab({ ...parseLab(row), ...(body.lab || body) });
+  }
   const now = Date.now();
   await dualWrite({
     label: `admin-lesson-upd:${lid}`,
@@ -627,7 +640,7 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
         `UPDATE lessons SET
           title = ?, does = ?, type = ?, estimated_minutes = ?,
           has_quiz = ?, has_assignment = ?, content_url = ?, media_id = ?,
-          sort_order = ?, updated_at = ?
+          lab_json = ?, sort_order = ?, updated_at = ?
          WHERE lesson_id = ?`,
         [
           title,
@@ -638,6 +651,7 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
           hasAssignment,
           contentUrl,
           mediaId,
+          labJson,
           sortOrder,
           now,
           lid,

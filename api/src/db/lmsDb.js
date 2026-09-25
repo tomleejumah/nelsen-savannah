@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   has_assignment INTEGER DEFAULT 0,
   content_url TEXT,
   media_id TEXT,
+  lab_json TEXT,
   sort_order INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
@@ -281,6 +282,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   has_assignment INTEGER DEFAULT 0,
   content_url TEXT,
   media_id TEXT,
+  lab_json TEXT,
   sort_order INTEGER DEFAULT 0,
   created_at BIGINT NOT NULL,
   updated_at BIGINT NOT NULL
@@ -435,6 +437,7 @@ async function ensureMigrations() {
       : "ALTER TABLE modules ADD COLUMN due_at INTEGER",
     "ALTER TABLE progress ADD COLUMN watch_seconds INTEGER DEFAULT 0",
     "ALTER TABLE progress ADD COLUMN watch_pct INTEGER DEFAULT 0",
+    "ALTER TABLE lessons ADD COLUMN lab_json TEXT",
   ];
   for (const sql of alters) {
     try {
