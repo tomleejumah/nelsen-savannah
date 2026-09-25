@@ -113,6 +113,9 @@ export type LessonDto = {
   mediaId?: string | null;
   playbackUrl?: string | null;
   playbackExpiresAt?: number | null;
+  contentPct?: number;
+  lastPage?: number;
+  isPdf?: boolean;
   bodyHtml?: string | null;
   quiz?: {
     mode: string;
