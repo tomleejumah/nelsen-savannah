@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 
+# Generated from pdfjs-dist on install/build (stable URL for the PDF reader)
+public/pdf.worker.min.mjs
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
