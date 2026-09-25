@@ -71,18 +71,37 @@ export function createS3Driver() {
       };
     },
 
+    async getObject({ objectKey }) {
+      const out = await client.send(
+        new GetObjectCommand({ Bucket: bucket, Key: objectKey }),
+      );
+      return {
+        body: out.Body,
+        contentLength: Number(out.ContentLength) || null,
+        contentType: out.ContentType || null,
+      };
+    },
+
     async presignGet({ objectKey, ttlSeconds, filename, contentType }) {
+      const looksPdf =
+        String(contentType || "").toLowerCase().includes("pdf") ||
+        String(filename || objectKey || "").toLowerCase().endsWith(".pdf");
+      const responseType = looksPdf
+        ? "application/pdf"
+        : contentType || undefined;
       const url = await getSignedUrl(
         client,
         new GetObjectCommand({
           Bucket: bucket,
           Key: objectKey,
-          ...(contentType ? { ResponseContentType: contentType } : {}),
+          ...(responseType ? { ResponseContentType: responseType } : {}),
           ...(filename
             ? {
                 ResponseContentDisposition: `inline; filename="${String(filename).replace(/["\\]/g, "")}"`,
               }
-            : {}),
+            : looksPdf
+              ? { ResponseContentDisposition: 'inline; filename="lesson.pdf"' }
+              : {}),
         }),
         { expiresIn: ttlSeconds },
       );
