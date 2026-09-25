@@ -508,7 +508,9 @@ public class TrackLearnActivity extends AppCompatActivity {
             Toast.makeText(this, milestoneLockMessage(mile), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (lesson.hasQuiz || (lesson.quiz != null && "single_answer".equals(lesson.quiz.mode))) {
+        if (lesson.hasQuiz || (lesson.quiz != null
+                && ("single_answer".equals(lesson.quiz.mode)
+                || "multi_answer".equals(lesson.quiz.mode)))) {
             promptQuiz(lesson);
             return;
         }
@@ -538,7 +540,8 @@ public class TrackLearnActivity extends AppCompatActivity {
                                 return;
                             }
                             if (full.hasQuiz || (full.quiz != null
-                                    && "single_answer".equals(full.quiz.mode))) {
+                                    && ("single_answer".equals(full.quiz.mode)
+                                    || "multi_answer".equals(full.quiz.mode)))) {
                                 promptQuiz(full);
                             } else if (full.hasAssignment) {
                                 promptAssignment(full);
@@ -565,6 +568,11 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void promptQuiz(LmsModels.LessonDto lesson) {
+        if (lesson.quiz != null && "multi_answer".equals(lesson.quiz.mode)
+                && lesson.quiz.questions != null && !lesson.quiz.questions.isEmpty()) {
+            promptMultiQuiz(lesson, 0, new java.util.HashMap<>());
+            return;
+        }
         if (lesson.quiz != null && "single_answer".equals(lesson.quiz.mode)
                 && lesson.quiz.options != null && !lesson.quiz.options.isEmpty()) {
             promptAuthoredQuiz(lesson);
@@ -592,11 +600,50 @@ public class TrackLearnActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void promptMultiQuiz(LmsModels.LessonDto lesson, int index,
+                                 java.util.Map<String, String> answers) {
+        java.util.List<LmsModels.QuizQuestionDto> questions = lesson.quiz.questions;
+        if (index >= questions.size()) {
+            submitAuthoredQuizAnswers(lesson.lessonId, answers);
+            return;
+        }
+        LmsModels.QuizQuestionDto q = questions.get(index);
+        java.util.List<LmsModels.QuizOptionDto> options = q.options;
+        if (options == null || options.isEmpty()) {
+            promptMultiQuiz(lesson, index + 1, answers);
+            return;
+        }
+        CharSequence[] labels = new CharSequence[options.size()];
+        for (int i = 0; i < options.size(); i++) {
+            String letter = options.get(i).id != null ? options.get(i).id.toUpperCase() + ". " : "";
+            labels[i] = letter + (options.get(i).text != null ? options.get(i).text : "");
+        }
+        final int[] selected = {-1};
+        String title = "Question " + (index + 1) + " of " + questions.size();
+        String prompt = q.prompt != null ? q.prompt : "Choose an answer";
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(prompt)
+                .setSingleChoiceItems(labels, -1, (d, which) -> selected[0] = which)
+                .setPositiveButton(index + 1 < questions.size() ? "Next" : "Submit", (d, w) -> {
+                    if (selected[0] < 0 || selected[0] >= options.size()) {
+                        Toast.makeText(this, "Pick an answer", Toast.LENGTH_SHORT).show();
+                        promptMultiQuiz(lesson, index, answers);
+                        return;
+                    }
+                    answers.put(q.id, options.get(selected[0]).id);
+                    promptMultiQuiz(lesson, index + 1, answers);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void promptAuthoredQuiz(LmsModels.LessonDto lesson) {
         List<LmsModels.QuizOptionDto> options = lesson.quiz.options;
         CharSequence[] labels = new CharSequence[options.size()];
         for (int i = 0; i < options.size(); i++) {
-            labels[i] = options.get(i).text != null ? options.get(i).text : options.get(i).id;
+            String letter = options.get(i).id != null ? options.get(i).id.toUpperCase() + ". " : "";
+            labels[i] = letter + (options.get(i).text != null ? options.get(i).text : options.get(i).id);
         }
         final int[] selected = {-1};
         String prompt = lesson.quiz.prompt != null ? lesson.quiz.prompt : "Choose an answer";
@@ -614,6 +661,34 @@ public class TrackLearnActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void submitAuthoredQuizAnswers(String lessonId, java.util.Map<String, String> answers) {
+        withBearer(bearer -> ApiClient.getLmsService()
+                .submitQuiz(bearer, lessonId, LmsModels.QuizBody.answers(answers))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.QuizEnvelope> call,
+                                           Response<LmsModels.QuizEnvelope> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                            float pct = response.body().data != null
+                                    ? response.body().data.quizPct : 0f;
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Quiz scored " + Math.round(pct) + "%",
+                                    Toast.LENGTH_SHORT).show();
+                            loadTrack();
+                        } else {
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "Quiz submit failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.QuizEnvelope> call, Throwable t) {
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Quiz submit failed", Toast.LENGTH_SHORT).show();
+                    }
+                }));
     }
 
     private void submitAuthoredQuiz(String lessonId, String selectedOptionId) {
