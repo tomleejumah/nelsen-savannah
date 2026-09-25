@@ -47,6 +47,11 @@ router.post(
 router.get("/modules/:moduleId", authenticateUser, lmsController.getModule);
 router.get("/lessons/:lessonId", authenticateUser, lmsController.getLesson);
 router.post(
+  "/lessons/:lessonId/run",
+  authenticateUser,
+  lmsController.runLessonLab,
+);
+router.post(
   "/lessons/:lessonId/quiz",
   authenticateUser,
   lmsController.submitQuiz,
