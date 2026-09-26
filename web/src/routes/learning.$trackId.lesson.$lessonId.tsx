@@ -692,7 +692,8 @@ function LessonPage() {
                         type="button"
                         disabled={saving}
                         onClick={() => void markComplete()}
-                        className="cursor-pointer rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:cursor-not-allowed disabled:opacity-60"
+                        style={{ cursor: saving ? "not-allowed" : "pointer" }}
+                        className="rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
                       >
                         {saving ? "Saving…" : "Mark content complete"}
                       </button>
