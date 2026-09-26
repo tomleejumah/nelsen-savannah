@@ -37,7 +37,8 @@ jobs:
 
   deploy:
     needs: check
-    if: github.event_name == 'workflow_dispatch'
+    # Push to main + manual runs. PRs check only (no deploy).
+    if: github.event_name != 'pull_request'
     runs-on: self-hosted
     concurrency:
       group: nelsen-self-hosted
