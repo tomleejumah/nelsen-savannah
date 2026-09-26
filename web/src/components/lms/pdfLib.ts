@@ -4,19 +4,55 @@ const docs = new Map<string, Promise<pdfjs.PDFDocumentProxy>>();
 
 let workerReady: Promise<void> | null = null;
 
-/** nginx often serves .mjs as octet-stream, which blocks `import()` of the worker. */
+function looksLikeWorkerSource(code: string) {
+  const head = code.slice(0, 200).trimStart();
+  if (!head || head.startsWith("<!") || head.startsWith("<html")) return false;
+  return (
+    head.includes("webpack") ||
+    head.includes("pdfjs") ||
+    head.includes("PDFWorker") ||
+    head.startsWith("//") ||
+    head.startsWith("use strict") ||
+    head.startsWith("(function") ||
+    head.startsWith("!function") ||
+    head.startsWith("import ") ||
+    /["']use strict["']/.test(head.slice(0, 80))
+  );
+}
+
+async function fetchWorkerCode(url: string) {
+  const res = await fetch(url, { cache: "force-cache" });
+  if (!res.ok) return null;
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("text/html")) return null;
+  const code = await res.text();
+  if (!looksLikeWorkerSource(code)) return null;
+  return code;
+}
+
+/**
+ * nginx serves .mjs as application/octet-stream (breaks module import) and may
+ * SPA-fallback .js to index.html. Load worker bytes into a JS blob, or CDN.
+ */
 function ensurePdfWorker() {
   if (!workerReady) {
     workerReady = (async () => {
-      const paths = ["/pdf.worker.min.js", "/pdf.worker.min.mjs"];
-      let code = "";
-      for (const path of paths) {
-        const res = await fetch(path);
-        if (!res.ok) continue;
-        code = await res.text();
+      const localPaths = ["/pdf.worker.min.mjs", "/pdf.worker.min.js"];
+      let code: string | null = null;
+      for (const path of localPaths) {
+        code = await fetchWorkerCode(path);
         if (code) break;
       }
-      if (!code) throw new Error("PDF worker file missing");
+      if (!code) {
+        const cdn = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        code = await fetchWorkerCode(cdn);
+      }
+      if (!code) {
+        // Last resort: same-origin CDN script tag path via unpkg as workerSrc
+        // (unpkg sends a proper JS content-type).
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        return;
+      }
       const blob = new Blob([code], { type: "text/javascript" });
       pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
     })().catch((err) => {
