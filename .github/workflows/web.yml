@@ -44,7 +44,8 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name == 'workflow_dispatch'
+    # Push to main + manual runs. PRs build only (no deploy).
+    if: github.event_name != 'pull_request'
     runs-on: self-hosted
     # Share the machine with API deploy — one job at a time avoids runner _diag collisions.
     concurrency:
