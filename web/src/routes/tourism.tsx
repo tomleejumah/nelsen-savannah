@@ -95,72 +95,6 @@ const OFFERS = [
   },
 ] as const;
 
-const WHY_TRAVEL = [
-  {
-    title: "Local East African Knowledge",
-    body: "We know the destinations we sell and understand the experiences that make Kenya and East Africa special. Our local perspective helps us recommend journeys that are authentic, practical, and suited to your interests.",
-  },
-  {
-    title: "Personalised Planning",
-    body: "Your journey should reflect you. We consider your interests, travel dates, preferred pace, accommodation style and budget to create an experience that fits your expectations.",
-  },
-  {
-    title: "Thoughtful Service",
-    body: "From your first enquiry to the end of your journey, we pay attention to the details. Our goal is to make your travel experience as smooth, comfortable and enjoyable as possible.",
-  },
-  {
-    title: "Meaningful Experiences",
-    body: "We believe the best journeys go beyond simply visiting places. Our experiences connect travellers with wildlife, nature, culture, communities and the unique character of East Africa.",
-  },
-  {
-    title: "Flexible Journeys",
-    body: "Whether you prefer a carefully designed safari package or a completely tailor-made adventure, we provide the flexibility to shape your journey around your needs.",
-  },
-  {
-    title: "Responsible Travel",
-    body: "We believe tourism should benefit both travellers and the destinations they visit. We are committed to encouraging responsible travel that respects wildlife, local communities, cultures and the environment.",
-  },
-] as const;
-
-const WHAT_WE_DO = [
-  {
-    title: "Safari Holidays",
-    body: "Discover Kenya and East Africa through wildlife safaris ranging from classic and family journeys to luxury, honeymoon and private safari experiences.",
-    href: "#inquire",
-    linkLabel: "Explore Safaris",
-  },
-  {
-    title: "Beach & Safari Escapes",
-    body: "Combine unforgettable wildlife experiences with relaxing time along Kenya's Indian Ocean coast, including Diani, Mombasa and Lamu.",
-    href: "#inquire",
-    linkLabel: "Explore Beach & Safari",
-  },
-  {
-    title: "Tailor-Made Travel",
-    body: "Have a particular destination, experience or travel style in mind? We create flexible journeys around your interests, dates, pace and budget.",
-    href: "#inquire",
-    linkLabel: "Plan a Tailor-Made Journey",
-  },
-  {
-    title: "Corporate & Group Travel",
-    body: "Travel solutions for companies, organisations and schools, including team-building, retreats, incentive travel and group journeys.",
-    href: "#inquire",
-    linkLabel: "Explore Corporate Travel",
-  },
-  {
-    title: "Themed Holidays",
-    body: "Celebrate life's special moments with honeymoon, romantic, engagement, birthday and other themed holiday experiences.",
-    href: "#inquire",
-    linkLabel: "Explore Themed Holidays",
-  },
-  {
-    title: "East Africa Travel",
-    body: "Extend your journey beyond Kenya and discover Tanzania, Uganda and Rwanda through carefully planned multi-country experiences.",
-    href: "#inquire",
-    linkLabel: "Explore East Africa",
-  },
-] as const;
-
 const GALLERY = [
   { src: "/tourism/kenya/lion-kenya.jpg", alt: "Lion in Kenya" },
   { src: "/tourism/kenya/leopard-kenya.jpg", alt: "Leopard in Kenya" },
@@ -267,58 +201,6 @@ function TourismPage() {
                 <h3 className="font-display text-lg font-semibold">{item.title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{item.body}</p>
               </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mx-auto mt-20 max-w-7xl px-5 sm:px-8">
-        <div className="text-center">
-          <p className="eyebrow text-muted-foreground">Services</p>
-          <h2 className="mt-3 font-display text-3xl font-bold text-foreground">
-            What we do
-          </h2>
-        </div>
-        <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {WHAT_WE_DO.map((item) => (
-            <li key={item.title}>
-              <article className="flex h-full flex-col rounded-3xl border border-border/70 bg-card p-6 text-center shadow-sm sm:p-8">
-                <h3 className="font-display text-lg font-semibold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                  {item.body}
-                </p>
-                <a
-                  href={item.href}
-                  className="mt-5 inline-flex justify-center text-sm font-semibold text-ember transition-colors hover:text-maroon"
-                >
-                  {item.linkLabel}
-                </a>
-              </article>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mx-auto mt-20 max-w-7xl px-5 sm:px-8">
-        <div className="text-center">
-          <p className="eyebrow text-muted-foreground">Why us</p>
-          <h2 className="mt-3 font-display text-3xl font-bold text-foreground">
-            Why travel with us
-          </h2>
-        </div>
-        <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {WHY_TRAVEL.map((item) => (
-            <li key={item.title}>
-              <article className="flex h-full flex-col rounded-3xl border border-border/70 bg-card p-6 text-center shadow-sm sm:p-8">
-                <h3 className="font-display text-lg font-semibold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                  {item.body}
-                </p>
-              </article>
             </li>
           ))}
         </ul>
