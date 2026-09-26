@@ -18,6 +18,7 @@ dist-ssr
 
 # Generated from pdfjs-dist on install/build (stable URL for the PDF reader)
 public/pdf.worker.min.mjs
+public/pdf.worker.min.js
 
 # Wrangler / Cloudflare
 .wrangler/
