@@ -25,7 +25,7 @@ export function PdfReader({
   const lastReport = useRef(0);
   const [page, setPage] = useState(Math.max(1, initialPage));
   const [pages, setPages] = useState(0);
-  const [zoom, setZoom] = useState(1.35);
+  const [zoom, setZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
 
@@ -67,6 +67,8 @@ export function PdfReader({
         const width = wrapRef.current?.clientWidth || 720;
         await renderPdfPage(url, next, canvas, width * zoom);
         if (cancelled) return;
+        canvas.style.width = `${canvas.width}px`;
+        canvas.style.height = `${canvas.height}px`;
         setBusy(false);
         report(next, total);
       } catch (err) {
@@ -94,25 +96,28 @@ export function PdfReader({
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="rounded-full border border-border p-1.5 hover:bg-accent disabled:opacity-40"
-            disabled={zoom <= 0.8}
-            onClick={() => setZoom((z) => Math.max(0.8, +(z - 0.15).toFixed(2)))}
+            className="cursor-pointer rounded-full border border-border p-1.5 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={zoom <= 0.75}
+            onClick={() => setZoom((z) => Math.max(0.75, +(z - 0.25).toFixed(2)))}
             aria-label="Zoom out"
           >
             <Minus className="h-4 w-4" />
           </button>
+          <span className="w-10 text-center text-xs tabular-nums text-muted-foreground">
+            {Math.round(zoom * 100)}%
+          </span>
           <button
             type="button"
-            className="rounded-full border border-border p-1.5 hover:bg-accent disabled:opacity-40"
-            disabled={zoom >= 2.8}
-            onClick={() => setZoom((z) => Math.min(2.8, +(z + 0.15).toFixed(2)))}
+            className="cursor-pointer rounded-full border border-border p-1.5 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={zoom >= 2.5}
+            onClick={() => setZoom((z) => Math.min(2.5, +(z + 0.25).toFixed(2)))}
             aria-label="Zoom in"
           >
             <Plus className="h-4 w-4" />
           </button>
           <button
             type="button"
-            className="rounded-full border border-border p-1.5 hover:bg-accent disabled:opacity-40"
+            className="cursor-pointer rounded-full border border-border p-1.5 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             aria-label="Previous page"
@@ -121,7 +126,7 @@ export function PdfReader({
           </button>
           <button
             type="button"
-            className="rounded-full border border-border p-1.5 hover:bg-accent disabled:opacity-40"
+            className="cursor-pointer rounded-full border border-border p-1.5 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             disabled={!pages || page >= pages}
             onClick={() => setPage((p) => Math.min(pages, p + 1))}
             aria-label="Next page"
@@ -132,7 +137,7 @@ export function PdfReader({
       </div>
       <div
         ref={wrapRef}
-        className="min-h-[min(85vh,960px)] overflow-auto rounded-xl border border-border bg-neutral-100"
+        className="max-h-[calc(100dvh-16rem)] overflow-auto rounded-xl border border-border bg-neutral-100"
       >
         {error ? (
           <p className="px-4 py-10 text-center text-sm text-destructive">{error}</p>
@@ -140,7 +145,7 @@ export function PdfReader({
           <canvas
             ref={canvasRef}
             title={title}
-            className={`mx-auto block w-full max-w-none bg-white shadow-sm ${busy ? "opacity-60" : ""}`}
+            className={`mx-auto block h-auto bg-white shadow-sm ${busy ? "opacity-60" : ""}`}
           />
         )}
       </div>
