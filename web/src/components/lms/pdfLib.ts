@@ -93,7 +93,7 @@ export async function renderPdfPage(
   const doc = await loadPdf(url);
   const page = await doc.getPage(pageNumber);
   const unscaled = page.getViewport({ scale: 1 });
-  const scale = Math.min(2.2, Math.max(0.4, maxWidth / unscaled.width));
+  const scale = Math.min(3.2, Math.max(0.5, maxWidth / unscaled.width));
   const viewport = page.getViewport({ scale });
   const ctx = canvas.getContext("2d");
   if (!ctx) return { pages: doc.numPages, width: viewport.width, height: viewport.height };

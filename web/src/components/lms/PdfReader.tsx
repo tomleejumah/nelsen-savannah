@@ -25,7 +25,7 @@ export function PdfReader({
   const lastReport = useRef(0);
   const [page, setPage] = useState(Math.max(1, initialPage));
   const [pages, setPages] = useState(0);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(1.35);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
 
@@ -95,8 +95,8 @@ export function PdfReader({
           <button
             type="button"
             className="rounded-full border border-border p-1.5 hover:bg-accent disabled:opacity-40"
-            disabled={zoom <= 0.7}
-            onClick={() => setZoom((z) => Math.max(0.7, +(z - 0.15).toFixed(2)))}
+            disabled={zoom <= 0.8}
+            onClick={() => setZoom((z) => Math.max(0.8, +(z - 0.15).toFixed(2)))}
             aria-label="Zoom out"
           >
             <Minus className="h-4 w-4" />
@@ -104,8 +104,8 @@ export function PdfReader({
           <button
             type="button"
             className="rounded-full border border-border p-1.5 hover:bg-accent disabled:opacity-40"
-            disabled={zoom >= 2}
-            onClick={() => setZoom((z) => Math.min(2, +(z + 0.15).toFixed(2)))}
+            disabled={zoom >= 2.8}
+            onClick={() => setZoom((z) => Math.min(2.8, +(z + 0.15).toFixed(2)))}
             aria-label="Zoom in"
           >
             <Plus className="h-4 w-4" />
@@ -132,7 +132,7 @@ export function PdfReader({
       </div>
       <div
         ref={wrapRef}
-        className="overflow-auto rounded-xl border border-border bg-neutral-100"
+        className="min-h-[min(85vh,960px)] overflow-auto rounded-xl border border-border bg-neutral-100"
       >
         {error ? (
           <p className="px-4 py-10 text-center text-sm text-destructive">{error}</p>
@@ -140,7 +140,7 @@ export function PdfReader({
           <canvas
             ref={canvasRef}
             title={title}
-            className={`mx-auto block max-w-full bg-white shadow-sm ${busy ? "opacity-60" : ""}`}
+            className={`mx-auto block w-full max-w-none bg-white shadow-sm ${busy ? "opacity-60" : ""}`}
           />
         )}
       </div>
