@@ -8,7 +8,6 @@ import { getFirebaseAuth } from "@/lib/firebase";
 import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { workspacesForMe } from "@/lib/lmsCapabilities";
-import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
@@ -71,12 +70,9 @@ function useWorkspaceNav() {
   }, []);
 
   return useMemo(() => {
-    if (!me) return null;
-    const home = shellHomePath(shellFromMe(me));
-    const label =
-      workspacesForMe(me).find((w) => w.to === home)?.label ||
-      (shellFromMe(me) === "student" ? "Learning" : "Workspace");
-    return { to: home, label };
+    const learning = { to: "/learning", label: "Learning" };
+    const extras = workspacesForMe(me).filter((w) => w.to !== "/learning");
+    return [learning, ...extras];
   }, [me]);
 }
 
@@ -85,7 +81,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobilePrograms, setMobilePrograms] = useState(false);
-  const workspace = useWorkspaceNav();
+  const workspaces = useWorkspaceNav();
 
   const linkActive = (to: string) => pathname != null && pathIsActive(pathname, to);
 
@@ -163,16 +159,17 @@ export function Navbar() {
               </Link>
             ),
           )}
-          {workspace ? (
+          {workspaces.map((w) => (
             <Link
-              to={workspace.to}
-              activeOptions={navActiveOptions(workspace.to)}
+              key={w.to}
+              to={w.to}
+              activeOptions={navActiveOptions(w.to)}
               activeProps={{ className: "" }}
-              className={cn(navLinkClass, linkActive(workspace.to) && "text-brick")}
+              className={cn(navLinkClass, linkActive(w.to) && "text-brick")}
             >
-              {workspace.label}
+              {w.label}
             </Link>
-          ) : null}
+          ))}
         </div>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-2">
@@ -258,20 +255,21 @@ export function Navbar() {
               </Link>
             ),
           )}
-          {workspace ? (
+          {workspaces.map((w) => (
             <Link
-              to={workspace.to}
+              key={w.to}
+              to={w.to}
               onClick={() => setOpen(false)}
-              activeOptions={navActiveOptions(workspace.to)}
+              activeOptions={navActiveOptions(w.to)}
               activeProps={{ className: "" }}
               className={cn(
                 "block rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cream-deep/60 hover:text-brick focus-visible:text-brick",
-                linkActive(workspace.to) && "text-brick",
+                linkActive(w.to) && "text-brick",
               )}
             >
-              {workspace.label}
+              {w.label}
             </Link>
-          ) : null}
+          ))}
         </div>
       )}
     </header>

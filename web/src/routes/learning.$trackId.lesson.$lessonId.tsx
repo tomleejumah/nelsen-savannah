@@ -397,7 +397,7 @@ function LessonPage() {
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
-      <div className={`mx-auto px-5 sm:px-8 ${lessonType === "code" ? "max-w-4xl" : "max-w-2xl"}`}>
+      <div className={`mx-auto px-4 sm:px-8 ${lessonType === "pdf" || lessonType === "code" ? "max-w-6xl" : "max-w-2xl"}`}>
         <Link
           to="/learning/$trackId"
           params={{ trackId }}
@@ -461,7 +461,7 @@ function LessonPage() {
                     </p>
                   )}
 
-                  <div className="mt-8 space-y-4 rounded-2xl border border-border/70 bg-card p-6 sm:p-8">
+                  <div className="mt-8 space-y-4 rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
                     <p className="text-base leading-relaxed text-foreground">
                       {lesson.does ||
                         (lessonType === "text"
@@ -489,24 +489,25 @@ function LessonPage() {
                         }
                       />
                     ) : null}
-                    {lessonType !== "code" &&
+                    {lessonType === "video" &&
                     (lesson.playbackUrl || lesson.contentUrl) ? (
                       <SignedMediaPlayer
                         user={user}
                         lesson={lesson}
-                        onWatchProgress={
-                          lessonType === "video"
-                            ? (info) => void onWatchProgress(info)
-                            : undefined
-                        }
-                        onPdfProgress={
-                          lessonType === "pdf"
-                            ? (info) => void onPdfProgress(info)
-                            : undefined
-                        }
+                        onWatchProgress={(info) => void onWatchProgress(info)}
                       />
                     ) : null}
                   </div>
+                  {lessonType === "pdf" &&
+                  (lesson.playbackUrl || lesson.contentUrl) ? (
+                    <div className="mt-6">
+                      <SignedMediaPlayer
+                        user={user}
+                        lesson={lesson}
+                        onPdfProgress={(info) => void onPdfProgress(info)}
+                      />
+                    </div>
+                  ) : null}
 
                   {showQuiz &&
                   (lesson.quiz?.mode === "single_answer" ||
