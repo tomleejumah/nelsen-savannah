@@ -397,7 +397,7 @@ function LessonPage() {
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
-      <div className={`mx-auto px-4 sm:px-8 ${lessonType === "pdf" || lessonType === "code" ? "max-w-6xl" : "max-w-2xl"}`}>
+      <div className={`mx-auto px-4 sm:px-8 ${lessonType === "pdf" ? "max-w-3xl" : lessonType === "code" ? "max-w-4xl" : "max-w-2xl"}`}>
         <Link
           to="/learning/$trackId"
           params={{ trackId }}
