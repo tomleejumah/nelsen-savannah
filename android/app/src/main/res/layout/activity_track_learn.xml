@@ -5,16 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topAppBar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/ic_back"
-        app:title="Course track"
-        app:titleTextColor="@color/ink" />
 
     <ProgressBar
         android:id="@+id/progress"
@@ -35,14 +26,16 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Hero band -->
+            <!-- Hero band — maroon fills under status bar; pad top in code. -->
             <LinearLayout
                 android:id="@+id/heroBand"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_hero_maroon"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:paddingHorizontal="20dp"
+                android:paddingBottom="20dp"
+                android:paddingTop="12dp">
 
                 <TextView
                     android:id="@+id/tvTitle"
@@ -50,8 +43,21 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/font_display"
                     android:textColor="@color/white"
-                    android:textSize="24sp"
+                    android:textSize="26sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvTrackEyebrow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/font_ui"
+                    android:text="Course track"
+                    android:textAllCaps="true"
+                    android:textColor="#B8E8D5D9"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.06"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/tvDesc"
@@ -76,11 +82,11 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
+                        android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true"
-                        android:background="?attr/selectableItemBackground">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <de.hdodenhof.circleimageview.CircleImageView
                             android:id="@+id/ivTutorAvatar"
@@ -132,7 +138,7 @@
                     android:layout_marginTop="6dp"
                     android:max="100"
                     android:progress="0"
-                    android:progressDrawable="@drawable/progress_seats" />
+                    android:progressDrawable="@drawable/progress_track_bw" />
             </LinearLayout>
 
             <!-- 3-up stats -->

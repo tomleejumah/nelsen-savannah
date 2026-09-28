@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.paging.LoadState;
 import androidx.paging.PagingDataAdapter;
@@ -71,13 +72,22 @@ public class AllCoursesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_all_courses);
+        View headerContent = findViewById(R.id.headerContent);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            // Wash draws under status bar; only header + list respect insets.
+            headerContent.setPadding(
+                    headerContent.getPaddingLeft(),
+                    bars.top + dp(12),
+                    headerContent.getPaddingRight(),
+                    headerContent.getPaddingBottom());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
             return insets;
         });
+        WindowInsetsControllerCompat barsCtrl =
+                ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (barsCtrl != null) barsCtrl.setAppearanceLightStatusBars(true);
 
-        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         etSearch = findViewById(R.id.etSearch);
         btnClearSearch = findViewById(R.id.btnClearSearch);
         tvResultCount = findViewById(R.id.tvResultCount);
@@ -287,6 +297,8 @@ public class AllCoursesActivity extends AppCompatActivity {
             final TextView meta;
             final TextView lessonsChip;
             final TextView durationChip;
+            final View tutorClickRow;
+            final de.hdodenhof.circleimageview.CircleImageView tutorAvatar;
 
             VH(@NonNull View itemView) {
                 super(itemView);
@@ -296,6 +308,8 @@ public class AllCoursesActivity extends AppCompatActivity {
                 meta = itemView.findViewById(R.id.tvCourseMeta);
                 lessonsChip = itemView.findViewById(R.id.tvLessonsChip);
                 durationChip = itemView.findViewById(R.id.tvDurationChip);
+                tutorClickRow = itemView.findViewById(R.id.tutorClickRow);
+                tutorAvatar = itemView.findViewById(R.id.ivTutorAvatar);
             }
 
             void bind(CourseItem c) {
@@ -305,10 +319,16 @@ public class AllCoursesActivity extends AppCompatActivity {
                         && !tutor.trim().equalsIgnoreCase("Nelsen Savannah")
                         && !tutor.trim().equalsIgnoreCase("Nelsen Savannah Innovation Hub");
                 if (showTutor) {
-                    meta.setVisibility(View.VISIBLE);
-                    meta.setText(itemView.getContext().getString(R.string.courses_with_tutor, tutor));
+                    tutorClickRow.setVisibility(View.VISIBLE);
+                    meta.setText(tutor);
+                    String avatar = c.getTutorAvatarUrl();
+                    if (!TextUtils.isEmpty(avatar)) {
+                        Glide.with(itemView).load(avatar).placeholder(R.drawable.ic_person).into(tutorAvatar);
+                    } else {
+                        tutorAvatar.setImageResource(R.drawable.ic_person);
+                    }
                 } else {
-                    meta.setVisibility(View.GONE);
+                    tutorClickRow.setVisibility(View.GONE);
                     meta.setText("");
                 }
 
@@ -359,7 +379,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                     }
                     startActivity(learn);
                 });
-                meta.setOnClickListener(v -> {
+                tutorClickRow.setOnClickListener(v -> {
                     String tid = c.getTutorId();
                     if (!showTutor || TextUtils.isEmpty(tid)) {
                         Toast.makeText(AllCoursesActivity.this, "Tutor profile unavailable", Toast.LENGTH_SHORT).show();
@@ -375,6 +395,10 @@ public class AllCoursesActivity extends AppCompatActivity {
                 });
             }
         }
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private static String initialsFor(String title) {
