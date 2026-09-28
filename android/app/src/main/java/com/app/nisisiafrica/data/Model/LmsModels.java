@@ -260,6 +260,31 @@ public final class LmsModels {
         public String error;
     }
 
+    public static class MentorApplyBody {
+        public String email;
+        public String displayName;
+        public Map<String, String> answers;
+        public List<String> documentUrls;
+        public String videoUrl;
+    }
+
+    public static class SchoolApplicationDto {
+        public String id;
+        public String schoolId;
+        public String status;
+    }
+
+    public static class SchoolApplicationData {
+        public SchoolApplicationDto application;
+    }
+
+    public static class SchoolApplicationEnvelope {
+        public boolean ok;
+        public String source;
+        public SchoolApplicationData data;
+        public String error;
+    }
+
     public static class TrackDetailData {
         public TrackCard track;
         public List<ModuleDto> modules;

@@ -674,6 +674,27 @@ CREATE TABLE IF NOT EXISTS school_memberships (
     console.warn(`[lms-db] school_memberships: ${err.message}`);
   }
 
+  try {
+    await dbRun(`
+CREATE TABLE IF NOT EXISTS school_applications (
+  id TEXT PRIMARY KEY,
+  school_id TEXT NOT NULL,
+  uid TEXT NOT NULL,
+  email TEXT,
+  display_name TEXT,
+  answers_json TEXT,
+  document_urls_json TEXT,
+  video_url TEXT,
+  status TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  decided_by TEXT,
+  decided_at INTEGER
+)`);
+  } catch (err) {
+    console.warn(`[lms-db] school_applications: ${err.message}`);
+  }
+
   const indexes = [
     "CREATE INDEX IF NOT EXISTS idx_media_assets_school ON media_assets(school_id)",
     "CREATE INDEX IF NOT EXISTS idx_media_assets_scope ON media_assets(scope, scope_id)",
@@ -684,6 +705,8 @@ CREATE TABLE IF NOT EXISTS school_memberships (
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_email ON school_memberships(email)",
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_school ON school_memberships(school_id)",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_school_memberships_token ON school_memberships(invite_token)",
+    "CREATE INDEX IF NOT EXISTS idx_school_applications_school ON school_applications(school_id, status)",
+    "CREATE INDEX IF NOT EXISTS idx_school_applications_uid ON school_applications(uid)",
     "CREATE INDEX IF NOT EXISTS idx_cohorts_school ON cohorts(school_id)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_members_uid ON cohort_members(uid)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_runs_cohort_track ON cohort_track_runs(cohort_id, track_id)",
