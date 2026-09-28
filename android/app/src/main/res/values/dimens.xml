@@ -30,7 +30,7 @@
     <dimen name="ns_space_md">14dp</dimen>
     <dimen name="ns_space_lg">20dp</dimen>
     <dimen name="ns_space_xl">28dp</dimen>
-    <dimen name="ns_stamp_size">46dp</dimen>
+    <dimen name="ns_stamp_size">56dp</dimen>
     <dimen name="ns_stamp_ring_stroke">2.5dp</dimen>
     <dimen name="ns_arc_stamp_size">44dp</dimen>
     <dimen name="ns_fab_size">42dp</dimen>

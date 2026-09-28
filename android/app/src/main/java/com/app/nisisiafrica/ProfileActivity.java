@@ -55,7 +55,9 @@ import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.Model.UserMedia;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
@@ -238,6 +240,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                                         joinedTittle.setText("Last Login");
                                         tvJoined.setText(formattedDate);
                                         tvAbout.setText(mentors.getMentorDescription());
+                                        tagMentorSchool(id, mentors.getMentorDescription());
                                         return Unit.INSTANCE;
                                     }, e -> {
                                         e.printStackTrace();
@@ -874,34 +877,17 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         String ext = getExtension(currentFileType);
         String originalName = getFileNameFromUri(currentPreviewUri);
         String fileName = originalName + "_" + System.currentTimeMillis() + ext;
-        String userId = Util.getState(Constants.CURRENT_USER_ID, "");
 
-        StorageReference mediaRef = FirebaseStorage.getInstance().getReference()
-                .child("USER_MEDIA").child(userId).child(fileName);
-
-        // --- Start Upload ---
-        UploadTask uploadTask = mediaRef.putFile(currentPreviewUri);
-
-        uploadTask.addOnProgressListener(snapshot -> {
-            int percent = (int) ((100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount());
-            progressBar.setProgress(percent);
-            percentTextView.setText(String.valueOf(percent)); // Fixed integer crash
-            updateStatusText(percent);
-        }).addOnSuccessListener(taskSnapshot -> {
-            mediaRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                String mediaUrl = uri.toString();
-
-                // Handle PDF Thumbnail before saving to DB
-                if (ext.equals(".pdf")) {
-                    uploadPdfThumbnail(mediaUrl, description, ext, fileName);
-                } else {
-                    saveToDatabase(mediaUrl, null, description, ext, fileName);
-                }
-            });
-        }).addOnFailureListener(e -> {
-            dismissProgressOverlay();
-            Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        });
+        progressTextView.setText("Uploading…");
+        com.app.nisisiafrica.data.remote.StorageUploader.upload(currentPreviewUri, "profile_media",
+                (ok, url) -> {
+                    if (!ok || url == null) {
+                        dismissProgressOverlay();
+                        Toast.makeText(this, "Upload failed", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    saveToDatabase(url, null, description, ext, fileName);
+                });
     }
 
     private void uploadPdfThumbnail(String pdfUrl, String desc, String ext, String name) {
@@ -1053,6 +1039,48 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
     }
 
 
+    private void tagMentorSchool(String mentorId, String about) {
+        if (TextUtils.isEmpty(mentorId) || tvAbout == null) return;
+        FirebaseDatabase.getInstance().getReference("mentors").child(mentorId).child("schoolName")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        applySchoolLine(about, snapshot.getValue(String.class));
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError error) {}
+                });
+        FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
+        if (me == null || !mentorId.equals(me.getUid())) return;
+        me.getIdToken(false).addOnSuccessListener(result ->
+                ApiClient.getLmsService().me("Bearer " + result.getToken())
+                        .enqueue(new retrofit2.Callback<>() {
+                            @Override
+                            public void onResponse(retrofit2.Call<LmsModels.MeEnvelope> call,
+                                                   retrofit2.Response<LmsModels.MeEnvelope> response) {
+                                LmsModels.MeEnvelope body = response.body();
+                                if (body == null || !body.ok || body.data == null) return;
+                                Object raw = body.data.get("schoolName");
+                                String school = raw != null ? String.valueOf(raw).trim() : "";
+                                if (school.isEmpty() || "null".equals(school)) return;
+                                FirebaseDatabase.getInstance().getReference("mentors")
+                                        .child(mentorId).child("schoolName").setValue(school);
+                                applySchoolLine(about, school);
+                            }
+
+                            @Override
+                            public void onFailure(retrofit2.Call<LmsModels.MeEnvelope> call, Throwable t) {}
+                        }));
+    }
+
+    private void applySchoolLine(String about, String school) {
+        if (tvAbout == null || TextUtils.isEmpty(school)) return;
+        String base = about != null ? about.trim() : "";
+        tvAbout.setText(base.isEmpty() ? school : base + "\n" + school);
+        tvAbout.setVisibility(View.VISIBLE);
+    }
+
     @Override
     public void onUserDataReceived(@org.jetbrains.annotations.Nullable UserData userData) {
 
@@ -1069,6 +1097,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             tvProfileName.setText(mentors.getMentorName());
             tvRole.setText("Mentor");
             tvAbout.setText(mentors.getMentorDescription());
+            tagMentorSchool(id, mentors.getMentorDescription());
 //            tvDescription.setText(mentors.getMentorDescription());
 //            tv_username.setText(mentors.getMentorName());
 //            loadAndStyle(mentors.getMentorImageUrl());

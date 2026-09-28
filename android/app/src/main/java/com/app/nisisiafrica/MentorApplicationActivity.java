@@ -45,8 +45,6 @@ import com.app.nisisiafrica.data.Model.Question;
 import com.app.nisisiafrica.data.Model.QuestionType;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -55,7 +53,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MentorApplicationActivity extends AppCompatActivity {
     private static final String PREFS = "MentorApplicationPrefs";
@@ -72,7 +69,6 @@ public class MentorApplicationActivity extends AppCompatActivity {
     private TextView tvProgress;
 
     private SharedPreferences prefs;
-    private FirebaseStorage storage;
     private DatabaseReference database;
     private List<Question> questions;
     private List<Uri> documentUris = new ArrayList<>();
@@ -101,7 +97,6 @@ public class MentorApplicationActivity extends AppCompatActivity {
 
         tvCategory.setText("Mentor Application");
 
-        storage = FirebaseStorage.getInstance();
         database = FirebaseDatabase.getInstance().getReference();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
@@ -411,33 +406,31 @@ public class MentorApplicationActivity extends AppCompatActivity {
 
     private void uploadDocuments() {
         List<String> documentUrls = new ArrayList<>();
-        AtomicInteger uploadCount = new AtomicInteger(0);
 
         if (documentUris.isEmpty()) {
             uploadVideo(new ArrayList<>());
             return;
         }
 
-        for (Uri uri : documentUris) {
-            String filename = "doc_" + System.currentTimeMillis() + "_" + uploadCount.get() + ".pdf";
-            StorageReference ref = storage.getReference().child("mentor_applications/" + userEmail + "/documents/" + filename);
+        uploadNextDocument(0, documentUrls);
+    }
 
-            ref.putFile(uri)
-                    .addOnProgressListener(snapshot -> {
-                        int progress = (int) ((100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount());
-                        tvProgress.setText("Uploading docs: " + (uploadCount.get() + 1) + "/" + documentUris.size() + " (" + progress + "%)");
-                    })
-                    .addOnSuccessListener(taskSnapshot -> ref.getDownloadUrl().addOnSuccessListener(downloadUri -> {
-                        documentUrls.add(downloadUri.toString());
-                        if (uploadCount.incrementAndGet() == documentUris.size()) {
-                            uploadVideo(documentUrls);
-                        }
-                    }))
-                    .addOnFailureListener(e -> {
+    private void uploadNextDocument(int index, List<String> documentUrls) {
+        if (index >= documentUris.size()) {
+            uploadVideo(documentUrls);
+            return;
+        }
+        tvProgress.setText("Uploading docs: " + (index + 1) + "/" + documentUris.size());
+        com.app.nisisiafrica.data.remote.StorageUploader.upload(
+                documentUris.get(index), "mentor_applications", (ok, url) -> {
+                    if (!ok || url == null) {
                         Toast.makeText(this, "Upload failed", Toast.LENGTH_SHORT).show();
                         resetUploadState();
-                    });
-        }
+                        return;
+                    }
+                    documentUrls.add(url);
+                    uploadNextDocument(index + 1, documentUrls);
+                });
     }
 
     private void uploadVideo(List<String> documentUrls) {
@@ -446,20 +439,15 @@ public class MentorApplicationActivity extends AppCompatActivity {
             return;
         }
 
-        String filename = "video_" + System.currentTimeMillis() + ".mp4";
-        StorageReference ref = storage.getReference().child("mentor_applications/" + userEmail + "/videos/" + filename);
-
-        ref.putFile(videoUri)
-                .addOnProgressListener(snapshot -> {
-                    int progress = (int) ((100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount());
-                    tvProgress.setText("Uploading video: " + progress + "%");
-                })
-                .addOnSuccessListener(taskSnapshot -> ref.getDownloadUrl().addOnSuccessListener(downloadUri ->
-                        saveToDatabase(documentUrls, downloadUri.toString())))
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Video upload failed", Toast.LENGTH_SHORT).show();
-                    resetUploadState();
-                });
+        tvProgress.setText("Uploading video…");
+        com.app.nisisiafrica.data.remote.StorageUploader.upload(videoUri, "mentor_applications", (ok, url) -> {
+            if (!ok || url == null) {
+                Toast.makeText(this, "Video upload failed", Toast.LENGTH_SHORT).show();
+                resetUploadState();
+                return;
+            }
+            saveToDatabase(documentUrls, url);
+        });
     }
 
     private void saveToDatabase(List<String> documentUrls, String videoUrl) {

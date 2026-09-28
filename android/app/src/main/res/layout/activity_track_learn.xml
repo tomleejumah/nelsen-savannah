@@ -248,6 +248,12 @@
                     android:layout_height="match_parent"
                     android:visibility="gone" />
 
+                <com.github.barteksc.pdfviewer.PDFView
+                    android:id="@+id/pdfView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+
                 <TextView
                     android:id="@+id/tvPlayerPlaceholder"
                     android:layout_width="wrap_content"
@@ -258,6 +264,15 @@
                     android:text="Select a lesson to play"
                     android:textColor="@color/muted" />
             </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/lessonPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="12dp"
+                android:visibility="gone" />
 
             <TextView
                 android:layout_width="wrap_content"

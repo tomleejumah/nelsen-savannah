@@ -55,7 +55,7 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
         holder.title.setText(p.getTitle());
         holder.title.setVisibility(p.getTitle() == null || p.getTitle().isEmpty() ? View.GONE : View.VISIBLE);
         holder.body.setText(p.getBody());
-        holder.votes.setText(String.valueOf(p.getUpvoteCount()));
+        holder.votes.setText("▲\n" + p.getUpvoteCount());
         holder.comments.setText(String.valueOf(p.getCommentCount()));
         if (!TextUtils.isEmpty(p.getImageUrl())) {
             holder.image.setVisibility(View.VISIBLE);

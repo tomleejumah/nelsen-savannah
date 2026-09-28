@@ -60,7 +60,11 @@ class ChatRepository(private val appDatabase: AppDatabase) {
         replyTo: ChatMessageEntity? = null,
         onComplete: (Boolean) -> Unit
     ) {
-        val preview = if (type == "audio") "\uD83C\uDFB5 Audio" else "\uD83D\uDCC4 Document"
+        val preview = when (type) {
+            "audio" -> "\uD83C\uDFB5 Audio"
+            "video" -> "\uD83C\uDFA5 Video"
+            else -> "\uD83D\uDCC4 Document"
+        }
         writeMessage(chatroomId, url, type, preview, receiverId, replyTo, onComplete)
     }
 
@@ -136,6 +140,7 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                         val body = newestAlive.getString("message").orEmpty()
                         when (type) {
                             "image" -> "\uD83D\uDCF7 Photo"
+                            "video" -> "\uD83C\uDFA5 Video"
                             "audio" -> "\uD83C\uDFB5 Audio"
                             "file" -> "\uD83D\uDCC4 Document"
                             else -> body.ifBlank { DELETED_PLACEHOLDER }
@@ -155,6 +160,7 @@ class ChatRepository(private val appDatabase: AppDatabase) {
     private fun quoteSnippet(message: ChatMessageEntity): String = when {
         message.deleted -> DELETED_PLACEHOLDER
         message.type == "image" -> "\uD83D\uDCF7 Photo"
+        message.type == "video" -> "\uD83C\uDFA5 Video"
         message.type == "audio" -> "\uD83C\uDFB5 Audio"
         message.type == "file" -> "\uD83D\uDCC4 Document"
         else -> message.message.take(SNIPPET_MAX_CHARS)
