@@ -193,7 +193,7 @@ public class MentorApplicationActivity extends AppCompatActivity {
                     setEnabledRecursive(questionsContainer, true);
                     questionsContainer.setAlpha(1f);
                     btnApply.setText("Apply >");
-                    btnApply.setEnabled(true);
+                    checkFormComplete();
                 }
             }
 
@@ -479,12 +479,21 @@ public class MentorApplicationActivity extends AppCompatActivity {
         }
 
         btnApply.setEnabled(complete);
+        btnApply.setAlpha(complete ? 1f : 0.5f);
     }
 
     private void submitApplication() {
+        if (!btnApply.isEnabled()) return;
+        // Re-check in case spinner/path enabled Apply without answers.
+        checkFormComplete();
+        if (!btnApply.isEnabled()) {
+            Toast.makeText(this, "Complete all questions first", Toast.LENGTH_SHORT).show();
+            return;
+        }
         progressBar.setVisibility(View.VISIBLE);
         tvProgress.setVisibility(View.VISIBLE);
         btnApply.setEnabled(false);
+        btnApply.setAlpha(0.5f);
 
         uploadDocuments();
     }
@@ -615,13 +624,14 @@ public class MentorApplicationActivity extends AppCompatActivity {
     private void resetUploadState() {
         progressBar.setVisibility(View.GONE);
         tvProgress.setVisibility(View.GONE);
-        btnApply.setEnabled(true);
+        checkFormComplete();
     }
 
     private void lockForm() {
         setEnabledRecursive(questionsContainer, false);
         questionsContainer.setAlpha(0.6f);
         btnApply.setEnabled(false);
+        btnApply.setAlpha(0.5f);
         btnApply.setText("Application Submitted");
     }
 
