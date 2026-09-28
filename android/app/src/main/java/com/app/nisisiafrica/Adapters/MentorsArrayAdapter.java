@@ -18,6 +18,7 @@ import com.app.nisisiafrica.BookMentor;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.MentorRatingFormat;
 import com.app.nisisiafrica.Utils.OverlapImages;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.data.Model.MentorItem;
@@ -83,24 +84,10 @@ public class MentorsArrayAdapter extends RecyclerView.Adapter<MentorsArrayAdapte
             name.setText(m.getMentorName());
             desc.setText(m.getMentorDescription() != null ? m.getMentorDescription() : "");
             OverlapImages.load(overlap, m.getStudentImages());
-            long n = 0;
-            try {
-                if (m.getStudentsCount() != null)
-                    n = Long.parseLong(m.getStudentsCount().replaceAll("[^0-9]", ""));
-            } catch (NumberFormatException ignored) {}
-            if (n <= 0 && m.getStudentImages() != null) n = m.getStudentImages().size();
-            Double rating = m.getAverageRating();
-            boolean hasHistory = (rating != null && rating > 0) || n > 0;
-            if (hasHistory && rating != null && rating > 0) {
-                tag.setText(String.format(Locale.getDefault(), "★ %.1f · %d students", rating, n));
-                count.setText(n > 0 ? n + " mentees" : "");
-            } else if (hasHistory) {
-                tag.setText(n + " students");
-                count.setText(n + " mentees");
-            } else {
-                tag.setText("New mentor");
-                count.setText("");
-            }
+            Long ratings = m.getRatingsCount();
+            tag.setText(MentorRatingFormat.listTag(m.getAverageRating(), ratings));
+            long n = ratings != null ? ratings : 0L;
+            count.setText(n > 0 ? n + (n == 1 ? " rating" : " ratings") : "");
             book.setVisibility(Roles.browsesMentors() ? View.VISIBLE : View.GONE);
             itemView.setOnClickListener(v -> {
                 Intent i = new Intent(context, ProfileActivity.class);

@@ -117,7 +117,8 @@ public class AllMentorsActivity extends AppCompatActivity {
                                     m.getStudentImages(),
                                     m.getBookedDates(),
                                     m.getCategories(),
-                                    m.getAverageRating()
+                                    m.getAverageRating(),
+                                    m.getRatingsCount()
                             );
                         }
                         boolean hit = false;
@@ -168,7 +169,8 @@ public class AllMentorsActivity extends AppCompatActivity {
                 images,
                 null,
                 cats,
-                s.child("averageRating").getValue(Double.class)
+                s.child("averageRating").getValue(Double.class),
+                s.child("ratingsCount").getValue(Long.class)
         );
     }
 }

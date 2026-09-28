@@ -612,7 +612,9 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                 if (count > 0) {
                     double avg = sum / count;
                     tvRatingAvg.setText(String.format(Locale.getDefault(),
-                            "%.1f average from %d rating%s", avg, count, count == 1 ? "" : "s"));
+                            "%s average from %d rating%s",
+                            com.app.nisisiafrica.Utils.MentorRatingFormat.formatAverage(avg),
+                            count, count == 1 ? "" : "s"));
                 } else {
                     tvRatingAvg.setText("No ratings yet. Be the first.");
                 }

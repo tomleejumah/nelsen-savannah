@@ -168,8 +168,7 @@ public class StoryViewerActivity extends AppCompatActivity {
         }
 
         headerName.setText(story.displayLabel());
-        String logo = !TextUtils.isEmpty(story.logoUrl) ? story.logoUrl : story.mediaUrl;
-        Glide.with(this).load(logo).placeholder(R.drawable.ic_image_placeholder).into(headerLogo);
+        bindPosterAvatar(story);
         Glide.with(this).load(story.mediaUrl).placeholder(R.drawable.ic_image_placeholder).into(storyImage);
 
         if (!TextUtils.isEmpty(story.caption)) {
@@ -199,6 +198,31 @@ public class StoryViewerActivity extends AppCompatActivity {
         registerView(story);
 
         startProgress(index);
+    }
+
+    /** Header chip must be the poster's DP — never the story media itself. */
+    private void bindPosterAvatar(Story story) {
+        if (headerLogo == null || story == null) return;
+        headerLogo.setImageResource(R.drawable.ic_person);
+        String logo = story.logoUrl;
+        // Older personal posts wrongly stored mediaUrl as logoUrl — ignore that.
+        if (!TextUtils.isEmpty(logo)
+                && (TextUtils.isEmpty(story.mediaUrl) || !logo.equals(story.mediaUrl))) {
+            Glide.with(this).load(logo).placeholder(R.drawable.ic_person).circleCrop().into(headerLogo);
+            return;
+        }
+        if (TextUtils.isEmpty(story.ownerId)) return;
+        FirebaseDatabase.getInstance().getReference("users")
+                .child(story.ownerId)
+                .child("photoUrl")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    String photo = snap.getValue(String.class);
+                    if (TextUtils.isEmpty(photo) || "default".equals(photo)) return;
+                    if (isFinishing()) return;
+                    Glide.with(this).load(photo).placeholder(R.drawable.ic_person).circleCrop()
+                            .into(headerLogo);
+                });
     }
 
     private static String normalizeUrl(String url) {

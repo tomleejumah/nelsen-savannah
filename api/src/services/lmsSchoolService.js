@@ -20,6 +20,7 @@ import {
 import { loadUserRole } from "../middleware/lmsRoles.js";
 import { setUserRole } from "./lmsMeService.js";
 import { inviteUrlForToken } from "./lmsMembershipService.js";
+import { notifySchoolDecisionEmail } from "./inquiryEmail.js";
 
 function slugify(name) {
   return String(name || "school")
@@ -868,6 +869,27 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
       await setUserRole(uid, ROLES.Mentor);
     }
   }
+  const schoolName = await getSchoolName(schoolId);
+  const notifyEmail = user?.email || mem?.email || "";
+  const notifyName = user?.display_name || mem?.display_name || "";
+  if (next === "active" && notifyEmail) {
+    await notifySchoolDecisionEmail({
+      to: notifyEmail,
+      displayName: notifyName,
+      schoolName,
+      kind: "mentee",
+      approved: true,
+    });
+  }
+  if (next === "suspended" && notifyEmail) {
+    await notifySchoolDecisionEmail({
+      to: notifyEmail,
+      displayName: notifyName,
+      schoolName,
+      kind: "mentee",
+      approved: false,
+    });
+  }
   const fresh = await dbGet(
     `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,
             m.status, m.invite_token
@@ -1088,6 +1110,14 @@ export async function decideSchoolApplication(
   const fresh = await dbGet("SELECT * FROM school_applications WHERE id = ?", [
     applicationId,
   ]);
+  const schoolName = await getSchoolName(schoolId);
+  await notifySchoolDecisionEmail({
+    to: row.email || "",
+    displayName: row.display_name || "",
+    schoolName,
+    kind: "mentor",
+    approved: decision === "approved",
+  });
   return {
     source: getPrimaryEngine(),
     data: { application: mapApplication(fresh) },

@@ -252,6 +252,7 @@ object FirebaseRemoteDataSource {
                         bookedDates = parseBookedDates(snapshot.child("bookedDates")),
                         categories = parseStringList(snapshot.child("categories")),
                         averageRating = snapshot.child("averageRating").getValue(Double::class.java),
+                        ratingsCount = snapshot.child("ratingsCount").getValue(Long::class.java),
                     )
                     onSuccess?.invoke(mentorData)
                 } else {
@@ -482,6 +483,8 @@ object FirebaseRemoteDataSource {
                                 categories = parseStringList(mentorSnapshot.child("categories")),
                                 averageRating = mentorSnapshot.child("averageRating")
                                     .getValue(Double::class.java),
+                                ratingsCount = mentorSnapshot.child("ratingsCount")
+                                    .getValue(Long::class.java),
                             ) to key
                         }
                     }
@@ -547,6 +550,8 @@ object FirebaseRemoteDataSource {
                             categories = parseStringList(mentorSnapshot.child("categories")),
                             averageRating = mentorSnapshot.child("averageRating")
                                 .getValue(Double::class.java),
+                            ratingsCount = mentorSnapshot.child("ratingsCount")
+                                .getValue(Long::class.java),
                         )
                     }
                 }.sortedBy { it.mentorName.lowercase() }
