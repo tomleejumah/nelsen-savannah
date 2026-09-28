@@ -204,6 +204,12 @@ router.get(
   requireRoles("SchoolAdmin", "Admin"),
   lmsController.getSchoolDashboard,
 );
+router.put(
+  "/schools/:id/tracks/:trackId/mentors",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.putSchoolTrackMentors,
+);
 router.get(
   "/schools/:id/money",
   authenticateUser,
