@@ -22,7 +22,13 @@ data class CommunityEvent(
     var title: String = "",
     var description: String = "",
     var location: String = "",
+    var meetingLink: String = "",
+    var mode: String = "physical",
     var startsAt: Long = 0,
+    var endTime: String = "",
+    var program: String = "",
+    var seats: Int = 0,
+    var price: String = "",
     var createdBy: String = "",
     var createdByName: String = "",
     @ServerTimestamp var createdAt: Date? = null
