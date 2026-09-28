@@ -5,13 +5,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,7 +20,6 @@ import com.app.nisisiafrica.CommunityDetailActivity;
 import com.app.nisisiafrica.CreateCommunityActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Roles;
-import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.Community;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -35,6 +34,7 @@ public class CommunitiesFragment extends Fragment {
     private CommunityAdapter adapter;
     private ListenerRegistration registration;
     private View emptyState;
+    private TextView btnEdit;
 
     @Nullable
     @Override
@@ -48,16 +48,17 @@ public class CommunitiesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         emptyState = view.findViewById(R.id.emptyState);
+        View header = view.findViewById(R.id.communitiesHeader);
+        btnEdit = view.findViewById(R.id.btnEditCommunities);
         RecyclerView rv = view.findViewById(R.id.rvCommunities);
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
-        ViewCompat.setOnApplyWindowInsetsListener(rv, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
             int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            int bottom = v.getPaddingBottom();
-            v.setPadding(v.getPaddingLeft(), status + Math.round(52 * getResources().getDisplayMetrics().density),
-                    v.getPaddingRight(), bottom);
+            v.setPadding(v.getPaddingLeft(), status + Math.round(8 * getResources().getDisplayMetrics().density),
+                    v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
-        ViewCompat.requestApplyInsets(rv);
+        ViewCompat.requestApplyInsets(header);
         adapter = new CommunityAdapter(community -> {
             Intent intent = new Intent(requireContext(), CommunityDetailActivity.class);
             intent.putExtra(CommunityDetailActivity.EXTRA_COMMUNITY_ID, community.getId());
@@ -66,8 +67,13 @@ public class CommunitiesFragment extends Fragment {
         });
         rv.setAdapter(adapter);
 
+        btnEdit.setOnClickListener(v -> {
+            if (Roles.isMentor() || Roles.canManageApp() || Roles.canManageSchoolUsers()) {
+                startActivity(new Intent(requireContext(), CreateCommunityActivity.class));
+            }
+        });
+
         FloatingActionButton fab = view.findViewById(R.id.fabCreateCommunity);
-        // Side FAB on MainActivity owns create — avoid a second floating button.
         fab.setVisibility(View.GONE);
     }
 

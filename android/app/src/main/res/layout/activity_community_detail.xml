@@ -45,21 +45,17 @@
                         android:layout_height="88dp"
                         android:background="@color/ns_maroon" />
 
-                    <FrameLayout
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgGroupLogo"
                         android:layout_width="72dp"
                         android:layout_height="72dp"
                         android:layout_marginStart="16dp"
                         android:layout_marginTop="-36dp"
-                        android:background="@drawable/shape_arc_stamp_circle">
-
-                        <ImageView
-                            android:id="@+id/imgGroupLogo"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="4dp"
-                            android:scaleType="centerCrop"
-                            android:src="@mipmap/ic_launcher" />
-                    </FrameLayout>
+                        android:scaleType="centerCrop"
+                        android:src="@mipmap/ic_launcher"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Squircle"
+                        app:strokeColor="@color/ns_page"
+                        app:strokeWidth="3dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnChangeLogo"
