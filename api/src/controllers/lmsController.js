@@ -104,7 +104,76 @@ export async function getAndroidAppRelease(_req, res) {
   }
 }
 
-/** Authenticated — any role. Stream the installable APK. */
+/**
+ * Authenticated — mint a short-lived URL the browser can navigate to
+ * (native download progress: size + %).
+ */
+export async function postAndroidAppDownloadUrl(req, res) {
+  try {
+    const {
+      getAndroidReleaseMeta,
+      androidApkDownloadUrlFor,
+    } = await import("../services/lmsAppReleaseService.js");
+    const meta = getAndroidReleaseMeta();
+    if (!meta.available) {
+      return lmsErr(res, "Android APK not published yet", 404);
+    }
+    const signed = androidApkDownloadUrlFor(req.user.uid);
+    return lmsOk(
+      res,
+      {
+        ...meta,
+        downloadUrl: signed.url,
+        downloadExpiresAt: signed.expiresAt,
+      },
+      getPrimaryEngine(),
+    );
+  } catch (err) {
+    return lmsErr(res, err.message || "Failed", 500);
+  }
+}
+
+/** Public (signed query) — stream APK so the browser owns the download UI. */
+export async function downloadAndroidAppFile(req, res) {
+  try {
+    const {
+      getAndroidReleaseMeta,
+      openAndroidApkStream,
+      verifyAndroidApkToken,
+    } = await import("../services/lmsAppReleaseService.js");
+    const uid = String(req.query.uid || "");
+    const token = String(req.query.token || "");
+    if (!verifyAndroidApkToken(uid, token)) {
+      return lmsErr(res, "Invalid or expired download link", 401);
+    }
+    const meta = getAndroidReleaseMeta();
+    if (!meta.available) {
+      return lmsErr(res, "Android APK not published yet", 404);
+    }
+    const opened = openAndroidApkStream();
+    if (!opened) {
+      return lmsErr(res, "Android APK not published yet", 404);
+    }
+    const downloadName = `nelsen-savannah-${meta.versionName || "latest"}.apk`;
+    res.setHeader("Content-Type", "application/vnd.android.package-archive");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${downloadName}"`,
+    );
+    res.setHeader("Content-Length", String(opened.size));
+    res.setHeader("Cache-Control", "private, no-store");
+    opened.stream.on("error", (err) => {
+      console.error("[GET /lms/app/android/file]", err);
+      if (!res.headersSent) res.status(500).end();
+      else res.destroy(err);
+    });
+    return opened.stream.pipe(res);
+  } catch (err) {
+    return lmsErr(res, err.message || "Failed", 500);
+  }
+}
+
+/** Authenticated stream (legacy / API clients). Prefer signed /file for browsers. */
 export async function downloadAndroidApp(_req, res) {
   try {
     const {

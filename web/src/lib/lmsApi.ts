@@ -321,11 +321,25 @@ export type AndroidAppReleaseDto = {
   runId?: string;
 };
 
+export type AndroidAppDownloadUrlDto = AndroidAppReleaseDto & {
+  downloadUrl: string;
+  downloadExpiresAt: number;
+};
+
 export async function fetchAndroidAppRelease(idToken: string) {
   return lmsFetch<AndroidAppReleaseDto>("/lms/app/android", idToken);
 }
 
-/** Authenticated blob download — callers trigger a browser save. */
+/** Mint a short-lived URL for a real browser download (progress bar). */
+export async function fetchAndroidApkDownloadUrl(idToken: string) {
+  return lmsFetch<AndroidAppDownloadUrlDto>(
+    "/lms/app/android/download-url",
+    idToken,
+    { method: "POST" },
+  );
+}
+
+/** @deprecated Prefer fetchAndroidApkDownloadUrl + window navigation. */
 export async function downloadAndroidApk(
   idToken: string,
 ): Promise<{ blob: Blob; fileName: string }> {
