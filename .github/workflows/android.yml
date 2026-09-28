@@ -17,6 +17,10 @@ concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Needed so softprops/action-gh-release can create tags + Releases.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -66,6 +70,28 @@ jobs:
           path: nelsen-savannah.apk
           retention-days: 14
           if-no-files-found: error
+
+      # Public download page: https://github.com/<org>/<repo>/releases
+      # Re-running the same VERSION_NAME updates that release’s APK asset.
+      - name: Create GitHub Release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ steps.meta.outputs.version_name }}
+          name: Android ${{ steps.meta.outputs.version_name }}
+          body: |
+            Nelsen Savannah Android sideload build.
+
+            - **versionName:** ${{ steps.meta.outputs.version_name }}
+            - **versionCode:** ${{ steps.meta.outputs.version_code }}
+            - **commit:** ${{ github.sha }}
+            - **workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Authenticated users can also download from Learning after this APK is published to the API server.
+          files: nelsen-savannah.apk
+          fail_on_unmatched_files: true
+          make_latest: true
+          generate_release_notes: true
 
   publish:
     needs: build
