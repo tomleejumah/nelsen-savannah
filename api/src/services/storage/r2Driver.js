@@ -71,6 +71,17 @@ export function createS3Driver() {
       };
     },
 
+    async putObject({ objectKey, body, contentType }) {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: objectKey,
+          Body: body,
+          ContentType: contentType || "application/octet-stream",
+        }),
+      );
+    },
+
     async getObject({ objectKey }) {
       const out = await client.send(
         new GetObjectCommand({ Bucket: bucket, Key: objectKey }),

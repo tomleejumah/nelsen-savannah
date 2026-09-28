@@ -15,7 +15,11 @@ const ALLOWED_FOLDERS = new Set([
   "community_posts",
   "community_icons",
   "chat_images",
+  "chat_video",
   "chat_files",
+  "chat_audio",
+  "profile_media",
+  "mentor_applications",
   "banners",
   "misc",
 ]);
@@ -41,7 +45,7 @@ const router = express.Router();
  * Authenticated app media upload (stories, groups, chat, banners).
  * Files land under uploads/app/{folder}/ and are served at /uploads/app/...
  */
-router.post("/upload", authenticateUser, upload.single("file"), (req, res) => {
+router.post("/upload", authenticateUser, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "Missing file" });
@@ -59,20 +63,36 @@ router.post("/upload", authenticateUser, upload.single("file"), (req, res) => {
           ? ".webp"
           : req.file.mimetype === "image/gif"
             ? ".gif"
-            : ".jpg");
+            : req.file.mimetype === "video/mp4"
+              ? ".mp4"
+              : req.file.mimetype === "audio/mpeg"
+                ? ".mp3"
+                : ".jpg");
 
     const name = `${crypto.randomBytes(12).toString("hex")}${ext}`;
-    const destDir = path.join(uploadDir(), "app", folder);
-    fs.mkdirSync(destDir, { recursive: true });
-    const destPath = path.join(destDir, name);
-    fs.renameSync(req.file.path, destPath);
+    const objectKey = `app/${folder}/${name}`;
+    const { getStorageDriver } = await import("../services/storage/index.js");
+    const driver = getStorageDriver();
+    if (driver.name === "r2" && typeof driver.putObject === "function") {
+      const body = fs.readFileSync(req.file.path);
+      await driver.putObject({
+        objectKey,
+        body,
+        contentType: req.file.mimetype || "application/octet-stream",
+      });
+      fs.unlinkSync(req.file.path);
+    } else {
+      const destDir = path.join(uploadDir(), "app", folder);
+      fs.mkdirSync(destDir, { recursive: true });
+      fs.renameSync(req.file.path, path.join(destDir, name));
+    }
 
     const url = `${publicBaseUrl()}/uploads/app/${folder}/${name}`;
     return res.status(201).json({
       success: true,
       url,
       folder,
-      path: `app/${folder}/${name}`,
+      path: objectKey,
     });
   } catch (err) {
     console.error("[POST /media/upload]", err);

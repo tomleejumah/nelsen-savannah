@@ -1,9 +1,9 @@
 package com.app.nisisiafrica.data.Repository
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.liveData
 import com.app.nisisiafrica.data.Model.Booking
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
+import com.google.firebase.database.ValueEventListener
 
 class UserRepository {
 
@@ -12,8 +12,16 @@ class UserRepository {
     }
 
     fun getUserBookedDatesLive(userId: String): LiveData<List<Booking>> =
-        liveData {
-            val dates = FirebaseRemoteDataSource.getBookedDates(userId)
-            emit(dates)
+        object : LiveData<List<Booking>>() {
+            private var listener: ValueEventListener? = null
+
+            override fun onActive() {
+                listener = FirebaseRemoteDataSource.observeBookedDates(userId) { postValue(it) }
+            }
+
+            override fun onInactive() {
+                listener?.let { FirebaseRemoteDataSource.removeBookedDatesListener(userId, it) }
+                listener = null
+            }
         }
 }
