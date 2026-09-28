@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp">
+
+    <TextView
+        android:id="@+id/tvEventTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/font_ui"
+        android:textColor="@color/ns_ink"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="Kotlin meetup" />
+
+    <TextView
+        android:id="@+id/tvEventWhen"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/font_ui"
+        android:textColor="@color/ns_maroon"
+        android:textSize="13sp"
+        tools:text="Sat, 4 Oct · 14:00" />
+
+    <TextView
+        android:id="@+id/tvEventMeta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/font_ui"
+        android:textColor="@color/ns_grey"
+        android:textSize="13sp"
+        tools:text="iHub · Hosted by mwangi" />
+
+    <TextView
+        android:id="@+id/tvEventBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/font_ui"
+        android:textColor="@color/ns_grey"
+        android:textSize="14sp"
+        tools:text="Bring a laptop." />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:background="@color/line" />
+</LinearLayout>

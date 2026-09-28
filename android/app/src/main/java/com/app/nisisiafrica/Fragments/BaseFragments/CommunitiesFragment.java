@@ -2,13 +2,17 @@ package com.app.nisisiafrica.Fragments.BaseFragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -48,17 +52,22 @@ public class CommunitiesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         emptyState = view.findViewById(R.id.emptyState);
-        View header = view.findViewById(R.id.communitiesHeader);
+        View content = view.findViewById(R.id.communitiesContent);
         btnEdit = view.findViewById(R.id.btnEditCommunities);
+        EditText search = view.findViewById(R.id.etSearchCommunities);
         RecyclerView rv = view.findViewById(R.id.rvCommunities);
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            v.setPadding(v.getPaddingLeft(), status + Math.round(8 * getResources().getDisplayMetrics().density),
-                    v.getPaddingRight(), v.getPaddingBottom());
+
+        ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(),
+                    bars.top + Math.round(8 * getResources().getDisplayMetrics().density),
+                    v.getPaddingRight(),
+                    v.getPaddingBottom());
             return insets;
         });
-        ViewCompat.requestApplyInsets(header);
+        ViewCompat.requestApplyInsets(content);
+
         adapter = new CommunityAdapter(community -> {
             Intent intent = new Intent(requireContext(), CommunityDetailActivity.class);
             intent.putExtra(CommunityDetailActivity.EXTRA_COMMUNITY_ID, community.getId());
@@ -67,8 +76,16 @@ public class CommunitiesFragment extends Fragment {
         });
         rv.setAdapter(adapter);
 
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                adapter.filter(s != null ? s.toString() : "");
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
         btnEdit.setOnClickListener(v -> {
-            if (Roles.isMentor() || Roles.canManageApp() || Roles.canManageSchoolUsers()) {
+            if (Roles.canCreate()) {
                 startActivity(new Intent(requireContext(), CreateCommunityActivity.class));
             }
         });

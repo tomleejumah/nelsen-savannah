@@ -94,7 +94,7 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
                     .load(communityIconUrl)
                     .placeholder(R.mipmap.ic_launcher)
                     .error(R.mipmap.ic_launcher)
-                    .centerCrop()
+                    .circleCrop()
                     .into(holder.icon);
         } else {
             holder.icon.setImageResource(R.mipmap.ic_launcher);

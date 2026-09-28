@@ -65,6 +65,7 @@ class CommunityRepository {
             "description" to description,
             "createdBy" to uid,
             "iconUrl" to iconUrl,
+            "bannerUrl" to "",
             "memberCount" to 0L,
             "postCount" to 0L,
             "recentMemberAvatars" to emptyList<String>(),
@@ -229,6 +230,46 @@ class CommunityRepository {
     /** Updates the group logo URL (creator / mentors). */
     fun updateCommunityIcon(communityId: String, iconUrl: String, callback: BoolCallback) {
         communityRef(communityId).update("iconUrl", iconUrl)
+            .addOnSuccessListener { callback.onResult(true) }
+            .addOnFailureListener { callback.onResult(false) }
+    }
+
+    fun updateCommunityBanner(communityId: String, bannerUrl: String, callback: BoolCallback) {
+        communityRef(communityId).update("bannerUrl", bannerUrl)
+            .addOnSuccessListener { callback.onResult(true) }
+            .addOnFailureListener { callback.onResult(false) }
+    }
+
+    fun eventsQuery(communityId: String): Query =
+        communities().document(communityId).collection("events")
+            .orderBy("startsAt", Query.Direction.ASCENDING)
+
+    fun createCommunityEvent(
+        communityId: String,
+        title: String,
+        description: String,
+        location: String,
+        startsAt: Long,
+        createdByName: String,
+        callback: ResultCallback
+    ) {
+        val uid = auth.currentUser?.uid ?: return callback.onResult(false, "Not signed in")
+        val data = hashMapOf(
+            "title" to title,
+            "description" to description,
+            "location" to location,
+            "startsAt" to startsAt,
+            "createdBy" to uid,
+            "createdByName" to createdByName,
+            "createdAt" to FieldValue.serverTimestamp()
+        )
+        communities().document(communityId).collection("events").add(data)
+            .addOnSuccessListener { callback.onResult(true, it.id) }
+            .addOnFailureListener { callback.onResult(false, it.message) }
+    }
+
+    fun deleteCommunityEvent(communityId: String, eventId: String, callback: BoolCallback) {
+        communities().document(communityId).collection("events").document(eventId).delete()
             .addOnSuccessListener { callback.onResult(true) }
             .addOnFailureListener { callback.onResult(false) }
     }

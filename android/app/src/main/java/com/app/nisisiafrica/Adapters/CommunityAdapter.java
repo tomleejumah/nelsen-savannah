@@ -1,5 +1,7 @@
 package com.app.nisisiafrica.Adapters;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,12 +10,17 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.data.Model.Community;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
+import com.zen.overlapimagelistview.OverlapImageListView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,28 +34,39 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
         void onClick(Community community);
     }
 
+    private final List<Community> all = new ArrayList<>();
     private final List<Community> items = new ArrayList<>();
     private final Map<String, Boolean> membership = new HashMap<>();
     private final OnCommunityClick listener;
     private final CommunityRepository repository = new CommunityRepository();
-    private boolean editMode = false;
+    private String query = "";
 
     public CommunityAdapter(OnCommunityClick listener) {
         this.listener = listener;
     }
 
-    public void setEditMode(boolean editMode) {
-        this.editMode = editMode;
-        notifyDataSetChanged();
-    }
-
-    public boolean isEditMode() {
-        return editMode;
-    }
-
     public void submit(List<Community> list) {
+        all.clear();
+        all.addAll(list);
+        applyFilter();
+    }
+
+    public void filter(String q) {
+        query = q != null ? q.trim() : "";
+        applyFilter();
+    }
+
+    private void applyFilter() {
         items.clear();
-        items.addAll(list);
+        if (query.isEmpty()) {
+            items.addAll(all);
+        } else {
+            String needle = query.toLowerCase(Locale.US);
+            for (Community c : all) {
+                String name = c.getName() != null ? c.getName() : "";
+                if (name.toLowerCase(Locale.US).contains(needle)) items.add(c);
+            }
+        }
         notifyDataSetChanged();
     }
 
@@ -63,24 +81,23 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Community c = items.get(position);
         String name = c.getName() != null ? c.getName() : "";
-        if (name.startsWith("r/") || name.startsWith("R/")) {
-            name = name.substring(2);
-        }
+        if (name.startsWith("r/") || name.startsWith("R/")) name = name.substring(2);
         holder.name.setText(name);
         holder.desc.setVisibility(View.GONE);
         holder.meta.setText(formatMembers(c.getMemberCount()));
-        if (holder.overlap != null) holder.overlap.setVisibility(View.GONE);
 
         if (!TextUtils.isEmpty(c.getIconUrl())) {
             Glide.with(holder.logo.getContext())
                     .load(c.getIconUrl())
                     .placeholder(R.mipmap.ic_launcher)
                     .error(R.mipmap.ic_launcher)
-                    .centerCrop()
+                    .circleCrop()
                     .into(holder.logo);
         } else {
             holder.logo.setImageResource(R.mipmap.ic_launcher);
         }
+
+        bindMemberAvatars(holder, c);
 
         Boolean known = membership.get(c.getId());
         if (known != null) {
@@ -125,6 +142,52 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
         });
     }
 
+    private void bindMemberAvatars(ViewHolder holder, Community c) {
+        List<String> avatars = c.getRecentMemberAvatars();
+        List<String> urls = new ArrayList<>();
+        if (avatars != null) {
+            for (String url : avatars) {
+                if (!TextUtils.isEmpty(url)) urls.add(url);
+            }
+        }
+        long others = Math.max(0, c.getMemberCount() - urls.size());
+        if (urls.isEmpty()) {
+            holder.overlap.setVisibility(View.GONE);
+            holder.others.setVisibility(View.GONE);
+            return;
+        }
+        holder.overlap.setVisibility(View.VISIBLE);
+        holder.overlap.setTag(urls);
+        if (others > 0) {
+            holder.others.setVisibility(View.VISIBLE);
+            holder.others.setText(holder.itemView.getContext()
+                    .getString(R.string.group_others_count, (int) Math.min(others, Integer.MAX_VALUE)));
+        } else {
+            holder.others.setVisibility(View.GONE);
+        }
+        final ArrayList<Bitmap> bitmaps = new ArrayList<>();
+        final int total = Math.min(urls.size(), 3);
+        for (int i = 0; i < total; i++) {
+            Glide.with(holder.overlap.getContext())
+                    .asBitmap()
+                    .load(urls.get(i))
+                    .apply(RequestOptions.circleCropTransform())
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource,
+                                                    @Nullable Transition<? super Bitmap> transition) {
+                            bitmaps.add(resource);
+                            if (bitmaps.size() == total && urls.equals(holder.overlap.getTag())) {
+                                holder.overlap.setImageList(bitmaps);
+                            }
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {}
+                    });
+        }
+    }
+
     private static String formatMembers(long count) {
         if (count >= 1_000_000) {
             double m = count / 1_000_000.0;
@@ -145,8 +208,8 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView name, desc, meta, join;
-        View overlap;
+        TextView name, desc, meta, join, others;
+        OverlapImageListView overlap;
         ImageView logo;
 
         ViewHolder(@NonNull View itemView) {
@@ -155,6 +218,7 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
             desc = itemView.findViewById(R.id.tvCommunityDesc);
             meta = itemView.findViewById(R.id.tvCommunityMeta);
             join = itemView.findViewById(R.id.btnCommunityJoin);
+            others = itemView.findViewById(R.id.tvOthersCount);
             overlap = itemView.findViewById(R.id.overlapImage);
             logo = itemView.findViewById(R.id.imgCommunityLogo);
         }
