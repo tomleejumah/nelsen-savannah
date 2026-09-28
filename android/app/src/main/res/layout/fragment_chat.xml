@@ -141,7 +141,8 @@
                     android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Back"
-                    android:src="@drawable/ic_back"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_nav_back"
                     app:tint="@color/ink" />
 
                 <!-- Tapping the header opens the partner's full profile. -->
@@ -192,11 +193,13 @@
 
                     <ImageView
                         android:id="@+id/btnViewProfile"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="6dp"
-                        android:contentDescription="View full profile"
-                        android:src="@drawable/ic_arrow_right"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Chat options"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_more"
                         app:tint="@color/ink" />
                 </LinearLayout>
             </LinearLayout>
