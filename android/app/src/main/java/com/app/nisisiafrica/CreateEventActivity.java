@@ -19,6 +19,7 @@ import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.ProgrammeItem;
+import com.app.nisisiafrica.data.Repository.CommunityRepository;
 import com.app.nisisiafrica.data.remote.LmsEventsDataSource;
 import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
 import android.view.View;
@@ -42,6 +43,9 @@ import java.util.Locale;
 
 public class CreateEventActivity extends AppCompatActivity {
 
+    public static final String EXTRA_COMMUNITY_ID = "extra_community_id";
+    public static final String EXTRA_COMMUNITY_NAME = "extra_community_name";
+
     private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink, etSeats, etPrice;
     private MaterialAutoCompleteTextView etProgram;
     private TextView tvDate, tvStart, tvEnd;
@@ -52,6 +56,8 @@ public class CreateEventActivity extends AppCompatActivity {
     private boolean dateSet = false;
     private String startTime = "";
     private String endTime = "";
+    private String communityId;
+    private String communityName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +72,15 @@ public class CreateEventActivity extends AppCompatActivity {
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
+
+        communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
+        communityName = getIntent().getStringExtra(EXTRA_COMMUNITY_NAME);
+        if (communityId != null && !communityId.isEmpty()) {
+            toolbar.setTitle(R.string.group_create_event);
+            if (communityName != null && !communityName.isEmpty()) {
+                toolbar.setSubtitle(communityName);
+            }
+        }
 
         etTitle = findViewById(R.id.etEventTitle);
         etDescription = findViewById(R.id.etEventDescription);
@@ -193,6 +208,13 @@ public class CreateEventActivity extends AppCompatActivity {
         }
 
         btnSave.setEnabled(false);
+
+        if (communityId != null && !communityId.isEmpty()) {
+            saveCommunityEvent(title, description, location, meetingLink,
+                    online ? "online" : "physical", eventMillis, program, seats, price);
+            return;
+        }
+
         LmsModels.CreateHubEventBody body = new LmsModels.CreateHubEventBody(
                 title,
                 eventMillis,
@@ -234,5 +256,45 @@ public class CreateEventActivity extends AppCompatActivity {
             btnSave.setEnabled(true);
             Toast.makeText(this, "Auth failed", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void saveCommunityEvent(
+            String title,
+            String description,
+            String location,
+            String meetingLink,
+            String mode,
+            long startsAt,
+            String program,
+            int seats,
+            String price
+    ) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String byName = user != null && user.getDisplayName() != null ? user.getDisplayName() : "Host";
+        new CommunityRepository().createCommunityEvent(
+                communityId,
+                title,
+                description,
+                location,
+                meetingLink,
+                mode,
+                startsAt,
+                endTime,
+                program,
+                seats,
+                price,
+                byName,
+                (ok, idOrError) -> runOnUiThread(() -> {
+                    if (ok) {
+                        Toast.makeText(this, "Event created", Toast.LENGTH_SHORT).show();
+                        finish();
+                    } else {
+                        btnSave.setEnabled(true);
+                        Toast.makeText(this,
+                                idOrError != null ? idOrError : "Could not create event",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
+        );
     }
 }

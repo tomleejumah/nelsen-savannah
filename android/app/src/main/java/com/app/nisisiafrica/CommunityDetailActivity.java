@@ -179,9 +179,9 @@ public class CommunityDetailActivity extends AppCompatActivity {
         tabPosts.setOnClickListener(v -> showTab(true));
         tabEvents.setOnClickListener(v -> showTab(false));
         btnCreateEvent.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateCommunityEventActivity.class);
-            intent.putExtra(CreateCommunityEventActivity.EXTRA_COMMUNITY_ID, communityId);
-            intent.putExtra(CreateCommunityEventActivity.EXTRA_COMMUNITY_NAME, communityName);
+            Intent intent = new Intent(this, CreateEventActivity.class);
+            intent.putExtra(CreateEventActivity.EXTRA_COMMUNITY_ID, communityId);
+            intent.putExtra(CreateEventActivity.EXTRA_COMMUNITY_NAME, communityName);
             startActivity(intent);
         });
 

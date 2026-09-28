@@ -45,8 +45,9 @@ public class CommunityEventAdapter extends RecyclerView.Adapter<CommunityEventAd
         } else {
             holder.when.setText("");
         }
+        String place = "online".equalsIgnoreCase(e.getMode()) ? "Online" : e.getLocation();
         String meta = "";
-        if (!TextUtils.isEmpty(e.getLocation())) meta = e.getLocation();
+        if (!TextUtils.isEmpty(place)) meta = place;
         if (!TextUtils.isEmpty(e.getCreatedByName())) {
             meta += (meta.isEmpty() ? "" : " · ") + e.getCreatedByName();
         }

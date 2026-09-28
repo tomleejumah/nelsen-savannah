@@ -253,12 +253,39 @@ class CommunityRepository {
         createdByName: String,
         callback: ResultCallback
     ) {
+        createCommunityEvent(
+            communityId, title, description, location, "", "physical",
+            startsAt, "", "", 0, "", createdByName, callback
+        )
+    }
+
+    fun createCommunityEvent(
+        communityId: String,
+        title: String,
+        description: String,
+        location: String,
+        meetingLink: String,
+        mode: String,
+        startsAt: Long,
+        endTime: String,
+        program: String,
+        seats: Int,
+        price: String,
+        createdByName: String,
+        callback: ResultCallback
+    ) {
         val uid = auth.currentUser?.uid ?: return callback.onResult(false, "Not signed in")
         val data = hashMapOf(
             "title" to title,
             "description" to description,
             "location" to location,
+            "meetingLink" to meetingLink,
+            "mode" to mode,
             "startsAt" to startsAt,
+            "endTime" to endTime,
+            "program" to program,
+            "seats" to seats,
+            "price" to price,
             "createdBy" to uid,
             "createdByName" to createdByName,
             "createdAt" to FieldValue.serverTimestamp()
