@@ -133,8 +133,11 @@ export type LessonDto = {
     questions?: {
       id: string;
       prompt: string;
-      options: { id: string; text: string }[];
+      type?: "single" | "multi_select" | "true_false" | "short_text";
+      options?: { id: string; text: string }[];
       correctOptionId?: string;
+      correctOptionIds?: string[];
+      acceptedAnswers?: string[];
     }[];
     passingScore?: number;
   } | null;
@@ -619,8 +622,11 @@ export async function authorLessonQuiz(
     questions?: {
       id: string;
       prompt: string;
-      options: { id: string; text: string }[];
-      correctOptionId: string;
+      type?: "single" | "multi_select" | "true_false" | "short_text";
+      options?: { id: string; text: string }[];
+      correctOptionId?: string;
+      correctOptionIds?: string[];
+      acceptedAnswers?: string[];
     }[];
     runId?: string;
   },
@@ -685,7 +691,7 @@ export async function submitLessonQuiz(
     score?: number;
     passed?: boolean;
     selectedOptionId?: string;
-    answers?: Record<string, string>;
+    answers?: Record<string, string | string[]>;
     lastPlatform?: "web" | "android";
   },
 ) {
@@ -1156,6 +1162,14 @@ export type SchoolDashboardDto = {
   }[];
   logoUrl: string | null;
   accentColor: string | null;
+  /** Mentors available to assign as course trainers. */
+  assignableMentors?: {
+    uid: string;
+    email: string;
+    displayName: string;
+    photoUrl?: string;
+    status?: string;
+  }[];
 };
 
 export async function fetchAdminStats(idToken: string) {
