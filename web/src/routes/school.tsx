@@ -1,51 +1,37 @@
-import { useCallback, useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
 
-import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
-import { CohortIntakesPanel } from "@/components/lms/CohortIntakesPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
-import {
-  decideSchoolApplication,
-  fetchLmsTracks,
-  fetchMenteeProgress,
-  fetchSchoolApplications,
-  fetchSchoolDashboard,
-  fetchSchoolMembers,
-  fetchSchoolMoney,
-  fetchSchoolTutorPayouts,
-  importSchoolRoster,
-  patchSchoolBranding,
-  patchSchoolMemberRole,
-  patchSchoolMemberStatus,
-  putSchoolTrackMentors,
-  registerSchoolMentee,
-  registerSchoolMentor,
-  type MeDto,
-  type MenteeProgressDto,
-  type SchoolApplicationDto,
-  type SchoolDashboardDto,
-  type SchoolMemberDto,
-  type TrackCardDto,
-} from "@/lib/lmsApi";
+import { useSchoolAdmin } from "@/components/lms/schoolAdmin/useSchoolAdmin";
+import type { MeDto } from "@/lib/lmsApi";
 
-function SchoolPctBar({ label, pct }: { label: string; pct: number }) {
-  const n = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
-  return (
-    <div className="mt-3">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{label}</span>
-        <span className="tabular-nums text-foreground">{n}%</span>
-      </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-2 rounded-full bg-ember"
-          style={{ width: `${n}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+const AREAS = [
+  {
+    to: "/school/mentors" as const,
+    label: "Mentors",
+    blurb: "Invite, applications, escalate mentees, assign courses.",
+  },
+  {
+    to: "/school/coursework" as const,
+    label: "Courses",
+    blurb: "Catalog → price → cohorts (tools live inside the cohort).",
+  },
+  {
+    to: "/school/students" as const,
+    label: "Students",
+    blurb: "Invite, roster, CSV import, progress / at-risk.",
+  },
+  {
+    to: "/school/finances" as const,
+    label: "Billing",
+    blurb: "Seats checkout (M-Pesa; card coming soon) and payouts.",
+  },
+  {
+    to: "/school/settings" as const,
+    label: "School settings",
+    blurb: "Logo and accent branding.",
+  },
+];
 
 export const Route = createFileRoute("/school")({
   head: () => ({
@@ -53,303 +39,31 @@ export const Route = createFileRoute("/school")({
       { title: "School admin — Nelsen Savannah LMS" },
       {
         name: "description",
-        content: "School admin — roster, catalog, dashboard, and payments UI.",
+        content: "School admin — mentors, courses, cohorts, students, billing.",
       },
     ],
   }),
-  component: SchoolPage,
+  component: SchoolLayout,
 });
 
-function SchoolPage() {
+function SchoolLayout() {
+  const childMatches = useChildMatches();
+  if (childMatches.length > 0) return <Outlet />;
   return (
     <RoleShellPage
       shell="school"
       title="School admin"
-      blurb="Courses, trainers, roster, and school ops — not student Learning."
+      blurb="Mentors → Courses → Cohorts, plus students, billing, and settings."
     >
-      {({ user, me }) => <SchoolConsole user={user} me={me} />}
+      {({ user, me }) => <SchoolHub user={user} me={me} />}
     </RoleShellPage>
   );
 }
 
-function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
-  const schoolId = me.schoolId || me.activeSchoolId || "";
-  const [members, setMembers] = useState<SchoolMemberDto[]>([]);
-  const [dash, setDash] = useState<SchoolDashboardDto | null>(null);
-  const [busy, setBusy] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [mentorUid, setMentorUid] = useState("");
-  const [mentorEmail, setMentorEmail] = useState("");
-  const [mentorName, setMentorName] = useState("");
-  const [menteeUid, setMenteeUid] = useState("");
-  const [menteeEmail, setMenteeEmail] = useState("");
-  const [menteeName, setMenteeName] = useState("");
-  const [csv, setCsv] = useState("uid,email,displayName,role\n");
-  const [accent, setAccent] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [seats, setSeats] = useState(10);
-  const [phone, setPhone] = useState("");
-  const [payMethod, setPayMethod] = useState<"card" | "mpesa">("card");
-  const [payMsg, setPayMsg] = useState<string | null>(null);
-  const [moneyNote, setMoneyNote] = useState<string | null>(null);
-  const [payoutNote, setPayoutNote] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
-  const [tracks, setTracks] = useState<TrackCardDto[]>([]);
-  const [mentees, setMentees] = useState<MenteeProgressDto[]>([]);
-  const [assignTrackId, setAssignTrackId] = useState<string | null>(null);
-  const [assignUids, setAssignUids] = useState<string[]>([]);
-  const [assignMsg, setAssignMsg] = useState<string | null>(null);
-  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
-  const [applications, setApplications] = useState<SchoolApplicationDto[]>([]);
-
-  const load = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const token = await user.getIdToken();
-      const [m, d, money, payouts, t, progress, apps] = await Promise.all([
-        fetchSchoolMembers(token, schoolId),
-        fetchSchoolDashboard(token, schoolId),
-        fetchSchoolMoney(token, schoolId),
-        fetchSchoolTutorPayouts(token, schoolId),
-        fetchLmsTracks(token),
-        fetchMenteeProgress(token, me.uid),
-        fetchSchoolApplications(token, schoolId, "pending"),
-      ]);
-      if (!m.ok) setError(m.error || "Could not load roster");
-      setMembers(m.data?.members || []);
-      setDash(d.data || null);
-      if (d.data?.accentColor) setAccent(d.data.accentColor);
-      if (d.data?.logoUrl) setLogoUrl(d.data.logoUrl);
-      if (money.ok && money.data) {
-        setBalance(money.data.balance);
-        setMoneyNote(money.data.note);
-      }
-      if (payouts.ok && payouts.data) setPayoutNote(payouts.data.note);
-      setTracks(t.data?.tracks || []);
-      setMentees(progress.data?.mentees || []);
-      setApplications(apps.data?.applications || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setBusy(false);
-    }
-  }, [user, schoolId, me.uid]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function addMentor(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await registerSchoolMentor(token, schoolId, {
-      email: mentorEmail.trim(),
-      displayName: mentorName.trim() || undefined,
-      uid: mentorUid.trim() || undefined,
-    });
-    setMsg(
-      result.ok
-        ? result.data?.member?.status === "invited"
-          ? "Invite saved — they become a mentor when they sign in with that email."
-          : "Mentor attached to this school."
-        : result.error || "Failed",
-    );
-    if (result.ok) {
-      setLastInviteUrl(result.data?.member?.inviteUrl || null);
-      setMentorUid("");
-      setMentorEmail("");
-      setMentorName("");
-      await load();
-    }
-  }
-
-  async function addMentee(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await registerSchoolMentee(token, schoolId, {
-      email: menteeEmail.trim(),
-      displayName: menteeName.trim() || undefined,
-      uid: menteeUid.trim() || undefined,
-    });
-    setMsg(
-      result.ok
-        ? result.data?.member?.status === "invited"
-          ? "Invite saved — share the join link, or they join when they sign in with that email."
-          : "Mentee attached to this school."
-        : result.error || "Failed",
-    );
-    if (result.ok) {
-      setLastInviteUrl(result.data?.member?.inviteUrl || null);
-      setMenteeUid("");
-      setMenteeEmail("");
-      setMenteeName("");
-      await load();
-    }
-  }
-
-  async function escalate(uid: string) {
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await patchSchoolMemberRole(token, schoolId, uid, "Mentor");
-    setMsg(result.ok ? "Escalated to Mentor." : result.error || "Failed");
-    if (result.ok) await load();
-  }
-
-  async function setMentorEnabled(uid: string, enabled: boolean) {
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await patchSchoolMemberStatus(
-      token,
-      schoolId,
-      uid,
-      enabled ? "active" : "suspended",
-    );
-    setMsg(
-      result.ok
-        ? enabled
-          ? "Mentor re-enabled."
-          : "Mentor disabled and removed from courses."
-        : result.error || "Failed",
-    );
-    if (result.ok) await load();
-  }
-
-  async function approveJoin(uid: string) {
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await patchSchoolMemberStatus(
-      token,
-      schoolId,
-      uid,
-      "active",
-    );
-    setMsg(result.ok ? "Join request approved — student can enroll." : result.error || "Failed");
-    if (result.ok) await load();
-  }
-
-  async function copyInvite(url: string) {
-    try {
-      await navigator.clipboard.writeText(url);
-      setMsg("Invite link copied.");
-    } catch {
-      setMsg(url);
-    }
-  }
-
-  async function decideApp(
-    applicationId: string,
-    status: "approved" | "rejected",
-  ) {
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await decideSchoolApplication(
-      token,
-      schoolId,
-      applicationId,
-      status,
-    );
-    setMsg(
-      result.ok
-        ? status === "approved"
-          ? "Mentor approved."
-          : "Application rejected."
-        : result.error || "Failed",
-    );
-    if (result.ok) await load();
-  }
-
-  async function onRoster(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await importSchoolRoster(token, schoolId, csv);
-    setMsg(
-      result.ok
-        ? `Imported ${result.data?.imported ?? 0} members`
-        : result.error || "Import failed",
-    );
-    if (result.ok) await load();
-  }
-
-  async function onBrand(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await patchSchoolBranding(token, schoolId, {
-      accentColor: accent.trim() || undefined,
-      logoUrl: logoUrl.trim() || undefined,
-    });
-    setMsg(result.ok ? "Branding saved." : result.error || "Failed");
-  }
-
-  const schoolMentors = (() => {
-    const byUid = new Map<
-      string,
-      { uid: string; email?: string; displayName?: string }
-    >();
-    for (const m of members) {
-      if (
-        m.userRole === "Mentor" &&
-        m.uid &&
-        m.status !== "suspended"
-      ) {
-        byUid.set(m.uid, m);
-      }
-    }
-    for (const m of dash?.assignableMentors || []) {
-      if (m.uid && !byUid.has(m.uid)) byUid.set(m.uid, m);
-    }
-    // Include anyone already on a course in this school (so current trainers appear).
-    for (const c of dash?.byCourse || []) {
-      for (const m of c.mentors || []) {
-        if (m.uid && !byUid.has(m.uid)) {
-          byUid.set(m.uid, {
-            uid: m.uid,
-            displayName: m.displayName,
-          });
-        }
-      }
-    }
-    return [...byUid.values()].sort((a, b) =>
-      String(a.displayName || a.uid).localeCompare(
-        String(b.displayName || b.uid),
-      ),
-    );
-  })();
-
-  async function saveTrackMentors(trackId: string) {
-    setMsg(null);
-    setAssignMsg(null);
-    if (schoolMentors.length === 0) {
-      setAssignMsg(
-        "Invite a mentor first (Invite mentor below), then assign them here.",
-      );
-      return;
-    }
-    const token = await user.getIdToken();
-    const result = await putSchoolTrackMentors(
-      token,
-      schoolId,
-      trackId,
-      assignUids,
-    );
-    const text = result.ok
-      ? "Trainers assigned to this course."
-      : result.error || "Failed";
-    setMsg(text);
-    setAssignMsg(result.ok ? null : text);
-    if (result.ok) {
-      setAssignTrackId(null);
-      await load();
-    }
-  }
-
+function SchoolHub({ user, me }: { user: User; me: MeDto }) {
+  const { schoolId, dash, busy, error } = useSchoolAdmin(user, me);
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       <p className="text-sm text-muted-foreground">
         School id: <span className="font-mono text-foreground">{schoolId}</span>
       </p>
@@ -358,527 +72,48 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
           {error}
         </p>
       ) : null}
-      {msg ? <p className="text-sm text-ember">{msg}</p> : null}
-      {lastInviteUrl ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/40 px-4 py-3 text-sm">
-          <span className="text-muted-foreground">Join link:</span>
-          <code className="max-w-full break-all text-xs">{lastInviteUrl}</code>
-          <button
-            type="button"
-            onClick={() => void copyInvite(lastInviteUrl)}
-            className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
-          >
-            Copy
-          </button>
-        </div>
-      ) : null}
-
-      <section id="dashboard">
-        <h2 className="font-display text-xl font-semibold">Courses</h2>
-        {busy && !dash ? (
-          <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
-        ) : dash ? (
-          <div className="mt-4 space-y-6">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Students
-                </p>
-                <p className="mt-1 font-display text-3xl font-semibold text-foreground">
-                  {dash.mentees}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {dash.enrollments} enrollments · avg {dash.avgCompletion}%
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Courses
-                </p>
-                <p className="mt-1 font-display text-3xl font-semibold text-foreground">
-                  {dash.byCourse?.length ?? 0}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Roster {dash.rosterCount} people
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Mentors
-                </p>
-                <p className="mt-1 font-display text-3xl font-semibold text-foreground">
-                  {dash.mentors}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Avg assignment {dash.avgAssignment ?? 0}%
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium">Course completion</h3>
-              {(dash.byCourse?.length ?? 0) === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  No courses in this school yet.
-                </p>
-              ) : (
-                <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {dash.byCourse.map((c) => (
-                    <li
-                      key={c.trackId}
-                      className="rounded-2xl border border-border/70 bg-card/40 px-4 py-4 text-sm"
-                    >
-                      <p className="font-display font-semibold">{c.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {c.enrolled} enrolled
-                      </p>
-                      <SchoolPctBar
-                        label="Completion"
-                        pct={c.avgPercent}
-                      />
-                      <SchoolPctBar
-                        label="Assignments"
-                        pct={c.avgAssignment ?? 0}
-                      />
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        {(c.mentors?.length ?? 0) === 0
-                          ? "No trainers assigned"
-                          : c.mentors
-                              ?.map((m) => m.displayName || m.uid)
-                              .join(", ")}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssignMsg(null);
-                          setAssignTrackId(
-                            assignTrackId === c.trackId ? null : c.trackId,
-                          );
-                          setAssignUids(
-                            (c.mentors || []).map((m) => m.uid).filter(Boolean),
-                          );
-                        }}
-                        className="mt-3 cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                      >
-                        {assignTrackId === c.trackId
-                          ? "Cancel"
-                          : "Assign trainers"}
-                      </button>
-                      {assignTrackId === c.trackId ? (
-                        <div className="mt-3 space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
-                          {schoolMentors.length === 0 ? (
-                            <p className="text-xs text-muted-foreground">
-                              No mentors linked to this school yet. Use{" "}
-                              <a
-                                href="#invite-mentor"
-                                className="font-medium text-ember underline-offset-2 hover:underline"
-                              >
-                                Invite mentor
-                              </a>{" "}
-                              below — they must sign in once, then they show up
-                              here to assign.
-                            </p>
-                          ) : (
-                            schoolMentors.map((m) => (
-                              <label
-                                key={m.uid}
-                                className="flex cursor-pointer items-center gap-2 text-xs"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={assignUids.includes(m.uid)}
-                                  onChange={(e) => {
-                                    setAssignUids((prev) =>
-                                      e.target.checked
-                                        ? [...prev, m.uid]
-                                        : prev.filter((id) => id !== m.uid),
-                                    );
-                                  }}
-                                />
-                                {m.displayName || m.email || m.uid}
-                              </label>
-                            ))
-                          )}
-                          {assignMsg ? (
-                            <p className="text-xs text-destructive">{assignMsg}</p>
-                          ) : null}
-                          {schoolMentors.length > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => void saveTrackMentors(c.trackId)}
-                              className="cursor-pointer rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
-                            >
-                              Save trainers
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {dash.atRisk.length > 0 ? (
-              <ul className="rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm">
-                <li className="mb-2 font-medium">At risk (&lt;40%, inactive 7d)</li>
-                {dash.atRisk.slice(0, 8).map((a) => (
-                  <li key={`${a.uid}-${a.trackId}`} className="py-1.5 text-muted-foreground">
-                    <p className="font-medium text-foreground">
-                      {a.displayName || a.uid}
-                    </p>
-                    {a.email ? (
-                      <a
-                        href={`mailto:${a.email}`}
-                        className="block text-xs text-ember underline-offset-2 hover:underline"
-                      >
-                        {a.email}
-                      </a>
-                    ) : null}
-                    <p className="text-xs">
-                      {a.trackId} · {a.trackPercent}%
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No at-risk students.</p>
-            )}
-          </div>
-        ) : null}
-      </section>
-
-      <section id="money" className="space-y-3 rounded-2xl border border-dashed border-border/70 bg-card/30 p-5">
-        <h2 className="font-display text-xl font-semibold">Revenue</h2>
-        <p className="text-sm text-muted-foreground">
-          Coming soon. Seat balance shown for ops only:{" "}
-          <span className="font-semibold text-ember">
-            KES {balance.toLocaleString()}
-          </span>
-        </p>
-        {moneyNote ? <p className="text-xs text-muted-foreground">{moneyNote}</p> : null}
-      </section>
-
-      <section id="tutor-payouts" className="space-y-3 rounded-2xl border border-border/70 bg-card/50 p-5">
-        <h2 className="font-display text-xl font-semibold">Tutor payouts</h2>
-        <p className="text-sm text-muted-foreground">
-          Mentors/tutors are paid from <em>this school’s</em> balance — not a shared platform pot.
-        </p>
-        {payoutNote ? <p className="text-xs text-muted-foreground">{payoutNote}</p> : null}
-        <p className="text-sm text-muted-foreground">No payout rows yet (prototype stub).</p>
-      </section>
-
-      <section id="cms">
-        <CatalogCmsPanel user={user} schoolId={schoolId} allowCreateTrack />
-      </section>
-
-      <section id="intakes" className="rounded-2xl border border-border/70 bg-card/40 p-5">
-        <CohortIntakesPanel
-          user={user}
-          schoolId={schoolId}
-          tracks={tracks}
-          mentees={mentees}
-        />
-      </section>
-
-      <section id="applications" className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">
-          Mentor applications
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          People who applied from the Android app to teach at this school.
-        </p>
-        {applications.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No pending applications.</p>
-        ) : (
-          <ul className="divide-y divide-border/60 rounded-2xl border border-border/70 bg-card">
-            {applications.map((a) => (
-              <li
-                key={a.id}
-                className="space-y-2 px-5 py-4 text-sm"
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-display font-semibold">
-                    {a.displayName || a.email || a.uid}
-                  </p>
-                  <span className="text-xs text-muted-foreground">
-                    {a.email}
-                  </span>
-                </div>
-                {a.answers?.motivation ? (
-                  <p className="text-muted-foreground line-clamp-3">
-                    {a.answers.motivation}
-                  </p>
-                ) : null}
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void decideApp(a.id, "approved")}
-                    className="cursor-pointer rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void decideApp(a.id, "rejected")}
-                    className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section id="people" className="grid gap-8 sm:grid-cols-2">
-        <form
-          id="invite-mentor"
-          onSubmit={(e) => void addMentor(e)}
-          className="space-y-3"
-        >
-          <h2 className="font-display text-lg font-semibold">Invite mentor</h2>
-          <p className="text-xs text-muted-foreground">
-            Add their email — when they sign in with it, they join this school as a
-            Mentor (no Firebase uid needed).
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Students
           </p>
-          <input
-            required
-            type="email"
-            value={mentorEmail}
-            onChange={(e) => setMentorEmail(e.target.value)}
-            placeholder="teacher@email.com"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            value={mentorName}
-            onChange={(e) => setMentorName(e.target.value)}
-            placeholder="Display name"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            value={mentorUid}
-            onChange={(e) => setMentorUid(e.target.value)}
-            placeholder="Firebase uid (optional, legacy)"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
-          >
-            Invite mentor
-          </button>
-        </form>
-
-        <form onSubmit={(e) => void addMentee(e)} className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">Invite student</h2>
-          <p className="text-xs text-muted-foreground">
-            Email plus a join link they can open on the site.
+          <p className="mt-1 font-display text-3xl font-semibold">
+            {busy && !dash ? "…" : (dash?.mentees ?? 0)}
           </p>
-          <input
-            required
-            type="email"
-            value={menteeEmail}
-            onChange={(e) => setMenteeEmail(e.target.value)}
-            placeholder="student@email.com"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            value={menteeName}
-            onChange={(e) => setMenteeName(e.target.value)}
-            placeholder="Display name"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <input
-            value={menteeUid}
-            onChange={(e) => setMenteeUid(e.target.value)}
-            placeholder="Firebase uid (optional, legacy)"
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
-          >
-            Invite by email
-          </button>
-        </form>
-      </section>
-
-      <form id="roster" onSubmit={(e) => void onRoster(e)} className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Roster CSV import</h2>
-        <textarea
-          value={csv}
-          onChange={(e) => setCsv(e.target.value)}
-          rows={4}
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs"
-        />
-        <button type="submit" className="rounded-full border border-border px-5 py-2 text-sm">
-          Import
-        </button>
-      </form>
-
-      <form id="branding" onSubmit={(e) => void onBrand(e)} className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Branding</h2>
-        <input
-          value={logoUrl}
-          onChange={(e) => setLogoUrl(e.target.value)}
-          placeholder="Logo URL"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <input
-          value={accent}
-          onChange={(e) => setAccent(e.target.value)}
-          placeholder="Accent color (#hex)"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <button type="submit" className="rounded-full border border-border px-5 py-2 text-sm">
-          Save branding
-        </button>
-      </form>
-
-      <section id="payments" className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Buy seats (prototype)</h2>
-        <p className="text-sm text-muted-foreground">
-          Checkout stub — funds will credit <strong>this school’s</strong> ledger after the cut.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Buy seat licenses for your school. Checkout stays off until you pick a
-          payment rail — UI is ready.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <label className="text-xs text-muted-foreground">
-            Seats
-            <input
-              type="number"
-              min={1}
-              max={500}
-              value={seats}
-              onChange={(e) => setSeats(Number(e.target.value) || 1)}
-              className="ml-2 w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
-            />
-          </label>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="M-Pesa phone 254…"
-            className="min-w-[10rem] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
-          />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setPayMethod("card");
-              setPayMsg(
-                `Card checkout UI ready (${seats} seats). Provider not wired yet — tell us which card rail to use.`,
-              );
-            }}
-            className="rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground"
-          >
-            Pay with card
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setPayMethod("mpesa");
-              if (!phone.trim()) {
-                setPayMsg("Enter an M-Pesa phone (254…) first.");
-                return;
-              }
-              setPayMsg(
-                `M-Pesa STK UI ready for ${phone.trim()} · ${seats} seats. Provider not wired yet.`,
-              );
-            }}
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium"
-          >
-            Pay with M-Pesa
-          </button>
-        </div>
-        {payMsg ? (
-          <p className="rounded-xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
-            <span className="font-medium text-ember">{payMethod === "mpesa" ? "M-Pesa" : "Card"}</span>
-            {" — "}
-            {payMsg}
+        <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Mentors
           </p>
-        ) : null}
-      </section>
-
-      <section>
-        <h2 className="font-display text-xl font-semibold">Roster</h2>
-        {busy ? (
-          <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
-        ) : members.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No members yet.</p>
-        ) : (
-          <ul className="mt-4 divide-y divide-border/60 rounded-2xl border border-border/70 bg-card">
-            {members.map((m) => (
-              <li
-                key={m.uid || m.email}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
-              >
-                <div>
-                  <p className="font-medium">{m.displayName || m.email || m.uid}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {m.email || m.uid}
-                    {m.status === "invited" ? " · pending invite" : ""}
-                    {m.status === "applied" ? " · join request" : ""}
-                    {m.status === "suspended" ? " · disabled" : ""}
-                  </p>
-                </div>
-                <span className="text-ember">{m.userRole}</span>
-                <div className="flex flex-wrap gap-2">
-                  {m.status === "applied" && m.uid ? (
-                    <button
-                      type="button"
-                      onClick={() => void approveJoin(m.uid)}
-                      className="cursor-pointer rounded-full border border-ember px-3 py-1 text-xs font-medium text-ember"
-                    >
-                      Approve join
-                    </button>
-                  ) : null}
-                  {m.inviteUrl ? (
-                    <button
-                      type="button"
-                      onClick={() => void copyInvite(m.inviteUrl as string)}
-                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
-                    >
-                      Copy invite link
-                    </button>
-                  ) : null}
-                  {m.userRole === "Mentee" && m.uid && m.status !== "suspended" ? (
-                    <button
-                      type="button"
-                      onClick={() => void escalate(m.uid)}
-                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
-                    >
-                      Escalate → Mentor
-                    </button>
-                  ) : null}
-                  {m.userRole === "Mentor" && m.uid && m.status !== "suspended" ? (
-                    <button
-                      type="button"
-                      onClick={() => void setMentorEnabled(m.uid, false)}
-                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
-                    >
-                      Disable
-                    </button>
-                  ) : null}
-                  {m.userRole === "Mentor" && m.uid && m.status === "suspended" ? (
-                    <button
-                      type="button"
-                      onClick={() => void setMentorEnabled(m.uid, true)}
-                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
-                    >
-                      Re-enable
-                    </button>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <p className="mt-1 font-display text-3xl font-semibold">
+            {busy && !dash ? "…" : (dash?.mentors ?? 0)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border/70 bg-card/50 px-4 py-4">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Courses
+          </p>
+          <p className="mt-1 font-display text-3xl font-semibold">
+            {busy && !dash ? "…" : (dash?.byCourse?.length ?? 0)}
+          </p>
+        </div>
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {AREAS.map((area) => (
+          <li key={area.to}>
+            <Link
+              to={area.to}
+              className="block rounded-2xl border border-border/70 bg-card/40 px-5 py-5 transition hover:border-ember/40 hover:bg-card"
+            >
+              <p className="font-display text-lg font-semibold text-foreground">
+                {area.label}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{area.blurb}</p>
+              <p className="mt-3 text-xs font-medium text-ember">Open →</p>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

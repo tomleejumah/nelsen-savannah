@@ -29,6 +29,11 @@ import { Route as LearningCertificatesRouteImport } from './routes/learning.cert
 import { Route as LearningCourseworkRouteImport } from './routes/learning.coursework'
 import { Route as ProgramsSlugRouteImport } from './routes/programs.$slug'
 import { Route as SSchoolIdRouteImport } from './routes/s.$schoolId'
+import { Route as SchoolCourseworkRouteImport } from './routes/school.coursework'
+import { Route as SchoolFinancesRouteImport } from './routes/school.finances'
+import { Route as SchoolMentorsRouteImport } from './routes/school.mentors'
+import { Route as SchoolSettingsRouteImport } from './routes/school.settings'
+import { Route as SchoolStudentsRouteImport } from './routes/school.students'
 import { Route as TeachTrackIdRouteImport } from './routes/teach.$trackId'
 import { Route as LearningTrackIdLessonLessonIdRouteImport } from './routes/learning.$trackId.lesson.$lessonId'
 
@@ -132,6 +137,31 @@ const SSchoolIdRoute = SSchoolIdRouteImport.update({
   path: '/s/$schoolId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SchoolCourseworkRoute = SchoolCourseworkRouteImport.update({
+  id: '/coursework',
+  path: '/coursework',
+  getParentRoute: () => SchoolRoute,
+} as any)
+const SchoolFinancesRoute = SchoolFinancesRouteImport.update({
+  id: '/finances',
+  path: '/finances',
+  getParentRoute: () => SchoolRoute,
+} as any)
+const SchoolMentorsRoute = SchoolMentorsRouteImport.update({
+  id: '/mentors',
+  path: '/mentors',
+  getParentRoute: () => SchoolRoute,
+} as any)
+const SchoolSettingsRoute = SchoolSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => SchoolRoute,
+} as any)
+const SchoolStudentsRoute = SchoolStudentsRouteImport.update({
+  id: '/students',
+  path: '/students',
+  getParentRoute: () => SchoolRoute,
+} as any)
 const TeachTrackIdRoute = TeachTrackIdRouteImport.update({
   id: '/$trackId',
   path: '/$trackId',
@@ -156,7 +186,7 @@ export interface FileRoutesByFullPath {
   '/media': typeof MediaRoute
   '/profile': typeof ProfileRoute
   '/programs': typeof ProgramsRouteWithChildren
-  '/school': typeof SchoolRoute
+  '/school': typeof SchoolRouteWithChildren
   '/teach': typeof TeachRouteWithChildren
   '/tourism': typeof TourismRoute
   '/join/$token': typeof JoinTokenRoute
@@ -165,6 +195,11 @@ export interface FileRoutesByFullPath {
   '/learning/coursework': typeof LearningCourseworkRoute
   '/programs/$slug': typeof ProgramsSlugRoute
   '/s/$schoolId': typeof SSchoolIdRoute
+  '/school/coursework': typeof SchoolCourseworkRoute
+  '/school/finances': typeof SchoolFinancesRoute
+  '/school/mentors': typeof SchoolMentorsRoute
+  '/school/settings': typeof SchoolSettingsRoute
+  '/school/students': typeof SchoolStudentsRoute
   '/teach/$trackId': typeof TeachTrackIdRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -180,7 +215,7 @@ export interface FileRoutesByTo {
   '/media': typeof MediaRoute
   '/profile': typeof ProfileRoute
   '/programs': typeof ProgramsRouteWithChildren
-  '/school': typeof SchoolRoute
+  '/school': typeof SchoolRouteWithChildren
   '/teach': typeof TeachRouteWithChildren
   '/tourism': typeof TourismRoute
   '/join/$token': typeof JoinTokenRoute
@@ -189,6 +224,11 @@ export interface FileRoutesByTo {
   '/learning/coursework': typeof LearningCourseworkRoute
   '/programs/$slug': typeof ProgramsSlugRoute
   '/s/$schoolId': typeof SSchoolIdRoute
+  '/school/coursework': typeof SchoolCourseworkRoute
+  '/school/finances': typeof SchoolFinancesRoute
+  '/school/mentors': typeof SchoolMentorsRoute
+  '/school/settings': typeof SchoolSettingsRoute
+  '/school/students': typeof SchoolStudentsRoute
   '/teach/$trackId': typeof TeachTrackIdRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -205,7 +245,7 @@ export interface FileRoutesById {
   '/media': typeof MediaRoute
   '/profile': typeof ProfileRoute
   '/programs': typeof ProgramsRouteWithChildren
-  '/school': typeof SchoolRoute
+  '/school': typeof SchoolRouteWithChildren
   '/teach': typeof TeachRouteWithChildren
   '/tourism': typeof TourismRoute
   '/join/$token': typeof JoinTokenRoute
@@ -214,6 +254,11 @@ export interface FileRoutesById {
   '/learning/coursework': typeof LearningCourseworkRoute
   '/programs/$slug': typeof ProgramsSlugRoute
   '/s/$schoolId': typeof SSchoolIdRoute
+  '/school/coursework': typeof SchoolCourseworkRoute
+  '/school/finances': typeof SchoolFinancesRoute
+  '/school/mentors': typeof SchoolMentorsRoute
+  '/school/settings': typeof SchoolSettingsRoute
+  '/school/students': typeof SchoolStudentsRoute
   '/teach/$trackId': typeof TeachTrackIdRoute
   '/learning/$trackId/lesson/$lessonId': typeof LearningTrackIdLessonLessonIdRoute
 }
@@ -240,6 +285,11 @@ export interface FileRouteTypes {
     | '/learning/coursework'
     | '/programs/$slug'
     | '/s/$schoolId'
+    | '/school/coursework'
+    | '/school/finances'
+    | '/school/mentors'
+    | '/school/settings'
+    | '/school/students'
     | '/teach/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesByTo: FileRoutesByTo
@@ -264,6 +314,11 @@ export interface FileRouteTypes {
     | '/learning/coursework'
     | '/programs/$slug'
     | '/s/$schoolId'
+    | '/school/coursework'
+    | '/school/finances'
+    | '/school/mentors'
+    | '/school/settings'
+    | '/school/students'
     | '/teach/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   id:
@@ -288,6 +343,11 @@ export interface FileRouteTypes {
     | '/learning/coursework'
     | '/programs/$slug'
     | '/s/$schoolId'
+    | '/school/coursework'
+    | '/school/finances'
+    | '/school/mentors'
+    | '/school/settings'
+    | '/school/students'
     | '/teach/$trackId'
     | '/learning/$trackId/lesson/$lessonId'
   fileRoutesById: FileRoutesById
@@ -304,7 +364,7 @@ export interface RootRouteChildren {
   MediaRoute: typeof MediaRoute
   ProfileRoute: typeof ProfileRoute
   ProgramsRoute: typeof ProgramsRouteWithChildren
-  SchoolRoute: typeof SchoolRoute
+  SchoolRoute: typeof SchoolRouteWithChildren
   TeachRoute: typeof TeachRouteWithChildren
   TourismRoute: typeof TourismRoute
   JoinTokenRoute: typeof JoinTokenRoute
@@ -453,6 +513,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SSchoolIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/school/coursework': {
+      id: '/school/coursework'
+      path: '/coursework'
+      fullPath: '/school/coursework'
+      preLoaderRoute: typeof SchoolCourseworkRouteImport
+      parentRoute: typeof SchoolRoute
+    }
+    '/school/finances': {
+      id: '/school/finances'
+      path: '/finances'
+      fullPath: '/school/finances'
+      preLoaderRoute: typeof SchoolFinancesRouteImport
+      parentRoute: typeof SchoolRoute
+    }
+    '/school/mentors': {
+      id: '/school/mentors'
+      path: '/mentors'
+      fullPath: '/school/mentors'
+      preLoaderRoute: typeof SchoolMentorsRouteImport
+      parentRoute: typeof SchoolRoute
+    }
+    '/school/settings': {
+      id: '/school/settings'
+      path: '/settings'
+      fullPath: '/school/settings'
+      preLoaderRoute: typeof SchoolSettingsRouteImport
+      parentRoute: typeof SchoolRoute
+    }
+    '/school/students': {
+      id: '/school/students'
+      path: '/students'
+      fullPath: '/school/students'
+      preLoaderRoute: typeof SchoolStudentsRouteImport
+      parentRoute: typeof SchoolRoute
+    }
     '/teach/$trackId': {
       id: '/teach/$trackId'
       path: '/$trackId'
@@ -510,6 +605,25 @@ const ProgramsRouteWithChildren = ProgramsRoute._addFileChildren(
   ProgramsRouteChildren,
 )
 
+interface SchoolRouteChildren {
+  SchoolCourseworkRoute: typeof SchoolCourseworkRoute
+  SchoolFinancesRoute: typeof SchoolFinancesRoute
+  SchoolMentorsRoute: typeof SchoolMentorsRoute
+  SchoolSettingsRoute: typeof SchoolSettingsRoute
+  SchoolStudentsRoute: typeof SchoolStudentsRoute
+}
+
+const SchoolRouteChildren: SchoolRouteChildren = {
+  SchoolCourseworkRoute: SchoolCourseworkRoute,
+  SchoolFinancesRoute: SchoolFinancesRoute,
+  SchoolMentorsRoute: SchoolMentorsRoute,
+  SchoolSettingsRoute: SchoolSettingsRoute,
+  SchoolStudentsRoute: SchoolStudentsRoute,
+}
+
+const SchoolRouteWithChildren =
+  SchoolRoute._addFileChildren(SchoolRouteChildren)
+
 interface TeachRouteChildren {
   TeachTrackIdRoute: typeof TeachTrackIdRoute
 }
@@ -532,7 +646,7 @@ const rootRouteChildren: RootRouteChildren = {
   MediaRoute: MediaRoute,
   ProfileRoute: ProfileRoute,
   ProgramsRoute: ProgramsRouteWithChildren,
-  SchoolRoute: SchoolRoute,
+  SchoolRoute: SchoolRouteWithChildren,
   TeachRoute: TeachRouteWithChildren,
   TourismRoute: TourismRoute,
   JoinTokenRoute: JoinTokenRoute,
@@ -541,3 +655,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
