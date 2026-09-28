@@ -33,25 +33,26 @@ class PinnedChatAdapter(
         private val tvUnread: TextView = itemView.findViewById(R.id.tvUnread)
 
         fun bind(chatroom: Chatroom) {
-            FirebaseAuth.getInstance().currentUser?.uid ?: return
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
             // Pinned: Announcements only (AI assistant hidden until a new provider is wired).
             if (chatroom.chatroomId == "announcements" || chatroom.type == "system") {
                 itemView.visibility = View.VISIBLE
                 tvName.text = itemView.context.getString(R.string.chat_announcements)
-                val people = chatroom.userIds.size
-                tvLastMsg.text = if (people > 0) {
-                    itemView.context.getString(R.string.chat_announcements_people, people)
-                } else {
-                    chatroom.lastMessage ?: itemView.context.getString(R.string.chat_official_updates)
-                }
+                tvLastMsg.text = chatroom.lastMessage
+                    ?: itemView.context.getString(R.string.chat_official_updates)
                 Glide.with(tvAvatar.context).load(R.drawable.nelsen_icon).into(tvAvatar)
+
+                val unreadCount = chatroom.unreadCount?.get(currentUserId) ?: 0
+                tvUnread.apply {
+                    visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
+                    text = unreadCount.toString()
+                }
             } else {
                 itemView.visibility = View.GONE
                 return
             }
 
-            tvUnread.visibility = View.GONE
             itemView.setOnClickListener { onChatroomClick(chatroom) }
         }
     }
