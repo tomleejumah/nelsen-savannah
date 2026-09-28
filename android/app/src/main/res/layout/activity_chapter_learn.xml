@@ -1,39 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
-    android:fitsSystemWindows="true"
-    android:orientation="vertical">
+    android:background="@color/bg">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topAppBar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:navigationIcon="@drawable/ic_back"
-        app:title="Chapter"
-        app:titleTextColor="@color/ink" />
+    <View
+        android:id="@+id/headerWash"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/maroon_050"
+        app:layout_constraintBottom_toBottomOf="@id/headerContent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/headerContent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvScreenTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/font_display"
+            android:textColor="@color/maroon_900"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            tools:text="Chapter 1" />
+
+        <TextView
+            android:id="@+id/tvChapterDoes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/font_ui"
+            android:textColor="@color/muted"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="What this chapter covers"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvPageHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/font_ui"
+            android:textColor="@color/ink_soft"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:text="Page 1 / 12"
+            tools:visibility="visible" />
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="4dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/headerContent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/headerContent" />
 
-    <!-- Player is outside NestedScrollView so PDF/video can receive swipe/gestures. -->
+    <!-- PDF/video fills the rest of the screen — true reading surface. -->
     <FrameLayout
         android:id="@+id/playerFrame"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="8dp"
-        android:layout_weight="1"
         android:background="@color/surface_2"
-        android:minHeight="240dp">
+        app:layout_constraintBottom_toTopOf="@id/lessonsSheet"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerContent">
 
         <VideoView
             android:id="@+id/videoView"
@@ -58,64 +108,56 @@
             android:textColor="@color/muted" />
     </FrameLayout>
 
-    <TextView
-        android:id="@+id/tvPageHint"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/lessonsSheet"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingHorizontal="12dp"
-        android:paddingTop="4dp"
-        android:textColor="@color/muted"
-        android:textSize="12sp"
-        android:visibility="gone" />
+        android:background="@color/surface"
+        android:elevation="4dp"
+        android:maxHeight="280dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/font_ui"
+            android:text="Lessons"
+            android:textColor="@color/ink"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="24dp"
-            android:paddingTop="8dp">
-
-            <TextView
-                android:id="@+id/tvChapterDoes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/font_ui"
-                android:textColor="@color/muted"
-                android:textSize="13sp"
-                android:visibility="gone" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:fontFamily="@font/font_ui"
-                android:text="Lessons"
-                android:textColor="@color/ink"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+            android:layout_marginTop="6dp"
+            android:fillViewport="true"
+            android:maxHeight="220dp">
 
             <LinearLayout
-                android:id="@+id/lessonsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="8dp" />
+                android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/lessonPanel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="12dp"
-                android:visibility="gone" />
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-</LinearLayout>
+                <LinearLayout
+                    android:id="@+id/lessonsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <LinearLayout
+                    android:id="@+id/lessonPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
