@@ -267,7 +267,8 @@ export async function listMyEnrollments(uid) {
     try {
       const rows = await dbAll(
         `SELECT e.*, t.title AS course_title, t.course_image_url,
-                t.tutor_id, t.tutor_name, t.tutor_avatar_url, t.duration, t.program_slug
+                t.tutor_id, t.tutor_name, t.tutor_avatar_url, t.duration, t.program_slug,
+                t.school_id AS track_school_id
          FROM enrollments e
          JOIN tracks t ON t.track_id = e.track_id
          WHERE e.uid = ?
@@ -289,6 +290,7 @@ export async function listMyEnrollments(uid) {
             tutorAvatarUrl: tutorName ? row.tutor_avatar_url || "" : "",
             duration: row.duration || "",
             programSlug: row.program_slug || "",
+            schoolId: row.school_id || row.track_school_id || "",
             mentors,
           }),
         );
@@ -305,7 +307,10 @@ export async function listMyEnrollments(uid) {
     .once("value");
   const val = snap.val() || {};
   const enrollments = Object.entries(val).map(([trackId, row]) =>
-    mapEnrollment({ track_id: trackId, uid, ...row }),
+    mapEnrollment(
+      { track_id: trackId, uid, ...row },
+      { schoolId: row?.school_id || row?.schoolId || "" },
+    ),
   );
   return { source: "rtdb", data: { enrollments } };
 }
