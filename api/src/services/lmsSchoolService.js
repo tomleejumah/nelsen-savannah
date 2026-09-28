@@ -555,7 +555,7 @@ export async function schoolDashboard(actorUid, schoolId) {
   );
   const enrollments = await dbAll(
     `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at, u.display_name,
-            COALESCE(t.title, e.track_id) AS track_title
+            u.email, COALESCE(t.title, e.track_id) AS track_title
      FROM enrollments e
      JOIN users_mirror u ON u.uid = e.uid
      LEFT JOIN tracks t ON t.track_id = e.track_id
@@ -580,6 +580,7 @@ export async function schoolDashboard(actorUid, schoolId) {
     .map((e) => ({
       uid: e.uid,
       displayName: e.display_name || "",
+      email: e.email || "",
       trackId: e.track_id,
       trackPercent: Number(e.track_percent || 0),
       lastActiveAt: Number(e.last_active_at || 0),
