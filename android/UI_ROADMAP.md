@@ -100,6 +100,18 @@ MentUI form; brand/company name required (validation copy strengthened).
 
 ---
 
+## Future TODOs
+
+### Announcements vs school groups
+**Status:** `pending`
+
+- **Announcements** = Nelsen Savannah platform channel. Only **system admin** may post / communicate there (hub-wide broadcast).
+- **Groups** = per-school spaces. Each school has its own group(s); members of that school use those, not a single global group dump.
+
+Today `chatRooms/announcements` is a single shared room — split posting rights + school-scoped groups when we pick this up.
+
+---
+
 ## How we work
 
 Say **“do chunk N”** (or “next”) — implement that chunk only, build/debug, then mark it `done` here.
