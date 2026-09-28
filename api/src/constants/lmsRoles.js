@@ -94,10 +94,22 @@ export const ROLE_CAPABILITIES = Object.freeze({
 });
 
 export function normalizeRole(role) {
-  if (role === ROLES.Mentor) return ROLES.Mentor;
-  if (role === ROLES.SchoolAdmin) return ROLES.SchoolAdmin;
-  if (role === ROLES.SuperAdmin || role === ROLES.Admin) return ROLES.SuperAdmin;
-  if (role === ROLES.Mentee) return ROLES.Mentee;
+  const raw = String(role || "").trim();
+  if (!raw) return ROLES.Mentee;
+  // Exact first (canonical), then case-insensitive for CLI / forms.
+  if (raw === ROLES.Mentor) return ROLES.Mentor;
+  if (raw === ROLES.SchoolAdmin) return ROLES.SchoolAdmin;
+  if (raw === ROLES.SuperAdmin || raw === ROLES.Admin) return ROLES.SuperAdmin;
+  if (raw === ROLES.Mentee) return ROLES.Mentee;
+  const lower = raw.toLowerCase();
+  if (lower === "mentor") return ROLES.Mentor;
+  if (lower === "schooladmin" || lower === "school_admin" || lower === "school-admin") {
+    return ROLES.SchoolAdmin;
+  }
+  if (lower === "superadmin" || lower === "super_admin" || lower === "admin") {
+    return ROLES.SuperAdmin;
+  }
+  if (lower === "mentee") return ROLES.Mentee;
   return ROLES.Mentee;
 }
 
