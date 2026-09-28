@@ -135,9 +135,16 @@
     <string name="communities_empty_body">Join topic spaces, ask questions, and share with mentors and peers.</string>
 
     <!-- Schedules / reserve -->
+    <string name="home_schedules">Schedules</string>
+    <string name="schedules_subtitle">Upcoming sessions and past events</string>
     <string name="schedules_upcoming">Upcoming</string>
     <string name="schedules_past">Past</string>
     <string name="schedules_no_events">No events</string>
+    <string name="programmes_subtitle">Browse programmes and apply to get started</string>
+    <string name="schools_count_label">%d schools</string>
+    <string name="schools_count_one">1 school</string>
+    <string name="programmes_count_label">%d programmes</string>
+    <string name="programmes_count_one">1 programme</string>
     <string name="reserve_title">Reserve a seat</string>
     <string name="reserve_title_named">Reserve — %1$s</string>
     <string name="reserve_confirm_details">Confirm your details to reserve</string>
