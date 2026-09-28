@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Adapters.CommunityAdapter;
 import com.app.nisisiafrica.CommunityDetailActivity;
 import com.app.nisisiafrica.CreateCommunityActivity;
+import com.app.nisisiafrica.CreatePostActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.data.Model.Community;
@@ -92,6 +93,85 @@ public class CommunitiesFragment extends Fragment {
 
         FloatingActionButton fab = view.findViewById(R.id.fabCreateCommunity);
         fab.setVisibility(View.GONE);
+    }
+
+    /** Bottom sheet: pick a joined community, then open CreatePost. */
+    public void showCreatePostPicker() {
+        if (getContext() == null) return;
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        android.widget.LinearLayout sheet = new android.widget.LinearLayout(requireContext());
+        sheet.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = Math.round(16 * getResources().getDisplayMetrics().density);
+        sheet.setPadding(pad, pad, pad, pad);
+
+        TextView title = new TextView(requireContext());
+        title.setText("Post in a community");
+        title.setTextSize(18f);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        title.setPadding(0, 0, 0, pad);
+        sheet.addView(title);
+
+        TextView status = new TextView(requireContext());
+        status.setText("Loading…");
+        status.setTextColor(requireContext().getColor(R.color.muted));
+        sheet.addView(status);
+
+        dialog.setContentView(sheet);
+        dialog.show();
+
+        repository.communitiesQuery().get().addOnSuccessListener(snapshot -> {
+            if (!isAdded()) return;
+            List<Community> all = new ArrayList<>();
+            if (snapshot != null) {
+                snapshot.forEach(doc -> all.add(doc.toObject(Community.class)));
+            }
+            if (all.isEmpty()) {
+                status.setText("No communities yet");
+                return;
+            }
+            final int[] pending = {all.size()};
+            final List<Community> joined = new ArrayList<>();
+            for (Community c : all) {
+                if (c == null || c.getId() == null) {
+                    if (--pending[0] == 0) bindJoined(sheet, status, dialog, joined);
+                    continue;
+                }
+                repository.isMember(c.getId(), member -> {
+                    if (member) joined.add(c);
+                    if (--pending[0] == 0) bindJoined(sheet, status, dialog, joined);
+                });
+            }
+        }).addOnFailureListener(e -> {
+            if (isAdded()) status.setText("Could not load communities");
+        });
+    }
+
+    private void bindJoined(android.widget.LinearLayout sheet, TextView status,
+                            com.google.android.material.bottomsheet.BottomSheetDialog dialog,
+                            List<Community> joined) {
+        if (!isAdded()) return;
+        if (joined.isEmpty()) {
+            status.setText("Join a community first to post");
+            return;
+        }
+        status.setVisibility(View.GONE);
+        for (Community c : joined) {
+            TextView row = new TextView(requireContext());
+            String name = c.getName() != null ? c.getName() : "Community";
+            if (name.startsWith("r/") || name.startsWith("R/")) name = name.substring(2);
+            row.setText(name);
+            row.setTextSize(16f);
+            int pad = Math.round(12 * getResources().getDisplayMetrics().density);
+            row.setPadding(0, pad, 0, pad);
+            row.setOnClickListener(v -> {
+                dialog.dismiss();
+                Intent intent = new Intent(requireContext(), CreatePostActivity.class);
+                intent.putExtra(CreatePostActivity.EXTRA_COMMUNITY_ID, c.getId());
+                startActivity(intent);
+            });
+            sheet.addView(row);
+        }
     }
 
     @Override

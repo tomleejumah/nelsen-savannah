@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -307,12 +308,8 @@ public class ChatFragment extends Fragment {
                 .show();
     }
 
-    /** Bottom-sheet: mentors pick any other mentor/tutor to start a DM. */
+    /** Bottom-sheet: mentors pick any mentor; mentees pick tutors from enrolled courses. */
     public void showNewChatPicker() {
-        if (!Roles.canCreate(role)) {
-            Toast.makeText(requireContext(), "Only mentors can start chats here", Toast.LENGTH_SHORT).show();
-            return;
-        }
         String me = FirebaseAuth.getInstance().getUid();
         if (me == null) {
             Toast.makeText(requireContext(), "Not signed in", Toast.LENGTH_SHORT).show();
@@ -327,7 +324,9 @@ public class ChatFragment extends Fragment {
         sheet.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(requireContext());
-        title.setText(R.string.chat_pick_mentor_title);
+        title.setText(Roles.canCreate(role)
+                ? R.string.chat_pick_mentor_title
+                : R.string.chat_pick_tutor_title);
         title.setTextSize(18f);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         title.setPadding(0, 0, 0, dp(12));
@@ -353,27 +352,111 @@ public class ChatFragment extends Fragment {
         dialog.setContentView(sheet);
         dialog.show();
 
-        FirebaseRemoteDataSource.INSTANCE.fetchAllMentors(mentors -> {
-            if (binding == null || !isAdded()) return Unit.INSTANCE;
-            java.util.List<com.app.nisisiafrica.data.Model.MentorItem> others = new ArrayList<>();
-            for (com.app.nisisiafrica.data.Model.MentorItem m : mentors) {
-                if (m == null || m.getMentorId() == null) continue;
-                if (me.equals(m.getMentorId())) continue;
-                others.add(m);
-            }
-            if (others.isEmpty()) {
+        if (Roles.canCreate(role)) {
+            FirebaseRemoteDataSource.INSTANCE.fetchAllMentors(mentors -> {
+                if (binding == null || !isAdded()) return Unit.INSTANCE;
+                java.util.List<com.app.nisisiafrica.data.Model.MentorItem> others = new ArrayList<>();
+                for (com.app.nisisiafrica.data.Model.MentorItem m : mentors) {
+                    if (m == null || m.getMentorId() == null) continue;
+                    if (me.equals(m.getMentorId())) continue;
+                    others.add(m);
+                }
+                if (others.isEmpty()) {
+                    status.setText(R.string.chat_no_mentors);
+                    return Unit.INSTANCE;
+                }
+                status.setVisibility(View.GONE);
+                rv.setVisibility(View.VISIBLE);
+                adapter.submit(others);
+                return Unit.INSTANCE;
+            }, e -> {
+                if (binding == null || !isAdded()) return Unit.INSTANCE;
                 status.setText(R.string.chat_no_mentors);
                 return Unit.INSTANCE;
-            }
-            status.setVisibility(View.GONE);
-            rv.setVisibility(View.VISIBLE);
-            adapter.submit(others);
-            return Unit.INSTANCE;
-        }, e -> {
-            if (binding == null || !isAdded()) return Unit.INSTANCE;
-            status.setText(R.string.chat_no_mentors);
-            return Unit.INSTANCE;
-        });
+            });
+        } else {
+            loadEnrolledTutors(me, status, rv, adapter);
+        }
+    }
+
+    private void loadEnrolledTutors(String me, TextView status, RecyclerView rv,
+                                    MentorPickAdapter adapter) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            status.setText(R.string.chat_no_enrolled_tutors);
+            return;
+        }
+        user.getIdToken(false).addOnSuccessListener(result -> {
+            String bearer = "Bearer " + result.getToken();
+            ApiClient.getLmsService().myEnrollments(bearer).enqueue(new retrofit2.Callback<>() {
+                @Override
+                public void onResponse(retrofit2.Call<com.app.nisisiafrica.data.Model.LmsModels.EnrollmentListEnvelope> call,
+                                       retrofit2.Response<com.app.nisisiafrica.data.Model.LmsModels.EnrollmentListEnvelope> response) {
+                    if (binding == null || !isAdded()) return;
+                    com.app.nisisiafrica.data.Model.LmsModels.EnrollmentListEnvelope body = response.body();
+                    java.util.LinkedHashMap<String, com.app.nisisiafrica.data.Model.MentorItem> byId =
+                            new java.util.LinkedHashMap<>();
+                    if (response.isSuccessful() && body != null && body.ok
+                            && body.data != null && body.data.enrollments != null) {
+                        for (com.app.nisisiafrica.data.Model.LmsModels.Enrollment e : body.data.enrollments) {
+                            if (e == null || TextUtils.isEmpty(e.tutorId)) continue;
+                            if (me.equals(e.tutorId)) continue;
+                            if (byId.containsKey(e.tutorId)) continue;
+                            com.app.nisisiafrica.data.Model.MentorItem item =
+                                    new com.app.nisisiafrica.data.Model.MentorItem(
+                                            e.tutorId,
+                                            e.tutorAvatarUrl != null ? e.tutorAvatarUrl : "",
+                                            e.tutorName != null ? e.tutorName : "Tutor",
+                                            e.courseTitle != null ? e.courseTitle : "",
+                                            "",
+                                            new ArrayList<>(),
+                                            new java.util.HashSet<>(),
+                                            null,
+                                            null
+                                    );
+                            byId.put(e.tutorId, item);
+                        }
+                    }
+                    if (byId.isEmpty()) {
+                        status.setText(R.string.chat_no_enrolled_tutors);
+                        return;
+                    }
+                    status.setVisibility(View.GONE);
+                    rv.setVisibility(View.VISIBLE);
+                    adapter.submit(new ArrayList<>(byId.values()));
+                }
+
+                @Override
+                public void onFailure(retrofit2.Call<com.app.nisisiafrica.data.Model.LmsModels.EnrollmentListEnvelope> call,
+                                      Throwable t) {
+                    if (binding == null || !isAdded()) return;
+                    status.setText(R.string.chat_no_enrolled_tutors);
+                }
+            });
+        }).addOnFailureListener(e -> status.setText(R.string.chat_no_enrolled_tutors));
+    }
+
+    /** Open an existing direct chat from Profile → Message. */
+    public void openDirectChat(String chatId, String otherId, String otherName) {
+        if (TextUtils.isEmpty(chatId)) return;
+        String me = FirebaseAuth.getInstance().getUid();
+        if (me == null) return;
+        String myName = resolveMyDisplayName();
+        String name = !TextUtils.isEmpty(otherName) ? otherName : "Mentor";
+        java.util.Map<String, String> names = new java.util.HashMap<>();
+        names.put(me, myName);
+        if (!TextUtils.isEmpty(otherId)) names.put(otherId, name);
+        Chatroom room = new Chatroom(
+                chatId,
+                otherId != null ? java.util.Arrays.asList(me, otherId) : java.util.Collections.singletonList(me),
+                names,
+                "No Messages Yet",
+                null,
+                "",
+                java.util.Collections.emptyMap(),
+                "direct"
+        );
+        openChat(room);
     }
 
     private void startMentorDirectChat(com.app.nisisiafrica.data.Model.MentorItem mentor) {
@@ -1020,13 +1103,13 @@ public class ChatFragment extends Fragment {
         startActivity(intent);
     }
 
-    /** Translucent header + composer (wash only — BlurView cannot nest inside BlurTarget). */
+    /** Translucent header + glass composer bar. */
     private void setupChatGlassChrome() {
         if (binding == null || getActivity() == null) return;
         if (binding.chatHeaderBlur == null || binding.chatComposerBlur == null) return;
         int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
         binding.chatHeaderBlur.setBackgroundColor(overlay);
-        binding.chatComposerBlur.setBackgroundColor(overlay);
+        binding.chatComposerBlur.setBackgroundResource(R.drawable.bg_glass_composer);
 
         if (binding.llHeader != null) {
             ViewCompat.setOnApplyWindowInsetsListener(binding.llHeader, (v, insets) -> {

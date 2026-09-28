@@ -343,10 +343,6 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray);
 
-        findViewById(R.id.btn_Menu).setOnClickListener(v -> {
-            showToolsSheet();
-        });
-
 //        setupBlur(target, radius, blurViewName, blurViewDescHead, blurViewDesc, blurViewRc);
 
         findViewById(R.id.iv_action).setOnClickListener(v -> {
@@ -358,17 +354,65 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         });
 
         ExtendedFloatingActionButton button = findViewById(R.id.btnNext);
-        button.setVisibility(!isFromMentor ? View.GONE : View.VISIBLE);
-        findViewById(R.id.btn_Menu).setVisibility(isFromMentor ? View.GONE : View.VISIBLE);
-        findViewById(R.id.iv_action).setVisibility(isFromMentor ? View.GONE : View.VISIBLE);
-        button.setText(!isFromMentor ? "" : "Book Now");
-        button.setOnClickListener(v -> {
-            Intent intent1 = new Intent(ProfileActivity.this, BookMentor.class);
-            intent1.putExtra(Constants.MENTOR_ID, id);
-            intent1.putExtra(Constants.MENTOR_NAME, tvProfileName.getText().toString());
-            startActivity(intent1);
-        });
+        button.setVisibility(View.GONE);
+        View menuBtn = findViewById(R.id.btn_Menu);
+        View settingsBtn = findViewById(R.id.iv_action);
+        if (isFromMentor) {
+            // Viewing a mentor: 3-dot menu for Message / Book (no giant Book Now).
+            menuBtn.setVisibility(View.VISIBLE);
+            settingsBtn.setVisibility(View.GONE);
+            menuBtn.setOnClickListener(v -> showMentorActionsSheet());
+        } else {
+            menuBtn.setVisibility(View.VISIBLE);
+            settingsBtn.setVisibility(View.VISIBLE);
+            menuBtn.setOnClickListener(v -> showToolsSheet());
+        }
         initMediaGrid();
+    }
+
+    /** Message (1:1 chat) or Book — replaces the old full-width Book Now FAB. */
+    private void showMentorActionsSheet() {
+        String[] items = new String[]{"Message", "Book"};
+        new AlertDialog.Builder(this)
+                .setItems(items, (d, which) -> {
+                    if (which == 0) {
+                        startMentorChat();
+                    } else {
+                        Intent intent1 = new Intent(ProfileActivity.this, BookMentor.class);
+                        intent1.putExtra(Constants.MENTOR_ID, id);
+                        intent1.putExtra(Constants.MENTOR_NAME, tvProfileName.getText().toString());
+                        startActivity(intent1);
+                    }
+                })
+                .show();
+    }
+
+    private void startMentorChat() {
+        FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
+        if (me == null || TextUtils.isEmpty(id)) {
+            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String myName = me.getDisplayName() != null && !me.getDisplayName().isEmpty()
+                ? me.getDisplayName() : "Me";
+        String otherName = tvProfileName.getText() != null
+                ? tvProfileName.getText().toString() : "Mentor";
+        Toast.makeText(this, R.string.chat_starting, Toast.LENGTH_SHORT).show();
+        com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource.INSTANCE.createOrGetDirectChatRoom(
+                id, otherName, myName, chatId -> {
+                    if (chatId == null) {
+                        Toast.makeText(this, "Could not open chat", Toast.LENGTH_SHORT).show();
+                        return kotlin.Unit.INSTANCE;
+                    }
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.putExtra(MainActivity.EXTRA_OPEN_CHAT_ID, chatId);
+                    intent.putExtra(MainActivity.EXTRA_OPEN_CHAT_OTHER_ID, id);
+                    intent.putExtra(MainActivity.EXTRA_OPEN_CHAT_OTHER_NAME, otherName);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                    return kotlin.Unit.INSTANCE;
+                });
     }
 
     private void initMediaGrid() {

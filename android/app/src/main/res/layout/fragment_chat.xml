@@ -191,14 +191,13 @@
                     </LinearLayout>
 
                     <ImageView
-                        android:visibility="gone"
                         android:id="@+id/btnViewProfile"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="6dp"
                         android:contentDescription="View full profile"
                         android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/muted" />
+                        app:tint="@color/ink" />
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
@@ -228,7 +227,8 @@
             android:id="@+id/chatComposerBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/blur_overlay"
+            android:background="@drawable/bg_glass_composer"
+            android:paddingTop="4dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">

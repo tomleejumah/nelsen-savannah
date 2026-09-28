@@ -83,6 +83,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private static final String TAG = "MainActivity";
     private static final String CHANNEL_ID = "nisisi_notifications";
     private static int REQUEST_CODE_NOTIFICATIONS = 210;
+
+    /** Profile → Message opens MainActivity on chat with these extras. */
+    public static final String EXTRA_OPEN_CHAT_ID = "extra_open_chat_id";
+    public static final String EXTRA_OPEN_CHAT_OTHER_ID = "extra_open_chat_other_id";
+    public static final String EXTRA_OPEN_CHAT_OTHER_NAME = "extra_open_chat_other_name";
     private final CompositeDisposable disposables = new CompositeDisposable();
     private HomeFragment homeFragment;
     private ChatFragment chatFragment;
@@ -166,6 +171,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         setupBlurBars();
         setupBottomNav();
         selectTab(currentTabId, false);
+        // After initial tab so chat open isn't overwritten by home select.
+        handleOpenChatIntent(getIntent());
 
         //fcm init
         initFCM();
@@ -446,13 +453,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (currentTabId == R.id.homeFragment) {
             if (isMentorOrAdmin()) {
                 homeFragment.showCreateSheet();
+            } else {
+                showMenteeHomeFabSheet();
             }
         } else if (currentTabId == R.id.communitiesFragment) {
-            if (isMentorOrAdmin()) {
-                startActivity(new Intent(this, CreateCommunityActivity.class));
-            }
+            showAddPostPicker();
         } else if (currentTabId == R.id.chatFragment) {
-            if (isMentorOrAdmin() && !chatConversationOpen) {
+            if (!chatConversationOpen) {
                 chatFragment.showNewChatPicker();
             }
         } else if (currentTabId == R.id.profileFragment) {
@@ -460,6 +467,71 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             i.putExtra(Constants.CURRENT_USER_ID, Util.getState(Constants.CURRENT_USER_ID, ""));
             startActivity(i);
         }
+    }
+
+    /** Mentee center FAB: add a status or enroll in schools. */
+    private void showMenteeHomeFabSheet() {
+        com.google.android.material.bottomsheet.BottomSheetDialog sheet =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        android.widget.LinearLayout root = new android.widget.LinearLayout(this);
+        root.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        root.setPadding(pad, pad, pad, pad);
+
+        android.widget.TextView title = new android.widget.TextView(this);
+        title.setText("Quick actions");
+        title.setTextSize(18f);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        title.setPadding(0, 0, 0, pad / 2);
+        root.addView(title);
+
+        android.widget.TextView addStatus = new android.widget.TextView(this);
+        addStatus.setText("Add status");
+        addStatus.setTextSize(16f);
+        addStatus.setPadding(0, pad / 2, 0, pad / 2);
+        addStatus.setOnClickListener(v -> {
+            sheet.dismiss();
+            startActivity(new Intent(this, CreateStoryActivity.class));
+        });
+        root.addView(addStatus);
+
+        android.widget.TextView enroll = new android.widget.TextView(this);
+        enroll.setText("Enroll in new schools");
+        enroll.setTextSize(16f);
+        enroll.setPadding(0, pad / 2, 0, pad / 2);
+        enroll.setOnClickListener(v -> {
+            sheet.dismiss();
+            startActivity(new Intent(this, SchoolsListActivity.class));
+        });
+        root.addView(enroll);
+
+        sheet.setContentView(root);
+        sheet.show();
+    }
+
+    /** Groups FAB: create a post in a community the user has joined. */
+    private void showAddPostPicker() {
+        if (communitiesFragment != null) {
+            communitiesFragment.showCreatePostPicker();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleOpenChatIntent(intent);
+    }
+
+    private void handleOpenChatIntent(Intent intent) {
+        if (intent == null) return;
+        String chatId = intent.getStringExtra(EXTRA_OPEN_CHAT_ID);
+        if (TextUtils.isEmpty(chatId) || chatFragment == null) return;
+        String otherId = intent.getStringExtra(EXTRA_OPEN_CHAT_OTHER_ID);
+        String otherName = intent.getStringExtra(EXTRA_OPEN_CHAT_OTHER_NAME);
+        selectTab(R.id.chatFragment, true);
+        chatFragment.openDirectChat(chatId, otherId, otherName);
+        intent.removeExtra(EXTRA_OPEN_CHAT_ID);
     }
 
     private boolean isMentorOrAdmin() {

@@ -120,7 +120,9 @@
     <string name="chat_announcements_people">%d people · Mentors can post</string>
     <string name="chat_announcements_you_can_post">%d people · You can post</string>
     <string name="chat_pick_mentor_title">Message a mentor</string>
+    <string name="chat_pick_tutor_title">Message your tutors</string>
     <string name="chat_no_mentors">No mentors found yet</string>
+    <string name="chat_no_enrolled_tutors">Enroll in a course to message your tutor</string>
     <string name="chat_starting">Starting chat…</string>
     <string name="chat_ai_assistant">Nelsen AI Assistant</string>
     <string name="chat_virtual_help">Virtual Help</string>
