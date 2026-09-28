@@ -145,6 +145,10 @@
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
+            android:name=".ChapterLearnActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
             android:name=".MentorBoardActivity"
             android:exported="false" />
         <activity
