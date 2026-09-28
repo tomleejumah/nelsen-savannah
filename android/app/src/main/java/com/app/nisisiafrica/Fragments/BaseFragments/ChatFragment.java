@@ -1105,18 +1105,18 @@ public class ChatFragment extends Fragment {
         startActivity(intent);
     }
 
-    /** Translucent header + glass composer bar. */
+    /** Translucent header + composer over full-bleed messages (Home-style glass wash). */
     private void setupChatGlassChrome() {
         if (binding == null || getActivity() == null) return;
         if (binding.chatHeaderBlur == null || binding.chatComposerBlur == null) return;
-        int overlay = ContextCompat.getColor(requireContext(), R.color.blur_overlay);
-        binding.chatHeaderBlur.setBackgroundColor(overlay);
-        binding.chatComposerBlur.setBackgroundResource(R.drawable.bg_glass_composer);
+        binding.chatHeaderBlur.setBackgroundResource(R.drawable.bg_glass_bar);
+        binding.chatComposerBlur.setBackgroundResource(R.drawable.bg_glass_bar);
 
         if (binding.llHeader != null) {
             ViewCompat.setOnApplyWindowInsetsListener(binding.llHeader, (v, insets) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
                 v.setPadding(v.getPaddingLeft(), bars.top + dp(10), v.getPaddingRight(), dp(12));
+                v.post(this::syncMessageListGlassPadding);
                 return insets;
             });
         }
@@ -1138,13 +1138,41 @@ public class ChatFragment extends Fragment {
                 // MainActivity already lifts the root by IME height — only pad nav bar when keyboard is closed.
                 int bottomPad = ime.bottom > 0 ? dp(8) : dp(8) + bars.bottom;
                 v.setPadding(v.getPaddingLeft(), dp(8), v.getPaddingRight(), bottomPad);
+                v.post(this::syncMessageListGlassPadding);
                 return insets;
             });
             ViewCompat.requestApplyInsets(binding.bottomChatBar);
         }
+        if (binding.chatHeaderBlur != null) {
+            binding.chatHeaderBlur.addOnLayoutChangeListener(
+                    (v, l, t, r, b, ol, ot, or, ob) -> syncMessageListGlassPadding());
+        }
+        if (binding.chatComposerBlur != null) {
+            binding.chatComposerBlur.addOnLayoutChangeListener(
+                    (v, l, t, r, b, ol, ot, or, ob) -> syncMessageListGlassPadding());
+        }
         if (binding.chatDetailContainer != null) {
             ViewCompat.requestApplyInsets(binding.chatDetailContainer);
         }
+        syncMessageListGlassPadding();
+    }
+
+    /** Keep messages scrolling under glass chrome without content sitting behind controls. */
+    private void syncMessageListGlassPadding() {
+        if (binding == null || binding.rvMessages == null) return;
+        int top = dp(12);
+        if (binding.chatHeaderBlur != null && binding.chatHeaderBlur.getHeight() > 0) {
+            top = binding.chatHeaderBlur.getHeight() + dp(8);
+        }
+        int bottom = dp(12);
+        if (binding.chatComposerBlur != null && binding.chatComposerBlur.getHeight() > 0) {
+            bottom = binding.chatComposerBlur.getHeight() + dp(8);
+        }
+        binding.rvMessages.setPadding(
+                binding.rvMessages.getPaddingLeft(),
+                top,
+                binding.rvMessages.getPaddingRight(),
+                bottom);
     }
 
     private int dp(int value) {
@@ -1165,6 +1193,7 @@ public class ChatFragment extends Fragment {
             ((MainActivity) getActivity()).setChatConversationOpen(true, keepBottomNav);
         }
         ViewCompat.requestApplyInsets(binding.chatDetailContainer);
+        binding.chatDetailContainer.post(this::syncMessageListGlassPadding);
     }
 
     /** Returns to the conversation list. */

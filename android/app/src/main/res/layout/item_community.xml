@@ -1,100 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Community row: circle logo, name, members, avatar stack + others, Join/Joined. -->
+<!-- Community row: ringed circle logo, name, members, Join/Joined, list divider. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="14dp">
-
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/imgCommunityLogo"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:scaleType="centerCrop"
-        android:src="@mipmap/ic_launcher"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Circle" />
+    android:orientation="vertical">
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
 
-        <TextView
-            android:id="@+id/tvCommunityName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:fontFamily="@font/font_ui"
-            android:maxLines="1"
-            android:textColor="@color/ink"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            tools:text="Nairobi Devs" />
+        <FrameLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_chat_dp_ring"
+            android:padding="3dp">
 
-        <TextView
-            android:id="@+id/tvCommunityMeta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:fontFamily="@font/font_ui"
-            android:textColor="@color/muted"
-            android:textSize="13sp"
-            tools:text="128k members" />
-
-        <TextView
-            android:id="@+id/tvCommunityDesc"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgCommunityLogo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Circle" />
+        </FrameLayout>
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <com.zen.overlapimagelistview.OverlapImageListView
-                android:id="@+id/overlapImage"
-                android:layout_width="72dp"
-                android:layout_height="28dp"
-                android:visibility="gone"
-                app:circleCount="3"
-                app:fillColor="@color/line"
-                app:strokeColor="?attr/colorSurface"
-                app:strokeWidth="2dp" />
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tvOthersCount"
-                android:layout_width="wrap_content"
+                android:id="@+id/tvCommunityName"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/font_ui"
+                android:maxLines="1"
+                android:textColor="@color/ink"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="Nairobi Devs" />
+
+            <TextView
+                android:id="@+id/tvCommunityMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
                 android:fontFamily="@font/font_ui"
                 android:textColor="@color/muted"
-                android:textSize="12sp"
-                android:visibility="gone"
-                tools:text="+3553 others" />
+                android:textSize="13sp"
+                tools:text="128k members" />
+
+            <TextView
+                android:id="@+id/tvCommunityDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.zen.overlapimagelistview.OverlapImageListView
+                    android:id="@+id/overlapImage"
+                    android:layout_width="72dp"
+                    android:layout_height="28dp"
+                    android:visibility="gone"
+                    app:circleCount="3"
+                    app:fillColor="@color/line"
+                    app:strokeColor="?attr/colorSurface"
+                    app:strokeWidth="2dp" />
+
+                <TextView
+                    android:id="@+id/tvOthersCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:text="+3553 others" />
+            </LinearLayout>
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnCommunityJoin"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_pill_muted"
+            android:fontFamily="@font/font_ui"
+            android:gravity="center"
+            android:minWidth="72dp"
+            android:paddingHorizontal="14dp"
+            android:text="Joined"
+            android:textColor="@color/ink"
+            android:textSize="13sp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/btnCommunityJoin"
-        android:layout_width="wrap_content"
-        android:layout_height="36dp"
-        android:layout_marginStart="8dp"
-        android:background="@drawable/bg_pill_muted"
-        android:fontFamily="@font/font_ui"
-        android:gravity="center"
-        android:minWidth="72dp"
-        android:paddingHorizontal="14dp"
-        android:text="Joined"
-        android:textColor="@color/ink"
-        android:textSize="13sp" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginStart="80dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/ns_list_divider" />
 </LinearLayout>
