@@ -9,8 +9,11 @@ import android.text.TextPaint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.media.MediaPlayer
+import android.net.Uri
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.VideoView
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
@@ -178,7 +181,9 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private val tvSender: TextView? = view.findViewById(R.id.tvSender)
         private val llMessage: View? = view.findViewById(R.id.llMessage)
         private val ivImage: ImageView? = view.findViewById(R.id.ivImage)
+        private val videoBubble: VideoView? = view.findViewById(R.id.videoBubble)
         private val quotedReply: View? = view.findViewById(R.id.quotedReply)
+        private var audioPlayer: MediaPlayer? = null
         private val tvQuotedSender: TextView? = view.findViewById(R.id.tvQuotedSender)
         private val tvQuotedSnippet: TextView? = view.findViewById(R.id.tvQuotedSnippet)
 
@@ -197,8 +202,12 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             tvMessage.setTypeface(null, Typeface.NORMAL)
             tvMessage.setTextColor(defaultTextColor)
             tvMessage.alpha = 1f
+            stopAudio()
             ivImage?.setOnClickListener(null)
             ivImage?.setOnLongClickListener(null)
+            videoBubble?.setOnClickListener(null)
+            videoBubble?.visibility = View.GONE
+            ivImage?.visibility = View.GONE
 
             val selectBg = if (selected) {
                 ColorUtils.setAlphaComponent(ThemeColors.accent(itemView.context), 50)
@@ -212,7 +221,6 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             when {
                 message.deleted -> {
-                    ivImage?.visibility = View.GONE
                     tvMessage.visibility = View.VISIBLE
                     tvMessage.text = ChatRepository.DELETED_PLACEHOLDER
                     tvMessage.setTypeface(null, Typeface.ITALIC)
@@ -229,18 +237,33 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                         ivImage.setOnClickListener { openUrl(it, message.message) }
                     }
                 }
-                message.type == "file" || message.type == "audio" -> {
-                    ivImage?.visibility = View.GONE
+                message.type == "video" && videoBubble != null -> {
+                    tvMessage.visibility = View.GONE
+                    videoBubble.visibility = View.VISIBLE
+                    if (!selectionMode) {
+                        videoBubble.setOnClickListener {
+                            videoBubble.setVideoURI(Uri.parse(message.message))
+                            videoBubble.start()
+                        }
+                    }
+                }
+                message.type == "audio" -> {
                     tvMessage.visibility = View.VISIBLE
-                    tvMessage.text = if (message.type == "audio") "\uD83C\uDFB5 Audio message"
-                        else "\uD83D\uDCC4 Document — tap to open"
+                    tvMessage.text = "Play audio"
+                    if (!selectionMode) {
+                        tvMessage.setOnClickListener { toggleAudio(message.message) }
+                    }
+                }
+                message.type == "file" -> {
+                    tvMessage.visibility = View.VISIBLE
+                    val name = Uri.parse(message.message).lastPathSegment ?: "Document"
+                    tvMessage.text = name
                     tvMessage.paintFlags = tvMessage.paintFlags or Paint.UNDERLINE_TEXT_FLAG
                     if (!selectionMode) {
                         tvMessage.setOnClickListener { openUrl(it, message.message) }
                     }
                 }
                 else -> {
-                    ivImage?.visibility = View.GONE
                     tvMessage.visibility = View.VISIBLE
                     tvMessage.text = message.message
                 }
@@ -270,13 +293,14 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 llMessage?.setOnLongClickListener(longClick)
                 itemView.setOnLongClickListener(longClick)
                 ivImage?.setOnLongClickListener(longClick)
+                videoBubble?.setOnLongClickListener(longClick)
                 tvMessage.setOnLongClickListener(longClick)
-                // In selection mode, any tap on the bubble content toggles (no long-press).
                 if (selectionMode) {
                     llMessage?.setOnClickListener(click)
                     itemView.setOnClickListener(click)
                     tvMessage.setOnClickListener(click)
                     ivImage?.setOnClickListener(click)
+                    videoBubble?.setOnClickListener(click)
                 } else {
                     llMessage?.setOnClickListener(null)
                     itemView.setOnClickListener(null)
@@ -339,6 +363,38 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 addUpdateListener { itemView.setBackgroundColor(it.animatedValue as Int) }
                 start()
             }
+        }
+
+        private fun toggleAudio(url: String?) {
+            if (url.isNullOrBlank()) return
+            if (audioPlayer?.isPlaying == true) {
+                stopAudio()
+                tvMessage.text = "Play audio"
+                return
+            }
+            stopAudio()
+            val player = MediaPlayer()
+            audioPlayer = player
+            try {
+                player.setDataSource(url)
+                player.setOnPreparedListener {
+                    tvMessage.text = "Pause audio"
+                    it.start()
+                }
+                player.setOnCompletionListener {
+                    tvMessage.text = "Play audio"
+                    stopAudio()
+                }
+                player.prepareAsync()
+            } catch (e: Exception) {
+                stopAudio()
+                android.widget.Toast.makeText(itemView.context, "Can't play audio", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        private fun stopAudio() {
+            audioPlayer?.release()
+            audioPlayer = null
         }
 
         private fun openUrl(v: View, url: String?) {

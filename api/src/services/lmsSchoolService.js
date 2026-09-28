@@ -576,7 +576,35 @@ export async function schoolDashboard(actorUid, schoolId) {
   const school = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
+  const tracks = await dbAll(
+    `SELECT track_id, title FROM tracks
+     WHERE COALESCE(school_id, 'nelsen-digital') = ?`,
+    [schoolId],
+  );
+  const assignmentRows = await dbAll(
+    `SELECT p.track_id, AVG(p.assignment_pct) AS avg_assignment
+     FROM progress p
+     JOIN lessons l ON l.lesson_id = p.lesson_id AND l.has_assignment = 1
+     JOIN users_mirror u ON u.uid = p.uid
+     WHERE COALESCE(u.school_id, 'nelsen-digital') = ?
+     GROUP BY p.track_id`,
+    [schoolId],
+  );
+  const assignmentByTrack = new Map(
+    assignmentRows.map((r) => [
+      r.track_id,
+      Math.round(Number(r.avg_assignment || 0)),
+    ]),
+  );
   const byCourseMap = new Map();
+  for (const t of tracks) {
+    byCourseMap.set(t.track_id, {
+      trackId: t.track_id,
+      title: t.title || t.track_id,
+      enrolled: 0,
+      percentSum: 0,
+    });
+  }
   for (const e of enrollments) {
     const key = e.track_id;
     const row = byCourseMap.get(key) || {
@@ -595,8 +623,16 @@ export async function schoolDashboard(actorUid, schoolId) {
       title: r.title,
       enrolled: r.enrolled,
       avgPercent: r.enrolled ? Math.round(r.percentSum / r.enrolled) : 0,
+      avgAssignment: assignmentByTrack.get(r.trackId) || 0,
     }))
-    .sort((a, b) => b.enrolled - a.enrolled);
+    .sort((a, b) => b.enrolled - a.enrolled || a.title.localeCompare(b.title));
+  const avgAssignment =
+    byCourse.length === 0
+      ? 0
+      : Math.round(
+          byCourse.reduce((s, c) => s + Number(c.avgAssignment || 0), 0) /
+            byCourse.length,
+        );
 
   return {
     source: getPrimaryEngine(),
@@ -610,6 +646,7 @@ export async function schoolDashboard(actorUid, schoolId) {
         .length,
       enrollments: enrollments.length,
       avgCompletion,
+      avgAssignment,
       byCourse,
       atRisk,
       logoUrl: school?.logo_url || null,

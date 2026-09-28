@@ -298,6 +298,10 @@ public final class LmsModels {
         public String contentUrl;
         public String playbackUrl;
         public Long playbackExpiresAt;
+        public boolean isPdf;
+        public int lastPage;
+        public float contentPct;
+        public String assignmentPrompt;
         public LessonQuizDto quiz;
         public MilestoneDto milestone;
     }
@@ -353,10 +357,13 @@ public final class LmsModels {
 
     public static class ProgressBody {
         public boolean opened;
-        public float contentPct;
-        public float quizPct;
+        /** Omitted when null so an "opened" ping does not reset progress. */
+        public Float contentPct;
+        public Float quizPct;
+        public Integer watchSeconds;
+        public Float watchPct;
         public String lastPlatform = "android";
-        public ProgressBody(boolean opened, float contentPct, float quizPct) {
+        public ProgressBody(boolean opened, Float contentPct, Float quizPct) {
             this.opened = opened;
             this.contentPct = contentPct;
             this.quizPct = quizPct;

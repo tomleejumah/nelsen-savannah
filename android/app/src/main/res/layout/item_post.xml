@@ -1,36 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Group post — cream correspondence card (keep CommunityPostAdapter IDs). -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Reddit-style post row. Keep CommunityPostAdapter IDs. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="@dimen/ns_space_lg"
-    android:paddingTop="10dp">
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="10dp">
+
+    <TextView
+        android:id="@+id/tvPostVotes"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:drawablePadding="2dp"
+        android:fontFamily="@font/font_inter"
+        android:gravity="center_horizontal"
+        android:textColor="@color/ns_ink"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        app:drawableTint="@color/ns_maroon" />
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/shape_journal_slip"
-        android:orientation="vertical"
-        android:padding="14dp">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/tvPostMeta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/font_plex_mono"
-            android:textAllCaps="true"
-            android:textColor="@color/ns_maroon"
-            android:textSize="10sp" />
+            android:fontFamily="@font/font_inter"
+            android:textColor="@color/ns_grey"
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/tvPostTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="@font/font_fraunces"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/font_inter"
             android:textColor="@color/ns_ink"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvPostBody"
@@ -39,51 +51,29 @@
             android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:fontFamily="@font/font_inter"
-            android:maxLines="4"
+            android:maxLines="3"
             android:textColor="@color/ns_grey"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
         <ImageView
             android:id="@+id/ivPostImage"
             android:layout_width="match_parent"
-            android:layout_height="170dp"
-            android:layout_marginTop="10dp"
-            android:adjustViewBounds="true"
-            android:background="@drawable/shape_polaroid_bg"
-            android:padding="3dp"
+            android:layout_height="180dp"
+            android:layout_marginTop="8dp"
             android:scaleType="centerCrop"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tvPostComments"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/tvPostVotes"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawablePadding="4dp"
-                android:fontFamily="@font/font_plex_mono"
-                android:gravity="center_vertical"
-                android:textColor="@color/ns_maroon"
-                android:textSize="12sp"
-                app:drawableStartCompat="@drawable/ic_like"
-                app:drawableTint="@color/ns_maroon" />
-
-            <TextView
-                android:id="@+id/tvPostComments"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:drawablePadding="4dp"
-                android:fontFamily="@font/font_plex_mono"
-                android:gravity="center_vertical"
-                android:textColor="@color/ns_grey"
-                android:textSize="12sp"
-                app:drawableStartCompat="@drawable/ic_chat"
-                app:drawableTint="@color/ns_grey" />
-        </LinearLayout>
+            android:layout_marginTop="8dp"
+            android:drawablePadding="4dp"
+            android:fontFamily="@font/font_inter"
+            android:gravity="center_vertical"
+            android:textColor="@color/ns_grey"
+            android:textSize="12sp"
+            app:drawableStartCompat="@drawable/ic_chat"
+            app:drawableTint="@color/ns_grey" />
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>

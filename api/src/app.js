@@ -52,6 +52,29 @@ app.use(
   }),
 );
 
+// R2 objects are not on disk. Stream them at the same public path the app saves.
+app.get("/uploads/app/:folder/:name", async (req, res, next) => {
+  try {
+    const folder = String(req.params.folder || "").replace(/[^a-z0-9_\-]/g, "");
+    const name = path.basename(String(req.params.name || ""));
+    if (!folder || !name || name !== req.params.name) return next();
+    const { getStorageDriver } = await import("./services/storage/index.js");
+    const driver = getStorageDriver();
+    if (driver.name !== "r2" || typeof driver.getObject !== "function") return next();
+    const obj = await driver.getObject({ objectKey: `app/${folder}/${name}` });
+    if (!obj?.body) return next();
+    if (obj.contentType) res.setHeader("Content-Type", obj.contentType);
+    if (obj.contentLength) res.setHeader("Content-Length", String(obj.contentLength));
+    res.setHeader("Cache-Control", "public, max-age=604800");
+    if (typeof obj.body.pipe === "function") return obj.body.pipe(res);
+    const { Readable } = await import("node:stream");
+    return Readable.fromWeb(obj.body).pipe(res);
+  } catch (err) {
+    console.error("[GET /uploads/app]", err);
+    return next();
+  }
+});
+
 // Media is private by default: bytes are only reachable through a time-limited
 // signed URL (/lms/media/:id/url). Set MEDIA_PUBLIC_UPLOADS=1 to restore the
 // old unauthenticated /uploads mount.

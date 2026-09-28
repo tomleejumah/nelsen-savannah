@@ -2,17 +2,21 @@ package com.app.nisisiafrica;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -28,15 +32,26 @@ import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
+import com.github.barteksc.pdfviewer.PDFView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -71,8 +86,18 @@ public class TrackLearnActivity extends AppCompatActivity {
     private View tutorRow;
     private MaterialButton btnBookTutor;
     private VideoView videoView;
+    private PDFView pdfView;
     private View playerFrame;
+    private LinearLayout lessonPanel;
     private LinearLayout modulesContainer;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService pdfExec = Executors.newSingleThreadExecutor();
+    private final OkHttpClient http = new OkHttpClient();
+    private final Runnable watchTick = this::onWatchTick;
+    private String activeLessonId;
+    private long lastWatchReport;
+    private long lastPdfReport;
+    private int pdfMaxPage;
     private MaterialButton btnEnroll;
     private MaterialButton btnLeaveCourse;
     private boolean enrolledOnTrack = false;
@@ -118,7 +143,9 @@ public class TrackLearnActivity extends AppCompatActivity {
         tvStatLocked = findViewById(R.id.tvStatLocked);
         tvPlayerPlaceholder = findViewById(R.id.tvPlayerPlaceholder);
         videoView = findViewById(R.id.videoView);
+        pdfView = findViewById(R.id.pdfView);
         playerFrame = findViewById(R.id.playerFrame);
+        lessonPanel = findViewById(R.id.lessonPanel);
         modulesContainer = findViewById(R.id.modulesContainer);
         btnEnroll = findViewById(R.id.btnEnroll);
         btnLeaveCourse = findViewById(R.id.btnLeaveCourse);
@@ -508,21 +535,6 @@ public class TrackLearnActivity extends AppCompatActivity {
             Toast.makeText(this, milestoneLockMessage(mile), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (lesson.hasQuiz || (lesson.quiz != null
-                && ("single_answer".equals(lesson.quiz.mode)
-                || "multi_answer".equals(lesson.quiz.mode)))) {
-            promptQuiz(lesson);
-            return;
-        }
-        if (lesson.hasAssignment) {
-            promptAssignment(lesson);
-            return;
-        }
-        if (!TextUtils.isEmpty(lesson.playbackUrl)) {
-            playUrl(lesson.playbackUrl);
-            reportProgress(lesson.lessonId, true, 1f, 0f);
-            return;
-        }
         withBearer(bearer -> ApiClient.getLmsService().lesson(bearer, lesson.lessonId)
                 .enqueue(new Callback<>() {
                     @Override
@@ -539,20 +551,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                                         Toast.LENGTH_SHORT).show();
                                 return;
                             }
-                            if (full.hasQuiz || (full.quiz != null
-                                    && ("single_answer".equals(full.quiz.mode)
-                                    || "multi_answer".equals(full.quiz.mode)))) {
-                                promptQuiz(full);
-                            } else if (full.hasAssignment) {
-                                promptAssignment(full);
-                            } else if (!TextUtils.isEmpty(full.playbackUrl)) {
-                                playUrl(full.playbackUrl);
-                                reportProgress(lesson.lessonId, true, 1f, 0f);
-                            } else {
-                                reportProgress(lesson.lessonId, true, 1f, 0f);
-                                Toast.makeText(TrackLearnActivity.this,
-                                        "Marked opened — no media URL", Toast.LENGTH_SHORT).show();
-                            }
+                            presentLesson(full);
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
                                     "Lesson not ready yet", Toast.LENGTH_SHORT).show();
@@ -567,103 +566,172 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
-    private void promptQuiz(LmsModels.LessonDto lesson) {
-        if (lesson.quiz != null && "multi_answer".equals(lesson.quiz.mode)
-                && lesson.quiz.questions != null && !lesson.quiz.questions.isEmpty()) {
-            promptMultiQuiz(lesson, 0, new java.util.HashMap<>());
-            return;
+    private void presentLesson(LmsModels.LessonDto lesson) {
+        if (lesson == null) return;
+        activeLessonId = lesson.lessonId;
+        stopWatchLoop();
+        String url = !TextUtils.isEmpty(lesson.playbackUrl) ? lesson.playbackUrl : lesson.contentUrl;
+        if (isPdfLesson(lesson, url)) {
+            openPdf(url, Math.max(0, lesson.lastPage));
+        } else if (!TextUtils.isEmpty(url)) {
+            playUrl(url);
+        } else {
+            hidePlayers();
+            if (playerFrame != null) playerFrame.setVisibility(View.VISIBLE);
+            tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+            tvPlayerPlaceholder.setText("No media for this lesson");
         }
-        if (lesson.quiz != null && "single_answer".equals(lesson.quiz.mode)
-                && lesson.quiz.options != null && !lesson.quiz.options.isEmpty()) {
-            promptAuthoredQuiz(lesson);
-            return;
-        }
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
-        input.setHint("Score 0–100");
-        input.setText("85");
-        new AlertDialog.Builder(this)
-                .setTitle(lesson.title != null ? lesson.title : "Quiz")
-                .setMessage(lesson.does != null && !lesson.does.isEmpty()
-                        ? lesson.does
-                        : "Enter your quiz score (pass ≥ 80).")
-                .setView(input)
-                .setPositiveButton("Submit pass", (d, w) -> {
-                    int score = parseScore(input.getText().toString(), 85);
-                    submitQuiz(lesson.lessonId, Math.max(score, 80), true);
-                })
-                .setNeutralButton("Save score", (d, w) -> {
-                    int score = parseScore(input.getText().toString(), 70);
-                    submitQuiz(lesson.lessonId, score, score >= 80);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        bindLessonWork(lesson);
+        reportOpened(lesson.lessonId);
     }
 
-    private void promptMultiQuiz(LmsModels.LessonDto lesson, int index,
-                                 java.util.Map<String, String> answers) {
-        java.util.List<LmsModels.QuizQuestionDto> questions = lesson.quiz.questions;
-        if (index >= questions.size()) {
-            submitAuthoredQuizAnswers(lesson.lessonId, answers);
+    private static boolean isPdfLesson(LmsModels.LessonDto lesson, String url) {
+        if (lesson.isPdf || "pdf".equals(lesson.type)) return true;
+        return url != null && url.matches("(?i).*\\.pdf(\\?.*)?$");
+    }
+
+    private void bindLessonWork(LmsModels.LessonDto lesson) {
+        if (lessonPanel == null) return;
+        lessonPanel.removeAllViews();
+        boolean showQuiz = lesson.hasQuiz || lesson.quiz != null;
+        boolean showAssignment = lesson.hasAssignment
+                || "text".equals(lesson.type)
+                || !TextUtils.isEmpty(lesson.assignmentPrompt);
+        if (!showQuiz && !showAssignment) {
+            lessonPanel.setVisibility(View.GONE);
             return;
         }
-        LmsModels.QuizQuestionDto q = questions.get(index);
-        java.util.List<LmsModels.QuizOptionDto> options = q.options;
-        if (options == null || options.isEmpty()) {
-            promptMultiQuiz(lesson, index + 1, answers);
-            return;
-        }
-        CharSequence[] labels = new CharSequence[options.size()];
-        for (int i = 0; i < options.size(); i++) {
-            String letter = options.get(i).id != null ? options.get(i).id.toUpperCase() + ". " : "";
-            labels[i] = letter + (options.get(i).text != null ? options.get(i).text : "");
-        }
-        final int[] selected = {-1};
-        String title = "Question " + (index + 1) + " of " + questions.size();
-        String prompt = q.prompt != null ? q.prompt : "Choose an answer";
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setMessage(prompt)
-                .setSingleChoiceItems(labels, -1, (d, which) -> selected[0] = which)
-                .setPositiveButton(index + 1 < questions.size() ? "Next" : "Submit", (d, w) -> {
-                    if (selected[0] < 0 || selected[0] >= options.size()) {
-                        Toast.makeText(this, "Pick an answer", Toast.LENGTH_SHORT).show();
-                        promptMultiQuiz(lesson, index, answers);
+        lessonPanel.setVisibility(View.VISIBLE);
+        TextView result = sectionLabel("");
+        result.setTag("result");
+        if (showQuiz) bindQuiz(lesson, result);
+        if (showAssignment) bindAssignment(lesson, result);
+        lessonPanel.addView(result);
+    }
+
+    private void bindQuiz(LmsModels.LessonDto lesson, TextView result) {
+        LmsModels.LessonQuizDto quiz = lesson.quiz;
+        String mode = quiz != null ? quiz.mode : null;
+        if ("multi_answer".equals(mode) && quiz.questions != null && !quiz.questions.isEmpty()) {
+            Map<String, RadioGroup> groups = new LinkedHashMap<>();
+            for (LmsModels.QuizQuestionDto q : quiz.questions) {
+                lessonPanel.addView(sectionLabel(q.prompt != null ? q.prompt : "Choose an answer"));
+                RadioGroup group = new RadioGroup(this);
+                group.setOrientation(RadioGroup.VERTICAL);
+                if (q.options != null) {
+                    for (LmsModels.QuizOptionDto option : q.options) {
+                        RadioButton rb = new RadioButton(this);
+                        String letter = option.id != null ? option.id.toUpperCase() + ". " : "";
+                        rb.setId(View.generateViewId());
+                        rb.setText(letter + (option.text != null ? option.text : ""));
+                        rb.setTag(option.id);
+                        group.addView(rb);
+                    }
+                }
+                groups.put(q.id, group);
+                lessonPanel.addView(group);
+            }
+            MaterialButton submit = new MaterialButton(this);
+            submit.setText("Submit answers");
+            submit.setOnClickListener(v -> {
+                Map<String, String> answers = new LinkedHashMap<>();
+                for (Map.Entry<String, RadioGroup> entry : groups.entrySet()) {
+                    int checked = entry.getValue().getCheckedRadioButtonId();
+                    RadioButton rb = entry.getValue().findViewById(checked);
+                    if (rb == null || rb.getTag() == null) {
+                        Toast.makeText(this, "Answer every question", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    answers.put(q.id, options.get(selected[0]).id);
-                    promptMultiQuiz(lesson, index + 1, answers);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void promptAuthoredQuiz(LmsModels.LessonDto lesson) {
-        List<LmsModels.QuizOptionDto> options = lesson.quiz.options;
-        CharSequence[] labels = new CharSequence[options.size()];
-        for (int i = 0; i < options.size(); i++) {
-            String letter = options.get(i).id != null ? options.get(i).id.toUpperCase() + ". " : "";
-            labels[i] = letter + (options.get(i).text != null ? options.get(i).text : options.get(i).id);
+                    answers.put(entry.getKey(), String.valueOf(rb.getTag()));
+                }
+                submitAuthoredQuizAnswers(lesson.lessonId, answers, result);
+            });
+            lessonPanel.addView(submit);
+            return;
         }
-        final int[] selected = {-1};
-        String prompt = lesson.quiz.prompt != null ? lesson.quiz.prompt : "Choose an answer";
-        new AlertDialog.Builder(this)
-                .setTitle(lesson.title != null ? lesson.title : "Quiz")
-                .setMessage(prompt)
-                .setSingleChoiceItems(labels, -1, (d, which) -> selected[0] = which)
-                .setPositiveButton("Submit", (d, w) -> {
-                    if (selected[0] < 0 || selected[0] >= options.size()) {
-                        Toast.makeText(this, "Pick an answer", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    String optionId = options.get(selected[0]).id;
-                    submitAuthoredQuiz(lesson.lessonId, optionId);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        if ("single_answer".equals(mode) && quiz.options != null && !quiz.options.isEmpty()) {
+            lessonPanel.addView(sectionLabel(quiz.prompt != null ? quiz.prompt : "Choose an answer"));
+            RadioGroup group = new RadioGroup(this);
+            group.setOrientation(RadioGroup.VERTICAL);
+            for (LmsModels.QuizOptionDto option : quiz.options) {
+                RadioButton rb = new RadioButton(this);
+                String letter = option.id != null ? option.id.toUpperCase() + ". " : "";
+                rb.setId(View.generateViewId());
+                rb.setText(letter + (option.text != null ? option.text : option.id));
+                rb.setTag(option.id);
+                group.addView(rb);
+            }
+            lessonPanel.addView(group);
+            MaterialButton submit = new MaterialButton(this);
+            submit.setText("Submit answer");
+            submit.setOnClickListener(v -> {
+                int checked = group.getCheckedRadioButtonId();
+                RadioButton rb = group.findViewById(checked);
+                if (rb == null || rb.getTag() == null) {
+                    Toast.makeText(this, "Pick an answer", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                submitAuthoredQuiz(lesson.lessonId, String.valueOf(rb.getTag()), result);
+            });
+            lessonPanel.addView(submit);
+            return;
+        }
+        lessonPanel.addView(sectionLabel(quiz != null && quiz.prompt != null
+                ? quiz.prompt
+                : "Record how you did on this lesson’s quiz."));
+        EditText score = new EditText(this);
+        score.setInputType(InputType.TYPE_CLASS_NUMBER);
+        score.setHint("Score 0–100");
+        lessonPanel.addView(score);
+        MaterialButton submit = new MaterialButton(this);
+        submit.setText("Save score");
+        submit.setOnClickListener(v -> {
+            int value = parseScore(score.getText() != null ? score.getText().toString() : "", -1);
+            if (value < 0) {
+                Toast.makeText(this, "Enter a score", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            submitQuiz(lesson.lessonId, value, value >= 80, result);
+        });
+        lessonPanel.addView(submit);
     }
 
-    private void submitAuthoredQuizAnswers(String lessonId, java.util.Map<String, String> answers) {
+    private void bindAssignment(LmsModels.LessonDto lesson, TextView result) {
+        String prompt = !TextUtils.isEmpty(lesson.assignmentPrompt) ? lesson.assignmentPrompt : lesson.does;
+        lessonPanel.addView(sectionLabel(!TextUtils.isEmpty(prompt)
+                ? prompt
+                : "Write your response and submit."));
+        EditText input = new EditText(this);
+        input.setMinLines(4);
+        input.setHint("Your response");
+        lessonPanel.addView(input);
+        MaterialButton submit = new MaterialButton(this);
+        submit.setText("Submit assignment");
+        submit.setOnClickListener(v -> {
+            String text = input.getText() != null ? input.getText().toString().trim() : "";
+            if (text.length() < 8) {
+                Toast.makeText(this, "Write a bit more", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            submitAssignment(lesson.lessonId, text, result);
+        });
+        lessonPanel.addView(submit);
+    }
+
+    private TextView sectionLabel(String text) {
+        TextView label = new TextView(this);
+        label.setText(text);
+        label.setTextColor(getColor(R.color.ink));
+        label.setPadding(0, dp(8), 0, dp(4));
+        return label;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void submitAuthoredQuizAnswers(String lessonId, java.util.Map<String, String> answers,
+                                           TextView result) {
         withBearer(bearer -> ApiClient.getLmsService()
                 .submitQuiz(bearer, lessonId, LmsModels.QuizBody.answers(answers))
                 .enqueue(new Callback<>() {
@@ -673,9 +741,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
                             float pct = response.body().data != null
                                     ? response.body().data.quizPct : 0f;
-                            Toast.makeText(TrackLearnActivity.this,
-                                    "Quiz scored " + Math.round(pct) + "%",
-                                    Toast.LENGTH_SHORT).show();
+                            showWorkResult(result, "Quiz scored " + Math.round(pct) + "%");
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -691,7 +757,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
-    private void submitAuthoredQuiz(String lessonId, String selectedOptionId) {
+    private void submitAuthoredQuiz(String lessonId, String selectedOptionId, TextView result) {
         withBearer(bearer -> ApiClient.getLmsService()
                 .submitQuiz(bearer, lessonId, LmsModels.QuizBody.option(selectedOptionId))
                 .enqueue(new Callback<>() {
@@ -701,9 +767,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
                             float pct = response.body().data != null
                                     ? response.body().data.quizPct : 0f;
-                            Toast.makeText(TrackLearnActivity.this,
-                                    "Quiz scored " + Math.round(pct) + "%",
-                                    Toast.LENGTH_SHORT).show();
+                            showWorkResult(result, "Quiz scored " + Math.round(pct) + "%");
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -717,28 +781,6 @@ public class TrackLearnActivity extends AppCompatActivity {
                                 "Quiz submit failed", Toast.LENGTH_SHORT).show();
                     }
                 }));
-    }
-
-    private void promptAssignment(LmsModels.LessonDto lesson) {
-        final EditText input = new EditText(this);
-        input.setMinLines(4);
-        input.setHint("Your assignment response");
-        new AlertDialog.Builder(this)
-                .setTitle(lesson.title != null ? lesson.title : "Assignment")
-                .setMessage(lesson.does != null && !lesson.does.isEmpty()
-                        ? lesson.does
-                        : "Write your response for mentor review.")
-                .setView(input)
-                .setPositiveButton("Submit", (d, w) -> {
-                    String text = input.getText() != null ? input.getText().toString().trim() : "";
-                    if (text.length() < 8) {
-                        Toast.makeText(this, "Write a bit more", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    submitAssignment(lesson.lessonId, text);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     private static int parseScore(String raw, int fallback) {
@@ -749,7 +791,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         }
     }
 
-    private void submitQuiz(String lessonId, int score, boolean passed) {
+    private void submitQuiz(String lessonId, int score, boolean passed, TextView result) {
         withBearer(bearer -> ApiClient.getLmsService()
                 .submitQuiz(bearer, lessonId, new LmsModels.QuizBody(score, passed))
                 .enqueue(new Callback<>() {
@@ -757,8 +799,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                     public void onResponse(Call<LmsModels.QuizEnvelope> call,
                                            Response<LmsModels.QuizEnvelope> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
-                            Toast.makeText(TrackLearnActivity.this,
-                                    "Quiz saved (" + score + "%)", Toast.LENGTH_SHORT).show();
+                            showWorkResult(result, "Quiz saved (" + score + "%)");
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -774,7 +815,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
-    private void submitAssignment(String lessonId, String text) {
+    private void submitAssignment(String lessonId, String text, TextView result) {
         withBearer(bearer -> ApiClient.getLmsService()
                 .submitAssignment(bearer, new LmsModels.SubmissionBody(lessonId, text))
                 .enqueue(new Callback<>() {
@@ -782,8 +823,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                     public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
                                            Response<LmsModels.SubmissionEnvelope> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
-                            Toast.makeText(TrackLearnActivity.this,
-                                    "Assignment submitted", Toast.LENGTH_SHORT).show();
+                            showWorkResult(result, "Assignment submitted");
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
                                     "Submit failed", Toast.LENGTH_SHORT).show();
@@ -799,11 +839,19 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void playUrl(String url) {
+        hidePdf();
+        setPlayerHeight(180);
         if (playerFrame != null) playerFrame.setVisibility(View.VISIBLE);
         tvPlayerPlaceholder.setVisibility(View.GONE);
         videoView.setVisibility(View.VISIBLE);
         videoView.setVideoURI(Uri.parse(url));
-        videoView.setOnPreparedListener(MediaPlayer::start);
+        videoView.setOnPreparedListener(mp -> {
+            mp.start();
+            lastWatchReport = 0;
+            mainHandler.removeCallbacks(watchTick);
+            mainHandler.post(watchTick);
+        });
+        videoView.setOnCompletionListener(mp -> reportVideoPosition(true));
         videoView.setOnErrorListener((mp, what, extra) -> {
             Toast.makeText(this, "Playback failed", Toast.LENGTH_SHORT).show();
             return true;
@@ -811,10 +859,86 @@ public class TrackLearnActivity extends AppCompatActivity {
         videoView.start();
     }
 
-    private void reportProgress(String lessonId, boolean opened, float contentPct, float quizPct) {
-        if (TextUtils.isEmpty(lessonId)) return;
+    private void openPdf(String url, int lastPage) {
+        hideVideo();
+        setPlayerHeight(480);
+        if (playerFrame != null) playerFrame.setVisibility(View.VISIBLE);
+        pdfView.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setText("Opening PDF…");
+        pdfMaxPage = Math.max(1, lastPage);
+        String lessonId = activeLessonId;
+        pdfExec.execute(() -> {
+            try {
+                okhttp3.Response res = http.newCall(new Request.Builder().url(url).build()).execute();
+                if (!res.isSuccessful() || res.body() == null) throw new java.io.IOException("pdf");
+                File out = new File(getCacheDir(), "lesson-" + lessonId + ".pdf");
+                try (InputStream in = res.body().byteStream(); OutputStream os = new FileOutputStream(out)) {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) >= 0) os.write(buf, 0, n);
+                }
+                res.close();
+                int start = Math.max(0, lastPage - 1);
+                mainHandler.post(() -> showPdfFile(out, start, lessonId));
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    tvPlayerPlaceholder.setText("Could not open PDF");
+                    Toast.makeText(this, "Could not open PDF", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void showPdfFile(File file, int startPage, String lessonId) {
+        if (isFinishing() || !lessonId.equals(activeLessonId) || pdfView == null) return;
+        tvPlayerPlaceholder.setVisibility(View.GONE);
+        pdfView.fromFile(file)
+                .defaultPage(startPage)
+                .onPageChange((page, pageCount) -> {
+                    int current = page + 1;
+                    if (current > pdfMaxPage) pdfMaxPage = current;
+                    int pct = pageCount <= 0 ? 0 : Math.min(100, Math.round(pdfMaxPage * 100f / pageCount));
+                    long now = System.currentTimeMillis();
+                    if (now - lastPdfReport < 1200 && pct < 100) return;
+                    lastPdfReport = now;
+                    LmsModels.ProgressBody body = new LmsModels.ProgressBody(true, (float) pct, null);
+                    body.watchSeconds = pdfMaxPage;
+                    patchProgress(lessonId, body);
+                })
+                .load();
+    }
+
+    private void onWatchTick() {
+        reportVideoPosition(false);
+        if (videoView != null && videoView.isPlaying()) {
+            mainHandler.postDelayed(watchTick, 4000);
+        }
+    }
+
+    private void reportVideoPosition(boolean force) {
+        if (videoView == null || TextUtils.isEmpty(activeLessonId)) return;
+        int duration = videoView.getDuration();
+        if (duration <= 0) return;
+        int position = videoView.getCurrentPosition();
+        int pct = Math.min(100, Math.round(position * 100f / duration));
+        long now = System.currentTimeMillis();
+        if (!force && now - lastWatchReport < 4000 && pct < 95) return;
+        lastWatchReport = now;
+        LmsModels.ProgressBody body = new LmsModels.ProgressBody(true, (float) pct, null);
+        body.watchSeconds = position / 1000;
+        body.watchPct = (float) pct;
+        patchProgress(activeLessonId, body);
+    }
+
+    private void reportOpened(String lessonId) {
+        patchProgress(lessonId, new LmsModels.ProgressBody(true, null, null));
+    }
+
+    private void patchProgress(String lessonId, LmsModels.ProgressBody body) {
+        if (TextUtils.isEmpty(lessonId) || body == null) return;
         withBearer(bearer -> ApiClient.getLmsService()
-                .patchProgress(bearer, lessonId, new LmsModels.ProgressBody(opened, contentPct, quizPct))
+                .patchProgress(bearer, lessonId, body)
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(Call<LmsModels.ProgressEnvelope> call,
@@ -823,6 +947,46 @@ public class TrackLearnActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<LmsModels.ProgressEnvelope> call, Throwable t) {}
                 }));
+    }
+
+    private void showWorkResult(TextView result, String message) {
+        if (result != null) result.setText(message);
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void setPlayerHeight(int heightDp) {
+        if (playerFrame == null) return;
+        ViewGroup.LayoutParams lp = playerFrame.getLayoutParams();
+        lp.height = dp(heightDp);
+        playerFrame.setLayoutParams(lp);
+    }
+
+    private void hidePdf() {
+        if (pdfView != null) {
+            try {
+                pdfView.recycle();
+            } catch (Exception ignored) {
+                /* viewer was not loaded */
+            }
+            pdfView.setVisibility(View.GONE);
+        }
+    }
+
+    private void hideVideo() {
+        stopWatchLoop();
+        if (videoView != null) {
+            videoView.stopPlayback();
+            videoView.setVisibility(View.GONE);
+        }
+    }
+
+    private void hidePlayers() {
+        hidePdf();
+        hideVideo();
+    }
+
+    private void stopWatchLoop() {
+        mainHandler.removeCallbacks(watchTick);
     }
 
     private void enroll() {
@@ -1027,8 +1191,20 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        if (videoView != null && videoView.isPlaying()) {
+            reportVideoPosition(true);
+            videoView.pause();
+        }
+        stopWatchLoop();
         super.onPause();
-        if (videoView != null && videoView.isPlaying()) videoView.pause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopWatchLoop();
+        pdfExec.shutdownNow();
+        if (pdfView != null) pdfView.recycle();
+        super.onDestroy();
     }
 
     private interface BearerCallback {

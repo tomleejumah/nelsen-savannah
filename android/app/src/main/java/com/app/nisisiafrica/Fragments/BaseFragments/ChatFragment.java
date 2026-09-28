@@ -103,6 +103,7 @@ public class ChatFragment extends Fragment {
     private String currentChatId;
     private String currentReceiverId;
     private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
+    private ActivityResultLauncher<PickVisualMediaRequest> videoPicker;
     private ActivityResultLauncher<String> documentPicker;
     private String pendingMediaType = "file";
     private ActionMode messageActionMode;
@@ -114,6 +115,10 @@ public class ChatFragment extends Fragment {
         imagePicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
                     if (uri != null) sendPickedImage(uri);
+                });
+        videoPicker = registerForActivityResult(
+                new ActivityResultContracts.PickVisualMedia(), uri -> {
+                    if (uri != null) sendPickedMedia(uri, "video");
                 });
         documentPicker = registerForActivityResult(
                 new ActivityResultContracts.GetContent(), uri -> {
@@ -259,22 +264,13 @@ public class ChatFragment extends Fragment {
 
         updateChatHeader(chatroom, type, currentUserId);
 
-        // Access Control: everyone reads announcements; mentors & admins can post.
-        if ("system".equals(type) || "ai".equals(type)) {
-            if ("ai".equals(type)) {
-                // AI chat hidden — bounce back to list.
-                Toast.makeText(requireContext(), "AI chat is unavailable for now", Toast.LENGTH_SHORT).show();
-                showChatList();
-                return;
-            }
-            boolean canPost = Roles.canCreate(role);
-            int vis = canPost ? View.VISIBLE : View.GONE;
-            binding.bottomChatBar.setVisibility(vis);
-            binding.chatComposerBlur.setVisibility(vis);
-        } else {
-            binding.bottomChatBar.setVisibility(View.VISIBLE);
-            binding.chatComposerBlur.setVisibility(View.VISIBLE);
+        if ("ai".equals(type)) {
+            Toast.makeText(requireContext(), "AI chat is unavailable for now", Toast.LENGTH_SHORT).show();
+            showChatList();
+            return;
         }
+        binding.bottomChatBar.setVisibility(View.VISIBLE);
+        binding.chatComposerBlur.setVisibility(View.VISIBLE);
 
         startRealtimeMessages(chatId);
         setupSendAction(chatId, chatroom);
@@ -429,7 +425,7 @@ public class ChatFragment extends Fragment {
 
     /** Lets the user attach a photo, document, or audio file to the open chat. */
     private void showAttachmentChooser() {
-        CharSequence[] options = {"Photo", "Document", "Audio"};
+        CharSequence[] options = {"Photo", "Video", "Audio", "Document"};
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Send attachment")
                 .setItems(options, (d, which) -> {
@@ -440,12 +436,17 @@ public class ChatFragment extends Fragment {
                                     .build());
                             break;
                         case 1:
-                            pendingMediaType = "file";
-                            documentPicker.launch("*/*");
+                            videoPicker.launch(new PickVisualMediaRequest.Builder()
+                                    .setMediaType(ActivityResultContracts.PickVisualMedia.VideoOnly.INSTANCE)
+                                    .build());
                             break;
                         case 2:
                             pendingMediaType = "audio";
                             documentPicker.launch("audio/*");
+                            break;
+                        case 3:
+                            pendingMediaType = "file";
+                            documentPicker.launch("*/*");
                             break;
                     }
                 })
@@ -459,7 +460,9 @@ public class ChatFragment extends Fragment {
         final String receiverId = currentReceiverId;
         final ChatMessageEntity replyTarget = replyingTo;
         clearReply();
-        String folder = "audio".equals(type) ? "chat_audio" : "chat_files";
+        String folder = "audio".equals(type) ? "chat_audio"
+                : "video".equals(type) ? "chat_video"
+                : "chat_files";
         StorageUploader.upload(uri, folder, (success, url) -> {
             if (binding == null || viewModel == null) return;
             if (success && url != null) {
@@ -1079,16 +1082,18 @@ public class ChatFragment extends Fragment {
     private void showChatList() {
         if (binding == null) return;
         isChatOpen = false;
+        hideKeyboard();
         binding.chatDetailContainer.setVisibility(View.GONE);
         binding.chatListContainer.setVisibility(View.VISIBLE);
-        if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).setChatConversationOpen(false);
-        }
+        binding.etMessage.postDelayed(() -> {
+            if (!isChatOpen && getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).setChatConversationOpen(false);
+            }
+        }, 300);
         Util.saveState(Constants.IS_MENTOR, false);
         userData = null;
         selectedOtherUserId = null;
         clearReply();
-        hideKeyboard();
         finishActionMode();
     }
 
@@ -1133,11 +1138,13 @@ public class ChatFragment extends Fragment {
     }
 
     private void hideKeyboard() {
-        View view = getActivity() != null ? getActivity().getCurrentFocus() : null;
-        if (view != null) {
-            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
+        if (getActivity() == null) return;
+        View view = binding != null ? binding.etMessage : getActivity().getCurrentFocus();
+        if (view == null) view = getActivity().getCurrentFocus();
+        if (view == null) return;
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        view.clearFocus();
     }
 
     @Override
