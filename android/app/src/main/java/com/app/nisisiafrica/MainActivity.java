@@ -114,6 +114,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private de.hdodenhof.circleimageview.CircleImageView imgDp;
     /** True while a conversation is open inside ChatFragment — hides the create-chat FAB. */
     private boolean chatConversationOpen = false;
+    /** Announcements keep top + bottom chrome visible. */
+    private boolean keepChatChrome = false;
 
     private int insetLeft, insetTop, insetRight, insetBottom;
 
@@ -359,7 +361,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     /** Titles + trailing actions for the shared glass top bar (Home / Groups / Chat / Profile). */
     private void applyTopBarContext(int tabId) {
         if (topBarRow == null || topBarTitle == null) return;
-        if (chatConversationOpen && tabId == R.id.chatFragment) {
+        if (chatConversationOpen && !keepChatChrome && tabId == R.id.chatFragment) {
             topBarRow.setVisibility(View.GONE);
             return;
         }
@@ -447,6 +449,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     public void setChatConversationOpen(boolean open, boolean keepBottomNav) {
         chatConversationOpen = open;
+        keepChatChrome = open && keepBottomNav;
         if (bottomBarRow != null) {
             boolean hide = open && !keepBottomNav;
             bottomBarRow.setVisibility(hide ? View.GONE : View.VISIBLE);
