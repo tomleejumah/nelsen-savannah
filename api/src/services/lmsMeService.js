@@ -20,6 +20,39 @@ import {
   readRoleFromRtdb,
   readUserFromRtdb,
 } from "./lmsMirror.js";
+import admin from "../config/firebase.js";
+
+/**
+ * Mentors who only use the web never hit Android's saveOrUpdateMentor — so
+ * /mentors/{uid} stays empty and app profiles look blank. Create a stub when
+ * GET /lms/me sees a mentor without a node (same fields Android writes).
+ */
+async function ensureMentorRtdbProfile(profile, role) {
+  if (normalizeRole(role) !== ROLES.Mentor) return;
+  const uid = profile?.uid;
+  if (!uid) return;
+  try {
+    const ref = admin.database().ref(`mentors/${uid}`);
+    const snap = await ref.once("value");
+    if (snap.exists()) return;
+    const name =
+      profile.displayName ||
+      profile.name ||
+      (profile.email ? String(profile.email).split("@")[0] : "Mentor");
+    const photo = profile.photoURL || profile.picture || "";
+    await ref.update({
+      mentorId: uid,
+      mentorName: name,
+      mentorImageUrl: photo,
+      mentorDescription: "",
+      studentsCount: "0",
+      studentImages: [],
+      bookedDates: [],
+    });
+  } catch (err) {
+    console.warn("[lms-me] ensure mentor rtdb:", err.message);
+  }
+}
 
 function splitName(displayName = "") {
   const parts = String(displayName).trim().split(/\s+/).filter(Boolean);
@@ -224,6 +257,8 @@ export async function getMe(profile) {
 
       const activeMemberships = memberships.filter((m) => m.status === "active");
 
+      await ensureMentorRtdbProfile(profile, role);
+
       return mePayload(
         profile,
         {
@@ -254,6 +289,7 @@ export async function getMe(profile) {
     readRoleFromRtdb(profile.uid),
   ]);
   const role = normalizeRole(rtdbRole || ROLES.Mentee);
+  await ensureMentorRtdbProfile(profile, role);
   const { firstName, lastName } = splitName(
     rtdbUser?.displayName || profile.displayName,
   );
