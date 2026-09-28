@@ -19,6 +19,7 @@ import com.app.nisisiafrica.AllCoursesActivity;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.LmsModels;
@@ -114,7 +115,7 @@ public class ProfileFragment extends Fragment {
 
     private void bindHeader(UserData user, CircleImageView avatar, TextView avatarInitial,
                             TextView name, TextView role, TextView email, TextView about) {
-        isMentor = "Mentor".equals(user.getUserRole());
+        isMentor = Roles.actsAsMentor(user.getUserRole());
 
         String displayName = user.getDisplayName();
         if (displayName == null || displayName.trim().isEmpty()) {
