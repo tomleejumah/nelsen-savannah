@@ -112,6 +112,7 @@ function mapTrackCard(
     ),
     schoolId: row.school_id || row.schoolId || "",
     price: price || { isPaid: false, amountMinor: 0, currency: "USD" },
+    ideEnabled: Boolean(Number(row.ide_enabled ?? row.ideEnabled ?? 0)),
   };
 }
 
@@ -253,7 +254,8 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
     user?.school_id ||
     null;
 
-  // Explicit school → that catalog. No school → marketplace (all published).
+  // Explicit school → that catalog. No school → marketplace (public tracks only;
+  // private QA schools like school-qa-* stay hidden unless you belong to them).
   const rows = schoolId
     ? await dbAll(
         `SELECT * FROM tracks WHERE published = 1
@@ -263,6 +265,7 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
       )
     : await dbAll(
         `SELECT * FROM tracks WHERE published = 1
+         AND (school_id IS NULL OR school_id = '' OR school_id = 'nelsen-digital')
          ORDER BY sort_order ASC, track_id ASC`,
       );
   const [likes, enrollMap, lessonCounts, moduleCounts, minuteTotals, pricing] =

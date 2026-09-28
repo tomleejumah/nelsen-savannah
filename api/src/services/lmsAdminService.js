@@ -134,8 +134,8 @@ export async function adminCreateTrack(actorUid, body = {}) {
         `INSERT INTO tracks (
           track_id, program_slug, title, does, course_image_url,
           tutor_id, tutor_name, tutor_avatar_url, duration, audience_json,
-          sort_order, published, created_at, updated_at, school_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sort_order, published, created_at, updated_at, school_id, ide_enabled
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           trackId,
           body.programSlug || "",
@@ -152,6 +152,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
           now,
           now,
           schoolId,
+          body.ideEnabled ? 1 : 0,
         ],
       );
       return dbGet("SELECT * FROM tracks WHERE track_id = ?", [trackId]);
@@ -185,6 +186,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
         tutorName,
         tutorAvatarUrl,
         mentors: [],
+        ideEnabled: Boolean(body.ideEnabled),
       },
     },
   };
@@ -218,13 +220,20 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   const audienceJson = body.audience
     ? JSON.stringify(body.audience)
     : row.audience_json;
+  const ideEnabled =
+    body.ideEnabled === undefined
+      ? Number(row.ide_enabled || 0)
+      : body.ideEnabled
+        ? 1
+        : 0;
 
   await dualWrite({
     label: `admin-track-upd:${trackId}`,
     writeFn: async () => {
       await dbRun(
         `UPDATE tracks SET title = ?, does = ?, program_slug = ?,
-         course_image_url = ?, audience_json = ?, published = ?, updated_at = ?
+         course_image_url = ?, audience_json = ?, published = ?,
+         ide_enabled = ?, updated_at = ?
          WHERE track_id = ?`,
         [
           title,
@@ -233,6 +242,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
           imageUrl,
           audienceJson,
           published,
+          ideEnabled,
           now,
           trackId,
         ],
@@ -248,6 +258,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
         published: Boolean(published),
         tutorId: row.tutor_id || "",
         tutorName: row.tutor_name || "",
+        ideEnabled: Boolean(ideEnabled),
       });
     },
   });
@@ -262,6 +273,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
         courseTitle: title,
         does,
         published: Boolean(published),
+        ideEnabled: Boolean(ideEnabled),
         tutorId: primary?.uid || row.tutor_id || "",
         tutorName: formatTutorLabel(mentors, primary?.displayName || row.tutor_name || ""),
         mentors,
