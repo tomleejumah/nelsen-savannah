@@ -29,6 +29,12 @@ public interface LmsApiService {
     @GET("lms/schools/catalog")
     Call<LmsModels.SchoolsEnvelope> schoolsCatalog(@Header("Authorization") String bearer);
 
+    @POST("lms/schools/{schoolId}/applications")
+    Call<LmsModels.SchoolApplicationEnvelope> applyToSchool(
+            @Header("Authorization") String bearer,
+            @Path("schoolId") String schoolId,
+            @Body LmsModels.MentorApplyBody body);
+
     @GET("lms/tracks/{trackId}")
     Call<LmsModels.TrackDetailEnvelope> track(
             @Header("Authorization") String bearer,

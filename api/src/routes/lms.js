@@ -218,6 +218,23 @@ router.put(
   requireRoles("SchoolAdmin", "Admin"),
   lmsController.putSchoolTrackMentors,
 );
+router.post(
+  "/schools/:id/applications",
+  authenticateUser,
+  lmsController.postSchoolApplication,
+);
+router.get(
+  "/schools/:id/applications",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.listSchoolApplications,
+);
+router.patch(
+  "/schools/:id/applications/:appId",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.patchSchoolApplication,
+);
 router.get(
   "/schools/:id/money",
   authenticateUser,

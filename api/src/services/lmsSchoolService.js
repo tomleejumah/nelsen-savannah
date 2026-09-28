@@ -871,3 +871,202 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
   };
 }
 
+function mapApplication(row) {
+  let answers = {};
+  let documentUrls = [];
+  try {
+    answers = row.answers_json ? JSON.parse(row.answers_json) : {};
+  } catch {
+    answers = {};
+  }
+  try {
+    documentUrls = row.document_urls_json
+      ? JSON.parse(row.document_urls_json)
+      : [];
+  } catch {
+    documentUrls = [];
+  }
+  return {
+    id: row.id,
+    schoolId: row.school_id,
+    uid: row.uid || "",
+    email: row.email || "",
+    displayName: row.display_name || "",
+    answers,
+    documentUrls: Array.isArray(documentUrls) ? documentUrls : [],
+    videoUrl: row.video_url || null,
+    status: row.status || "pending",
+    createdAt: Number(row.created_at || 0),
+    updatedAt: Number(row.updated_at || 0),
+    decidedBy: row.decided_by || null,
+    decidedAt: row.decided_at ? Number(row.decided_at) : null,
+  };
+}
+
+/** Any signed-in user can apply to teach at a school. */
+export async function applyToSchoolAsMentor(actorUid, schoolId, body = {}) {
+  const school = await dbGet("SELECT school_id, name FROM schools WHERE school_id = ?", [
+    schoolId,
+  ]);
+  if (!school) {
+    const err = new Error("School not found");
+    err.status = 404;
+    throw err;
+  }
+  const role = await loadUserRole(actorUid);
+  if (isSuperAdmin(role) || isSchoolAdmin(role)) {
+    const err = new Error("Admins cannot apply as mentors");
+    err.status = 400;
+    throw err;
+  }
+  const user = await dbGet(
+    "SELECT uid, email, display_name FROM users_mirror WHERE uid = ?",
+    [actorUid],
+  );
+  const email = String(body.email || user?.email || "").trim().toLowerCase();
+  const displayName = String(
+    body.displayName || user?.display_name || "",
+  ).trim();
+  const pending = await dbGet(
+    `SELECT id FROM school_applications
+     WHERE school_id = ? AND uid = ? AND status = 'pending'`,
+    [schoolId, actorUid],
+  );
+  if (pending) {
+    const err = new Error("You already have a pending application for this school");
+    err.status = 409;
+    throw err;
+  }
+  const now = Date.now();
+  const id = `sa-${crypto.randomBytes(6).toString("hex")}`;
+  const answers =
+    body.answers && typeof body.answers === "object" ? body.answers : {};
+  const documentUrls = Array.isArray(body.documentUrls) ? body.documentUrls : [];
+  const videoUrl = body.videoUrl ? String(body.videoUrl) : null;
+  await dbRun(
+    `INSERT INTO school_applications
+      (id, school_id, uid, email, display_name, answers_json, document_urls_json,
+       video_url, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+    [
+      id,
+      schoolId,
+      actorUid,
+      email,
+      displayName,
+      JSON.stringify(answers),
+      JSON.stringify(documentUrls),
+      videoUrl,
+      now,
+      now,
+    ],
+  );
+  const row = await dbGet("SELECT * FROM school_applications WHERE id = ?", [id]);
+  return {
+    source: getPrimaryEngine(),
+    data: { application: mapApplication(row) },
+  };
+}
+
+export async function listSchoolApplications(actorUid, schoolId, query = {}) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const status = String(query.status || "pending").trim().toLowerCase();
+  const rows =
+    status === "all"
+      ? await dbAll(
+          `SELECT * FROM school_applications WHERE school_id = ?
+           ORDER BY created_at DESC LIMIT 200`,
+          [schoolId],
+        )
+      : await dbAll(
+          `SELECT * FROM school_applications WHERE school_id = ? AND status = ?
+           ORDER BY created_at DESC LIMIT 200`,
+          [schoolId, status],
+        );
+  return {
+    source: getPrimaryEngine(),
+    data: { applications: (rows || []).map(mapApplication) },
+  };
+}
+
+export async function decideSchoolApplication(
+  actorUid,
+  schoolId,
+  applicationId,
+  body = {},
+) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const decision = String(body.status || body.decision || "")
+    .trim()
+    .toLowerCase();
+  if (decision !== "approved" && decision !== "rejected") {
+    const err = new Error("status must be approved or rejected");
+    err.status = 400;
+    throw err;
+  }
+  const row = await dbGet(
+    "SELECT * FROM school_applications WHERE id = ? AND school_id = ?",
+    [applicationId, schoolId],
+  );
+  if (!row) {
+    const err = new Error("Application not found");
+    err.status = 404;
+    throw err;
+  }
+  if (row.status !== "pending") {
+    const err = new Error("Application already decided");
+    err.status = 409;
+    throw err;
+  }
+  const now = Date.now();
+  await dbRun(
+    `UPDATE school_applications
+     SET status = ?, decided_by = ?, decided_at = ?, updated_at = ?
+     WHERE id = ?`,
+    [decision, actorUid, now, now, applicationId],
+  );
+  if (decision === "approved") {
+    await ensureUserRow({
+      uid: row.uid,
+      email: row.email || "",
+      displayName: row.display_name || "",
+    });
+    await setMemberSchoolAndRole(row.uid, schoolId, ROLES.Mentor);
+    const existing = await dbGet(
+      `SELECT id FROM school_memberships WHERE school_id = ? AND uid = ?`,
+      [schoolId, row.uid],
+    );
+    if (existing) {
+      await dbRun(
+        `UPDATE school_memberships SET role = ?, status = 'active', updated_at = ?
+         WHERE id = ?`,
+        [ROLES.Mentor, now, existing.id],
+      );
+    } else {
+      const mid = `sm-${crypto.randomBytes(6).toString("hex")}`;
+      await dbRun(
+        `INSERT INTO school_memberships
+          (id, school_id, uid, email, role, status, display_name, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+        [
+          mid,
+          schoolId,
+          row.uid,
+          row.email || "",
+          ROLES.Mentor,
+          row.display_name || "",
+          now,
+          now,
+        ],
+      );
+    }
+  }
+  const fresh = await dbGet("SELECT * FROM school_applications WHERE id = ?", [
+    applicationId,
+  ]);
+  return {
+    source: getPrimaryEngine(),
+    data: { application: mapApplication(fresh) },
+  };
+}
+

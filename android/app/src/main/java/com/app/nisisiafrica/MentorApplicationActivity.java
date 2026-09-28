@@ -26,6 +26,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,8 +43,12 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.Question;
 import com.app.nisisiafrica.data.Model.QuestionType;
+import com.app.nisisiafrica.data.remote.ApiClient;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -53,6 +59,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MentorApplicationActivity extends AppCompatActivity {
     private static final String PREFS = "MentorApplicationPrefs";
@@ -67,6 +77,7 @@ public class MentorApplicationActivity extends AppCompatActivity {
     private Button btnApply;
     private ProgressBar progressBar;
     private TextView tvProgress;
+    private Spinner spinnerSchool;
 
     private SharedPreferences prefs;
     private DatabaseReference database;
@@ -76,6 +87,8 @@ public class MentorApplicationActivity extends AppCompatActivity {
     private String userName, userEmail;
     private LinearLayout currentDocumentsContainer;
     private FrameLayout currentVideoContainer;
+    private final List<LmsModels.SchoolDto> schools = new ArrayList<>();
+    private final List<String> schoolLabels = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,27 +107,99 @@ public class MentorApplicationActivity extends AppCompatActivity {
         btnApply = findViewById(R.id.btnApply);
         progressBar = findViewById(R.id.progressBar);
         tvProgress = findViewById(R.id.tvProgress);
+        spinnerSchool = findViewById(R.id.spinnerSchool);
 
         tvCategory.setText("Mentor Application");
 
         database = FirebaseDatabase.getInstance().getReference();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
-        // Get user from Room
         viewModel.fetchingCurrentUserDataFromDB(Util.getState(Constants.CURRENT_USER_ID, "")).observe(this, fetchedUserData -> {
+            if (fetchedUserData == null) return;
             userName = fetchedUserData.getFirstName() + " " + fetchedUserData.getLastName();
             userEmail = fetchedUserData.getEmail();
         });
 
         questions = buildQuestions();
         loadQuestions();
+        loadSchools();
 
         btnApply.setEnabled(false);
         btnApply.setOnClickListener(v -> submitApplication());
+    }
 
-        if (prefs.getBoolean(KEY_SUBMITTED, false)) {
+    private void loadSchools() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Sign in to apply", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            String bearer = "Bearer " + tokenResult.getToken();
+            ApiClient.getLmsService().schoolsCatalog(bearer).enqueue(new Callback<LmsModels.SchoolsEnvelope>() {
+                @Override
+                public void onResponse(Call<LmsModels.SchoolsEnvelope> call, Response<LmsModels.SchoolsEnvelope> response) {
+                    schools.clear();
+                    schoolLabels.clear();
+                    if (response.isSuccessful() && response.body() != null && response.body().ok
+                            && response.body().data != null && response.body().data.schools != null) {
+                        schools.addAll(response.body().data.schools);
+                        for (LmsModels.SchoolDto s : schools) {
+                            schoolLabels.add(s.name != null ? s.name : s.schoolId);
+                        }
+                    }
+                    if (schoolLabels.isEmpty()) {
+                        schoolLabels.add("No schools available");
+                    }
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                            MentorApplicationActivity.this,
+                            android.R.layout.simple_spinner_dropdown_item,
+                            schoolLabels);
+                    spinnerSchool.setAdapter(adapter);
+                    refreshSubmittedLock();
+                }
+
+                @Override
+                public void onFailure(Call<LmsModels.SchoolsEnvelope> call, Throwable t) {
+                    Toast.makeText(MentorApplicationActivity.this, "Could not load schools", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    private String selectedSchoolId() {
+        int i = spinnerSchool.getSelectedItemPosition();
+        if (i < 0 || i >= schools.size()) return null;
+        return schools.get(i).schoolId;
+    }
+
+    private String submittedKey(String schoolId) {
+        return KEY_SUBMITTED + "_" + (schoolId != null ? schoolId : "none");
+    }
+
+    private void refreshSubmittedLock() {
+        String schoolId = selectedSchoolId();
+        if (schoolId != null && prefs.getBoolean(submittedKey(schoolId), false)) {
             lockForm();
         }
+        spinnerSchool.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String sid = selectedSchoolId();
+                if (sid != null && prefs.getBoolean(submittedKey(sid), false)) {
+                    lockForm();
+                } else {
+                    setEnabledRecursive(questionsContainer, true);
+                    questionsContainer.setAlpha(1f);
+                    btnApply.setText("Apply >");
+                    btnApply.setEnabled(true);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
     }
 
     private List<Question> buildQuestions() {
@@ -451,31 +536,80 @@ public class MentorApplicationActivity extends AppCompatActivity {
     }
 
     private void saveToDatabase(List<String> documentUrls, String videoUrl) {
-        Map<String, Object> application = new HashMap<>();
-        application.put("name", userName);
-        application.put("email", userEmail);
-        application.put("timestamp", System.currentTimeMillis());
-        application.put("documentUrls", documentUrls);
-        application.put("videoUrl", videoUrl);
+        String schoolId = selectedSchoolId();
+        if (schoolId == null || schoolId.isEmpty()) {
+            Toast.makeText(this, "Pick a school first", Toast.LENGTH_SHORT).show();
+            resetUploadState();
+            return;
+        }
 
+        Map<String, String> answers = new HashMap<>();
         for (Question q : questions) {
             if (q.getType() != QuestionType.DOCUMENT_UPLOAD && q.getType() != QuestionType.VIDEO_UPLOAD) {
-                application.put(q.getId(), prefs.getString("ans_" + q.getId(), ""));
+                answers.put(q.getId(), prefs.getString("ans_" + q.getId(), ""));
             }
         }
 
-        database.child("mentor_applications").child(userEmail.replace(".", "_")).setValue(application)
-                .addOnSuccessListener(aVoid -> {
-                    prefs.edit().putBoolean(KEY_SUBMITTED, true).apply();
-                    progressBar.setVisibility(View.GONE);
-                    tvProgress.setVisibility(View.GONE);
-                    Toast.makeText(this, "Application submitted!", Toast.LENGTH_LONG).show();
-                    lockForm();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to submit", Toast.LENGTH_SHORT).show();
-                    resetUploadState();
-                });
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Sign in to apply", Toast.LENGTH_SHORT).show();
+            resetUploadState();
+            return;
+        }
+
+        tvProgress.setText("Submitting…");
+        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            LmsModels.MentorApplyBody body = new LmsModels.MentorApplyBody();
+            body.email = userEmail;
+            body.displayName = userName;
+            body.answers = answers;
+            body.documentUrls = documentUrls;
+            body.videoUrl = videoUrl;
+
+            String bearer = "Bearer " + tokenResult.getToken();
+            ApiClient.getLmsService().applyToSchool(bearer, schoolId, body)
+                    .enqueue(new Callback<LmsModels.SchoolApplicationEnvelope>() {
+                        @Override
+                        public void onResponse(Call<LmsModels.SchoolApplicationEnvelope> call,
+                                               Response<LmsModels.SchoolApplicationEnvelope> response) {
+                            if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                                Map<String, Object> application = new HashMap<>();
+                                application.put("name", userName);
+                                application.put("email", userEmail);
+                                application.put("schoolId", schoolId);
+                                application.put("timestamp", System.currentTimeMillis());
+                                application.put("documentUrls", documentUrls);
+                                application.put("videoUrl", videoUrl);
+                                application.putAll(answers);
+                                String key = schoolId + "_" + (userEmail != null ? userEmail.replace(".", "_") : user.getUid());
+                                database.child("mentor_applications").child(key).setValue(application);
+
+                                prefs.edit().putBoolean(submittedKey(schoolId), true).apply();
+                                progressBar.setVisibility(View.GONE);
+                                tvProgress.setVisibility(View.GONE);
+                                Toast.makeText(MentorApplicationActivity.this,
+                                        "Application submitted!", Toast.LENGTH_LONG).show();
+                                lockForm();
+                                return;
+                            }
+                            String err = response.body() != null && response.body().error != null
+                                    ? response.body().error
+                                    : "Failed to submit";
+                            Toast.makeText(MentorApplicationActivity.this, err, Toast.LENGTH_SHORT).show();
+                            resetUploadState();
+                        }
+
+                        @Override
+                        public void onFailure(Call<LmsModels.SchoolApplicationEnvelope> call, Throwable t) {
+                            Toast.makeText(MentorApplicationActivity.this,
+                                    "Failed to submit", Toast.LENGTH_SHORT).show();
+                            resetUploadState();
+                        }
+                    });
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Auth failed", Toast.LENGTH_SHORT).show();
+            resetUploadState();
+        });
     }
 
     private void resetUploadState() {
