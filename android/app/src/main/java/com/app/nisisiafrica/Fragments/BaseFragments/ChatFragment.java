@@ -273,7 +273,8 @@ public class ChatFragment extends Fragment {
         currentChatId = chatId;
         currentReceiverId = chatroom.getOtherUserId(currentUserId);
 
-        showChatDetail();
+        boolean keepNav = "announcements".equals(chatId) || "system".equals(type);
+        showChatDetail(keepNav);
         binding.etMessage.setText("");
         clearReply();
 
@@ -425,6 +426,7 @@ public class ChatFragment extends Fragment {
                                             "",
                                             new ArrayList<>(),
                                             new java.util.HashSet<>(),
+                                            null,
                                             null,
                                             null
                                     );
@@ -1165,12 +1167,16 @@ public class ChatFragment extends Fragment {
 
     /** Shows the open conversation and hides the bottom nav so the input has room. */
     private void showChatDetail() {
+        showChatDetail(false);
+    }
+
+    private void showChatDetail(boolean keepBottomNav) {
         if (binding == null) return;
         isChatOpen = true;
         binding.chatListContainer.setVisibility(View.GONE);
         binding.chatDetailContainer.setVisibility(View.VISIBLE);
         if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).setChatConversationOpen(true);
+            ((MainActivity) getActivity()).setChatConversationOpen(true, keepBottomNav);
         }
         ViewCompat.requestApplyInsets(binding.chatDetailContainer);
     }

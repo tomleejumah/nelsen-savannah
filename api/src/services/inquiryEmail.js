@@ -82,6 +82,52 @@ export async function sendGuestEmail(payload) {
   });
 }
 
+/**
+ * Notify an applicant that a school admin decided their mentor app or join request.
+ * Never throws — approval must succeed even if mail fails.
+ */
+export async function notifySchoolDecisionEmail({
+  to,
+  displayName,
+  schoolName,
+  kind,
+  approved,
+}) {
+  const email = String(to || "").trim();
+  if (!email || !email.includes("@")) return null;
+  const name = String(displayName || "").trim() || "there";
+  const school = String(schoolName || "").trim() || "the school";
+  const isMentor = kind === "mentor";
+  const ok = Boolean(approved);
+  const title = ok
+    ? isMentor
+      ? "Your mentor application was approved"
+      : "Your school join request was approved"
+    : isMentor
+      ? "Your mentor application was not approved"
+      : "Your school join request was not approved";
+  const intro = ok
+    ? isMentor
+      ? `Hi ${name}, you can now teach at ${school}. Open Learning to get started.`
+      : `Hi ${name}, you are now a member of ${school}. Open Learning to enroll in courses.`
+    : `Hi ${name}, your request for ${school} was not approved at this time. You can apply again later or contact the school admin.`;
+  try {
+    return await sendGuestEmail({
+      to: email,
+      subject: title,
+      title,
+      intro,
+      rows: [
+        { label: "School", value: school },
+        { label: "Decision", value: ok ? "Approved" : "Not approved" },
+      ],
+    });
+  } catch (err) {
+    console.warn("[school-mail] notify decision:", err.message || err);
+    return null;
+  }
+}
+
 async function sendRaw({ to, subject, replyTo, text, html }) {
   const resend = new Resend(requireKey());
   const { data, error } = await resend.emails.send({

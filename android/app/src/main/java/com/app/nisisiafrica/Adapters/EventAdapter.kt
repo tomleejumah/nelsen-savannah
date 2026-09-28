@@ -60,6 +60,7 @@ class EventAdapter(
         private val tvProgramTag: TextView = itemView.findViewById(R.id.tvProgramTag)
         private val tvFormatTag: TextView = itemView.findViewById(R.id.tvFormatTag)
         private val tvEventPrice: TextView = itemView.findViewById(R.id.tvEventPrice)
+        private val tvEventFootnote: TextView = itemView.findViewById(R.id.tvEventFootnote)
         private val seatsBlock: View = itemView.findViewById(R.id.seatsBlock)
         private val tvSeatsLeft: TextView = itemView.findViewById(R.id.tvSeatsLeft)
         private val tvSeatsPct: TextView = itemView.findViewById(R.id.tvSeatsPct)
@@ -128,6 +129,7 @@ class EventAdapter(
 
             if (event.reservedByMe) {
                 seatsBlock.visibility = View.GONE
+                tvEventFootnote.text = itemView.context.getString(R.string.home_reserved)
                 btnReserve.isEnabled = false
                 btnReserve.text = itemView.context.getString(R.string.home_reserved)
             } else if (event.seats > 0) {
@@ -135,6 +137,7 @@ class EventAdapter(
                 val left = (event.seats - event.seatsTaken).coerceAtLeast(0)
                 val pct = ((event.seatsTaken.toFloat() / event.seats) * 100f).toInt().coerceIn(0, 100)
                 tvSeatsLeft.text = itemView.context.getString(R.string.home_seats_left, left)
+                tvEventFootnote.text = itemView.context.getString(R.string.home_seats_left, left)
                 tvSeatsPct.text = "$pct%"
                 seatsProgress.progress = pct
                 if (event.eventType != "announcement") {
@@ -148,6 +151,7 @@ class EventAdapter(
                 }
             } else {
                 seatsBlock.visibility = View.GONE
+                tvEventFootnote.text = ""
                 btnReserve.isEnabled = true
                 btnReserve.text = itemView.context.getString(R.string.home_reserve)
             }
