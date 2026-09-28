@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
 import com.app.nisisiafrica.data.remote.StorageUploader;
+import com.app.nisisiafrica.Utils.Roles;
 import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
@@ -30,6 +31,11 @@ public class CreateCommunityActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!Roles.canManageCommunities()) {
+            Toast.makeText(this, "Only mentors can create communities", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         setContentView(R.layout.activity_create_community);
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);

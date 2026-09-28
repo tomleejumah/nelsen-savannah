@@ -85,8 +85,9 @@ public class CommunitiesFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) {}
         });
 
+        btnEdit.setVisibility(Roles.canManageCommunities() ? View.VISIBLE : View.GONE);
         btnEdit.setOnClickListener(v -> {
-            if (Roles.canCreate()) {
+            if (Roles.canManageCommunities()) {
                 startActivity(new Intent(requireContext(), CreateCommunityActivity.class));
             }
         });
