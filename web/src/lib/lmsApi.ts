@@ -60,6 +60,7 @@ export type TrackCardDto = {
   audience: string[];
   moduleCount: number;
   schoolId?: string;
+  mentors?: { uid: string; displayName: string; avatarUrl?: string }[];
   price?: {
     isPaid: boolean;
     amountMinor: number;
@@ -886,6 +887,26 @@ export async function appointRoleByEmail(
   );
 }
 
+export async function putSchoolTrackMentors(
+  idToken: string,
+  schoolId: string,
+  trackId: string,
+  uids: string[],
+) {
+  return lmsFetch<{
+    trackId: string;
+    mentors: { uid: string; displayName: string; avatarUrl?: string }[];
+  }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/tracks/${encodeURIComponent(trackId)}/mentors`,
+    idToken,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uids }),
+    },
+  );
+}
+
 export async function fetchSchoolMembers(idToken: string, schoolId: string) {
   return lmsFetch<{ members: SchoolMemberDto[] }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/members`,
@@ -965,6 +986,7 @@ export type SchoolDashboardDto = {
     enrolled: number;
     avgPercent: number;
     avgAssignment?: number;
+    mentors?: { uid: string; displayName: string; avatarUrl?: string }[];
   }[];
   atRisk: {
     uid: string;

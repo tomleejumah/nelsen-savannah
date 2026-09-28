@@ -851,6 +851,19 @@ export const getSchoolDashboard = handle(
   },
 );
 
+export const putSchoolTrackMentors = handle(
+  "[PUT /lms/schools/:id/tracks/:trackId/mentors]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.setSchoolTrackMentors(
+      req.user.uid,
+      req.params.id,
+      req.params.trackId,
+      req.body || {},
+    );
+  },
+);
+
 export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   const { seedLmsCatalog } = await import("../services/lmsSeed.js");
   const result = await seedLmsCatalog({ force: true });

@@ -15,6 +15,7 @@ import {
   importSchoolRoster,
   patchSchoolBranding,
   patchSchoolMemberRole,
+  putSchoolTrackMentors,
   registerSchoolMentee,
   registerSchoolMentor,
   type MeDto,
@@ -92,6 +93,8 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [balance, setBalance] = useState(0);
   const [tracks, setTracks] = useState<TrackCardDto[]>([]);
   const [mentees, setMentees] = useState<MenteeProgressDto[]>([]);
+  const [assignTrackId, setAssignTrackId] = useState<string | null>(null);
+  const [assignUids, setAssignUids] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -209,6 +212,30 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     setMsg(result.ok ? "Branding saved." : result.error || "Failed");
   }
 
+  const schoolMentors = members.filter(
+    (m) => m.userRole === "Mentor" && m.uid,
+  );
+
+  async function saveTrackMentors(trackId: string) {
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await putSchoolTrackMentors(
+      token,
+      schoolId,
+      trackId,
+      assignUids,
+    );
+    setMsg(
+      result.ok
+        ? "Trainers assigned to this course."
+        : result.error || "Failed",
+    );
+    if (result.ok) {
+      setAssignTrackId(null);
+      await load();
+    }
+  }
+
   return (
     <div className="space-y-12">
       <p className="text-sm text-muted-foreground">
@@ -288,6 +315,66 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                         label="Assignments"
                         pct={c.avgAssignment ?? 0}
                       />
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {(c.mentors?.length ?? 0) === 0
+                          ? "No trainers assigned"
+                          : c.mentors
+                              ?.map((m) => m.displayName || m.uid)
+                              .join(", ")}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAssignTrackId(
+                            assignTrackId === c.trackId ? null : c.trackId,
+                          );
+                          setAssignUids(
+                            (c.mentors || []).map((m) => m.uid).filter(Boolean),
+                          );
+                        }}
+                        className="mt-3 cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                      >
+                        {assignTrackId === c.trackId
+                          ? "Cancel"
+                          : "Assign trainers"}
+                      </button>
+                      {assignTrackId === c.trackId ? (
+                        <div className="mt-3 space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
+                          {schoolMentors.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              Invite a mentor first (they must sign in before you
+                              can assign them).
+                            </p>
+                          ) : (
+                            schoolMentors.map((m) => (
+                              <label
+                                key={m.uid}
+                                className="flex cursor-pointer items-center gap-2 text-xs"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={assignUids.includes(m.uid)}
+                                  onChange={(e) => {
+                                    setAssignUids((prev) =>
+                                      e.target.checked
+                                        ? [...prev, m.uid]
+                                        : prev.filter((id) => id !== m.uid),
+                                    );
+                                  }}
+                                />
+                                {m.displayName || m.email || m.uid}
+                              </label>
+                            ))
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => void saveTrackMentors(c.trackId)}
+                            className="cursor-pointer rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
+                          >
+                            Save trainers
+                          </button>
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
