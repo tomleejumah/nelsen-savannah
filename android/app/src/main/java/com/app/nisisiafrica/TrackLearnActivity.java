@@ -101,6 +101,10 @@ public class TrackLearnActivity extends AppCompatActivity {
     private MaterialButton btnEnroll;
     private MaterialButton btnLeaveCourse;
     private boolean enrolledOnTrack = false;
+    private int lessonDone;
+    private int lessonProgress;
+    private int lessonLocked;
+    private final Map<String, Float> lessonPercents = new LinkedHashMap<>();
     private String trackId;
     private String fallbackUrl;
     private String tutorId;
@@ -299,6 +303,16 @@ public class TrackLearnActivity extends AppCompatActivity {
                                         String.format(Locale.getDefault(), "Overall progress · %d%%", p));
                             }
                         }
+                        lessonPercents.clear();
+                        if (body.data.byLessonId != null) {
+                            for (Map.Entry<String, Object> e : body.data.byLessonId.entrySet()) {
+                                if (!(e.getValue() instanceof Map)) continue;
+                                Object pct = ((Map<?, ?>) e.getValue()).get("lessonPercent");
+                                if (pct instanceof Number) {
+                                    lessonPercents.put(e.getKey(), ((Number) pct).floatValue());
+                                }
+                            }
+                        }
                     }
 
                     @Override
@@ -345,13 +359,13 @@ public class TrackLearnActivity extends AppCompatActivity {
                 if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
             }
         }
+        modulesContainer.removeAllViews();
         if (cohortRun != null && cohortRun.milestones != null && !cohortRun.milestones.isEmpty()) {
             TextView walk = new TextView(this);
             walk.setText("Cohort walkthrough");
             walk.setTextSize(14f);
             walk.setPadding(0, 4, 0, 4);
             walk.setTextColor(getColor(R.color.muted));
-            modulesContainer.removeAllViews();
             modulesContainer.addView(walk);
             for (LmsModels.MilestoneDto m : cohortRun.milestones) {
                 TextView row = new TextView(this);
@@ -368,7 +382,6 @@ public class TrackLearnActivity extends AppCompatActivity {
         List<LmsModels.ModuleDto> modules = data.modules;
         if (modules == null || modules.isEmpty()) {
             if (cohortRun == null || cohortRun.milestones == null || cohortRun.milestones.isEmpty()) {
-                modulesContainer.removeAllViews();
                 showFallbackLessonsHint();
             }
             return;
@@ -376,20 +389,49 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (cohortRun == null || cohortRun.milestones == null || cohortRun.milestones.isEmpty()) {
             modulesContainer.removeAllViews();
         }
-        for (LmsModels.ModuleDto module : modules) {
-            TextView header = new TextView(this);
-            header.setText(module.title != null ? module.title : "Module");
-            header.setTextSize(14f);
-            header.setPadding(0, 12, 0, 4);
-            header.setTextColor(getColor(R.color.muted));
-            modulesContainer.addView(header);
-            loadModuleLessonsInto(module.moduleId, module == modules.get(0));
+        flatLessons.clear();
+        resumeLesson = null;
+        lessonDone = lessonProgress = lessonLocked = 0;
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (int i = 0; i < modules.size(); i++) {
+            LmsModels.ModuleDto module = modules.get(i);
+            View card = inflater.inflate(R.layout.item_chapter_card, modulesContainer, false);
+            TextView index = card.findViewById(R.id.tvChapterIndex);
+            TextView title = card.findViewById(R.id.tvChapterTitle);
+            TextView does = card.findViewById(R.id.tvChapterDoes);
+            TextView window = card.findViewById(R.id.tvChapterWindow);
+            LinearLayout lessonsHost = card.findViewById(R.id.chapterLessons);
+            index.setText("Chapter " + (i + 1));
+            title.setText(module.title != null ? module.title : "Chapter");
+            if (TextUtils.isEmpty(module.does)) {
+                does.setVisibility(View.GONE);
+            } else {
+                does.setText(module.does);
+            }
+            bindChapterWindow(window, module);
+            modulesContainer.addView(card);
+            loadChapterLessons(module, lessonsHost);
         }
     }
 
-    private void loadModuleLessonsInto(String moduleId, boolean autoExpand) {
-        if (TextUtils.isEmpty(moduleId) || !autoExpand) return;
-        withBearer(bearer -> ApiClient.getLmsService().module(bearer, moduleId)
+    private void bindChapterWindow(TextView window, LmsModels.ModuleDto module) {
+        if (module.releaseAt == null || module.dueAt == null || module.releaseAt <= 0 || module.dueAt <= 0) {
+            window.setVisibility(View.GONE);
+            return;
+        }
+        java.text.DateFormat fmt = java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT);
+        long now = System.currentTimeMillis();
+        String state = module.releaseAt > now ? " · not open yet"
+                : module.dueAt < now ? " · window ended (finish incomplete lessons)"
+                : " · open";
+        window.setVisibility(View.VISIBLE);
+        window.setText(fmt.format(new java.util.Date(module.releaseAt))
+                + " → " + fmt.format(new java.util.Date(module.dueAt)) + state);
+    }
+
+    private void loadChapterLessons(LmsModels.ModuleDto module, LinearLayout lessonsHost) {
+        if (module == null || TextUtils.isEmpty(module.moduleId)) return;
+        withBearer(bearer -> ApiClient.getLmsService().module(bearer, module.moduleId)
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(Call<LmsModels.ModuleDetailEnvelope> call,
@@ -399,9 +441,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                                 || body.data == null || body.data.lessons == null) {
                             return;
                         }
-                        flatLessons.clear();
-                        flatLessons.addAll(body.data.lessons);
-                        renderLessonNodes(flatLessons);
+                        renderChapterLessons(module, lessonsHost, body.data.lessons);
                     }
 
                     @Override
@@ -409,94 +449,81 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
-    private void renderLessonNodes(List<LmsModels.LessonDto> lessons) {
-        // Keep module headers; append lesson rows after last child or rebuild bottom.
-        int done = 0, inProg = 0, locked = 0;
-        resumeLesson = null;
+    private void renderChapterLessons(LmsModels.ModuleDto module, LinearLayout host,
+                                      List<LmsModels.LessonDto> lessons) {
+        host.removeAllViews();
+        if (lessons.isEmpty()) return;
+        View divider = new View(this);
+        divider.setBackgroundColor(getColor(R.color.line));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, dp(1)));
+        lp.bottomMargin = dp(4);
+        host.addView(divider, lp);
+        long now = System.currentTimeMillis();
+        boolean hasWindow = module.releaseAt != null && module.dueAt != null
+                && module.releaseAt > 0 && module.dueAt > 0;
+        boolean chapterReleased = !hasWindow || module.releaseAt <= now;
+        boolean chapterExpired = hasWindow && module.dueAt < now;
         LayoutInflater inflater = LayoutInflater.from(this);
         for (int i = 0; i < lessons.size(); i++) {
             LmsModels.LessonDto lesson = lessons.get(i);
+            Float prog = lessonPercents.get(lesson.lessonId);
+            if (prog != null) lesson.lessonPercent = prog;
+            flatLessons.add(lesson);
             LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
-            String status = lesson.status != null ? lesson.status.toLowerCase(Locale.US) : "";
-            boolean isDone = "done".equals(status) || "completed".equals(status)
-                    || lesson.lessonPercent >= 100f
-                    || (mile != null && mile.completed);
-            boolean isLocked = mile != null
-                    ? !mile.available && !mile.completed
-                    : "locked".equals(status);
-            boolean isCurrent = !isDone && !isLocked
-                    && ("current".equals(status) || "in_progress".equals(status)
-                    || resumeLesson == null);
-
-            // Default when LMS has no per-lesson status / milestone yet:
-            if (mile == null && TextUtils.isEmpty(status) && lesson.lessonPercent <= 0) {
-                if (i == 0) {
-                    isCurrent = true;
-                    isLocked = false;
-                } else {
-                    isLocked = true;
-                    isCurrent = false;
-                }
-            }
-
-            if (isDone) done++;
-            else if (isLocked) locked++;
+            boolean canOpen = chapterReleased && (mile == null || mile.available || mile.completed);
+            boolean isDone = lesson.lessonPercent >= 100f || (mile != null && mile.completed);
+            if (isDone) lessonDone++;
+            else if (!canOpen) lessonLocked++;
             else {
-                inProg++;
+                lessonProgress++;
                 if (resumeLesson == null) resumeLesson = lesson;
             }
-
-            View row = inflater.inflate(R.layout.item_lesson_node, modulesContainer, false);
-            TextView node = row.findViewById(R.id.lessonNode);
+            View row = inflater.inflate(R.layout.item_chapter_lesson, host, false);
+            TextView index = row.findViewById(R.id.tvLessonIndex);
             TextView title = row.findViewById(R.id.tvLessonTitle);
             TextView meta = row.findViewById(R.id.tvLessonMeta);
-            TextView action = row.findViewById(R.id.tvLessonAction);
-            View line = row.findViewById(R.id.lessonLine);
-            line.setVisibility(i == lessons.size() - 1 ? View.INVISIBLE : View.VISIBLE);
-
+            TextView percent = row.findViewById(R.id.tvLessonPercent);
+            View thumb = row.findViewById(R.id.ivLessonThumb);
+            index.setText((i + 1) + ".");
             title.setText(lesson.title != null ? lesson.title : "Lesson");
-            String mins = lesson.estimatedMinutes > 0
-                    ? lesson.estimatedMinutes + " min" : "";
             String type = lesson.type != null ? lesson.type : "";
-            String lockHint = "";
-            if (isLocked && mile != null) {
-                lockHint = mile.lockedReason != null ? mile.lockedReason : "locked";
+            if ("read".equals(type)) type = "text";
+            if (!type.isEmpty()) {
+                type = type.substring(0, 1).toUpperCase(Locale.US) + type.substring(1);
             }
-            meta.setText((mins
-                    + (mins.isEmpty() || type.isEmpty() ? "" : " · ")
-                    + type
-                    + (lockHint.isEmpty() ? "" : " · " + lockHint)).trim());
-
-            if (isDone) {
-                node.setBackgroundResource(R.drawable.bg_lesson_node_done);
-                node.setText("✓");
-                node.setTextColor(getColor(R.color.white));
-                action.setVisibility(View.GONE);
-            } else if (isCurrent) {
-                node.setBackgroundResource(R.drawable.bg_lesson_node_current);
-                node.setText("▶");
-                node.setTextColor(getColor(R.color.maroon_700));
-                action.setVisibility(View.VISIBLE);
-                action.setText("Resume");
-            } else {
-                node.setBackgroundResource(R.drawable.bg_lesson_node_locked);
-                node.setText("🔒");
-                node.setTextColor(getColor(R.color.muted));
-                action.setVisibility(View.GONE);
+            StringBuilder metaText = new StringBuilder();
+            if (!type.isEmpty()) metaText.append(type);
+            if (lesson.estimatedMinutes > 0) {
+                if (metaText.length() > 0) metaText.append(" · ");
+                metaText.append(lesson.estimatedMinutes).append(" min");
             }
-
-            boolean clickable = !isLocked;
-            row.setAlpha(isLocked ? 0.55f : 1f);
+            if (!canOpen) {
+                if (metaText.length() > 0) metaText.append(" · ");
+                metaText.append("locked");
+            } else if (chapterExpired) {
+                if (metaText.length() > 0) metaText.append(" · ");
+                metaText.append("Past Due");
+            }
+            meta.setText(metaText.toString());
+            percent.setText(Math.round(lesson.lessonPercent) + "%");
+            boolean pdf = "pdf".equalsIgnoreCase(lesson.type) || lesson.isPdf
+                    || (lesson.contentUrl != null
+                    && lesson.contentUrl.toLowerCase(Locale.US).endsWith(".pdf"));
+            thumb.setVisibility(pdf ? View.VISIBLE : View.GONE);
+            row.setAlpha(canOpen ? 1f : 0.7f);
             row.setOnClickListener(v -> {
-                if (clickable) openLesson(lesson);
-                else Toast.makeText(this, milestoneLockMessage(mile), Toast.LENGTH_SHORT).show();
+                if (canOpen) openLesson(lesson);
+                else Toast.makeText(this, chapterReleased
+                        ? milestoneLockMessage(mile)
+                        : "Opens after release date", Toast.LENGTH_SHORT).show();
             });
-            modulesContainer.addView(row);
+            host.addView(row);
         }
-        tvStatDone.setText(String.valueOf(done));
-        tvStatProgress.setText(String.valueOf(inProg));
-        tvStatLocked.setText(String.valueOf(locked));
-        if (resumeLesson != null) {
+        tvStatDone.setText(String.valueOf(lessonDone));
+        tvStatProgress.setText(String.valueOf(lessonProgress));
+        tvStatLocked.setText(String.valueOf(lessonLocked));
+        if (resumeLesson != null && enrolledOnTrack) {
             btnEnroll.setText("Continue learning");
             btnEnroll.setEnabled(true);
         }

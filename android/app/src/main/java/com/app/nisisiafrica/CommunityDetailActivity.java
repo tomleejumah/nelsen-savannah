@@ -135,7 +135,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
             }
             repository.updateCommunityIcon(communityId, url, success -> {
                 if (success) {
-                    Glide.with(this).load(url).circleCrop().into(imgGroupLogo);
+                    Glide.with(this).load(url).centerCrop().into(imgGroupLogo);
                     Toast.makeText(this, "Logo updated", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "Could not save logo", Toast.LENGTH_SHORT).show();
@@ -150,7 +150,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
                     .load(iconUrl)
                     .placeholder(R.mipmap.ic_launcher)
                     .error(R.mipmap.ic_launcher)
-                    .circleCrop()
+                    .centerCrop()
                     .into(imgGroupLogo);
         } else {
             imgGroupLogo.setImageResource(R.mipmap.ic_launcher);
@@ -206,6 +206,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
         repository.isMember(communityId, member -> {
             isMember = member;
             btnJoin.setText(member ? "Joined" : "Join");
+            postAdapter.setMember(member);
         });
     }
 
@@ -217,6 +218,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
                 if (success) {
                     isMember = false;
                     btnJoin.setText("Join");
+                    postAdapter.setMember(false);
                 }
             });
         } else {
@@ -225,6 +227,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
                 if (success) {
                     isMember = true;
                     btnJoin.setText("Joined");
+                    postAdapter.setMember(true);
                 }
             });
         }
@@ -241,9 +244,15 @@ public class CommunityDetailActivity extends AppCompatActivity {
             Community c = snapshot.toObject(Community.class);
             if (c == null) return;
             createdBy = c.getCreatedBy();
+            communityName = c.getName();
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(communityName);
+            }
             tvDescription.setText(c.getDescription());
-            tvMembers.setText(c.getMemberCount() + " members  \u00b7  " + c.getPostCount() + " posts");
+            tvDescription.setVisibility(TextUtils.isEmpty(c.getDescription()) ? View.GONE : View.VISIBLE);
+            tvMembers.setText(c.getMemberCount() + " members");
             bindLogo(c.getIconUrl());
+            postAdapter.setCommunityContext(communityId, communityName, c.getIconUrl(), isMember);
             refreshChangeLogoVisibility();
         });
 
