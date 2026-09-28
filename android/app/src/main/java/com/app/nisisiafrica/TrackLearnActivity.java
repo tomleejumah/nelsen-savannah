@@ -111,6 +111,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private String tutorName;
     private String tutorAvatarUrl;
     private final List<LmsModels.LessonDto> flatLessons = new ArrayList<>();
+    private final List<LmsModels.ModuleDto> trackModules = new ArrayList<>();
     private LmsModels.LessonDto resumeLesson;
     private LmsModels.CohortRunDto cohortRun;
     private LmsModels.TrackPrice trackPrice;
@@ -389,6 +390,8 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (cohortRun == null || cohortRun.milestones == null || cohortRun.milestones.isEmpty()) {
             modulesContainer.removeAllViews();
         }
+        trackModules.clear();
+        trackModules.addAll(modules);
         flatLessons.clear();
         resumeLesson = null;
         lessonDone = lessonProgress = lessonLocked = 0;
@@ -409,9 +412,88 @@ public class TrackLearnActivity extends AppCompatActivity {
                 does.setText(module.does);
             }
             bindChapterWindow(window, module);
+            lessonsHost.removeAllViews();
+            TextView openHint = new TextView(this);
+            openHint.setText(module.lessonCount > 0
+                    ? module.lessonCount + " lessons · tap to open"
+                    : "Tap to open chapter");
+            openHint.setTextColor(getColor(R.color.maroon_600));
+            openHint.setTextSize(13f);
+            openHint.setPadding(0, dp(8), 0, 0);
+            lessonsHost.addView(openHint);
+            final int chapterIndex = i + 1;
+            View.OnClickListener openChapter = v -> openChapter(module, chapterIndex, null);
+            card.setOnClickListener(openChapter);
+            openHint.setOnClickListener(openChapter);
             modulesContainer.addView(card);
-            loadChapterLessons(module, lessonsHost);
+            prefetchChapterLessons(module);
         }
+    }
+
+    private void openChapter(LmsModels.ModuleDto module, int chapterIndex, String lessonId) {
+        if (module == null || TextUtils.isEmpty(module.moduleId)) return;
+        Intent intent = new Intent(this, ChapterLearnActivity.class);
+        intent.putExtra(ChapterLearnActivity.EXTRA_TRACK_ID, trackId);
+        intent.putExtra(ChapterLearnActivity.EXTRA_MODULE_ID, module.moduleId);
+        intent.putExtra(ChapterLearnActivity.EXTRA_CHAPTER_TITLE, module.title);
+        intent.putExtra(ChapterLearnActivity.EXTRA_CHAPTER_DOES, module.does);
+        intent.putExtra(ChapterLearnActivity.EXTRA_CHAPTER_INDEX, chapterIndex);
+        if (module.releaseAt != null) {
+            intent.putExtra(ChapterLearnActivity.EXTRA_RELEASE_AT, module.releaseAt);
+        }
+        if (module.dueAt != null) {
+            intent.putExtra(ChapterLearnActivity.EXTRA_DUE_AT, module.dueAt);
+        }
+        if (!TextUtils.isEmpty(lessonId)) {
+            intent.putExtra(ChapterLearnActivity.EXTRA_LESSON_ID, lessonId);
+        } else if (resumeLesson != null && module.moduleId.equals(resumeLesson.moduleId)) {
+            intent.putExtra(ChapterLearnActivity.EXTRA_LESSON_ID, resumeLesson.lessonId);
+        }
+        startActivity(intent);
+    }
+
+    /** Prefetch lesson list so Continue can jump into the right chapter. */
+    private void prefetchChapterLessons(LmsModels.ModuleDto module) {
+        if (module == null || TextUtils.isEmpty(module.moduleId)) return;
+        withBearer(bearer -> ApiClient.getLmsService().module(bearer, module.moduleId)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.ModuleDetailEnvelope> call,
+                                           Response<LmsModels.ModuleDetailEnvelope> response) {
+                        LmsModels.ModuleDetailEnvelope body = response.body();
+                        if (!response.isSuccessful() || body == null || !body.ok
+                                || body.data == null || body.data.lessons == null) {
+                            return;
+                        }
+                        long now = System.currentTimeMillis();
+                        boolean hasWindow = module.releaseAt != null && module.dueAt != null
+                                && module.releaseAt > 0 && module.dueAt > 0;
+                        boolean chapterReleased = !hasWindow || module.releaseAt <= now;
+                        for (LmsModels.LessonDto lesson : body.data.lessons) {
+                            Float prog = lessonPercents.get(lesson.lessonId);
+                            if (prog != null) lesson.lessonPercent = prog;
+                            if (TextUtils.isEmpty(lesson.moduleId)) lesson.moduleId = module.moduleId;
+                            flatLessons.add(lesson);
+                            LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
+                            boolean canOpen = chapterReleased
+                                    && (mile == null || mile.available || mile.completed);
+                            boolean isDone = lesson.lessonPercent >= 100f
+                                    || (mile != null && mile.completed);
+                            if (isDone) lessonDone++;
+                            else if (!canOpen) lessonLocked++;
+                            else {
+                                lessonProgress++;
+                                if (resumeLesson == null) resumeLesson = lesson;
+                            }
+                        }
+                        tvStatDone.setText(String.valueOf(lessonDone));
+                        tvStatProgress.setText(String.valueOf(lessonProgress));
+                        tvStatLocked.setText(String.valueOf(lessonLocked));
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {}
+                }));
     }
 
     private void bindChapterWindow(TextView window, LmsModels.ModuleDto module) {
@@ -556,41 +638,24 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void openLesson(LmsModels.LessonDto lesson) {
-        if (lesson == null) return;
-        LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
-        if (mile != null && !mile.available && !mile.completed) {
-            Toast.makeText(this, milestoneLockMessage(mile), Toast.LENGTH_SHORT).show();
+        if (lesson == null || TextUtils.isEmpty(lesson.moduleId)) {
+            Toast.makeText(this, "Chapter unavailable", Toast.LENGTH_SHORT).show();
             return;
         }
-        withBearer(bearer -> ApiClient.getLmsService().lesson(bearer, lesson.lessonId)
-                .enqueue(new Callback<>() {
-                    @Override
-                    public void onResponse(Call<LmsModels.LessonDetailEnvelope> call,
-                                           Response<LmsModels.LessonDetailEnvelope> response) {
-                        LmsModels.LessonDetailEnvelope body = response.body();
-                        if (response.isSuccessful() && body != null && body.ok
-                                && body.data != null && body.data.lesson != null) {
-                            LmsModels.LessonDto full = body.data.lesson;
-                            if (full.milestone != null && !full.milestone.available
-                                    && !full.milestone.completed) {
-                                Toast.makeText(TrackLearnActivity.this,
-                                        milestoneLockMessage(full.milestone),
-                                        Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-                            presentLesson(full);
-                        } else {
-                            Toast.makeText(TrackLearnActivity.this,
-                                    "Lesson not ready yet", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<LmsModels.LessonDetailEnvelope> call, Throwable t) {
-                        Toast.makeText(TrackLearnActivity.this,
-                                "Could not load lesson", Toast.LENGTH_SHORT).show();
-                    }
-                }));
+        LmsModels.ModuleDto mod = null;
+        int chapterIndex = 1;
+        for (int i = 0; i < trackModules.size(); i++) {
+            if (lesson.moduleId.equals(trackModules.get(i).moduleId)) {
+                mod = trackModules.get(i);
+                chapterIndex = i + 1;
+                break;
+            }
+        }
+        if (mod == null) {
+            mod = new LmsModels.ModuleDto();
+            mod.moduleId = lesson.moduleId;
+        }
+        openChapter(mod, chapterIndex, lesson.lessonId);
     }
 
     private void presentLesson(LmsModels.LessonDto lesson) {
