@@ -499,9 +499,13 @@ export async function updateSchoolBranding(actorUid, schoolId, body = {}) {
   };
 }
 
-/** CSV: uid,email,displayName,role per line (header optional). */
+/** CSV roster — email-first for novices; uid optional (legacy).
+ * Headers (any order): email, displayName, role [, uid]
+ * Or bare rows: email,displayName,role  OR  uid,email,displayName,role
+ */
 export async function importSchoolRoster(actorUid, schoolId, body = {}) {
   await assertCanManageSchool(actorUid, schoolId);
+  const { inviteMemberByEmail } = await import("./lmsMembershipService.js");
   const csv = String(body.csv || body.text || "");
   const lines = csv
     .split(/\r?\n/)
@@ -512,25 +516,75 @@ export async function importSchoolRoster(actorUid, schoolId, body = {}) {
     err.status = 400;
     throw err;
   }
+
+  const splitRow = (line) =>
+    line.split(",").map((p) => p.trim().replace(/^"|"$/g, ""));
+
   let start = 0;
-  if (/uid|email/i.test(lines[0])) start = 1;
+  let cols = null; // named columns from header
+  const header = splitRow(lines[0]).map((h) => h.toLowerCase());
+  if (header.some((h) => h === "email" || h === "uid" || h === "displayname")) {
+    start = 1;
+    cols = {
+      uid: header.indexOf("uid"),
+      email: header.indexOf("email"),
+      displayName: header.findIndex((h) => h === "displayname" || h === "display_name" || h === "name"),
+      role: header.indexOf("role"),
+    };
+  }
+
   const imported = [];
   const errors = [];
   for (let i = start; i < lines.length; i++) {
-    const parts = lines[i].split(",").map((p) => p.trim().replace(/^"|"$/g, ""));
-    const [uid, email, displayName, roleRaw] = parts;
-    if (!uid) {
-      errors.push({ line: i + 1, error: "uid missing" });
+    const parts = splitRow(lines[i]);
+    let uid = "";
+    let email = "";
+    let displayName = "";
+    let roleRaw = "";
+
+    if (cols) {
+      uid = cols.uid >= 0 ? parts[cols.uid] || "" : "";
+      email = cols.email >= 0 ? parts[cols.email] || "" : "";
+      displayName = cols.displayName >= 0 ? parts[cols.displayName] || "" : "";
+      roleRaw = cols.role >= 0 ? parts[cols.role] || "" : "";
+    } else if (parts[0]?.includes("@")) {
+      [email, displayName, roleRaw] = parts;
+    } else {
+      [uid, email, displayName, roleRaw] = parts;
+    }
+
+    email = String(email || "").trim();
+    uid = String(uid || "").trim();
+    displayName = String(displayName || "").trim();
+    const role =
+      normalizeRole(roleRaw || ROLES.Mentee) === ROLES.Mentor
+        ? ROLES.Mentor
+        : ROLES.Mentee;
+
+    if (!email && !uid) {
+      errors.push({ line: i + 1, error: "email or uid required" });
       continue;
     }
+
     try {
-      await ensureUserRow({ uid, email: email || "", displayName: displayName || "" });
-      const role =
-        normalizeRole(roleRaw || ROLES.Mentee) === ROLES.Mentor
-          ? ROLES.Mentor
-          : ROLES.Mentee;
-      await setMemberSchoolAndRole(uid, schoolId, role);
-      imported.push({ uid, userRole: role });
+      if (email) {
+        const invited = await inviteMemberByEmail(schoolId, {
+          email,
+          displayName,
+          uid: uid || undefined,
+          role,
+        });
+        imported.push({
+          uid: invited.data.membership.uid || "",
+          email: invited.data.membership.email,
+          userRole: role,
+          status: invited.data.membership.status,
+        });
+      } else {
+        await ensureUserRow({ uid, email: "", displayName });
+        await setMemberSchoolAndRole(uid, schoolId, role);
+        imported.push({ uid, email: "", userRole: role, status: "active" });
+      }
     } catch (err) {
       errors.push({ line: i + 1, error: err.message });
     }

@@ -78,6 +78,10 @@ function StudentsConsole({ user, me }: { user: User; me: MeDto }) {
 
       <form onSubmit={(e) => void a.onRoster(e)} className="space-y-3">
         <h3 className="font-display text-lg font-semibold">Roster CSV import</h3>
+        <p className="text-xs text-muted-foreground">
+          Paste rows like <code className="font-mono">email,displayName,role</code>.
+          No Firebase uid needed — they join when they sign in with that email.
+        </p>
         <textarea
           value={a.csv}
           onChange={(e) => a.setCsv(e.target.value)}
