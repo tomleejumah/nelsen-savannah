@@ -176,6 +176,11 @@ router.patch(
   requireRoles("Admin"),
   lmsController.patchSchoolAdmins,
 );
+router.post(
+  "/schools/:id/join-requests",
+  authenticateUser,
+  lmsController.postSchoolJoinRequest,
+);
 router.get(
   "/schools/:id/members",
   authenticateUser,

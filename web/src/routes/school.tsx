@@ -217,6 +217,19 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     if (result.ok) await load();
   }
 
+  async function approveJoin(uid: string) {
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await patchSchoolMemberStatus(
+      token,
+      schoolId,
+      uid,
+      "active",
+    );
+    setMsg(result.ok ? "Join request approved — student can enroll." : result.error || "Failed");
+    if (result.ok) await load();
+  }
+
   async function copyInvite(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -740,11 +753,21 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                   <p className="text-xs text-muted-foreground">
                     {m.email || m.uid}
                     {m.status === "invited" ? " · pending invite" : ""}
+                    {m.status === "applied" ? " · join request" : ""}
                     {m.status === "suspended" ? " · disabled" : ""}
                   </p>
                 </div>
                 <span className="text-ember">{m.userRole}</span>
                 <div className="flex flex-wrap gap-2">
+                  {m.status === "applied" && m.uid ? (
+                    <button
+                      type="button"
+                      onClick={() => void approveJoin(m.uid)}
+                      className="cursor-pointer rounded-full border border-ember px-3 py-1 text-xs font-medium text-ember"
+                    >
+                      Approve join
+                    </button>
+                  ) : null}
                   {m.inviteUrl ? (
                     <button
                       type="button"

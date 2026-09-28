@@ -268,6 +268,13 @@ public final class LmsModels {
         public String videoUrl;
     }
 
+    public static class JoinSchoolBody {
+        public String displayName;
+        public JoinSchoolBody(String displayName) {
+            this.displayName = displayName;
+        }
+    }
+
     public static class SchoolApplicationDto {
         public String id;
         public String schoolId;
