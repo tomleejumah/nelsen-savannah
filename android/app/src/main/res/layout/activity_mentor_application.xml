@@ -18,6 +18,22 @@
         android:textStyle="bold"
         android:textSize="20sp" />
 
+    <TextView
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="School you want to teach at"
+        android:textSize="14sp" />
+
+    <Spinner
+        android:id="@+id/spinnerSchool"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="8dp" />
+
     <ProgressBar
         android:layout_gravity="center_vertical|center_horizontal"
         android:visibility="gone"

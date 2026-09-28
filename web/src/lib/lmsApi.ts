@@ -908,6 +908,49 @@ export async function putSchoolTrackMentors(
   );
 }
 
+export type SchoolApplicationDto = {
+  id: string;
+  schoolId: string;
+  uid: string;
+  email: string;
+  displayName: string;
+  answers: Record<string, string>;
+  documentUrls: string[];
+  videoUrl: string | null;
+  status: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export async function fetchSchoolApplications(
+  idToken: string,
+  schoolId: string,
+  status: string = "pending",
+) {
+  const q = status ? `?status=${encodeURIComponent(status)}` : "";
+  return lmsFetch<{ applications: SchoolApplicationDto[] }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/applications${q}`,
+    idToken,
+  );
+}
+
+export async function decideSchoolApplication(
+  idToken: string,
+  schoolId: string,
+  applicationId: string,
+  status: "approved" | "rejected",
+) {
+  return lmsFetch<{ application: SchoolApplicationDto }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/applications/${encodeURIComponent(applicationId)}`,
+    idToken,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    },
+  );
+}
+
 export async function fetchSchoolMembers(idToken: string, schoolId: string) {
   return lmsFetch<{ members: SchoolMemberDto[] }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/members`,
