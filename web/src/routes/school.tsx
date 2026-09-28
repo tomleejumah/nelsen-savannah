@@ -15,6 +15,7 @@ import {
   importSchoolRoster,
   patchSchoolBranding,
   patchSchoolMemberRole,
+  patchSchoolMemberStatus,
   putSchoolTrackMentors,
   registerSchoolMentee,
   registerSchoolMentor,
@@ -95,6 +96,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [mentees, setMentees] = useState<MenteeProgressDto[]>([]);
   const [assignTrackId, setAssignTrackId] = useState<string | null>(null);
   const [assignUids, setAssignUids] = useState<string[]>([]);
+  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -149,6 +151,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         : result.error || "Failed",
     );
     if (result.ok) {
+      setLastInviteUrl(result.data?.member?.inviteUrl || null);
       setMentorUid("");
       setMentorEmail("");
       setMentorName("");
@@ -168,11 +171,12 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     setMsg(
       result.ok
         ? result.data?.member?.status === "invited"
-          ? "Invite saved — they join this school when they sign in with that email."
+          ? "Invite saved — share the join link, or they join when they sign in with that email."
           : "Mentee attached to this school."
         : result.error || "Failed",
     );
     if (result.ok) {
+      setLastInviteUrl(result.data?.member?.inviteUrl || null);
       setMenteeUid("");
       setMenteeEmail("");
       setMenteeName("");
@@ -186,6 +190,34 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     const result = await patchSchoolMemberRole(token, schoolId, uid, "Mentor");
     setMsg(result.ok ? "Escalated to Mentor." : result.error || "Failed");
     if (result.ok) await load();
+  }
+
+  async function setMentorEnabled(uid: string, enabled: boolean) {
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await patchSchoolMemberStatus(
+      token,
+      schoolId,
+      uid,
+      enabled ? "active" : "suspended",
+    );
+    setMsg(
+      result.ok
+        ? enabled
+          ? "Mentor re-enabled."
+          : "Mentor disabled and removed from courses."
+        : result.error || "Failed",
+    );
+    if (result.ok) await load();
+  }
+
+  async function copyInvite(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setMsg("Invite link copied.");
+    } catch {
+      setMsg(url);
+    }
   }
 
   async function onRoster(e: React.FormEvent) {
@@ -213,7 +245,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   }
 
   const schoolMentors = members.filter(
-    (m) => m.userRole === "Mentor" && m.uid,
+    (m) => m.userRole === "Mentor" && m.uid && m.status !== "suspended",
   );
 
   async function saveTrackMentors(trackId: string) {
@@ -247,6 +279,19 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         </p>
       ) : null}
       {msg ? <p className="text-sm text-ember">{msg}</p> : null}
+      {lastInviteUrl ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card/40 px-4 py-3 text-sm">
+          <span className="text-muted-foreground">Join link:</span>
+          <code className="max-w-full break-all text-xs">{lastInviteUrl}</code>
+          <button
+            type="button"
+            onClick={() => void copyInvite(lastInviteUrl)}
+            className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+          >
+            Copy
+          </button>
+        </div>
+      ) : null}
 
       <section id="dashboard">
         <h2 className="font-display text-xl font-semibold">Courses</h2>
@@ -466,9 +511,9 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
         </form>
 
         <form onSubmit={(e) => void addMentee(e)} className="space-y-3">
-          <h2 className="font-display text-lg font-semibold">Invite mentee (Door A)</h2>
+          <h2 className="font-display text-lg font-semibold">Invite student</h2>
           <p className="text-xs text-muted-foreground">
-            Add their email — when they sign in with it, they land in this school.
+            Email plus a join link they can open on the site.
           </p>
           <input
             required
@@ -616,18 +661,48 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                   <p className="text-xs text-muted-foreground">
                     {m.email || m.uid}
                     {m.status === "invited" ? " · pending invite" : ""}
+                    {m.status === "suspended" ? " · disabled" : ""}
                   </p>
                 </div>
                 <span className="text-ember">{m.userRole}</span>
-                {m.userRole === "Mentee" && m.uid ? (
-                  <button
-                    type="button"
-                    onClick={() => void escalate(m.uid)}
-                    className="rounded-full border border-border px-3 py-1 text-xs font-medium"
-                  >
-                    Escalate → Mentor
-                  </button>
-                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {m.inviteUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => void copyInvite(m.inviteUrl as string)}
+                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+                    >
+                      Copy invite link
+                    </button>
+                  ) : null}
+                  {m.userRole === "Mentee" && m.uid && m.status !== "suspended" ? (
+                    <button
+                      type="button"
+                      onClick={() => void escalate(m.uid)}
+                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+                    >
+                      Escalate → Mentor
+                    </button>
+                  ) : null}
+                  {m.userRole === "Mentor" && m.uid && m.status !== "suspended" ? (
+                    <button
+                      type="button"
+                      onClick={() => void setMentorEnabled(m.uid, false)}
+                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+                    >
+                      Disable
+                    </button>
+                  ) : null}
+                  {m.userRole === "Mentor" && m.uid && m.status === "suspended" ? (
+                    <button
+                      type="button"
+                      onClick={() => void setMentorEnabled(m.uid, true)}
+                      className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+                    >
+                      Re-enable
+                    </button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

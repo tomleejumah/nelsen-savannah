@@ -36,6 +36,8 @@ router.patch(
   lmsController.patchActiveSchool,
 );
 router.get("/health", lmsController.getLmsHealth);
+router.get("/join/:token", lmsController.getJoinInvite);
+router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
 router.get("/tracks", authenticateUser, lmsController.listTracks);
 router.get("/tracks/:trackId", authenticateUser, lmsController.getTrack);
@@ -185,6 +187,12 @@ router.patch(
   authenticateUser,
   requireRoles("SchoolAdmin", "Admin"),
   lmsController.patchSchoolMemberRole,
+);
+router.patch(
+  "/schools/:id/members/:uid/status",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin"),
+  lmsController.patchSchoolMemberStatus,
 );
 router.patch(
   "/schools/:id",
