@@ -92,6 +92,8 @@ data class MentorItem(
     /** Specialty tags used to pair questionnaire answers to mentors. */
     val categories: List<String>? = null,
     val averageRating: Double? = null,
+    /** How many mentees have rated this mentor (from RTDB ratingsCount). */
+    val ratingsCount: Long? = null,
 )
 
 /** Firestore wire format for a chat message. */

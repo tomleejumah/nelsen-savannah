@@ -22,6 +22,7 @@ import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.ProfileActivity;
 import com.app.nisisiafrica.R;
+import com.app.nisisiafrica.Utils.MentorRatingFormat;
 import com.app.nisisiafrica.Utils.OverlapImages;
 import com.bumptech.glide.Glide;
 import com.zen.overlapimagelistview.OverlapImageListView;
@@ -103,22 +104,9 @@ public class MentorsAdapter extends PagingDataAdapter<MentorItem, MentorsAdapter
             if (overlapImage != null && overlapImage.getVisibility() == View.VISIBLE) {
                 OverlapImages.load(overlapImage, studentImages);
             }
-            String count = mentorItem.getStudentsCount();
-            long n = 0;
-            if (count != null && !count.isEmpty()) {
-                try { n = Long.parseLong(count.replaceAll("[^0-9]", "")); } catch (NumberFormatException ignored) {}
-            }
-            if (n <= 0 && studentImages != null) n = studentImages.size();
 
-            Double rating = mentorItem.getAverageRating();
-            boolean hasHistory = (rating != null && rating > 0) || n > 0;
-            if (hasHistory && rating != null && rating > 0) {
-                tvMentorTag.setText(String.format(Locale.getDefault(), "★ %.1f · %d students", rating, n));
-            } else if (hasHistory) {
-                tvMentorTag.setText(n + " students");
-            } else {
-                tvMentorTag.setText("New mentor");
-            }
+            tvMentorTag.setText(MentorRatingFormat.listTag(
+                    mentorItem.getAverageRating(), mentorItem.getRatingsCount()));
             if (tvStudentsCount != null) tvStudentsCount.setText("");
 
             boolean hideBook = !com.app.nisisiafrica.Utils.Roles.browsesMentors();
