@@ -72,7 +72,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   const [cmsTrackId, setCmsTrackId] = useState("");
   const [sidePanel, setSidePanel] = useState<SidePanel>(null);
 
-  const schoolId = me.schoolId || me.activeSchoolId || "";
+  const schoolId = me.activeSchoolId || me.schoolId || "";
 
   function openSide(trackId: string, panel: SidePanel) {
     setCmsTrackId(trackId);

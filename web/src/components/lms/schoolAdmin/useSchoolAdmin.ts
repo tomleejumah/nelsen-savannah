@@ -25,7 +25,7 @@ import {
 } from "@/lib/lmsApi";
 
 export function useSchoolAdmin(user: User, me: MeDto) {
-  const schoolId = me.schoolId || me.activeSchoolId || "";
+  const schoolId = me.activeSchoolId || me.schoolId || "";
   const [members, setMembers] = useState<SchoolMemberDto[]>([]);
   const [dash, setDash] = useState<SchoolDashboardDto | null>(null);
   const [busy, setBusy] = useState(true);

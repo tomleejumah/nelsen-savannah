@@ -54,10 +54,12 @@ function mapMember(row) {
 
 export async function getActorSchoolId(uid) {
   const row = await dbGet(
-    "SELECT school_id FROM users_mirror WHERE uid = ?",
+    "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  return row?.school_id || DEFAULT_SCHOOL_ID;
+  // Prefer the school the user switched to; never invent DEFAULT silently —
+  // that snapped School Admin back to the wrong wing (e.g. QA / nelsen-digital).
+  return row?.active_school_id || row?.school_id || null;
 }
 
 export async function getSchoolName(schoolId) {
@@ -76,7 +78,7 @@ async function assertCanManageSchool(actorUid, schoolId) {
     throw err;
   }
   const actorSchool = await getActorSchoolId(actorUid);
-  if (actorSchool !== schoolId) {
+  if (!actorSchool || actorSchool !== schoolId) {
     const err = new Error("Cannot manage another school");
     err.status = 403;
     throw err;

@@ -67,7 +67,7 @@ function TeachCourseBoard({
   me: MeDto;
   trackId: string;
 }) {
-  const schoolId = me.schoolId || me.activeSchoolId || "";
+  const schoolId = me.activeSchoolId || me.schoolId || "";
   const [tracks, setTracks] = useState<TrackCardDto[]>([]);
   const [overview, setOverview] = useState<TrackOverviewDto | null>(null);
   const [busy, setBusy] = useState(true);
