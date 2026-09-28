@@ -1,87 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Reddit/Facebook-style group row — logo, name, members; keep CommunityAdapter IDs. -->
+<!-- Community row: squircle logo, name, member count, Join/Joined. No about text. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
-    android:orientation="vertical">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="14dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imgCommunityLogo"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:scaleType="centerCrop"
+        android:src="@mipmap/ic_launcher"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Squircle" />
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp">
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/imgCommunityLogo"
-            android:layout_width="52dp"
-            android:layout_height="52dp"
-            android:scaleType="centerCrop"
-            android:src="@mipmap/ic_launcher"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Rounded12" />
-
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvCommunityName"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:ellipsize="end"
+            android:fontFamily="@font/font_ui"
+            android:maxLines="1"
+            android:textColor="@color/ink"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="Nairobi Devs" />
 
-            <TextView
-                android:id="@+id/tvCommunityName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
-                android:maxLines="1"
-                android:textColor="@color/ink"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                tools:text="Trailblazers circle" />
+        <TextView
+            android:id="@+id/tvCommunityMeta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/font_ui"
+            android:textColor="@color/muted"
+            android:textSize="13sp"
+            tools:text="128k members" />
 
-            <TextView
-                android:id="@+id/tvCommunityMeta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:fontFamily="@font/font_ui"
-                android:textColor="@color/muted"
-                android:textSize="12sp"
-                tools:text="12 members" />
+        <!-- Kept for adapter compile; hidden — no about on list cards. -->
+        <TextView
+            android:id="@+id/tvCommunityDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/tvCommunityDesc"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
-                android:maxLines="2"
-                android:textColor="@color/ink_soft"
-                android:textSize="13sp"
-                tools:text="Ask questions and share wins with mentors." />
-
-            <!-- Kept for adapter; stacked avatars unused in list. -->
-            <com.zen.overlapimagelistview.OverlapImageListView
-                android:id="@+id/overlapImage"
-                android:layout_width="48dp"
-                android:layout_height="26dp"
-                android:visibility="gone"
-                app:circleCount="3"
-                app:fillColor="@color/line"
-                app:strokeColor="?attr/colorSurface"
-                app:strokeWidth="2dp" />
-        </LinearLayout>
+        <com.zen.overlapimagelistview.OverlapImageListView
+            android:id="@+id/overlapImage"
+            android:layout_width="48dp"
+            android:layout_height="26dp"
+            android:visibility="gone"
+            app:circleCount="3"
+            app:fillColor="@color/line"
+            app:strokeColor="?attr/colorSurface"
+            app:strokeWidth="2dp" />
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="6dp"
-        android:layout_marginStart="80dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/ns_list_divider" />
+    <TextView
+        android:id="@+id/btnCommunityJoin"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_pill_muted"
+        android:fontFamily="@font/font_ui"
+        android:gravity="center"
+        android:minWidth="72dp"
+        android:paddingHorizontal="14dp"
+        android:text="Joined"
+        android:textColor="@color/ink"
+        android:textSize="13sp" />
 </LinearLayout>

@@ -24,6 +24,10 @@
     <string name="stories_empty_hint">Be the first to share</string>
 
     <string name="groups_title">Groups</string>
+    <string name="your_communities">Your communities</string>
+    <string name="edit">Edit</string>
+    <string name="done">Done</string>
+    <string name="share">Share</string>
     <string name="groups_empty_title">No groups yet</string>
     <string name="groups_empty_body">Join topic spaces, ask questions, and share with mentors and peers.</string>
     <string name="group_change_logo">Change logo</string>
