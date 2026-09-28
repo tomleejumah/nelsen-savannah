@@ -66,17 +66,51 @@
                 android:textStyle="bold"
                 tools:text="Trailblazers track" />
 
-            <TextView
-                android:id="@+id/tvCourseMeta"
-                android:layout_width="match_parent"
+            <!-- Dedicated tappable tutor row (does not open the course). -->
+            <LinearLayout
+                android:id="@+id/tutorClickRow"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
-                android:maxLines="1"
-                android:textColor="@color/ink_soft"
-                android:textSize="13sp"
-                tools:text="with Nelsen Savannah" />
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_meta_chip"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/ivTutorAvatar"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_person" />
+
+                <TextView
+                    android:id="@+id/tvCourseMeta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/font_ui"
+                    android:maxLines="1"
+                    android:textColor="@color/maroon_700"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="Grace Achieng" />
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="2dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:rotation="180"
+                    app:tint="@color/maroon_500"
+                    tools:ignore="ContentDescription" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -110,7 +144,6 @@
                     android:textSize="11sp"
                     tools:text="3 h" />
 
-                <!-- Kept for binding compatibility -->
                 <TextView
                     android:id="@+id/tvCourseStats"
                     android:layout_width="0dp"

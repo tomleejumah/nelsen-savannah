@@ -14,12 +14,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -51,14 +51,21 @@ public class SchoolsListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_schools_list);
+        View headerContent = findViewById(R.id.headerContent);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            headerContent.setPadding(
+                    headerContent.getPaddingLeft(),
+                    bars.top + Math.round(12 * getResources().getDisplayMetrics().density),
+                    headerContent.getPaddingRight(),
+                    headerContent.getPaddingBottom());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
             return insets;
         });
+        WindowInsetsControllerCompat barsCtrl =
+                ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (barsCtrl != null) barsCtrl.setAppearanceLightStatusBars(true);
 
-        MaterialToolbar bar = findViewById(R.id.topAppBar);
-        bar.setNavigationOnClickListener(v -> finish());
         tvEmpty = findViewById(R.id.tvSchoolsEmpty);
         tvHint = findViewById(R.id.tvSchoolsHint);
 

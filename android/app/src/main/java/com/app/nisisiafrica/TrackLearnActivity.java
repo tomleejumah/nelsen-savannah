@@ -27,13 +27,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
 import com.github.barteksc.pdfviewer.PDFView;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -121,11 +121,21 @@ public class TrackLearnActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_track_learn);
+        View heroBand = findViewById(R.id.heroBand);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            // Maroon hero paints under the status bar; pad hero content only.
+            heroBand.setPadding(
+                    heroBand.getPaddingLeft(),
+                    bars.top + Math.round(12 * getResources().getDisplayMetrics().density),
+                    heroBand.getPaddingRight(),
+                    heroBand.getPaddingBottom());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
             return insets;
         });
+        WindowInsetsControllerCompat barsCtrl =
+                ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (barsCtrl != null) barsCtrl.setAppearanceLightStatusBars(false);
 
         trackId = getIntent().getStringExtra(EXTRA_TRACK_ID);
         fallbackUrl = getIntent().getStringExtra(EXTRA_FALLBACK_URL);
@@ -134,9 +144,6 @@ public class TrackLearnActivity extends AppCompatActivity {
         tutorId = getIntent().getStringExtra(EXTRA_TUTOR_ID);
         tutorName = getIntent().getStringExtra(EXTRA_TUTOR_NAME);
         tutorAvatarUrl = getIntent().getStringExtra(EXTRA_TUTOR_AVATAR);
-
-        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
-        toolbar.setNavigationOnClickListener(v -> finish());
 
         progress = findViewById(R.id.progress);
         trackProgress = findViewById(R.id.trackProgress);
