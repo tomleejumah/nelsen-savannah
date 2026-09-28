@@ -11,7 +11,7 @@
         android:id="@+id/btnBeMentor"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="10dp"
         android:layout_weight="1"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:gravity="center_horizontal"
@@ -20,6 +20,7 @@
         <FrameLayout
             android:layout_width="44dp"
             android:layout_height="44dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/shape_arc_stamp_circle">
 
             <ImageView
@@ -46,7 +47,7 @@
         android:id="@+id/btnOurShop"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="-3dp"
+        android:layout_marginTop="10dp"
         android:layout_weight="1"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:gravity="center_horizontal"
@@ -55,6 +56,7 @@
         <FrameLayout
             android:layout_width="44dp"
             android:layout_height="44dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/shape_arc_stamp_circle">
 
             <ImageView
@@ -81,7 +83,7 @@
         android:id="@+id/btnRecMe"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="-3dp"
+        android:layout_marginTop="10dp"
         android:layout_weight="1"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:gravity="center_horizontal"
@@ -90,6 +92,7 @@
         <FrameLayout
             android:layout_width="44dp"
             android:layout_height="44dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/shape_arc_stamp_circle">
 
             <ImageView
@@ -116,7 +119,7 @@
         android:id="@+id/btnDonate"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="10dp"
         android:layout_weight="1"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:gravity="center_horizontal"
@@ -125,6 +128,7 @@
         <FrameLayout
             android:layout_width="44dp"
             android:layout_height="44dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/shape_arc_stamp_circle">
 
             <ImageView
