@@ -24,31 +24,63 @@ import admin from "../config/firebase.js";
 
 /**
  * Mentors who only use the web never hit Android's saveOrUpdateMentor — so
- * /mentors/{uid} stays empty and app profiles look blank. Create a stub when
- * GET /lms/me sees a mentor without a node (same fields Android writes).
+ * /mentors/{uid} stays empty and app profiles look blank. Upsert a stub (and
+ * fill null/empty name or photo) whenever GET /lms/me sees a mentor/admin.
  */
-async function ensureMentorRtdbProfile(profile, role) {
-  if (normalizeRole(role) !== ROLES.Mentor) return;
+async function ensureMentorRtdbProfile(profile, role, dbUser = null) {
+  const normalized = normalizeRole(role);
+  if (
+    normalized !== ROLES.Mentor &&
+    normalized !== ROLES.SchoolAdmin &&
+    normalized !== ROLES.Admin
+  ) {
+    return;
+  }
   const uid = profile?.uid;
   if (!uid) return;
   try {
     const ref = admin.database().ref(`mentors/${uid}`);
     const snap = await ref.once("value");
-    if (snap.exists()) return;
+    const existing = snap.exists() ? snap.val() || {} : null;
     const name =
+      (dbUser && (dbUser.display_name || dbUser.displayName)) ||
       profile.displayName ||
       profile.name ||
-      (profile.email ? String(profile.email).split("@")[0] : "Mentor");
-    const photo = profile.photoURL || profile.picture || "";
-    await ref.update({
-      mentorId: uid,
-      mentorName: name,
-      mentorImageUrl: photo,
-      mentorDescription: "",
-      studentsCount: "0",
-      studentImages: [],
-      bookedDates: [],
-    });
+      (profile.email ? String(profile.email).split("@")[0] : "") ||
+      "Mentor";
+    const photo =
+      (dbUser && (dbUser.photo_url || dbUser.photoUrl)) ||
+      profile.photoUrl ||
+      profile.photoURL ||
+      profile.picture ||
+      "";
+
+    if (!existing) {
+      await ref.update({
+        mentorId: uid,
+        mentorName: name,
+        mentorImageUrl: photo,
+        mentorDescription: "",
+        studentsCount: "0",
+        studentImages: [],
+        bookedDates: [],
+      });
+      return;
+    }
+
+    const patch = {};
+    if (!existing.mentorId) patch.mentorId = uid;
+    const nameEmpty =
+      !existing.mentorName ||
+      String(existing.mentorName).trim() === "" ||
+      String(existing.mentorName).toLowerCase() === "null";
+    if (nameEmpty && name) patch.mentorName = name;
+    const photoEmpty =
+      !existing.mentorImageUrl ||
+      String(existing.mentorImageUrl).trim() === "" ||
+      String(existing.mentorImageUrl).toLowerCase() === "null";
+    if (photoEmpty && photo) patch.mentorImageUrl = photo;
+    if (Object.keys(patch).length) await ref.update(patch);
   } catch (err) {
     console.warn("[lms-me] ensure mentor rtdb:", err.message);
   }
@@ -257,7 +289,7 @@ export async function getMe(profile) {
 
       const activeMemberships = memberships.filter((m) => m.status === "active");
 
-      await ensureMentorRtdbProfile(profile, role);
+      await ensureMentorRtdbProfile(profile, role, user);
 
       return mePayload(
         profile,
@@ -289,7 +321,7 @@ export async function getMe(profile) {
     readRoleFromRtdb(profile.uid),
   ]);
   const role = normalizeRole(rtdbRole || ROLES.Mentee);
-  await ensureMentorRtdbProfile(profile, role);
+  await ensureMentorRtdbProfile(profile, role, rtdbUser);
   const { firstName, lastName } = splitName(
     rtdbUser?.displayName || profile.displayName,
   );
