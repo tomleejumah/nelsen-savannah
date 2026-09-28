@@ -2,6 +2,7 @@ package com.app.nisisiafrica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +38,15 @@ import retrofit2.Response;
 /**
  * School picker for mentees — Enroll Schools.
  * Lists membership schools first, then Explore others from GET /lms/schools/catalog.
+ * Membership rows show enrolled track counts (“n tracks in progress”).
  */
 public class SchoolsListActivity extends AppCompatActivity {
 
     public static final String EXTRA_EXPLORE = "explore";
 
     private final List<Row> rows = new ArrayList<>();
+    /** schoolId → enrolled track count for this user. */
+    private final Map<String, Integer> tracksInProgressBySchool = new HashMap<>();
     private SchoolsAdapter adapter;
     private TextView tvEmpty;
     private TextView tvHint;
@@ -86,36 +91,67 @@ public class SchoolsListActivity extends AppCompatActivity {
         }
         user.getIdToken(false).addOnSuccessListener(tokenResult -> {
             String bearer = "Bearer " + tokenResult.getToken();
-            ApiClient.getLmsService().me(bearer).enqueue(new Callback<>() {
-                @Override
-                public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
-                                       @NonNull Response<LmsModels.MeEnvelope> response) {
-                    Set<String> mine = new HashSet<>();
-                    List<Row> mineRows = new ArrayList<>();
-                    LmsModels.MeEnvelope body = response.body();
-                    if (response.isSuccessful() && body != null && body.ok && body.data != null) {
-                        Object mem = body.data.get("memberships");
-                        if (mem instanceof List<?> list) {
-                            for (Object o : list) {
-                                if (!(o instanceof Map<?, ?> m)) continue;
-                                Object status = m.get("status");
-                                if (status != null && !"active".equals(String.valueOf(status))) continue;
-                                String sid = str(m.get("schoolId"));
-                                String name = str(m.get("schoolName"));
-                                if (sid.isEmpty()) continue;
-                                mine.add(sid);
-                                mineRows.add(new Row(sid, name.isEmpty() ? sid : name, true));
-                            }
+            loadEnrolledTrackCounts(bearer, () -> loadMemberships(bearer));
+        });
+    }
+
+    private void loadEnrolledTrackCounts(String bearer, Runnable next) {
+        ApiClient.getLmsService().myEnrollments(bearer).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                   @NonNull Response<LmsModels.EnrollmentListEnvelope> response) {
+                tracksInProgressBySchool.clear();
+                LmsModels.EnrollmentListEnvelope body = response.body();
+                if (response.isSuccessful() && body != null && body.ok
+                        && body.data != null && body.data.enrollments != null) {
+                    for (LmsModels.Enrollment e : body.data.enrollments) {
+                        if (e == null || TextUtils.isEmpty(e.schoolId)) continue;
+                        Integer cur = tracksInProgressBySchool.get(e.schoolId);
+                        tracksInProgressBySchool.put(e.schoolId, (cur == null ? 0 : cur) + 1);
+                    }
+                }
+                next.run();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                  @NonNull Throwable t) {
+                tracksInProgressBySchool.clear();
+                next.run();
+            }
+        });
+    }
+
+    private void loadMemberships(String bearer) {
+        ApiClient.getLmsService().me(bearer).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
+                                   @NonNull Response<LmsModels.MeEnvelope> response) {
+                Set<String> mine = new HashSet<>();
+                List<Row> mineRows = new ArrayList<>();
+                LmsModels.MeEnvelope body = response.body();
+                if (response.isSuccessful() && body != null && body.ok && body.data != null) {
+                    Object mem = body.data.get("memberships");
+                    if (mem instanceof List<?> list) {
+                        for (Object o : list) {
+                            if (!(o instanceof Map<?, ?> m)) continue;
+                            Object status = m.get("status");
+                            if (status != null && !"active".equals(String.valueOf(status))) continue;
+                            String sid = str(m.get("schoolId"));
+                            String name = str(m.get("schoolName"));
+                            if (sid.isEmpty()) continue;
+                            mine.add(sid);
+                            mineRows.add(new Row(sid, name.isEmpty() ? sid : name, true));
                         }
                     }
-                    loadCatalog(bearer, mine, mineRows);
                 }
+                loadCatalog(bearer, mine, mineRows);
+            }
 
-                @Override
-                public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call, @NonNull Throwable t) {
-                    loadCatalog(bearer, new HashSet<>(), new ArrayList<>());
-                }
-            });
+            @Override
+            public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call, @NonNull Throwable t) {
+                loadCatalog(bearer, new HashSet<>(), new ArrayList<>());
+            }
         });
     }
 
@@ -156,6 +192,17 @@ public class SchoolsListActivity extends AppCompatActivity {
         });
     }
 
+    private String tracksMeta(String schoolId, boolean mine) {
+        Integer n = tracksInProgressBySchool.get(schoolId);
+        int count = n == null ? 0 : n;
+        if (count > 0) {
+            return count == 1
+                    ? getString(R.string.school_one_track_in_progress)
+                    : getString(R.string.school_tracks_in_progress, count);
+        }
+        return mine ? "Your school" : "Explore";
+    }
+
     private static String str(Object o) {
         return o == null ? "" : String.valueOf(o).trim();
     }
@@ -192,7 +239,7 @@ public class SchoolsListActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull VH holder, int position) {
             Row row = rows.get(position);
             holder.name.setText(row.name);
-            holder.meta.setText(row.mine ? "Your school" : "Explore");
+            holder.meta.setText(tracksMeta(row.schoolId, row.mine));
             holder.itemView.setOnClickListener(v -> openSchool(row));
         }
 

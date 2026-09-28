@@ -484,36 +484,44 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     /**
-     * Same LMS feed as web /learning: GET /lms/me + enrollments for a live blurb;
-     * card opens AllCoursesActivity (GET /lms/tracks).
+     * Enroll Schools blurb: school membership count (not track count).
+     * Track-in-progress counts live on each school row in SchoolsListActivity.
      */
     private void loadFindMyPathFromLms() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null || tvFindMyPathBlurb == null) return;
         user.getIdToken(false).addOnSuccessListener(tokenResult -> {
             String bearer = "Bearer " + tokenResult.getToken();
-            ApiClient.getLmsService().myEnrollments(bearer).enqueue(new Callback<>() {
+            ApiClient.getLmsService().me(bearer).enqueue(new Callback<>() {
                 @Override
-                public void onResponse(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
-                                       @NonNull Response<LmsModels.EnrollmentListEnvelope> response) {
+                public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
+                                       @NonNull Response<LmsModels.MeEnvelope> response) {
                     if (!isAdded() || tvFindMyPathBlurb == null) return;
-                    LmsModels.EnrollmentListEnvelope body = response.body();
+                    LmsModels.MeEnvelope body = response.body();
                     int n = 0;
-                    if (response.isSuccessful() && body != null && body.ok
-                            && body.data != null && body.data.enrollments != null) {
-                        n = body.data.enrollments.size();
+                    if (response.isSuccessful() && body != null && body.ok && body.data != null) {
+                        Object mem = body.data.get("memberships");
+                        if (mem instanceof java.util.List<?> list) {
+                            for (Object o : list) {
+                                if (!(o instanceof java.util.Map<?, ?> m)) continue;
+                                Object status = m.get("status");
+                                if (status != null && !"active".equals(String.valueOf(status))) continue;
+                                Object sid = m.get("schoolId");
+                                if (sid != null && !String.valueOf(sid).trim().isEmpty()) n++;
+                            }
+                        }
                     }
                     if (n > 0) {
                         tvFindMyPathBlurb.setText(n == 1
-                                ? getString(R.string.home_one_track_in_progress)
-                                : getString(R.string.home_tracks_in_progress, n));
+                                ? getString(R.string.home_enrolled_one_school)
+                                : getString(R.string.home_enrolled_schools, n));
                     } else {
                         refreshFindMyPathCatalogHint(bearer);
                     }
                 }
 
                 @Override
-                public void onFailure(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call,
                                       @NonNull Throwable t) {
                     if (!isAdded() || tvFindMyPathBlurb == null) return;
                     refreshFindMyPathCatalogHint(bearer);
@@ -523,43 +531,26 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
     }
 
     private void refreshFindMyPathCatalogHint(String bearer) {
-        ApiClient.getLmsService().tracks(bearer, null).enqueue(new Callback<>() {
+        ApiClient.getLmsService().schoolsCatalog(bearer).enqueue(new Callback<>() {
             @Override
-            public void onResponse(@NonNull Call<LmsModels.TracksEnvelope> call,
-                                   @NonNull Response<LmsModels.TracksEnvelope> response) {
+            public void onResponse(@NonNull Call<LmsModels.SchoolsEnvelope> call,
+                                   @NonNull Response<LmsModels.SchoolsEnvelope> response) {
                 if (!isAdded() || tvFindMyPathBlurb == null) return;
-                LmsModels.TracksEnvelope body = response.body();
+                LmsModels.SchoolsEnvelope body = response.body();
                 int n = 0;
                 if (response.isSuccessful() && body != null && body.ok
-                        && body.data != null && body.data.tracks != null) {
-                    n = body.data.tracks.size();
+                        && body.data != null && body.data.schools != null) {
+                    n = body.data.schools.size();
                 }
                 if (n > 0) {
                     tvFindMyPathBlurb.setText(getString(R.string.home_schools_count, n));
                 }
-                // else keep layout default copy
             }
 
             @Override
-            public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<LmsModels.SchoolsEnvelope> call,
+                                  @NonNull Throwable t) {
                 // keep default blurb
-            }
-        });
-
-        ApiClient.getLmsService().me(bearer).enqueue(new Callback<>() {
-            @Override
-            public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
-                                   @NonNull Response<LmsModels.MeEnvelope> response) {
-                // Warm /lms/me like web; role/capabilities live on envelope for later shells.
-                LmsModels.MeEnvelope body = response.body();
-                if (body != null && body.ok && body.data != null) {
-                    Log.d(TAG, "lms/me ok keys=" + body.data.keySet());
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call, @NonNull Throwable t) {
-                Log.w(TAG, "lms/me failed", t);
             }
         });
     }

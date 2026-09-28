@@ -45,9 +45,13 @@
     <!-- Home -->
     <string name="home_enroll_schools">Enroll Schools</string>
     <string name="home_browse_schools">browse schools →</string>
+    <string name="home_enrolled_schools">enrolled to %d schools →</string>
+    <string name="home_enrolled_one_school">enrolled to 1 school →</string>
     <string name="home_tracks_in_progress">%d tracks in progress →</string>
     <string name="home_one_track_in_progress">1 track in progress →</string>
     <string name="home_schools_count">%d schools →</string>
+    <string name="school_tracks_in_progress">%d tracks in progress</string>
+    <string name="school_one_track_in_progress">1 track in progress</string>
     <string name="home_upcoming_schedule">Upcoming schedule</string>
     <string name="home_see_more">See more</string>
     <string name="home_see_all">see all</string>
@@ -167,7 +171,12 @@
     <string name="schools_pick_hint">Pick a school to see courses — or explore others anytime.</string>
     <string name="schools_empty">No schools yet</string>
     <string name="courses_all">All Courses</string>
-    <string name="courses_from_school">Courses from this school — enroll to join</string>
+    <string name="courses_from_school">Courses from this school — apply to join, then enroll</string>
+    <string name="school_apply_now">Apply now</string>
+    <string name="school_apply_pending">Join request pending — waiting for school approval</string>
+    <string name="school_apply_sent">Join request sent</string>
+    <string name="enroll_now">Enroll now</string>
+    <string name="enroll_continue">Continue learning</string>
     <string name="courses_loading">Loading tracks…</string>
     <string name="courses_sign_in_required">Sign in required</string>
     <string name="courses_load_failed">Could not load tracks</string>

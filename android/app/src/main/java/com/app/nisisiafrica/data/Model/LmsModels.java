@@ -340,6 +340,7 @@ public final class LmsModels {
     public static class Enrollment {
         public String uid;
         public String trackId;
+        public String schoolId;
         public String status;
         public float trackPercent;
         public int modulesCompleted;
