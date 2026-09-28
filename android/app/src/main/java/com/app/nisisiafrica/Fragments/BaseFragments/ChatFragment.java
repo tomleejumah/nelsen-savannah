@@ -259,8 +259,7 @@ public class ChatFragment extends Fragment {
         currentChatId = chatId;
         currentReceiverId = chatroom.getOtherUserId(currentUserId);
 
-        boolean keepNav = "announcements".equals(chatId) || "system".equals(type);
-        showChatDetail(keepNav);
+        showChatDetail();
         binding.etMessage.setText("");
         clearReply();
 
@@ -587,15 +586,7 @@ public class ChatFragment extends Fragment {
         switch (type) {
             case "system":
                 binding.tvChatName.setText(R.string.chat_announcements);
-                int people = chatroom.getUserIds() != null ? chatroom.getUserIds().size() : 0;
-                boolean canPost = Roles.canCreate(role);
-                if (people > 0) {
-                    binding.tvChatRole.setText(canPost
-                            ? getString(R.string.chat_announcements_you_can_post, people)
-                            : getString(R.string.chat_announcements_people, people));
-                } else {
-                    binding.tvChatRole.setText(R.string.chat_official_updates);
-                }
+                binding.tvChatRole.setText(R.string.chat_official_updates);
                 Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
