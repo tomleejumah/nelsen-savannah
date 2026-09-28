@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
+import { useEffect } from "react";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { SchoolAdminChrome } from "@/components/lms/schoolAdmin/SchoolAdminChrome";
+import { SchoolInviteForm } from "@/components/lms/schoolAdmin/SchoolInviteForm";
 import { SchoolPctBar } from "@/components/lms/schoolAdmin/SchoolPctBar";
 import { useSchoolAdmin } from "@/components/lms/schoolAdmin/useSchoolAdmin";
 import type { MeDto } from "@/lib/lmsApi";
@@ -28,6 +30,10 @@ function MentorsPage() {
 
 function MentorsConsole({ user, me }: { user: User; me: MeDto }) {
   const a = useSchoolAdmin(user, me);
+  useEffect(() => {
+    a.setInviteRole("Mentor");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- default once per page
+  }, []);
 
   return (
     <SchoolAdminChrome
@@ -43,42 +49,52 @@ function MentorsConsole({ user, me }: { user: User; me: MeDto }) {
         </p>
       ) : null}
 
-      <form
-        id="invite-mentor"
-        onSubmit={(e) => void a.addMentor(e)}
-        className="space-y-3"
-      >
-        <h3 className="font-display text-lg font-semibold">Invite mentor</h3>
+      <SchoolInviteForm
+        emails={a.inviteEmails}
+        onEmailsChange={a.setInviteEmails}
+        role={a.inviteRole}
+        onRoleChange={a.setInviteRole}
+        onSubmit={(e) => void a.invitePeople(e)}
+        defaultHint="Invite trainers by email. Copy their join link from Invites sent if mail doesn't arrive."
+      />
+
+      <section className="space-y-3">
+        <h3 className="font-display text-lg font-semibold">Invites sent</h3>
         <p className="text-xs text-muted-foreground">
-          Add their email — when they sign in, they join as Mentor.
+          Pending invites stay on the school until they join.
         </p>
-        <input
-          required
-          type="email"
-          value={a.mentorEmail}
-          onChange={(e) => a.setMentorEmail(e.target.value)}
-          placeholder="teacher@email.com"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <input
-          value={a.mentorName}
-          onChange={(e) => a.setMentorName(e.target.value)}
-          placeholder="Display name"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <input
-          value={a.mentorUid}
-          onChange={(e) => a.setMentorUid(e.target.value)}
-          placeholder="Firebase uid (optional, legacy)"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
-        >
-          Invite mentor
-        </button>
-      </form>
+        {a.pendingInvites.filter((m) => m.userRole === "Mentor").length ===
+        0 ? (
+          <p className="text-sm text-muted-foreground">No pending mentor invites.</p>
+        ) : (
+          <ul className="divide-y divide-border/60 rounded-2xl border border-border/70 bg-card">
+            {a.pendingInvites
+              .filter((m) => m.userRole === "Mentor")
+              .map((m) => (
+                <li
+                  key={m.uid || m.email || m.inviteUrl}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {m.displayName || m.email || "Invite"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.email || "—"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void a.copyInvite(m.inviteUrl as string)}
+                    className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+                  >
+                    Copy invite link
+                  </button>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
 
       <section className="space-y-3">
         <h3 className="font-display text-lg font-semibold">

@@ -128,6 +128,49 @@ export async function notifySchoolDecisionEmail({
   }
 }
 
+/**
+ * Door-A invite email with join-link CTA.
+ * Best-effort — invite row always saves even if Resend fails.
+ * TODO: verify delivery in prod; surface mail failures in school admin UI.
+ */
+export async function notifySchoolInviteEmail({
+  to,
+  displayName,
+  schoolName,
+  role,
+  inviteUrl,
+}) {
+  const email = String(to || "").trim();
+  if (!email || !email.includes("@")) return null;
+  const url = String(inviteUrl || "").trim();
+  if (!url) return null;
+  const name = String(displayName || "").trim() || "there";
+  const school = String(schoolName || "").trim() || "the school";
+  const isMentor = String(role || "").toLowerCase() === "mentor";
+  const title = isMentor
+    ? `You're invited to mentor at ${school}`
+    : `You're invited to join ${school}`;
+  const intro = isMentor
+    ? `Hi ${name}, you've been invited to teach at ${school}. Open the link below — sign in (or create an account) and you'll land in the school as a mentor.`
+    : `Hi ${name}, you've been invited to learn at ${school}. Open the link below — sign in (or create an account) and you'll join automatically.`;
+  try {
+    return await sendGuestEmail({
+      to: email,
+      subject: title,
+      title,
+      intro,
+      rows: [
+        { label: "School", value: school },
+        { label: "Role", value: isMentor ? "Mentor" : "Student" },
+      ],
+      cta: { label: "Accept invite", href: url },
+    });
+  } catch (err) {
+    console.warn("[school-mail] notify invite:", err.message || err);
+    return null;
+  }
+}
+
 async function sendRaw({ to, subject, replyTo, text, html }) {
   const resend = new Resend(requireKey());
   const { data, error } = await resend.emails.send({

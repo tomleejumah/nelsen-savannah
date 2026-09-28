@@ -283,9 +283,26 @@ export async function inviteMemberByEmail(actorSchoolId, body = {}) {
     const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [
       existing.id,
     ]);
+    const membership = mapMembership(row);
+    try {
+      const school = await dbGet(
+        "SELECT name FROM schools WHERE school_id = ?",
+        [actorSchoolId],
+      );
+      const { notifySchoolInviteEmail } = await import("./inquiryEmail.js");
+      await notifySchoolInviteEmail({
+        to: email,
+        displayName: displayName || row.display_name || email,
+        schoolName: school?.name || DEFAULT_SCHOOL_NAME,
+        role,
+        inviteUrl: membership.inviteUrl,
+      });
+    } catch (err) {
+      console.warn("[invite] email:", err.message || err);
+    }
     return {
       source: getPrimaryEngine(),
-      data: { membership: mapMembership(row) },
+      data: { membership },
     };
   }
 
@@ -352,9 +369,26 @@ export async function inviteMemberByEmail(actorSchoolId, body = {}) {
   }
   await ensureInviteToken(id);
   const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [id]);
+  const membership = mapMembership(row);
+  try {
+    const school = await dbGet(
+      "SELECT name FROM schools WHERE school_id = ?",
+      [actorSchoolId],
+    );
+    const { notifySchoolInviteEmail } = await import("./inquiryEmail.js");
+    await notifySchoolInviteEmail({
+      to: email,
+      displayName: displayName || email,
+      schoolName: school?.name || DEFAULT_SCHOOL_NAME,
+      role,
+      inviteUrl: membership.inviteUrl,
+    });
+  } catch (err) {
+    console.warn("[invite] email:", err.message || err);
+  }
   return {
     source: getPrimaryEngine(),
-    data: { membership: mapMembership(row) },
+    data: { membership },
   };
 }
 

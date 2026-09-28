@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
+import { useEffect } from "react";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { SchoolAdminChrome } from "@/components/lms/schoolAdmin/SchoolAdminChrome";
+import { SchoolInviteForm } from "@/components/lms/schoolAdmin/SchoolInviteForm";
 import { SchoolPctBar } from "@/components/lms/schoolAdmin/SchoolPctBar";
 import { useSchoolAdmin } from "@/components/lms/schoolAdmin/useSchoolAdmin";
 import type { MeDto } from "@/lib/lmsApi";
@@ -19,7 +21,7 @@ function StudentsPage() {
     <RoleShellPage
       shell="school"
       title="Manage students"
-      blurb="Invite, roster, and track progress in one place."
+      blurb="Invite students and track progress in one place."
     >
       {({ user, me }) => <StudentsConsole user={user} me={me} />}
     </RoleShellPage>
@@ -28,11 +30,15 @@ function StudentsPage() {
 
 function StudentsConsole({ user, me }: { user: User; me: MeDto }) {
   const a = useSchoolAdmin(user, me);
+  useEffect(() => {
+    a.setInviteRole("Mentee");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- default once per page
+  }, []);
 
   return (
     <SchoolAdminChrome
       title="Manage students"
-      blurb="Invite students, import roster, approve joins, and watch progress."
+      blurb="Invite by email, approve joins, and watch progress."
       msg={a.msg}
       lastInviteUrl={a.lastInviteUrl}
       onCopyInvite={(url) => void a.copyInvite(url)}
@@ -43,58 +49,13 @@ function StudentsConsole({ user, me }: { user: User; me: MeDto }) {
         </p>
       ) : null}
 
-      <form onSubmit={(e) => void a.addMentee(e)} className="space-y-3">
-        <h3 className="font-display text-lg font-semibold">Invite student</h3>
-        <p className="text-xs text-muted-foreground">
-          Email plus a join link they can open on the site.
-        </p>
-        <input
-          required
-          type="email"
-          value={a.menteeEmail}
-          onChange={(e) => a.setMenteeEmail(e.target.value)}
-          placeholder="student@email.com"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <input
-          value={a.menteeName}
-          onChange={(e) => a.setMenteeName(e.target.value)}
-          placeholder="Display name"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <input
-          value={a.menteeUid}
-          onChange={(e) => a.setMenteeUid(e.target.value)}
-          placeholder="Firebase uid (optional, legacy)"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          className="rounded-full bg-ember-gradient px-5 py-2 text-sm font-semibold text-maroon-foreground"
-        >
-          Invite by email
-        </button>
-      </form>
-
-      <form onSubmit={(e) => void a.onRoster(e)} className="space-y-3">
-        <h3 className="font-display text-lg font-semibold">Roster CSV import</h3>
-        <p className="text-xs text-muted-foreground">
-          Paste rows like <code className="font-mono">email,displayName,role</code>.
-          No Firebase uid needed — they join when they sign in with that email.
-        </p>
-        <textarea
-          value={a.csv}
-          onChange={(e) => a.setCsv(e.target.value)}
-          rows={4}
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs"
-        />
-        <button
-          type="submit"
-          className="rounded-full border border-border px-5 py-2 text-sm"
-        >
-          Import
-        </button>
-      </form>
+      <SchoolInviteForm
+        emails={a.inviteEmails}
+        onEmailsChange={a.setInviteEmails}
+        role={a.inviteRole}
+        onRoleChange={a.setInviteRole}
+        onSubmit={(e) => void a.invitePeople(e)}
+      />
 
       <section className="space-y-3">
         <h3 className="font-display text-lg font-semibold">Progress snapshot</h3>
@@ -160,6 +121,44 @@ function StudentsConsole({ user, me }: { user: User; me: MeDto }) {
             )}
           </>
         ) : null}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="font-display text-lg font-semibold">Invites sent</h3>
+        <p className="text-xs text-muted-foreground">
+          Saved on the school roster until they join. Copy the link anytime —
+          email delivery is best-effort for now.
+        </p>
+        {a.busy ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : a.pendingInvites.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No pending invites.</p>
+        ) : (
+          <ul className="divide-y divide-border/60 rounded-2xl border border-border/70 bg-card">
+            {a.pendingInvites.map((m) => (
+              <li
+                key={m.uid || m.email || m.inviteUrl}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
+              >
+                <div>
+                  <p className="font-medium">
+                    {m.displayName || m.email || "Invite"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {m.email || "—"} · {m.userRole}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void a.copyInvite(m.inviteUrl as string)}
+                  className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs font-medium"
+                >
+                  Copy invite link
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section>
