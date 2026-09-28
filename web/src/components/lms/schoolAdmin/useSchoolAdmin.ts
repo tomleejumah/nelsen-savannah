@@ -38,7 +38,7 @@ export function useSchoolAdmin(user: User, me: MeDto) {
   const [menteeUid, setMenteeUid] = useState("");
   const [menteeEmail, setMenteeEmail] = useState("");
   const [menteeName, setMenteeName] = useState("");
-  const [csv, setCsv] = useState("uid,email,displayName,role\n");
+  const [csv, setCsv] = useState("email,displayName,role\n");
   const [accent, setAccent] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [seats, setSeats] = useState(10);
