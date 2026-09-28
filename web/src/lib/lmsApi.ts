@@ -223,6 +223,7 @@ export type SchoolMemberDto = {
   userRole: string;
   schoolId: string;
   status?: string;
+  inviteUrl?: string | null;
 };
 
 export type CertificateDto = {
@@ -943,6 +944,46 @@ export async function registerSchoolMentee(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     },
+  );
+}
+
+export async function patchSchoolMemberStatus(
+  idToken: string,
+  schoolId: string,
+  uid: string,
+  status: "active" | "suspended",
+) {
+  return lmsFetch<{ member: SchoolMemberDto }>(
+    `/lms/schools/${encodeURIComponent(schoolId)}/members/${encodeURIComponent(uid)}/status`,
+    idToken,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    },
+  );
+}
+
+export type JoinInviteDto = {
+  schoolId: string;
+  schoolName: string;
+  email: string;
+  displayName: string;
+  role: string;
+  status: string;
+};
+
+export async function fetchJoinInvite(token: string) {
+  return lmsFetch<JoinInviteDto>(
+    `/lms/join/${encodeURIComponent(token)}`,
+  );
+}
+
+export async function acceptJoinInvite(idToken: string, token: string) {
+  return lmsFetch<{ membership: SchoolMembershipDto }>(
+    `/lms/join/${encodeURIComponent(token)}`,
+    idToken,
+    { method: "POST" },
   );
 }
 
