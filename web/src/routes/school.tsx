@@ -471,8 +471,21 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
               <ul className="rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm">
                 <li className="mb-2 font-medium">At risk (&lt;40%, inactive 7d)</li>
                 {dash.atRisk.slice(0, 8).map((a) => (
-                  <li key={`${a.uid}-${a.trackId}`} className="text-muted-foreground">
-                    {a.displayName || a.uid} · {a.trackId} · {a.trackPercent}%
+                  <li key={`${a.uid}-${a.trackId}`} className="py-1.5 text-muted-foreground">
+                    <p className="font-medium text-foreground">
+                      {a.displayName || a.uid}
+                    </p>
+                    {a.email ? (
+                      <a
+                        href={`mailto:${a.email}`}
+                        className="block text-xs text-ember underline-offset-2 hover:underline"
+                      >
+                        {a.email}
+                      </a>
+                    ) : null}
+                    <p className="text-xs">
+                      {a.trackId} · {a.trackPercent}%
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -568,7 +581,11 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       </section>
 
       <section id="people" className="grid gap-8 sm:grid-cols-2">
-        <form onSubmit={(e) => void addMentor(e)} className="space-y-3">
+        <form
+          id="invite-mentor"
+          onSubmit={(e) => void addMentor(e)}
+          className="space-y-3"
+        >
           <h2 className="font-display text-lg font-semibold">Invite mentor</h2>
           <p className="text-xs text-muted-foreground">
             Add their email — when they sign in with it, they join this school as a

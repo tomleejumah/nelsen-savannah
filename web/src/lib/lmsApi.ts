@@ -1149,6 +1149,7 @@ export type SchoolDashboardDto = {
   atRisk: {
     uid: string;
     displayName: string;
+    email?: string;
     trackId: string;
     trackPercent: number;
     lastActiveAt: number;
