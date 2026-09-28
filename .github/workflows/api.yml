@@ -54,7 +54,7 @@ jobs:
           APP_DIR: /home/server/Apis/nelsen-savannah
         run: |
           set -euo pipefail
-          mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
+          mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp" "$APP_DIR/uploads/apk"
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
@@ -74,7 +74,7 @@ jobs:
           fi
           rm -rf node_modules
           npm install --omit=dev --no-audit --no-fund
-          mkdir -p data uploads uploads/_tmp
+          mkdir -p data uploads uploads/_tmp uploads/apk
           # Proven path: delete + start with explicit cwd (restart can keep a stale cwd/PORT).
           "$PM2" delete nelsen-savannah || true
           "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env

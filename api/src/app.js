@@ -22,6 +22,7 @@ const DATA_DIR = process.env.LMS_DATA_DIR || path.join(ROOT, "data");
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(path.join(UPLOAD_DIR, "app"), { recursive: true });
+fs.mkdirSync(path.join(UPLOAD_DIR, "apk"), { recursive: true });
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const app = express();
