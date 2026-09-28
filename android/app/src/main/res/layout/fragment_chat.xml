@@ -107,7 +107,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Open conversation -->
+    <!-- Open conversation: messages full-bleed; glass header/composer overlay like Home. -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/chatDetailContainer"
         android:layout_width="match_parent"
@@ -115,12 +115,34 @@
         android:background="?attr/colorSurface"
         android:visibility="gone">
 
-        <!-- Translucent header (not BlurView — nested BlurView inside activity BlurTarget crashes). -->
+        <!-- Kept id for any legacy binding references -->
+        <View
+            android:id="@+id/headerCard"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMessages"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:clipToPadding="false"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Translucent header over messages (not BlurView — nested BlurView in activity BlurTarget crashes). -->
         <FrameLayout
             android:id="@+id/chatHeaderBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@color/blur_overlay"
+            android:background="@drawable/bg_glass_bar"
+            android:elevation="6dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -212,32 +234,12 @@
             </LinearLayout>
         </FrameLayout>
 
-        <!-- Kept id for any legacy binding references -->
-        <View
-            android:id="@+id/headerCard"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvMessages"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:clipToPadding="false"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="12dp"
-            app:layout_constraintBottom_toTopOf="@id/chatComposerBlur"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/chatHeaderBlur" />
-
         <FrameLayout
             android:id="@+id/chatComposerBlur"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_glass_composer"
+            android:background="@drawable/bg_glass_bar"
+            android:elevation="6dp"
             android:paddingTop="4dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
