@@ -62,6 +62,8 @@
     <color name="bubble_quote_bg">#1A7C1F32</color>
 
     <color name="blur_overlay">#99FFFFFF</color>
+    <!-- Chat open-conversation chrome — denser than home overlay (no BlurView allowed here). -->
+    <color name="chat_glass_overlay">#E6FFFFFF</color>
     <color name="glass_fill">#B3FFFFFF</color>
     <color name="glass_stroke">#40FFFFFF</color>
 
