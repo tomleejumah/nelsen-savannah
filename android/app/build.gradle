@@ -75,10 +75,12 @@ android {
     }
 
 
+    // Sideload releases: sign with debug keystore until a Play upload keystore is wired in CI.
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
         }
     }
 
