@@ -19,6 +19,7 @@ import {
   fetchLmsMe,
   fetchLmsTracks,
   fetchSchoolsCatalog,
+  applyToJoinSchool,
   setActiveSchool,
   type MeDto,
   type SchoolCatalogDto,
@@ -118,7 +119,10 @@ function LearningPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [schoolQuery, setSchoolQuery] = useState("");
   const [filter, setFilter] = useState<CatalogFilter>("all");
+  const [schoolActionId, setSchoolActionId] = useState<string | null>(null);
+  const [schoolMsg, setSchoolMsg] = useState<string | null>(null);
 
   const previewTracks = useMemo<DisplayTrack[]>(
     () =>
@@ -181,12 +185,10 @@ function LearningPage() {
             if (gen !== getAuthGeneration()) return;
             const nextMe = envelope.ok && envelope.data ? envelope.data : null;
             setMe(nextMe);
-            if (nextMe?.needsSchoolPick || nextMe?.unaffiliated) {
-              const catalog = await fetchSchoolsCatalog(token);
-              if (gen !== getAuthGeneration()) return;
-              if (catalog.ok && catalog.data?.schools) {
-                setSchools(catalog.data.schools);
-              }
+            const catalog = await fetchSchoolsCatalog(token);
+            if (gen !== getAuthGeneration()) return;
+            if (catalog.ok && catalog.data?.schools) {
+              setSchools(catalog.data.schools);
             }
           } catch {
             if (gen !== getAuthGeneration()) return;
@@ -241,6 +243,89 @@ function LearningPage() {
       );
     });
   }, [catalog, filter, query]);
+
+  const membershipBySchool = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of me?.memberships || []) {
+      if (!m.schoolId) continue;
+      map.set(m.schoolId, (m.status || "").toLowerCase());
+    }
+    return map;
+  }, [me?.memberships]);
+
+  const filteredSchools = useMemo(() => {
+    const q = schoolQuery.trim().toLowerCase();
+    const list = [...schools];
+    list.sort((a, b) => {
+      const aActive = membershipBySchool.get(a.schoolId) === "active" ? 0 : 1;
+      const bActive = membershipBySchool.get(b.schoolId) === "active" ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return (a.name || a.schoolId).localeCompare(b.name || b.schoolId);
+    });
+    if (!q) return list;
+    return list.filter((s) =>
+      (s.name || s.schoolId).toLowerCase().includes(q),
+    );
+  }, [schools, schoolQuery, membershipBySchool]);
+
+  const activeSchoolId =
+    exploreSchoolId || me?.activeSchoolId || me?.schoolId || "";
+
+  async function refreshMe(u: User) {
+    const token = await u.getIdToken();
+    const envelope = await fetchLmsMe(token);
+    if (envelope.ok && envelope.data) setMe(envelope.data);
+  }
+
+  async function enterSchool(schoolId: string) {
+    if (!user) return;
+    setSchoolMsg(null);
+    setSchoolActionId(schoolId);
+    try {
+      const token = await user.getIdToken();
+      const result = await setActiveSchool(token, schoolId);
+      if (!result.ok) {
+        setSchoolMsg(result.error || "Could not open school");
+        return;
+      }
+      await refreshMe(user);
+      await navigate({ to: "/learning", search: { schoolId } });
+      await loadTracks(user, schoolId);
+    } catch (err) {
+      setSchoolMsg(err instanceof Error ? err.message : "Could not open school");
+    } finally {
+      setSchoolActionId(null);
+    }
+  }
+
+  async function applySchool(schoolId: string) {
+    if (!user) return;
+    setSchoolMsg(null);
+    setSchoolActionId(schoolId);
+    try {
+      const token = await user.getIdToken();
+      const result = await applyToJoinSchool(
+        token,
+        schoolId,
+        me?.displayName || user.displayName || "",
+      );
+      if (!result.ok) {
+        setSchoolMsg(result.error || "Could not apply");
+        return;
+      }
+      if (result.data?.alreadyMember) {
+        setSchoolMsg("You are already a member — use Enter.");
+        await refreshMe(user);
+        return;
+      }
+      setSchoolMsg("Application sent — a school admin will approve you.");
+      await refreshMe(user);
+    } catch (err) {
+      setSchoolMsg(err instanceof Error ? err.message : "Could not apply");
+    } finally {
+      setSchoolActionId(null);
+    }
+  }
 
   function onLogout() {
     setMe(null);
@@ -300,80 +385,9 @@ function LearningPage() {
             Learning you keep.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            {me
-              ? me.needsSchoolPick || me.unaffiliated
-                ? "Pick a school to browse its tracks — enroll to join that wing. Or explore via a school link."
-                : `Learning at ${me.schoolName || "your school"}. Switch schools anytime if you belong to more than one.`
-              : "Browse the tracks, enroll, and pick up where you left off."}
+            Find your school, enter if you already belong, or apply to join a new
+            one — then search and enroll in its tracks.
           </p>
-          {me ? (
-            <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-left">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {me.needsSchoolPick || me.unaffiliated
-                  ? exploreSchoolId
-                    ? "Exploring"
-                    : "Choose a school"
-                  : "Your school"}
-              </p>
-              <p className="mt-1 font-display text-lg font-semibold">
-                {exploreSchoolId
-                  ? schools.find((s) => s.schoolId === exploreSchoolId)?.name ||
-                    exploreSchoolId
-                  : me.schoolName || me.activeSchoolId || "No school yet"}
-              </p>
-              {(me.needsSchoolPick || me.unaffiliated) && schools.length > 0 ? (
-                <label className="mt-3 block text-sm text-muted-foreground">
-                  Schools catalog
-                  <select
-                    className="mt-1.5 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
-                    value={exploreSchoolId || ""}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      void navigate({
-                        to: "/learning",
-                        search: id ? { schoolId: id } : {},
-                      });
-                    }}
-                  >
-                    <option value="">All marketplace tracks</option>
-                    {schools.map((s) => (
-                      <option key={s.schoolId} value={s.schoolId}>
-                        {s.name || s.schoolId}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              {(me.memberships || []).filter((m) => m.status === "active").length > 1 ? (
-                <label className="mt-3 block text-sm text-muted-foreground">
-                  Switch school
-                  <select
-                    className="mt-1.5 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
-                    value={me.activeSchoolId || me.schoolId || ""}
-                    onChange={(e) => {
-                      void (async () => {
-                        const token = await user.getIdToken();
-                        const result = await setActiveSchool(token, e.target.value);
-                        if (result.ok) {
-                          const refreshed = await fetchLmsMe(token);
-                          if (refreshed.ok && refreshed.data) setMe(refreshed.data);
-                          await loadTracks(user, exploreSchoolId);
-                        }
-                      })();
-                    }}
-                  >
-                    {(me.memberships || [])
-                      .filter((m) => m.status === "active")
-                      .map((m) => (
-                        <option key={m.schoolId} value={m.schoolId}>
-                          {m.schoolName || m.schoolId}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              ) : null}
-            </div>
-          ) : null}
           <div className="mx-auto mt-9 max-w-xl space-y-6">
             {me ? (
               <CapabilitiesBoard
@@ -407,7 +421,105 @@ function LearningPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section className="mx-auto max-w-3xl px-5 sm:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow text-ember">Schools</p>
+            <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
+              {filteredSchools.length} partner schools
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your schools first — apply to join others. Admins approve new
+              requests.
+            </p>
+          </div>
+          <label className="relative block w-full sm:max-w-xs">
+            <span className="sr-only">Search schools</span>
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={schoolQuery}
+              onChange={(e) => setSchoolQuery(e.target.value)}
+              placeholder="Search schools…"
+              className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground outline-none ring-ember/40 placeholder:text-muted-foreground focus:ring-2"
+            />
+          </label>
+        </div>
+        {schoolMsg ? (
+          <p className="mt-4 rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-sm text-foreground">
+            {schoolMsg}
+          </p>
+        ) : null}
+        <ul className="mt-8 space-y-3">
+          {filteredSchools.map((s) => {
+            const status = membershipBySchool.get(s.schoolId) || "";
+            const isActive = status === "active";
+            const isPending =
+              status === "applied" || status === "invited";
+            const busy = schoolActionId === s.schoolId;
+            const open = activeSchoolId === s.schoolId;
+            return (
+              <li
+                key={s.schoolId}
+                className={`flex flex-col gap-3 rounded-2xl border px-5 py-4 text-left sm:flex-row sm:items-center sm:justify-between ${
+                  open
+                    ? "border-ember/50 bg-ember/5"
+                    : "border-border/70 bg-card/60"
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="font-display text-lg font-semibold">
+                    {s.name || s.schoolId}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {isActive
+                      ? "Your school"
+                      : isPending
+                        ? "Join request pending"
+                        : s.trackCount != null && s.trackCount > 0
+                          ? `${s.trackCount} tracks`
+                          : "Partner school"}
+                    {open ? " · viewing tracks below" : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  {isActive ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void enterSchool(s.schoolId)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-ember-gradient px-4 py-2 text-xs font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-50"
+                    >
+                      {busy ? "Opening…" : open ? "Refresh" : "Enter"}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  ) : isPending ? (
+                    <span className="rounded-full border border-border px-4 py-2 text-xs font-medium text-muted-foreground">
+                      Pending
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void applySchool(s.schoolId)}
+                      className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent disabled:opacity-50"
+                    >
+                      {busy ? "Sending…" : "Apply now"}
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        {filteredSchools.length === 0 ? (
+          <p className="mt-8 text-sm text-muted-foreground">
+            No schools match that search.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="mx-auto mt-16 max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="eyebrow text-ember">Tracks</p>
@@ -418,6 +530,15 @@ function LearningPage() {
                   ? `${filteredTracks.length} enrolled`
                   : `${filteredTracks.length} learning tracks`}
             </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {activeSchoolId
+                ? `In ${
+                    schools.find((s) => s.schoolId === activeSchoolId)?.name ||
+                    me?.schoolName ||
+                    "this school"
+                  } — search tracks below.`
+                : "Enter a school you belong to, or apply first, to focus its tracks."}
+            </p>
           </div>
 
           <div className="flex w-full flex-col gap-3 sm:max-w-md">

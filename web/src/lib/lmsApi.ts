@@ -389,6 +389,23 @@ export async function fetchSchoolsCatalog(idToken: string) {
   );
 }
 
+/** Mentee applies to join a school (pending until school admin approves). */
+export async function applyToJoinSchool(
+  idToken: string,
+  schoolId: string,
+  displayName?: string,
+) {
+  return lmsFetch<{
+    membership?: SchoolMembershipDto;
+    pending?: boolean;
+    alreadyMember?: boolean;
+  }>(`/lms/schools/${encodeURIComponent(schoolId)}/join-requests`, idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ displayName: displayName || "" }),
+  });
+}
+
 export async function fetchLmsTrack(idToken: string, trackId: string) {
   return lmsFetch<TrackDetailDto>(
     `/lms/tracks/${encodeURIComponent(trackId)}`,
