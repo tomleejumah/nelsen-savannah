@@ -28,11 +28,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.github.barteksc.pdfviewer.PDFView;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -80,7 +80,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private TextView tvChapterDoes;
     private LinearLayout lessonsContainer;
     private LinearLayout lessonPanel;
-    private MaterialToolbar toolbar;
+    private TextView tvScreenTitle;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService pdfExec = Executors.newSingleThreadExecutor();
@@ -105,11 +105,28 @@ public class ChapterLearnActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_chapter_learn);
+        View headerContent = findViewById(R.id.headerContent);
+        View lessonsSheet = findViewById(R.id.lessonsSheet);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            headerContent.setPadding(
+                    headerContent.getPaddingLeft(),
+                    bars.top + dp(12),
+                    headerContent.getPaddingRight(),
+                    headerContent.getPaddingBottom());
+            if (lessonsSheet != null) {
+                lessonsSheet.setPadding(
+                        lessonsSheet.getPaddingLeft(),
+                        lessonsSheet.getPaddingTop(),
+                        lessonsSheet.getPaddingRight(),
+                        bars.bottom + dp(12));
+            }
+            v.setPadding(bars.left, 0, bars.right, 0);
             return insets;
         });
+        WindowInsetsControllerCompat barsCtrl =
+                ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (barsCtrl != null) barsCtrl.setAppearanceLightStatusBars(true);
 
         trackId = getIntent().getStringExtra(EXTRA_TRACK_ID);
         moduleId = getIntent().getStringExtra(EXTRA_MODULE_ID);
@@ -120,9 +137,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         String does = getIntent().getStringExtra(EXTRA_CHAPTER_DOES);
         int chapterIndex = getIntent().getIntExtra(EXTRA_CHAPTER_INDEX, 1);
 
-        toolbar = findViewById(R.id.topAppBar);
-        toolbar.setNavigationOnClickListener(v -> finish());
-        toolbar.setTitle(!TextUtils.isEmpty(title) ? title : ("Chapter " + chapterIndex));
+        tvScreenTitle = findViewById(R.id.tvScreenTitle);
+        tvScreenTitle.setText(!TextUtils.isEmpty(title) ? title : ("Chapter " + chapterIndex));
 
         progress = findViewById(R.id.progress);
         playerFrame = findViewById(R.id.playerFrame);
@@ -211,7 +227,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                         }
                         if (body.data.module != null) {
                             if (!TextUtils.isEmpty(body.data.module.title)) {
-                                toolbar.setTitle(body.data.module.title);
+                                tvScreenTitle.setText(body.data.module.title);
                             }
                             if (body.data.module.releaseAt != null) {
                                 releaseAt = body.data.module.releaseAt;

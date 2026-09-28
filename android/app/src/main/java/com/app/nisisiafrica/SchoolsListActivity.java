@@ -2,10 +2,14 @@ package com.app.nisisiafrica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,6 +49,7 @@ public class SchoolsListActivity extends AppCompatActivity {
 
     public static final String EXTRA_EXPLORE = "explore";
 
+    private final List<Row> allRows = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();
     /** schoolId → enrolled track count for this user. */
     private final Map<String, Integer> tracksInProgressBySchool = new HashMap<>();
@@ -51,6 +57,9 @@ public class SchoolsListActivity extends AppCompatActivity {
     private TextView tvEmpty;
     private TextView tvHint;
     private TextView tvSchoolCount;
+    private EditText etSearch;
+    private ImageButton btnClearSearch;
+    private String query = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,13 +84,66 @@ public class SchoolsListActivity extends AppCompatActivity {
         tvEmpty = findViewById(R.id.tvSchoolsEmpty);
         tvHint = findViewById(R.id.tvSchoolsHint);
         tvSchoolCount = findViewById(R.id.tvSchoolCount);
+        etSearch = findViewById(R.id.etSearch);
+        btnClearSearch = findViewById(R.id.btnClearSearch);
 
         RecyclerView rv = findViewById(R.id.rvSchools);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new SchoolsAdapter();
         rv.setAdapter(adapter);
 
+        setupSearch();
         load();
+    }
+
+    private void setupSearch() {
+        if (etSearch == null) return;
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                query = s != null ? s.toString().trim() : "";
+                if (btnClearSearch != null) {
+                    btnClearSearch.setVisibility(query.isEmpty() ? View.GONE : View.VISIBLE);
+                }
+                applyFilter();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+        if (btnClearSearch != null) {
+            btnClearSearch.setOnClickListener(v -> {
+                etSearch.setText("");
+                etSearch.clearFocus();
+            });
+        }
+    }
+
+    private void applyFilter() {
+        rows.clear();
+        if (query.isEmpty()) {
+            rows.addAll(allRows);
+        } else {
+            String q = query.toLowerCase(Locale.getDefault());
+            for (Row row : allRows) {
+                if (row.name.toLowerCase(Locale.getDefault()).contains(q)
+                        || row.schoolId.toLowerCase(Locale.getDefault()).contains(q)) {
+                    rows.add(row);
+                }
+            }
+        }
+        adapter.notifyDataSetChanged();
+        boolean empty = rows.isEmpty();
+        tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        if (empty) {
+            tvEmpty.setText(query.isEmpty()
+                    ? R.string.schools_empty
+                    : R.string.schools_empty_search);
+        }
+        updateSchoolCount();
     }
 
     private void load() {
@@ -162,15 +224,15 @@ public class SchoolsListActivity extends AppCompatActivity {
             @Override
             public void onResponse(@NonNull Call<LmsModels.SchoolsEnvelope> call,
                                    @NonNull Response<LmsModels.SchoolsEnvelope> response) {
-                rows.clear();
-                rows.addAll(mineRows);
+                allRows.clear();
+                allRows.addAll(mineRows);
                 LmsModels.SchoolsEnvelope body = response.body();
                 if (response.isSuccessful() && body != null && body.ok
                         && body.data != null && body.data.schools != null) {
                     for (LmsModels.SchoolDto s : body.data.schools) {
                         if (s == null || s.schoolId == null || s.schoolId.isEmpty()) continue;
                         if (mineIds.contains(s.schoolId)) continue;
-                        rows.add(new Row(s.schoolId, s.name != null ? s.name : s.schoolId, false));
+                        allRows.add(new Row(s.schoolId, s.name != null ? s.name : s.schoolId, false));
                     }
                 }
                 if (mineRows.isEmpty()) {
@@ -178,18 +240,14 @@ public class SchoolsListActivity extends AppCompatActivity {
                 } else {
                     tvHint.setText("Your schools first — Explore others below.");
                 }
-                adapter.notifyDataSetChanged();
-                tvEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
-                updateSchoolCount();
+                applyFilter();
             }
 
             @Override
             public void onFailure(@NonNull Call<LmsModels.SchoolsEnvelope> call, @NonNull Throwable t) {
-                rows.clear();
-                rows.addAll(mineRows);
-                adapter.notifyDataSetChanged();
-                tvEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
-                updateSchoolCount();
+                allRows.clear();
+                allRows.addAll(mineRows);
+                applyFilter();
                 Toast.makeText(SchoolsListActivity.this,
                         "Could not load schools", Toast.LENGTH_SHORT).show();
             }
