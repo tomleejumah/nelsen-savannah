@@ -216,9 +216,8 @@ public class CommunityDetailActivity extends AppCompatActivity {
     }
 
     private boolean canEditMedia() {
-        String me = FirebaseAuth.getInstance().getUid();
-        return Roles.isMentor() || Roles.canManageApp() || Roles.canManageSchoolUsers()
-                || (me != null && me.equals(createdBy));
+        // Mentors+ only — creators who are mentees may still post/like, not manage.
+        return Roles.canManageCommunities();
     }
 
     private void showTab(boolean posts) {
@@ -363,7 +362,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (Roles.isMentor() || Roles.canManageApp() || Roles.canManageSchoolUsers()) {
+        if (Roles.canManageCommunities()) {
             getMenuInflater().inflate(R.menu.menu_community_detail, menu);
         }
         return true;

@@ -15,6 +15,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
+import com.app.nisisiafrica.Utils.Roles;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -51,6 +52,11 @@ public class CreateCommunityEventActivity extends AppCompatActivity {
 
         communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
         if (TextUtils.isEmpty(communityId)) {
+            finish();
+            return;
+        }
+        if (!Roles.canManageCommunities()) {
+            Toast.makeText(this, "Only mentors can create group events", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }

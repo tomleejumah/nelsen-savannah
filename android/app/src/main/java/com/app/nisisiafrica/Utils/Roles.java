@@ -134,6 +134,18 @@ public final class Roles {
         return actsAsMentor();
     }
 
+    /**
+     * Create / edit / delete communities, logos, group events.
+     * Mentees engage only (join, post, like) — not manage the space.
+     */
+    public static boolean canManageCommunities() {
+        return actsAsMentor();
+    }
+
+    public static boolean canManageCommunities(String role) {
+        return actsAsMentor(role);
+    }
+
     public static boolean canManageApp() {
         return isSuperAdmin();
     }
