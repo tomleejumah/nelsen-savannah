@@ -37,6 +37,33 @@ const STATUSES = {
   suspended: "suspended",
 };
 
+export function publicWebOrigin() {
+  return String(
+    process.env.WEB_PUBLIC_URL ||
+      process.env.PUBLIC_SITE_URL ||
+      "https://nelsen-savannah.co.ke",
+  ).replace(/\/$/, "");
+}
+
+export function inviteUrlForToken(token) {
+  if (!token) return null;
+  return `${publicWebOrigin()}/join/${encodeURIComponent(token)}`;
+}
+
+async function ensureInviteToken(id) {
+  const row = await dbGet(
+    "SELECT invite_token FROM school_memberships WHERE id = ?",
+    [id],
+  );
+  if (row?.invite_token) return row.invite_token;
+  const token = crypto.randomBytes(18).toString("hex");
+  await dbRun(
+    "UPDATE school_memberships SET invite_token = ?, updated_at = ? WHERE id = ?",
+    [token, Date.now(), id],
+  );
+  return token;
+}
+
 function mapMembership(row) {
   return {
     id: row.id,
@@ -46,6 +73,7 @@ function mapMembership(row) {
     email: row.email || "",
     role: row.role || ROLES.Mentee,
     status: row.status,
+    inviteUrl: inviteUrlForToken(row.invite_token),
     createdAt: Number(row.created_at || 0),
     updatedAt: Number(row.updated_at || 0),
   };
@@ -251,6 +279,7 @@ export async function inviteMemberByEmail(actorSchoolId, body = {}) {
         [actorSchoolId, actorSchoolId, now, nextUid],
       );
     }
+    await ensureInviteToken(existing.id);
     const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [
       existing.id,
     ]);
@@ -321,10 +350,96 @@ export async function inviteMemberByEmail(actorSchoolId, body = {}) {
       }
     }
   }
+  await ensureInviteToken(id);
   const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [id]);
   return {
     source: getPrimaryEngine(),
     data: { membership: mapMembership(row) },
+  };
+}
+
+export async function peekInviteByToken(token) {
+  const tok = String(token || "").trim();
+  if (!tok) {
+    const err = new Error("Invite token required");
+    err.status = 400;
+    throw err;
+  }
+  const row = await dbGet(
+    `SELECT m.*, s.name AS school_name
+     FROM school_memberships m
+     LEFT JOIN schools s ON s.school_id = m.school_id
+     WHERE m.invite_token = ?`,
+    [tok],
+  );
+  if (!row) {
+    const err = new Error("Invite not found");
+    err.status = 404;
+    throw err;
+  }
+  if (row.status === STATUSES.suspended) {
+    const err = new Error("This invite is no longer valid");
+    err.status = 410;
+    throw err;
+  }
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      schoolId: row.school_id,
+      schoolName: row.school_name || DEFAULT_SCHOOL_NAME,
+      email: row.email || "",
+      displayName: row.display_name || "",
+      role: normalizeRole(row.role || ROLES.Mentee),
+      status: row.status,
+    },
+  };
+}
+
+export async function claimInviteByToken(uid, email, token) {
+  const peek = await peekInviteByToken(token);
+  const invitedEmail = String(peek.data.email || "")
+    .trim()
+    .toLowerCase();
+  const actorEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (invitedEmail && actorEmail && invitedEmail !== actorEmail) {
+    const err = new Error(
+      `Sign in with ${invitedEmail} to accept this school invite`,
+    );
+    err.status = 403;
+    throw err;
+  }
+  const row = await dbGet(
+    "SELECT * FROM school_memberships WHERE invite_token = ?",
+    [String(token || "").trim()],
+  );
+  const now = Date.now();
+  await dbRun(
+    `UPDATE school_memberships
+     SET uid = ?, status = ?, updated_at = ?
+     WHERE id = ?`,
+    [uid, STATUSES.active, now, row.id],
+  );
+  await dbRun(
+    `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ?
+     WHERE uid = ?`,
+    [row.school_id, row.school_id, now, uid],
+  );
+  const inviteRole = normalizeRole(row.role);
+  if (inviteRole === ROLES.Mentor || inviteRole === ROLES.SchoolAdmin) {
+    const current = await loadUserRole(uid);
+    if (!isSuperAdmin(current)) {
+      const { setUserRole } = await import("./lmsMeService.js");
+      await setUserRole(uid, inviteRole);
+    }
+  }
+  const fresh = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [
+    row.id,
+  ]);
+  return {
+    source: getPrimaryEngine(),
+    data: { membership: mapMembership(fresh) },
   };
 }
 

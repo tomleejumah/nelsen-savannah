@@ -438,6 +438,7 @@ async function ensureMigrations() {
     "ALTER TABLE progress ADD COLUMN watch_seconds INTEGER DEFAULT 0",
     "ALTER TABLE progress ADD COLUMN watch_pct INTEGER DEFAULT 0",
     "ALTER TABLE lessons ADD COLUMN lab_json TEXT",
+    "ALTER TABLE school_memberships ADD COLUMN invite_token TEXT",
   ];
   for (const sql of alters) {
     try {
@@ -682,6 +683,7 @@ CREATE TABLE IF NOT EXISTS school_memberships (
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_uid ON school_memberships(uid)",
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_email ON school_memberships(email)",
     "CREATE INDEX IF NOT EXISTS idx_school_memberships_school ON school_memberships(school_id)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_school_memberships_token ON school_memberships(invite_token)",
     "CREATE INDEX IF NOT EXISTS idx_cohorts_school ON cohorts(school_id)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_members_uid ON cohort_members(uid)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_runs_cohort_track ON cohort_track_runs(cohort_id, track_id)",

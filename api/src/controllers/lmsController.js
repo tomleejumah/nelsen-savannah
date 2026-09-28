@@ -827,6 +827,33 @@ export const patchSchoolMemberRole = handle(
   },
 );
 
+export const patchSchoolMemberStatus = handle(
+  "[PATCH /lms/schools/:id/members/:uid/status]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.setSchoolMemberStatus(
+      req.user.uid,
+      req.params.id,
+      req.params.uid,
+      req.body || {},
+    );
+  },
+);
+
+export const getJoinInvite = handle("[GET /lms/join/:token]", async (req) => {
+  const svc = await import("../services/lmsMembershipService.js");
+  return svc.peekInviteByToken(req.params.token);
+});
+
+export const postJoinInvite = handle("[POST /lms/join/:token]", async (req) => {
+  const svc = await import("../services/lmsMembershipService.js");
+  return svc.claimInviteByToken(
+    req.user.uid,
+    req.user.email,
+    req.params.token,
+  );
+});
+
 export const patchSchoolBranding = handle(
   "[PATCH /lms/schools/:id]",
   async (req) => {
