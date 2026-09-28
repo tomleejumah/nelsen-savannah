@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.BookMentorStepAdapter;
+import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
@@ -164,6 +165,8 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
     }
 
     private void handlePayment() {
+        btnNext.setEnabled(false);
+        btnNext.setText("Booking…");
         // Get booking data
         String firstName = adapter.getFirstName();
         String lastName = adapter.getLastName();
@@ -254,8 +257,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         FirebaseRemoteDataSource.INSTANCE.createEvent(event, event.getMentorId(), event.getMenteeId(), success -> {
             if (success) {
                 Log.d(TAG, "Event created successfully");
-                // Navigate or show success message
-
+                scheduleBookingReminder(dateStr, timeStr);
                 FirebaseRemoteDataSource.INSTANCE.createOrGetDirectChatRoom(event.getMentorId(),
                         event.getMentorName(), event.getMenteeName(), complete -> {
                             if (complete != null) {
@@ -272,6 +274,9 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
 
             } else {
                 Log.e(TAG, "Failed to create event");
+                btnNext.setEnabled(true);
+                btnNext.setText("Book Now");
+                showSnackbar("Couldn’t book that time", Snackbar.LENGTH_SHORT, 1);
             }
             return Unit.INSTANCE;
         });
@@ -302,6 +307,26 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
 //                Log.e(TAG, "Failed to create event");
 //            }
 //      return Unit.INSTANCE;  });
+    }
+
+    private void scheduleBookingReminder(String dateStr, String timeStr) {
+        long whenMs = 0L;
+        try {
+            Date parsed = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).parse(dateStr + " " + timeStr);
+            if (parsed != null) whenMs = parsed.getTime();
+        } catch (ParseException ignored) {
+            whenMs = 0L;
+        }
+        if (whenMs <= 0L) return;
+        long now = System.currentTimeMillis();
+        long trigger = whenMs - EventReminderWorker.REMINDER_LEAD_MS;
+        if (trigger < now) trigger = whenMs;
+        EventReminderWorker.scheduleAlarm(
+                this,
+                (mentorId + dateStr + timeStr).hashCode(),
+                trigger,
+                "Upcoming session",
+                "You have a session on " + dateStr + " at " + timeStr);
     }
 
     @Override

@@ -21,7 +21,12 @@ import com.app.nisisiafrica.EditProfileActivity;
 import com.app.nisisiafrica.R;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.UserData;
+import com.app.nisisiafrica.data.remote.ApiClient;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 import com.bumptech.glide.Glide;
 
 import java.util.Locale;
@@ -134,6 +139,7 @@ public class ProfileFragment extends Fragment {
             } else {
                 about.setVisibility(View.GONE);
             }
+            if (isMentor) tagOwnSchool(about, bio);
         }
 
         String photo = user.getPhotoUrl();
@@ -152,6 +158,39 @@ public class ProfileFragment extends Fragment {
             avatarInitial.setText(initial);
             avatarInitial.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void tagOwnSchool(TextView about, String bio) {
+        if (!isAdded()) return;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(result -> {
+            if (!isAdded()) return;
+            ApiClient.getLmsService().me("Bearer " + result.getToken())
+                    .enqueue(new retrofit2.Callback<>() {
+                        @Override
+                        public void onResponse(retrofit2.Call<LmsModels.MeEnvelope> call,
+                                               retrofit2.Response<LmsModels.MeEnvelope> response) {
+                            if (!isAdded() || about == null) return;
+                            LmsModels.MeEnvelope body = response.body();
+                            if (body == null || !body.ok || body.data == null) return;
+                            Object raw = body.data.get("schoolName");
+                            String school = raw != null ? String.valueOf(raw).trim() : "";
+                            if (school.isEmpty() || "null".equals(school)) return;
+                            String uid = user.getUid();
+                            if (uid != null) {
+                                FirebaseDatabase.getInstance().getReference("mentors")
+                                        .child(uid).child("schoolName").setValue(school);
+                            }
+                            String base = bio != null ? bio.trim() : "";
+                            about.setText(base.isEmpty() ? school : base + "\n" + school);
+                            about.setVisibility(View.VISIBLE);
+                        }
+
+                        @Override
+                        public void onFailure(retrofit2.Call<LmsModels.MeEnvelope> call, Throwable t) {}
+                    });
+        });
     }
 
     private String initialFor(String displayName, String firstName) {

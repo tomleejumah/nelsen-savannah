@@ -901,6 +901,13 @@ object FirebaseRemoteDataSource {
                 "date" to bookedDay,
                 "time" to finalEvent.startTime,
             ),
+            "/bookedDates/$menteeId/$eventId" to mapOf(
+                "id" to eventId.hashCode(),
+                "mentorId" to mentorId,
+                "studentId" to menteeId,
+                "date" to bookedDay,
+                "time" to finalEvent.startTime,
+            ),
         )
 
         db.updateChildren(updates)

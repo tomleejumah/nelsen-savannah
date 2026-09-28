@@ -82,6 +82,12 @@
             android:scaleType="centerCrop"
             android:visibility="gone" />
 
+        <VideoView
+            android:id="@+id/videoBubble"
+            android:layout_width="220dp"
+            android:layout_height="140dp"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/tvMessage"
             android:layout_width="wrap_content"
