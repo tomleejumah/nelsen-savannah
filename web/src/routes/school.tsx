@@ -19,7 +19,7 @@ const AREAS = [
   {
     to: "/school/students" as const,
     label: "Students",
-    blurb: "Invite, roster, CSV import, progress / at-risk.",
+    blurb: "Invite by email, roster, progress / at-risk.",
   },
   {
     to: "/school/finances" as const,

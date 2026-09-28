@@ -10,7 +10,6 @@ import {
   fetchSchoolMembers,
   fetchSchoolMoney,
   fetchSchoolTutorPayouts,
-  importSchoolRoster,
   patchSchoolBranding,
   patchSchoolMemberRole,
   patchSchoolMemberStatus,
@@ -32,13 +31,8 @@ export function useSchoolAdmin(user: User, me: MeDto) {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [mentorUid, setMentorUid] = useState("");
-  const [mentorEmail, setMentorEmail] = useState("");
-  const [mentorName, setMentorName] = useState("");
-  const [menteeUid, setMenteeUid] = useState("");
-  const [menteeEmail, setMenteeEmail] = useState("");
-  const [menteeName, setMenteeName] = useState("");
-  const [csv, setCsv] = useState("email,displayName,role\n");
+  const [inviteEmails, setInviteEmails] = useState("");
+  const [inviteRole, setInviteRole] = useState<"Mentee" | "Mentor">("Mentee");
   const [accent, setAccent] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [seats, setSeats] = useState(10);
@@ -130,52 +124,47 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     [members],
   );
 
-  async function addMentor(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await registerSchoolMentor(token, schoolId, {
-      email: mentorEmail.trim(),
-      ...(mentorName.trim() ? { displayName: mentorName.trim() } : {}),
-      ...(mentorUid.trim() ? { uid: mentorUid.trim() } : {}),
-    });
-    setMsg(
-      result.ok
-        ? result.data?.member?.status === "invited"
-          ? "Invite saved — they become a mentor when they sign in with that email."
-          : "Mentor attached to this school."
-        : result.error || "Failed",
-    );
-    if (result.ok) {
-      setLastInviteUrl(result.data?.member?.inviteUrl || null);
-      setMentorUid("");
-      setMentorEmail("");
-      setMentorName("");
-      await load();
-    }
-  }
+  const pendingInvites = useMemo(
+    () => members.filter((m) => m.status === "invited" && m.inviteUrl),
+    [members],
+  );
 
-  async function addMentee(e: React.FormEvent) {
+  async function invitePeople(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+    const emails = inviteEmails
+      .split(/[,;\s]+/)
+      .map((x) => x.trim().toLowerCase())
+      .filter((x) => x.includes("@"));
+    if (!emails.length) {
+      setMsg("Enter at least one email address.");
+      return;
+    }
     const token = await user.getIdToken();
-    const result = await registerSchoolMentee(token, schoolId, {
-      email: menteeEmail.trim(),
-      ...(menteeName.trim() ? { displayName: menteeName.trim() } : {}),
-      ...(menteeUid.trim() ? { uid: menteeUid.trim() } : {}),
-    });
+    const register =
+      inviteRole === "Mentor" ? registerSchoolMentor : registerSchoolMentee;
+    let ok = 0;
+    let fail = 0;
+    let lastUrl: string | null = null;
+    for (const email of emails) {
+      const result = await register(token, schoolId, { email });
+      if (result.ok) {
+        ok += 1;
+        lastUrl = result.data?.member?.inviteUrl || lastUrl;
+      } else {
+        fail += 1;
+      }
+    }
+    setLastInviteUrl(lastUrl);
     setMsg(
-      result.ok
-        ? result.data?.member?.status === "invited"
-          ? "Invite saved — share the join link, or they join when they sign in with that email."
-          : "Mentee attached to this school."
-        : result.error || "Failed",
+      fail
+        ? `Invited ${ok}, failed ${fail}. Check emails and try again.`
+        : ok === 1
+          ? "Invite saved — copy the link below (email may also go out)."
+          : `Saved ${ok} invites — copy links from the list below.`,
     );
-    if (result.ok) {
-      setLastInviteUrl(result.data?.member?.inviteUrl || null);
-      setMenteeUid("");
-      setMenteeEmail("");
-      setMenteeName("");
+    if (ok) {
+      setInviteEmails("");
       await load();
     }
   }
@@ -255,19 +244,6 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     if (result.ok) await load();
   }
 
-  async function onRoster(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
-    const token = await user.getIdToken();
-    const result = await importSchoolRoster(token, schoolId, csv);
-    setMsg(
-      result.ok
-        ? `Imported ${result.data?.imported ?? 0} members`
-        : result.error || "Import failed",
-    );
-    if (result.ok) await load();
-  }
-
   async function onBrand(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -310,26 +286,17 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     schoolId,
     members,
     studentMembers,
+    pendingInvites,
     schoolMentors,
     dash,
     busy,
     error,
     msg,
     setMsg,
-    mentorUid,
-    setMentorUid,
-    mentorEmail,
-    setMentorEmail,
-    mentorName,
-    setMentorName,
-    menteeUid,
-    setMenteeUid,
-    menteeEmail,
-    setMenteeEmail,
-    menteeName,
-    setMenteeName,
-    csv,
-    setCsv,
+    inviteEmails,
+    setInviteEmails,
+    inviteRole,
+    setInviteRole,
     accent,
     setAccent,
     logoUrl,
@@ -356,14 +323,12 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     lastInviteUrl,
     applications,
     load,
-    addMentor,
-    addMentee,
+    invitePeople,
     escalate,
     setMentorEnabled,
     approveJoin,
     copyInvite,
     decideApp,
-    onRoster,
     onBrand,
     saveTrackMentors,
   };
