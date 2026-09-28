@@ -35,6 +35,12 @@ public interface LmsApiService {
             @Path("schoolId") String schoolId,
             @Body LmsModels.MentorApplyBody body);
 
+    @POST("lms/schools/{schoolId}/join-requests")
+    Call<LmsModels.MapEnvelope> applyToJoinSchool(
+            @Header("Authorization") String bearer,
+            @Path("schoolId") String schoolId,
+            @Body LmsModels.JoinSchoolBody body);
+
     @GET("lms/tracks/{trackId}")
     Call<LmsModels.TrackDetailEnvelope> track(
             @Header("Authorization") String bearer,

@@ -356,14 +356,15 @@ public class TrackLearnActivity extends AppCompatActivity {
                     String.format(Locale.getDefault(), "Overall progress · %d%%", pct));
             if (track.enrolled) {
                 enrolledOnTrack = true;
-                btnEnroll.setText("Continue learning");
+                btnEnroll.setText(R.string.enroll_continue);
                 if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.VISIBLE);
             } else if (track.price != null && track.price.isPaid) {
                 enrolledOnTrack = false;
-                btnEnroll.setText("Unlock · " + formatPrice(track.price));
+                btnEnroll.setText(getString(R.string.enroll_now) + " · " + formatPrice(track.price));
                 if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
             } else {
                 enrolledOnTrack = false;
+                btnEnroll.setText(R.string.enroll_now);
                 if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
             }
         }
@@ -613,7 +614,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         tvStatProgress.setText(String.valueOf(lessonProgress));
         tvStatLocked.setText(String.valueOf(lessonLocked));
         if (resumeLesson != null && enrolledOnTrack) {
-            btnEnroll.setText("Continue learning");
+            btnEnroll.setText(R.string.enroll_continue);
             btnEnroll.setEnabled(true);
         }
     }
@@ -1105,7 +1106,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                         }
                         if (response.isSuccessful() && body != null && body.ok) {
                             enrolledOnTrack = true;
-                            btnEnroll.setText("Continue learning");
+                            btnEnroll.setText(R.string.enroll_continue);
                             if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.VISIBLE);
                             Toast.makeText(TrackLearnActivity.this, "Enrolled", Toast.LENGTH_SHORT).show();
                             loadTrack();
@@ -1154,8 +1155,8 @@ public class TrackLearnActivity extends AppCompatActivity {
                             resumeLesson = null;
                             if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
                             btnEnroll.setText(trackPrice != null && trackPrice.isPaid
-                                    ? "Unlock · " + formatPrice(trackPrice)
-                                    : "Enroll");
+                                    ? getString(R.string.enroll_now) + " · " + formatPrice(trackPrice)
+                                    : getString(R.string.enroll_now));
                             Toast.makeText(TrackLearnActivity.this, "Left course", Toast.LENGTH_SHORT).show();
                             loadTrack();
                             return;

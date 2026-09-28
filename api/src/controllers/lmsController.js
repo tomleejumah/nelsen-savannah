@@ -834,6 +834,20 @@ export const listSchoolMembers = handle(
   },
 );
 
+export const postSchoolJoinRequest = handle(
+  "[POST /lms/schools/:id/join-requests]",
+  async (req) => {
+    const mem = await import("../services/lmsMembershipService.js");
+    const result = await mem.applyToJoinSchool(
+      req.user.uid,
+      req.user.email,
+      req.body?.displayName || req.user.displayName || "",
+      req.params.id,
+    );
+    return { ...result, status: 201 };
+  },
+);
+
 export const postSchoolMentor = handle(
   "[POST /lms/schools/:id/mentors]",
   async (req) => {

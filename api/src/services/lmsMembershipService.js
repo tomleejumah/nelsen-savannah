@@ -451,7 +451,84 @@ export async function inviteMenteeByEmail(actorSchoolId, body = {}) {
   });
 }
 
-/** Door B — attach (or apply) when enrolling in a school's track. */
+/** Door B — student applies to join a school (pending until admin activates). */
+export async function applyToJoinSchool(uid, email, displayName, schoolId) {
+  const sid = String(schoolId || "").trim();
+  if (!sid) {
+    const err = new Error("schoolId required");
+    err.status = 400;
+    throw err;
+  }
+  const school = await dbGet(
+    "SELECT school_id, name FROM schools WHERE school_id = ?",
+    [sid],
+  );
+  if (!school) {
+    const err = new Error("School not found");
+    err.status = 404;
+    throw err;
+  }
+  const now = Date.now();
+  const existing = await dbGet(
+    `SELECT * FROM school_memberships WHERE uid = ? AND school_id = ?`,
+    [uid, sid],
+  );
+  if (existing) {
+    if (existing.status === STATUSES.active) {
+      return {
+        source: getPrimaryEngine(),
+        data: { membership: mapMembership(existing), alreadyMember: true },
+      };
+    }
+    if (existing.status === STATUSES.applied || existing.status === STATUSES.invited) {
+      return {
+        source: getPrimaryEngine(),
+        data: { membership: mapMembership(existing), pending: true },
+      };
+    }
+    await dbRun(
+      `UPDATE school_memberships SET status = ?, updated_at = ?,
+        email = COALESCE(NULLIF(?, ''), email),
+        display_name = COALESCE(NULLIF(?, ''), display_name)
+       WHERE id = ?`,
+      [
+        STATUSES.applied,
+        now,
+        String(email || "").toLowerCase(),
+        String(displayName || "").trim(),
+        existing.id,
+      ],
+    );
+  } else {
+    const id = `sm-${crypto.randomBytes(6).toString("hex")}`;
+    await dbRun(
+      `INSERT INTO school_memberships
+        (id, school_id, uid, email, role, status, display_name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        sid,
+        uid,
+        String(email || "").toLowerCase(),
+        ROLES.Mentee,
+        STATUSES.applied,
+        String(displayName || "").trim(),
+        now,
+        now,
+      ],
+    );
+  }
+  const row = await dbGet(
+    `SELECT * FROM school_memberships WHERE uid = ? AND school_id = ?`,
+    [uid, sid],
+  );
+  return {
+    source: getPrimaryEngine(),
+    data: { membership: mapMembership(row), pending: true },
+  };
+}
+
+/** Door B — attach only when already an active (or invited→activate) school member. */
 export async function attachOnEnroll(uid, email, schoolId) {
   const sid = String(schoolId || "").trim();
   if (!sid) {
@@ -465,35 +542,38 @@ export async function attachOnEnroll(uid, email, schoolId) {
     [uid, sid],
   );
   if (existing) {
-    if (existing.status === STATUSES.invited || existing.status === STATUSES.applied) {
+    if (existing.status === STATUSES.active) {
+      await dbRun(
+        `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
+        [sid, sid, now, uid],
+      );
+      return sid;
+    }
+    if (existing.status === STATUSES.invited) {
       await dbRun(
         `UPDATE school_memberships SET status = ?, updated_at = ? WHERE id = ?`,
         [STATUSES.active, now, existing.id],
       );
+      await dbRun(
+        `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
+        [sid, sid, now, uid],
+      );
+      return sid;
     }
-  } else {
-    const id = `sm-${crypto.randomBytes(6).toString("hex")}`;
-    await dbRun(
-      `INSERT INTO school_memberships
-        (id, school_id, uid, email, role, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        sid,
-        uid,
-        String(email || "").toLowerCase(),
-        ROLES.Mentee,
-        STATUSES.active,
-        now,
-        now,
-      ],
-    );
+    if (existing.status === STATUSES.applied) {
+      const err = new Error(
+        "Your join request is pending school approval",
+      );
+      err.status = 403;
+      throw err;
+    }
+    const err = new Error("Apply to this school before enrolling");
+    err.status = 403;
+    throw err;
   }
-  await dbRun(
-    `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
-    [sid, sid, now, uid],
-  );
-  return sid;
+  const err = new Error("Apply to this school before enrolling");
+  err.status = 403;
+  throw err;
 }
 
 /** Demo ledger stubs — money belongs to the school institution. */

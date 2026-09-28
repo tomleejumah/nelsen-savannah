@@ -40,8 +40,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import kotlin.Unit;
 import retrofit2.Call;
@@ -58,14 +60,20 @@ public class AllCoursesActivity extends AppCompatActivity {
     public static final String EXTRA_SCHOOL_NAME = "schoolName";
 
     private final List<CourseItem> allCourses = new ArrayList<>();
+    private final Set<String> enrolledTrackIds = new HashSet<>();
     private CourseCardAdapter listAdapter;
     private EditText etSearch;
     private ImageButton btnClearSearch;
     private TextView tvResultCount;
     private View emptyState;
+    private com.google.android.material.button.MaterialButton btnApplySchool;
+    private TextView tvApplyPending;
     private String query = "";
     private String schoolIdFilter = "";
     private String schoolNameFilter = "";
+    /** null = unknown/loading, true = active member, false = not, "pending" handled separately */
+    private Boolean schoolMemberActive = null;
+    private boolean schoolJoinPending = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +100,8 @@ public class AllCoursesActivity extends AppCompatActivity {
         btnClearSearch = findViewById(R.id.btnClearSearch);
         tvResultCount = findViewById(R.id.tvResultCount);
         emptyState = findViewById(R.id.emptyState);
+        btnApplySchool = findViewById(R.id.btnApplySchool);
+        tvApplyPending = findViewById(R.id.tvApplyPending);
 
         schoolIdFilter = getIntent().getStringExtra(EXTRA_SCHOOL_ID);
         if (schoolIdFilter == null) schoolIdFilter = "";
@@ -124,12 +134,18 @@ public class AllCoursesActivity extends AppCompatActivity {
             tvSubtitle.setOnClickListener(v -> showAssignmentsInbox());
         }
 
+        if (btnApplySchool != null) {
+            btnApplySchool.setOnClickListener(v -> applyToSchool());
+        }
+
         RecyclerView rv = findViewById(R.id.rvCourses);
         rv.setLayoutManager(new LinearLayoutManager(this));
         listAdapter = new CourseCardAdapter();
         rv.setAdapter(listAdapter);
 
+        loadMyEnrollments();
         if (!schoolIdFilter.isEmpty()) {
+            refreshSchoolMembership();
             loadTracksForSchool(schoolIdFilter);
         } else {
             // Invisible paging bridge — LMS/Firebase returns one page; we filter in-memory.
@@ -194,6 +210,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                         if (card == null) continue;
                                         String id = card.courseId != null ? card.courseId : card.trackId;
                                         if (id == null || id.isEmpty()) continue;
+                                        if (card.enrolled) enrolledTrackIds.add(id);
                                         allCourses.add(new CourseItem(
                                                 id,
                                                 card.tutorId != null ? card.tutorId : "",
@@ -219,6 +236,224 @@ public class AllCoursesActivity extends AppCompatActivity {
                                 emptyState.setVisibility(View.VISIBLE);
                             }
                         }));
+    }
+
+    private void loadMyEnrollments() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(r ->
+                ApiClient.getLmsService()
+                        .myEnrollments("Bearer " + r.getToken())
+                        .enqueue(new Callback<>() {
+                            @Override
+                            public void onResponse(
+                                    @NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                    @NonNull Response<LmsModels.EnrollmentListEnvelope> response) {
+                                LmsModels.EnrollmentListEnvelope body = response.body();
+                                if (response.isSuccessful() && body != null && body.ok
+                                        && body.data != null && body.data.enrollments != null) {
+                                    for (LmsModels.Enrollment e : body.data.enrollments) {
+                                        if (e != null && e.trackId != null) {
+                                            enrolledTrackIds.add(e.trackId);
+                                        }
+                                    }
+                                    if (listAdapter != null) listAdapter.notifyDataSetChanged();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(
+                                    @NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                    @NonNull Throwable t) {}
+                        }));
+    }
+
+    private void refreshSchoolMembership() {
+        if (schoolIdFilter.isEmpty()) {
+            bindApplyUi();
+            return;
+        }
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(r ->
+                ApiClient.getLmsService().me("Bearer " + r.getToken()).enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
+                                           @NonNull Response<LmsModels.MeEnvelope> response) {
+                        schoolMemberActive = false;
+                        schoolJoinPending = false;
+                        LmsModels.MeEnvelope body = response.body();
+                        if (response.isSuccessful() && body != null && body.ok && body.data != null) {
+                            Object mem = body.data.get("memberships");
+                            if (mem instanceof List<?> list) {
+                                for (Object o : list) {
+                                    if (!(o instanceof java.util.Map<?, ?> m)) continue;
+                                    String sid = String.valueOf(m.get("schoolId") != null
+                                            ? m.get("schoolId") : "");
+                                    if (!schoolIdFilter.equals(sid)) continue;
+                                    String status = String.valueOf(m.get("status") != null
+                                            ? m.get("status") : "");
+                                    if ("active".equals(status)) {
+                                        schoolMemberActive = true;
+                                        schoolJoinPending = false;
+                                        break;
+                                    }
+                                    if ("applied".equals(status) || "invited".equals(status)) {
+                                        schoolJoinPending = true;
+                                    }
+                                }
+                            }
+                        }
+                        bindApplyUi();
+                        if (listAdapter != null) listAdapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call,
+                                          @NonNull Throwable t) {
+                        schoolMemberActive = false;
+                        bindApplyUi();
+                    }
+                }));
+    }
+
+    private void bindApplyUi() {
+        if (btnApplySchool == null || tvApplyPending == null) return;
+        if (schoolIdFilter.isEmpty()) {
+            btnApplySchool.setVisibility(View.GONE);
+            tvApplyPending.setVisibility(View.GONE);
+            return;
+        }
+        if (Boolean.TRUE.equals(schoolMemberActive)) {
+            btnApplySchool.setVisibility(View.GONE);
+            tvApplyPending.setVisibility(View.GONE);
+        } else if (schoolJoinPending) {
+            btnApplySchool.setVisibility(View.GONE);
+            tvApplyPending.setVisibility(View.VISIBLE);
+        } else {
+            btnApplySchool.setVisibility(View.VISIBLE);
+            tvApplyPending.setVisibility(View.GONE);
+        }
+    }
+
+    private void applyToSchool() {
+        if (schoolIdFilter.isEmpty()) return;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Sign in required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        btnApplySchool.setEnabled(false);
+        String name = user.getDisplayName() != null ? user.getDisplayName() : "";
+        user.getIdToken(false).addOnSuccessListener(r ->
+                ApiClient.getLmsService()
+                        .applyToJoinSchool(
+                                "Bearer " + r.getToken(),
+                                schoolIdFilter,
+                                new LmsModels.JoinSchoolBody(name))
+                        .enqueue(new Callback<>() {
+                            @Override
+                            public void onResponse(@NonNull Call<LmsModels.MapEnvelope> call,
+                                                   @NonNull Response<LmsModels.MapEnvelope> response) {
+                                btnApplySchool.setEnabled(true);
+                                if (response.isSuccessful()) {
+                                    Toast.makeText(AllCoursesActivity.this,
+                                            R.string.school_apply_sent, Toast.LENGTH_SHORT).show();
+                                    schoolJoinPending = true;
+                                    schoolMemberActive = false;
+                                    bindApplyUi();
+                                } else {
+                                    Toast.makeText(AllCoursesActivity.this,
+                                            "Could not apply (" + response.code() + ")",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(@NonNull Call<LmsModels.MapEnvelope> call,
+                                                  @NonNull Throwable t) {
+                                btnApplySchool.setEnabled(true);
+                                Toast.makeText(AllCoursesActivity.this,
+                                        "Could not apply", Toast.LENGTH_SHORT).show();
+                            }
+                        }))
+                .addOnFailureListener(e -> {
+                    btnApplySchool.setEnabled(true);
+                    Toast.makeText(this, "Auth failed", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void enrollTrack(CourseItem c) {
+        if (!schoolIdFilter.isEmpty() && !Boolean.TRUE.equals(schoolMemberActive)) {
+            Toast.makeText(this,
+                    schoolJoinPending
+                            ? getString(R.string.school_apply_pending)
+                            : "Apply to this school first",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Sign in required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        user.getIdToken(false).addOnSuccessListener(r ->
+                ApiClient.getLmsService()
+                        .enroll("Bearer " + r.getToken(), new LmsModels.EnrollBody(c.getCourseId()))
+                        .enqueue(new Callback<>() {
+                            @Override
+                            public void onResponse(
+                                    @NonNull Call<LmsModels.EnrollmentEnvelope> call,
+                                    @NonNull Response<LmsModels.EnrollmentEnvelope> response) {
+                                if (response.isSuccessful()) {
+                                    enrolledTrackIds.add(c.getCourseId());
+                                    listAdapter.notifyDataSetChanged();
+                                    Toast.makeText(AllCoursesActivity.this,
+                                            "Enrolled", Toast.LENGTH_SHORT).show();
+                                    openTrack(c);
+                                } else if (response.code() == 403) {
+                                    Toast.makeText(AllCoursesActivity.this,
+                                            "Apply to this school first",
+                                            Toast.LENGTH_SHORT).show();
+                                    refreshSchoolMembership();
+                                } else {
+                                    Toast.makeText(AllCoursesActivity.this,
+                                            "Enroll failed (" + response.code() + ")",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(
+                                    @NonNull Call<LmsModels.EnrollmentEnvelope> call,
+                                    @NonNull Throwable t) {
+                                Toast.makeText(AllCoursesActivity.this,
+                                        "Enroll failed", Toast.LENGTH_SHORT).show();
+                            }
+                        }));
+    }
+
+    private void openTrack(CourseItem c) {
+        String tutor = c.getTutorName();
+        boolean showTutor = !TextUtils.isEmpty(tutor)
+                && !tutor.trim().equalsIgnoreCase("Nelsen Savannah")
+                && !tutor.trim().equalsIgnoreCase("Nelsen Savannah Innovation Hub");
+        Intent learn = new Intent(AllCoursesActivity.this, TrackLearnActivity.class);
+        learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, c.getCourseId());
+        learn.putExtra(TrackLearnActivity.EXTRA_TITLE, c.getCourseTitle());
+        learn.putExtra(TrackLearnActivity.EXTRA_DESC,
+                showTutor ? getString(R.string.courses_with_tutor, tutor) : "");
+        learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, c.getCourseLink());
+        if (showTutor && !TextUtils.isEmpty(c.getTutorId())) {
+            learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, c.getTutorId());
+        }
+        if (showTutor) {
+            learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, tutor);
+        }
+        if (showTutor && !TextUtils.isEmpty(c.getTutorAvatarUrl())) {
+            learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_AVATAR, c.getTutorAvatarUrl());
+        }
+        startActivity(learn);
     }
 
     private void applyFilter() {
@@ -299,6 +534,7 @@ public class AllCoursesActivity extends AppCompatActivity {
             final TextView durationChip;
             final View tutorClickRow;
             final de.hdodenhof.circleimageview.CircleImageView tutorAvatar;
+            final com.google.android.material.button.MaterialButton btnEnrollCourse;
 
             VH(@NonNull View itemView) {
                 super(itemView);
@@ -310,6 +546,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                 durationChip = itemView.findViewById(R.id.tvDurationChip);
                 tutorClickRow = itemView.findViewById(R.id.tutorClickRow);
                 tutorAvatar = itemView.findViewById(R.id.ivTutorAvatar);
+                btnEnrollCourse = itemView.findViewById(R.id.btnEnrollCourse);
             }
 
             void bind(CourseItem c) {
@@ -361,24 +598,19 @@ public class AllCoursesActivity extends AppCompatActivity {
                     initials.setVisibility(View.VISIBLE);
                 }
 
-                itemView.setOnClickListener(v -> {
-                    Intent learn = new Intent(AllCoursesActivity.this, TrackLearnActivity.class);
-                    learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, c.getCourseId());
-                    learn.putExtra(TrackLearnActivity.EXTRA_TITLE, c.getCourseTitle());
-                    learn.putExtra(TrackLearnActivity.EXTRA_DESC,
-                            showTutor ? getString(R.string.courses_with_tutor, tutor) : "");
-                    learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, c.getCourseLink());
-                    if (showTutor && !TextUtils.isEmpty(c.getTutorId())) {
-                        learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_ID, c.getTutorId());
-                    }
-                    if (showTutor) {
-                        learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_NAME, tutor);
-                    }
-                    if (showTutor && !TextUtils.isEmpty(c.getTutorAvatarUrl())) {
-                        learn.putExtra(TrackLearnActivity.EXTRA_TUTOR_AVATAR, c.getTutorAvatarUrl());
-                    }
-                    startActivity(learn);
-                });
+                boolean enrolled = enrolledTrackIds.contains(c.getCourseId());
+                if (btnEnrollCourse != null) {
+                    btnEnrollCourse.setVisibility(View.VISIBLE);
+                    btnEnrollCourse.setText(enrolled
+                            ? R.string.enroll_continue
+                            : R.string.enroll_now);
+                    btnEnrollCourse.setOnClickListener(v -> {
+                        if (enrolled) openTrack(c);
+                        else enrollTrack(c);
+                    });
+                }
+
+                itemView.setOnClickListener(v -> openTrack(c));
                 tutorClickRow.setOnClickListener(v -> {
                     String tid = c.getTutorId();
                     if (!showTutor || TextUtils.isEmpty(tid)) {

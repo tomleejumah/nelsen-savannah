@@ -280,7 +280,7 @@ export async function listSchoolMembers(actorUid, schoolId) {
   const pending = await dbAll(
     `SELECT uid, email, display_name, NULL AS photo_url, school_id, role, status, invite_token
      FROM school_memberships
-     WHERE school_id = ? AND status = 'invited'
+     WHERE school_id = ? AND status IN ('invited', 'applied')
      ORDER BY created_at DESC
      LIMIT 200`,
     [schoolId],
@@ -804,15 +804,21 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
     "SELECT uid, email, display_name, school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  if (!user || (user.school_id || DEFAULT_SCHOOL_ID) !== schoolId) {
-    const err = new Error("Member not found in this school");
-    err.status = 404;
-    throw err;
-  }
   let mem = await dbGet(
     `SELECT * FROM school_memberships WHERE school_id = ? AND uid = ?`,
     [schoolId, uid],
   );
+  // Applied join requests may not have users_mirror.school_id set yet.
+  if (!mem && (!user || (user.school_id || DEFAULT_SCHOOL_ID) !== schoolId)) {
+    const err = new Error("Member not found in this school");
+    err.status = 404;
+    throw err;
+  }
+  if (!user && !mem) {
+    const err = new Error("Member not found in this school");
+    err.status = 404;
+    throw err;
+  }
   const now = Date.now();
   if (!mem) {
     const id = `sm-${crypto.randomBytes(6).toString("hex")}`;
@@ -824,10 +830,10 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
         id,
         schoolId,
         uid,
-        user.email || "",
+        user?.email || "",
         targetRole || ROLES.Mentor,
         next,
-        user.display_name || "",
+        user?.display_name || "",
         now,
         now,
       ],
@@ -837,6 +843,12 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
     await dbRun(
       `UPDATE school_memberships SET status = ?, updated_at = ? WHERE id = ?`,
       [next, now, mem.id],
+    );
+  }
+  if (next === "active") {
+    await dbRun(
+      `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
+      [schoolId, schoolId, now, uid],
     );
   }
   if (next === "suspended") {
@@ -867,7 +879,19 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
   );
   return {
     source: getPrimaryEngine(),
-    data: { member: mapMember(fresh || { ...user, role: targetRole, status: next }) },
+    data: {
+      member: mapMember(
+        fresh || {
+          uid,
+          email: user?.email || mem.email || "",
+          display_name: user?.display_name || mem.display_name || "",
+          photo_url: "",
+          school_id: schoolId,
+          role: targetRole || mem.role || ROLES.Mentee,
+          status: next,
+        },
+      ),
+    },
   };
 }
 
