@@ -958,11 +958,13 @@ export type SchoolDashboardDto = {
   mentees: number;
   enrollments: number;
   avgCompletion: number;
+  avgAssignment?: number;
   byCourse: {
     trackId: string;
     title: string;
     enrolled: number;
     avgPercent: number;
+    avgAssignment?: number;
   }[];
   atRisk: {
     uid: string;
