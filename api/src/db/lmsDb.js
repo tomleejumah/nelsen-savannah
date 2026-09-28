@@ -439,6 +439,7 @@ async function ensureMigrations() {
     "ALTER TABLE progress ADD COLUMN watch_pct INTEGER DEFAULT 0",
     "ALTER TABLE lessons ADD COLUMN lab_json TEXT",
     "ALTER TABLE school_memberships ADD COLUMN invite_token TEXT",
+    "ALTER TABLE tracks ADD COLUMN ide_enabled INTEGER DEFAULT 0",
   ];
   for (const sql of alters) {
     try {

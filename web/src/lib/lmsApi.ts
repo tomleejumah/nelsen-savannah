@@ -60,6 +60,7 @@ export type TrackCardDto = {
   audience: string[];
   moduleCount: number;
   schoolId?: string;
+  ideEnabled?: boolean;
   mentors?: { uid: string; displayName: string; avatarUrl?: string }[];
   price?: {
     isPaid: boolean;
@@ -1170,9 +1171,10 @@ export async function adminCreateTrack(
     blurb?: string;
     schoolId?: string;
     published?: boolean;
+    ideEnabled?: boolean;
   },
 ) {
-  return lmsFetch<{ track: { trackId: string; schoolId?: string } }>(
+  return lmsFetch<{ track: { trackId: string; schoolId?: string; ideEnabled?: boolean } }>(
     "/lms/admin/tracks",
     idToken,
     {
@@ -1192,9 +1194,17 @@ export async function adminUpdateTrack(
     published?: boolean;
     programSlug?: string;
     imageUrl?: string;
+    ideEnabled?: boolean;
   },
 ) {
-  return lmsFetch<{ track: { trackId: string; courseTitle: string; published: boolean } }>(
+  return lmsFetch<{
+    track: {
+      trackId: string;
+      courseTitle: string;
+      published: boolean;
+      ideEnabled?: boolean;
+    };
+  }>(
     `/lms/admin/tracks/${encodeURIComponent(trackId)}`,
     idToken,
     {

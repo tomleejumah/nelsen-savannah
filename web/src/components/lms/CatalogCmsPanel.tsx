@@ -99,10 +99,12 @@ export function CatalogCmsPanel({
   const [createOpen, setCreateOpen] = useState(false);
   const [trackId, setTrackId] = useState("");
   const [trackTitle, setTrackTitle] = useState("");
+  const [trackIdeEnabled, setTrackIdeEnabled] = useState(false);
   const [editTrackId, setEditTrackId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editBlurb, setEditBlurb] = useState("");
   const [editPublished, setEditPublished] = useState(true);
+  const [editIdeEnabled, setEditIdeEnabled] = useState(false);
   const [chapters, setChapters] = useState<ChapterState[]>([]);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(
     null,
@@ -140,14 +142,14 @@ export function CatalogCmsPanel({
 
   const selected = chapters.find((c) => c.moduleId === selectedChapterId) || null;
 
-  function resetLessonForm() {
+  function resetLessonForm(preferCode = editIdeEnabled) {
     setLesTitle("");
     setLesDoes("");
     setLesFile(null);
     setQuizEnabled(false);
     setQuizQuestions([emptyQuestion(0)]);
     setUploadPct(null);
-    setLesType("text");
+    setLesType(preferCode ? "code" : "text");
     setLabLanguage("python");
     setLabStarter("print('hello')\n");
     setLabExpected("");
@@ -182,6 +184,7 @@ export function CatalogCmsPanel({
       setEditTitle(track.courseTitle || "");
       setEditBlurb(track.does || "");
       setEditPublished(true);
+      setEditIdeEnabled(Boolean(track.ideEnabled));
       const mods = envelope.data.modules || [];
       const loaded: ChapterState[] = [];
       for (const m of mods) {
@@ -241,13 +244,16 @@ export function CatalogCmsPanel({
     const result = await adminCreateTrack(token, {
       trackId: id,
       title: trackTitle.trim(),
+      ideEnabled: trackIdeEnabled,
       ...(schoolId ? { schoolId } : {}),
     });
     setMsg(result.ok ? `Track ${id} published` : result.error || "Failed");
     if (result.ok) {
       setEditTrackId(id);
+      setEditIdeEnabled(trackIdeEnabled);
       setTrackId("");
       setTrackTitle("");
+      setTrackIdeEnabled(false);
       setCreateOpen(false);
       void loadStats();
       onChanged?.();
@@ -263,6 +269,7 @@ export function CatalogCmsPanel({
       ...(editTitle.trim() ? { title: editTitle.trim() } : {}),
       blurb: editBlurb,
       published: editPublished,
+      ideEnabled: editIdeEnabled,
     });
     setMsg(result.ok ? "Course saved" : result.error || "Failed");
     if (result.ok) {
@@ -510,6 +517,12 @@ export function CatalogCmsPanel({
                 <option value="code">Code lab (in-browser IDE)</option>
               </select>
             </label>
+            {editIdeEnabled ? (
+              <p className="text-xs text-muted-foreground">
+                This course has IDE attached — pick <strong>Code lab</strong> for
+                Monaco + run.
+              </p>
+            ) : null}
             <textarea
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
               rows={3}
@@ -640,6 +653,23 @@ export function CatalogCmsPanel({
                   required
                 />
                 <button
+                  type="button"
+                  onClick={() => setTrackIdeEnabled((v) => !v)}
+                  className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
+                    trackIdeEnabled
+                      ? "border-ember bg-ember/10 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:bg-secondary/40"
+                  }`}
+                  aria-pressed={trackIdeEnabled}
+                >
+                  <span className="font-medium text-foreground">Attach IDE</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {trackIdeEnabled
+                      ? "On — new lessons default to the in-browser code lab"
+                      : "Off — add video, PDF, or text lessons as usual"}
+                  </span>
+                </button>
+                <button
                   type="submit"
                   className="rounded-full bg-ember px-4 py-2 text-sm font-medium text-white"
                 >
@@ -706,6 +736,29 @@ export function CatalogCmsPanel({
               />
               Published
             </label>
+            <button
+              type="button"
+              onClick={() => {
+                setEditIdeEnabled((v) => {
+                  const next = !v;
+                  if (next) setLesType("code");
+                  return next;
+                });
+              }}
+              className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
+                editIdeEnabled
+                  ? "border-ember bg-ember/10 text-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-secondary/40"
+              }`}
+              aria-pressed={editIdeEnabled}
+            >
+              <span className="font-medium text-foreground">Attach IDE</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {editIdeEnabled
+                  ? "On — Monaco code lab for coding lessons in this course"
+                  : "Off — enable for Software Engineering–style courses"}
+              </span>
+            </button>
             <button
               type="submit"
               className="rounded-full bg-ember px-4 py-1.5 text-sm font-medium text-white"
