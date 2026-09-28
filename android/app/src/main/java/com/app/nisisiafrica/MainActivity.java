@@ -439,11 +439,17 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         main.setPadding(insetLeft, 0, insetRight, insetBottom);
     }
 
-    /** Called by ChatFragment when entering/leaving a conversation. */
+    /** Called by ChatFragment when entering/leaving a conversation.
+     *  Announcements keep the bottom nav so users can switch tabs. */
     public void setChatConversationOpen(boolean open) {
+        setChatConversationOpen(open, false);
+    }
+
+    public void setChatConversationOpen(boolean open, boolean keepBottomNav) {
         chatConversationOpen = open;
         if (bottomBarRow != null) {
-            bottomBarRow.setVisibility(open ? View.GONE : View.VISIBLE);
+            boolean hide = open && !keepBottomNav;
+            bottomBarRow.setVisibility(hide ? View.GONE : View.VISIBLE);
         }
         applyTopBarContext(currentTabId);
         applyMainInsets();

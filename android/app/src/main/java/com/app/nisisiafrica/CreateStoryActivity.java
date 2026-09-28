@@ -173,12 +173,17 @@ public class CreateStoryActivity extends AppCompatActivity {
 
     private void saveStory(String label, String imageUrl) {
         long now = System.currentTimeMillis();
-        String uid = FirebaseAuth.getInstance().getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = user != null ? user.getUid() : FirebaseAuth.getInstance().getUid();
 
         Story story = new Story();
         story.companyName = label;
         story.mediaUrl = imageUrl;
-        story.logoUrl = imageUrl;
+        // Poster DP for the viewer header / rail — not the story media.
+        String photo = user != null && user.getPhotoUrl() != null
+                ? user.getPhotoUrl().toString()
+                : "";
+        story.logoUrl = photo;
         story.caption = text(etCaption);
         story.ctaUrl = corporateMode ? normalizeUrl(text(etCtaUrl)) : "";
         story.timestamp = now;
@@ -188,17 +193,35 @@ public class CreateStoryActivity extends AppCompatActivity {
         story.active = true;
         story.storyType = corporateMode ? Story.TYPE_CORPORATE : Story.TYPE_PERSONAL;
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("stories").push();
-        story.storyId = ref.getKey();
-        ref.setValue(story)
-                .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Story published", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    btnPublish.setEnabled(true);
-                    Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        Runnable push = () -> {
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("stories").push();
+            story.storyId = ref.getKey();
+            ref.setValue(story)
+                    .addOnSuccessListener(unused -> {
+                        Toast.makeText(this, "Story published", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        btnPublish.setEnabled(true);
+                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        };
+
+        if (TextUtils.isEmpty(story.logoUrl) && !TextUtils.isEmpty(uid)) {
+            FirebaseDatabase.getInstance().getReference("users").child(uid).child("photoUrl")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            String fromDb = task.getResult().getValue(String.class);
+                            if (!TextUtils.isEmpty(fromDb) && !"default".equals(fromDb)) {
+                                story.logoUrl = fromDb;
+                            }
+                        }
+                        push.run();
+                    });
+        } else {
+            push.run();
+        }
     }
 
     static String normalizeUrl(String url) {
