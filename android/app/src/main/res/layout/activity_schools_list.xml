@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg">
 
+    <!-- Same depth as All Courses: wash follows headerContent under status bar. -->
     <View
         android:id="@+id/headerWash"
         android:layout_width="0dp"
@@ -48,6 +49,23 @@
             android:text="@string/schools_pick_hint"
             android:textColor="@color/muted"
             android:textSize="14sp" />
+
+        <!-- Matches All Courses search-bar band so the wash height lines up. -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:background="@android:color/transparent" />
+
+        <TextView
+            android:id="@+id/tvSchoolCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/font_ui"
+            android:textColor="@color/ink_soft"
+            android:textSize="13sp"
+            tools:text="3 schools" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -55,8 +73,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingTop="4dp"
-        android:paddingBottom="24dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="28dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
