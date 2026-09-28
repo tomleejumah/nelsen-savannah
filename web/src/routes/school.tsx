@@ -6,8 +6,10 @@ import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
 import { CohortIntakesPanel } from "@/components/lms/CohortIntakesPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
+  decideSchoolApplication,
   fetchLmsTracks,
   fetchMenteeProgress,
+  fetchSchoolApplications,
   fetchSchoolDashboard,
   fetchSchoolMembers,
   fetchSchoolMoney,
@@ -21,6 +23,7 @@ import {
   registerSchoolMentor,
   type MeDto,
   type MenteeProgressDto,
+  type SchoolApplicationDto,
   type SchoolDashboardDto,
   type SchoolMemberDto,
   type TrackCardDto,
@@ -97,19 +100,21 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [assignTrackId, setAssignTrackId] = useState<string | null>(null);
   const [assignUids, setAssignUids] = useState<string[]>([]);
   const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
+  const [applications, setApplications] = useState<SchoolApplicationDto[]>([]);
 
   const load = useCallback(async () => {
     setBusy(true);
     setError(null);
     try {
       const token = await user.getIdToken();
-      const [m, d, money, payouts, t, progress] = await Promise.all([
+      const [m, d, money, payouts, t, progress, apps] = await Promise.all([
         fetchSchoolMembers(token, schoolId),
         fetchSchoolDashboard(token, schoolId),
         fetchSchoolMoney(token, schoolId),
         fetchSchoolTutorPayouts(token, schoolId),
         fetchLmsTracks(token),
         fetchMenteeProgress(token, me.uid),
+        fetchSchoolApplications(token, schoolId, "pending"),
       ]);
       if (!m.ok) setError(m.error || "Could not load roster");
       setMembers(m.data?.members || []);
@@ -123,6 +128,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       if (payouts.ok && payouts.data) setPayoutNote(payouts.data.note);
       setTracks(t.data?.tracks || []);
       setMentees(progress.data?.mentees || []);
+      setApplications(apps.data?.applications || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
@@ -218,6 +224,28 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     } catch {
       setMsg(url);
     }
+  }
+
+  async function decideApp(
+    applicationId: string,
+    status: "approved" | "rejected",
+  ) {
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await decideSchoolApplication(
+      token,
+      schoolId,
+      applicationId,
+      status,
+    );
+    setMsg(
+      result.ok
+        ? status === "approved"
+          ? "Mentor approved."
+          : "Application rejected."
+        : result.error || "Failed",
+    );
+    if (result.ok) await load();
   }
 
   async function onRoster(e: React.FormEvent) {
@@ -473,6 +501,57 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
           tracks={tracks}
           mentees={mentees}
         />
+      </section>
+
+      <section id="applications" className="space-y-3">
+        <h2 className="font-display text-xl font-semibold">
+          Mentor applications
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          People who applied from the Android app to teach at this school.
+        </p>
+        {applications.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No pending applications.</p>
+        ) : (
+          <ul className="divide-y divide-border/60 rounded-2xl border border-border/70 bg-card">
+            {applications.map((a) => (
+              <li
+                key={a.id}
+                className="space-y-2 px-5 py-4 text-sm"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="font-display font-semibold">
+                    {a.displayName || a.email || a.uid}
+                  </p>
+                  <span className="text-xs text-muted-foreground">
+                    {a.email}
+                  </span>
+                </div>
+                {a.answers?.motivation ? (
+                  <p className="text-muted-foreground line-clamp-3">
+                    {a.answers.motivation}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void decideApp(a.id, "approved")}
+                    className="cursor-pointer rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void decideApp(a.id, "rejected")}
+                    className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section id="people" className="grid gap-8 sm:grid-cols-2">

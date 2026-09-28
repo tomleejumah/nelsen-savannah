@@ -891,6 +891,40 @@ export const putSchoolTrackMentors = handle(
   },
 );
 
+export const postSchoolApplication = handle(
+  "[POST /lms/schools/:id/applications]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    const result = await svc.applyToSchoolAsMentor(
+      req.user.uid,
+      req.params.id,
+      req.body || {},
+    );
+    return { ...result, status: 201 };
+  },
+);
+
+export const listSchoolApplications = handle(
+  "[GET /lms/schools/:id/applications]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.listSchoolApplications(req.user.uid, req.params.id, req.query || {});
+  },
+);
+
+export const patchSchoolApplication = handle(
+  "[PATCH /lms/schools/:id/applications/:appId]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolService.js");
+    return svc.decideSchoolApplication(
+      req.user.uid,
+      req.params.id,
+      req.params.appId,
+      req.body || {},
+    );
+  },
+);
+
 export const adminForceSeed = handle("[POST /lms/admin/seed]", async () => {
   const { seedLmsCatalog } = await import("../services/lmsSeed.js");
   const result = await seedLmsCatalog({ force: true });
