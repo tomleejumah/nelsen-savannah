@@ -4,6 +4,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowRight, BookOpen, GraduationCap, Layers, LogIn, LogOut, Search } from "lucide-react";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
+import { DownloadApkButton } from "@/components/lms/DownloadApkButton";
 import {
   EnrollPaywallModal,
   formatTrackPrice,
@@ -381,6 +382,7 @@ function LearningPage() {
                 variant="compact"
               />
             ) : null}
+            <DownloadApkButton user={user} variant="card" />
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Account

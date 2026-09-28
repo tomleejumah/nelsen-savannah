@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
+import { DownloadApkButton } from "@/components/lms/DownloadApkButton";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
@@ -138,6 +139,7 @@ export function RoleShellPage({ shell, title, blurb, wide, children }: Props) {
                   {me.schoolName ? ` · ${me.schoolName}` : ""}
                 </p>
               </div>
+              <DownloadApkButton user={user} variant="compact" />
               {typeof children === "function" ? children({ user, me }) : children}
             </div>
           </div>
