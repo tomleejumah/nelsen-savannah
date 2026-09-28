@@ -301,6 +301,8 @@ public final class LmsModels {
         public int lessonCount;
         public float modulePercent;
         public String status;
+        public Long releaseAt;
+        public Long dueAt;
     }
 
     public static class ModuleDetailData {
