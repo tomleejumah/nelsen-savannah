@@ -309,6 +309,49 @@ export async function fetchLmsMe(idToken: string) {
   return lmsFetch<MeDto>("/lms/me", idToken);
 }
 
+export type AndroidAppReleaseDto = {
+  available: boolean;
+  fileName?: string;
+  versionName?: string;
+  versionCode?: number;
+  sizeBytes?: number;
+  sha256?: string;
+  updatedAt?: string;
+  gitSha?: string;
+  runId?: string;
+};
+
+export async function fetchAndroidAppRelease(idToken: string) {
+  return lmsFetch<AndroidAppReleaseDto>("/lms/app/android", idToken);
+}
+
+/** Authenticated blob download — callers trigger a browser save. */
+export async function downloadAndroidApk(
+  idToken: string,
+): Promise<{ blob: Blob; fileName: string }> {
+  const res = await fetch(`${LMS_API_BASE}/lms/app/android/download`, {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      Accept: "application/vnd.android.package-archive",
+    },
+  });
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const json = (await res.json()) as LmsEnvelope<unknown>;
+      if (json.error) message = json.error;
+    } catch {
+      /* binary error body */
+    }
+    throw new Error(message);
+  }
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const match = /filename="([^"]+)"/i.exec(disposition);
+  const fileName = match?.[1] || "nelsen-savannah.apk";
+  const blob = await res.blob();
+  return { blob, fileName };
+}
+
 export async function setActiveSchool(idToken: string, schoolId: string) {
   return lmsFetch<{ activeSchoolId: string; schoolName: string }>(
     "/lms/me/active-school",

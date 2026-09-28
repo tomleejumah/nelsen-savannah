@@ -92,6 +92,52 @@ export async function getLmsHealth(_req, res) {
   }
 }
 
+/** Authenticated — any role. Latest Android APK metadata for sideload. */
+export async function getAndroidAppRelease(_req, res) {
+  try {
+    const {
+      getAndroidReleaseMeta,
+    } = await import("../services/lmsAppReleaseService.js");
+    return lmsOk(res, getAndroidReleaseMeta(), getPrimaryEngine());
+  } catch (err) {
+    return lmsErr(res, err.message || "Failed", 500);
+  }
+}
+
+/** Authenticated — any role. Stream the installable APK. */
+export async function downloadAndroidApp(_req, res) {
+  try {
+    const {
+      getAndroidReleaseMeta,
+      openAndroidApkStream,
+    } = await import("../services/lmsAppReleaseService.js");
+    const meta = getAndroidReleaseMeta();
+    if (!meta.available) {
+      return lmsErr(res, "Android APK not published yet", 404);
+    }
+    const opened = openAndroidApkStream();
+    if (!opened) {
+      return lmsErr(res, "Android APK not published yet", 404);
+    }
+    const downloadName = `nelsen-savannah-${meta.versionName || "latest"}.apk`;
+    res.setHeader("Content-Type", "application/vnd.android.package-archive");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${downloadName}"`,
+    );
+    res.setHeader("Content-Length", String(opened.size));
+    res.setHeader("Cache-Control", "private, no-store");
+    opened.stream.on("error", (err) => {
+      console.error("[GET /lms/app/android/download]", err);
+      if (!res.headersSent) res.status(500).end();
+      else res.destroy(err);
+    });
+    return opened.stream.pipe(res);
+  } catch (err) {
+    return lmsErr(res, err.message || "Failed", 500);
+  }
+}
+
 export async function listTracks(req, res) {
   try {
     const result = await getTracks(req.user.uid, {

@@ -13,12 +13,19 @@ on:
       - ".github/workflows/android.yml"
   workflow_dispatch:
 
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: android
+    outputs:
+      version_name: ${{ steps.meta.outputs.version_name }}
+      version_code: ${{ steps.meta.outputs.version_code }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -32,5 +39,113 @@ jobs:
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Assemble release APK
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Locate APK + version meta
+        id: meta
+        run: |
+          set -euo pipefail
+          APK=$(find app/build/outputs/apk/release -name '*.apk' ! -name '*-unsigned.apk' | head -n1)
+          if [ -z "$APK" ]; then
+            APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
+          fi
+          test -n "$APK" && test -f "$APK"
+          cp "$APK" "${GITHUB_WORKSPACE}/nelsen-savannah.apk"
+          # version.properties lives at android/
+          VNAME=$(grep -E '^VERSION_NAME=' version.properties | cut -d= -f2- | tr -d '\r')
+          VCODE=$(grep -E '^VERSION_CODE=' version.properties | cut -d= -f2- | tr -d '\r')
+          echo "version_name=${VNAME:-1.0}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VCODE:-1}" >> "$GITHUB_OUTPUT"
+          echo "Built $APK → nelsen-savannah.apk (v${VNAME:-?} code ${VCODE:-?})"
+          ls -lh "${GITHUB_WORKSPACE}/nelsen-savannah.apk"
+      - name: Upload APK artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: nelsen-savannah.apk
+          retention-days: 14
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    # Push to main + manual runs. PRs build only (no server publish).
+    if: github.event_name != 'pull_request'
+    runs-on: self-hosted
+    concurrency:
+      group: nelsen-self-hosted
+      cancel-in-progress: false
+    timeout-minutes: 10
+    steps:
+      - name: Download APK artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Same curl pattern as web.yml — avoid download-artifact flake on this runner.
+          mkdir -p "${GITHUB_WORKSPACE}/android-apk"
+          API="https://api.github.com/repos/${{ github.repository }}"
+          ARTIFACT_ID=$(curl -sS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${API}/actions/runs/${{ github.run_id }}/artifacts" \
+            | python3 -c "import json,sys; arts=json.load(sys.stdin).get('artifacts') or []; print(next((str(a['id']) for a in arts if a.get('name')=='android-apk'), ''))")
+          test -n "$ARTIFACT_ID"
+          curl -sSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${API}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            -o /tmp/android-apk.zip
+          unzip -qo /tmp/android-apk.zip -d "${GITHUB_WORKSPACE}/android-apk"
+          rm -f /tmp/android-apk.zip
+          test -f "${GITHUB_WORKSPACE}/android-apk/nelsen-savannah.apk"
+
+      - name: Install APK on API server
+        env:
+          APP_DIR: /home/server/Apis/nelsen-savannah
+          VERSION_NAME: ${{ needs.build.outputs.version_name }}
+          VERSION_CODE: ${{ needs.build.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          APK_SRC="${GITHUB_WORKSPACE}/android-apk/nelsen-savannah.apk"
+          DEST_DIR="$APP_DIR/uploads/apk"
+          mkdir -p "$DEST_DIR"
+          SIZE=$(stat -c%s "$APK_SRC")
+          SHA=$(sha256sum "$APK_SRC" | awk '{print $1}')
+          UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          # Atomic replace: write temp then mv
+          cp "$APK_SRC" "$DEST_DIR/nelsen-savannah-latest.apk.tmp"
+          mv -f "$DEST_DIR/nelsen-savannah-latest.apk.tmp" "$DEST_DIR/nelsen-savannah-latest.apk"
+          python3 - <<PY
+          import json, os
+          meta = {
+            "fileName": "nelsen-savannah-latest.apk",
+            "versionName": os.environ.get("VERSION_NAME") or "1.0",
+            "versionCode": int(os.environ.get("VERSION_CODE") or "1"),
+            "sizeBytes": int("${SIZE}"),
+            "sha256": "${SHA}",
+            "updatedAt": "${UPDATED_AT}",
+            "gitSha": "${{ github.sha }}",
+            "runId": "${{ github.run_id }}",
+          }
+          path = "${DEST_DIR}/latest.json"
+          tmp = path + ".tmp"
+          with open(tmp, "w", encoding="utf-8") as f:
+              json.dump(meta, f, indent=2)
+              f.write("\n")
+          os.replace(tmp, path)
+          print(json.dumps(meta, indent=2))
+          PY
+          chmod 644 "$DEST_DIR/nelsen-savannah-latest.apk" "$DEST_DIR/latest.json"
+          ls -lh "$DEST_DIR"
+
+      - name: Smoke local metadata
+        env:
+          APP_DIR: /home/server/Apis/nelsen-savannah
+        run: |
+          set -euo pipefail
+          test -f "$APP_DIR/uploads/apk/nelsen-savannah-latest.apk"
+          test -f "$APP_DIR/uploads/apk/latest.json"
+          python3 -c "import json; m=json.load(open('$APP_DIR/uploads/apk/latest.json')); assert m.get('fileName'); print('apk publish ok', m.get('versionName'), m.get('versionCode'))"

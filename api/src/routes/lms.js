@@ -36,6 +36,18 @@ router.patch(
   lmsController.patchActiveSchool,
 );
 router.get("/health", lmsController.getLmsHealth);
+
+// Android sideload APK — any authenticated role
+router.get(
+  "/app/android",
+  authenticateUser,
+  lmsController.getAndroidAppRelease,
+);
+router.get(
+  "/app/android/download",
+  authenticateUser,
+  lmsController.downloadAndroidApp,
+);
 router.get("/join/:token", lmsController.getJoinInvite);
 router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
