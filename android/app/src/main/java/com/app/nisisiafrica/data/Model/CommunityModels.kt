@@ -10,9 +10,21 @@ data class Community(
     var description: String = "",
     var createdBy: String = "",
     var iconUrl: String = "",
+    var bannerUrl: String = "",
     var memberCount: Long = 0,
     var postCount: Long = 0,
     var recentMemberAvatars: List<String> = emptyList(),
+    @ServerTimestamp var createdAt: Date? = null
+)
+
+data class CommunityEvent(
+    @DocumentId var id: String = "",
+    var title: String = "",
+    var description: String = "",
+    var location: String = "",
+    var startsAt: Long = 0,
+    var createdBy: String = "",
+    var createdByName: String = "",
     @ServerTimestamp var createdAt: Date? = null
 )
 

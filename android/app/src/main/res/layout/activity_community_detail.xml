@@ -1,161 +1,293 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Field Journal group detail — white page, cream hero slip. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Immersive group header (banner under status bar) + Posts / Events. -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/ns_page"
-    android:orientation="vertical">
+    android:fitsSystemWindows="false">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topAppBar"
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/ns_page"
-        app:navigationIcon="@drawable/ic_back"
-        app:navigationIconTint="@color/ns_maroon"
-        app:title="Community"
-        app:titleTextAppearance="@style/TextAppearance.Nelsen.Display"
-        app:titleTextColor="@color/ns_ink" />
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <androidx.core.widget.NestedScrollView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="96dp">
+
+            <FrameLayout
+                android:id="@+id/bannerFrame"
+                android:layout_width="match_parent"
+                android:layout_height="168dp">
+
+                <ImageView
+                    android:id="@+id/imgGroupBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/ns_maroon"
+                    android:contentDescription="@string/group_change_banner"
+                    android:scaleType="centerCrop" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/bg_banner_scrim" />
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_circle_scrim"
+                    android:contentDescription="@null"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/white" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingBottom="24dp">
+                android:layout_marginTop="-36dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/imgGroupLogo"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:scaleType="centerCrop"
+                    android:src="@mipmap/ic_launcher"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Circle"
+                    app:strokeColor="@color/ns_page"
+                    app:strokeWidth="3dp" />
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
                     android:orientation="vertical">
 
-                    <View
+                    <TextView
+                        android:id="@+id/tvGroupName"
                         android:layout_width="match_parent"
-                        android:layout_height="88dp"
-                        android:background="@color/ns_maroon" />
-
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/imgGroupLogo"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginTop="-36dp"
-                        android:scaleType="centerCrop"
-                        android:src="@mipmap/ic_launcher"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Squircle"
-                        app:strokeColor="@color/ns_page"
-                        app:strokeWidth="3dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnChangeLogo"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:fontFamily="@font/font_inter"
-                        android:text="@string/group_change_logo"
-                        android:textAllCaps="false"
-                        android:textColor="@color/ns_maroon"
-                        android:visibility="gone" />
+                        android:ellipsize="end"
+                        android:fontFamily="@font/font_ui"
+                        android:maxLines="2"
+                        android:textColor="@color/ns_ink"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        tools:text="Nairobi Devs" />
 
                     <TextView
-                        android:id="@+id/tvDescription"
+                        android:id="@+id/tvPublicLabel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="16dp"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="@font/font_inter"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/font_ui"
+                        android:text="@string/public_community"
                         android:textColor="@color/ns_grey"
-                        android:textSize="14sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="16dp"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvMembers"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/font_plex_mono"
-                            android:textAllCaps="true"
-                            android:textColor="@color/ns_maroon"
-                            android:textSize="11sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnJoin"
-                            android:layout_width="wrap_content"
-                            android:layout_height="40dp"
-                            android:fontFamily="@font/font_inter"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:paddingHorizontal="18dp"
-                            android:text="Join"
-                            android:textAllCaps="false"
-                            android:textColor="@color/ns_cream"
-                            app:backgroundTint="@color/ns_maroon"
-                            app:cornerRadius="2dp" />
-                    </LinearLayout>
+                        android:textSize="13sp" />
                 </LinearLayout>
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnJoin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:fontFamily="@font/font_ui"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="18dp"
+                    android:text="Join"
+                    android:textAllCaps="false"
+                    android:textColor="@color/ns_cream"
+                    app:backgroundTint="@color/ns_maroon"
+                    app:cornerRadius="20dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvMembers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/font_ui"
+                android:textColor="@color/ns_ink"
+                android:textSize="14sp"
+                tools:text="412k members · Top 1%" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.zen.overlapimagelistview.OverlapImageListView
+                    android:id="@+id/overlapMembers"
+                    android:layout_width="88dp"
+                    android:layout_height="28dp"
+                    android:visibility="gone"
+                    app:circleCount="3"
+                    app:fillColor="@color/line"
+                    app:strokeColor="@color/ns_page"
+                    app:strokeWidth="2dp" />
+
                 <TextView
+                    android:id="@+id/tvOthersCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/ns_space_lg"
-                    android:layout_marginTop="20dp"
-                    android:fontFamily="@font/font_fraunces"
-                    android:text="Posts"
-                    android:textColor="@color/ns_ink"
-                    android:textSize="18sp"
-                    android:textStyle="italic" />
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="@font/font_ui"
+                    android:textColor="@color/ns_grey"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/font_ui"
+                android:textColor="@color/ns_grey"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeLogo"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="@font/font_ui"
+                android:text="@string/group_change_logo"
+                android:textAllCaps="false"
+                android:textColor="@color/ns_maroon"
+                android:visibility="gone" />
+
+            <!-- Hidden toolbar kept for menu inflate (delete group). -->
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/topAppBar"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <TextView
+                    android:id="@+id/tabPosts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/font_ui"
+                    android:paddingBottom="10dp"
+                    android:paddingEnd="20dp"
+                    android:text="@string/group_posts"
+                    android:textColor="@color/ns_maroon"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tabEvents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/font_ui"
+                    android:paddingBottom="10dp"
+                    android:text="@string/group_events"
+                    android:textColor="@color/ns_grey"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/line" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPosts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+            <TextView
+                android:id="@+id/tvNoPosts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:fontFamily="@font/font_ui"
+                android:gravity="center"
+                android:text="No posts yet. Be the first to post."
+                android:textColor="@color/ns_grey"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/eventsPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvPosts"
+                    android:id="@+id/rvEvents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:nestedScrollingEnabled="false"
-                    android:paddingBottom="96dp" />
+                    android:paddingTop="8dp" />
 
                 <TextView
-                    android:id="@+id/tvNoPosts"
+                    android:id="@+id/tvNoEvents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="40dp"
-                    android:fontFamily="@font/font_inter"
+                    android:fontFamily="@font/font_ui"
                     android:gravity="center"
-                    android:text="No posts yet. Be the first to post."
+                    android:text="@string/group_no_events"
                     android:textColor="@color/ns_grey"
                     android:visibility="gone" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCreateEvent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="16dp"
+                    android:fontFamily="@font/font_ui"
+                    android:text="@string/group_create_event"
+                    android:textAllCaps="false"
+                    android:visibility="gone"
+                    app:backgroundTint="@color/ns_maroon"
+                    app:cornerRadius="12dp" />
             </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabCreatePost"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="20dp"
-            android:src="@drawable/ic_add_circle"
-            app:backgroundTint="@color/ns_maroon"
-            app:tint="@color/ns_cream" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCreatePost"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        android:contentDescription="@string/group_posts"
+        android:src="@drawable/ic_add_circle"
+        app:backgroundTint="@color/ns_maroon"
+        app:tint="@color/ns_cream" />
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -110,6 +110,10 @@
             android:name=".CommunityDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".CreateCommunityEventActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".CreateCommunityActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

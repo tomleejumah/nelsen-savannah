@@ -40,6 +40,11 @@
         <item name="cornerSize">16dp</item>
     </style>
 
+    <style name="ShapeAppearance.Nelsen.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <style name="TextAppearance.Nelsen.Display" parent="TextAppearance.Material3.HeadlineMedium">
         <item name="android:fontFamily">@font/font_display</item>
         <item name="android:textColor">@color/ink</item>

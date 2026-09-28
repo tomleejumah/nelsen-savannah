@@ -25,9 +25,18 @@
 
     <string name="groups_title">Groups</string>
     <string name="your_communities">Your communities</string>
+    <string name="find_your_people">Find your people</string>
     <string name="edit">Edit</string>
     <string name="done">Done</string>
     <string name="share">Share</string>
+    <string name="public_community">Public community</string>
+    <string name="group_events">Events</string>
+    <string name="group_posts">Posts</string>
+    <string name="group_no_events">No events yet</string>
+    <string name="group_create_event">Create event</string>
+    <string name="group_change_banner">Change banner</string>
+    <string name="group_others_count">+%d others</string>
+    <string name="group_top_rank">Top %d%%</string>
     <string name="groups_empty_title">No groups yet</string>
     <string name="groups_empty_body">Join topic spaces, ask questions, and share with mentors and peers.</string>
     <string name="group_change_logo">Change logo</string>
