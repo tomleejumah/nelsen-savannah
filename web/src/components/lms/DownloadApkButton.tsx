@@ -3,7 +3,7 @@ import type { User } from "firebase/auth";
 import { Download, Smartphone } from "lucide-react";
 
 import {
-  downloadAndroidApk,
+  fetchAndroidApkDownloadUrl,
   fetchAndroidAppRelease,
   type AndroidAppReleaseDto,
 } from "@/lib/lmsApi";
@@ -61,18 +61,14 @@ export function DownloadApkButton({
     setError(null);
     try {
       const token = await user.getIdToken();
-      const { blob, fileName } = await downloadAndroidApk(token);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const envelope = await fetchAndroidApkDownloadUrl(token);
+      if (!envelope.ok || !envelope.data?.downloadUrl) {
+        throw new Error(envelope.error || "Could not start download");
+      }
+      // Navigate so the browser owns the transfer (size + % in its download UI).
+      window.location.assign(envelope.data.downloadUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Download failed");
-    } finally {
       setBusy(false);
     }
   }
@@ -108,7 +104,7 @@ export function DownloadApkButton({
           className="inline-flex items-center gap-1.5 rounded-full bg-ember-gradient px-3.5 py-1.5 text-xs font-semibold text-maroon-foreground disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
-          {busy ? "Downloading…" : "Download APK"}
+          {busy ? "Starting…" : "Download APK"}
         </button>
         {error ? (
           <p className="w-full text-xs text-destructive">{error}</p>
@@ -136,8 +132,9 @@ export function DownloadApkButton({
             Download our Android APK
           </p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Install the Nelsen Savannah app on your phone. Open the file after
-            download and allow installs from this browser if asked.
+            Install the Nelsen Savannah app on your phone. Your browser will
+            show download progress — then open the file and allow installs if
+            asked.
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             {loading
@@ -156,7 +153,7 @@ export function DownloadApkButton({
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
           >
             <Download className="h-4 w-4" />
-            {busy ? "Downloading…" : "Download APK"}
+            {busy ? "Starting…" : "Download APK"}
           </button>
         </div>
       </div>
