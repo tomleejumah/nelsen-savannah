@@ -386,12 +386,9 @@ public class TrackLearnActivity extends AppCompatActivity {
             }
             return;
         }
-<<<<<<< Updated upstream
-=======
         if (cohortRun == null || cohortRun.milestones == null || cohortRun.milestones.isEmpty()) {
             modulesContainer.removeAllViews();
         }
->>>>>>> Stashed changes
         flatLessons.clear();
         resumeLesson = null;
         lessonDone = lessonProgress = lessonLocked = 0;
@@ -452,14 +449,6 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
-<<<<<<< Updated upstream
-=======
-    private int lessonDone;
-    private int lessonProgress;
-    private int lessonLocked;
-    private final Map<String, Float> lessonPercents = new LinkedHashMap<>();
-
->>>>>>> Stashed changes
     private void renderChapterLessons(LmsModels.ModuleDto module, LinearLayout host,
                                       List<LmsModels.LessonDto> lessons) {
         host.removeAllViews();
@@ -478,17 +467,11 @@ public class TrackLearnActivity extends AppCompatActivity {
         LayoutInflater inflater = LayoutInflater.from(this);
         for (int i = 0; i < lessons.size(); i++) {
             LmsModels.LessonDto lesson = lessons.get(i);
-<<<<<<< Updated upstream
             Float prog = lessonPercents.get(lesson.lessonId);
             if (prog != null) lesson.lessonPercent = prog;
             flatLessons.add(lesson);
             LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
-            boolean canOpen = chapterReleased && (mile == null || mile.available);
-=======
-            flatLessons.add(lesson);
-            LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
             boolean canOpen = chapterReleased && (mile == null || mile.available || mile.completed);
->>>>>>> Stashed changes
             boolean isDone = lesson.lessonPercent >= 100f || (mile != null && mile.completed);
             if (isDone) lessonDone++;
             else if (!canOpen) lessonLocked++;
@@ -506,7 +489,9 @@ public class TrackLearnActivity extends AppCompatActivity {
             title.setText(lesson.title != null ? lesson.title : "Lesson");
             String type = lesson.type != null ? lesson.type : "";
             if ("read".equals(type)) type = "text";
-<<<<<<< Updated upstream
+            if (!type.isEmpty()) {
+                type = type.substring(0, 1).toUpperCase(Locale.US) + type.substring(1);
+            }
             StringBuilder metaText = new StringBuilder();
             if (!type.isEmpty()) metaText.append(type);
             if (lesson.estimatedMinutes > 0) {
@@ -525,23 +510,6 @@ public class TrackLearnActivity extends AppCompatActivity {
             boolean pdf = "pdf".equalsIgnoreCase(lesson.type) || lesson.isPdf
                     || (lesson.contentUrl != null
                     && lesson.contentUrl.toLowerCase(Locale.US).endsWith(".pdf"));
-=======
-            if (!type.isEmpty()) {
-                type = type.substring(0, 1).toUpperCase(Locale.US) + type.substring(1);
-            }
-            if (lesson.estimatedMinutes > 0) {
-                type = type.isEmpty() ? lesson.estimatedMinutes + " min"
-                        : type + " · " + lesson.estimatedMinutes + " min";
-            }
-            if (!canOpen) {
-                type = (type + " · locked").trim();
-            } else if (chapterExpired) {
-                type = (type + " · Past Due").trim();
-            }
-            meta.setText(type);
-            percent.setText(Math.round(lesson.lessonPercent) + "%");
-            boolean pdf = "pdf".equals(lesson.type) || lesson.isPdf;
->>>>>>> Stashed changes
             thumb.setVisibility(pdf ? View.VISIBLE : View.GONE);
             row.setAlpha(canOpen ? 1f : 0.7f);
             row.setOnClickListener(v -> {
