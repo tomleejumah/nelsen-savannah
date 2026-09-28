@@ -44,6 +44,8 @@
     <color name="bubble_quote_bg">#3393283F</color>
 
     <color name="blur_overlay">#66000000</color>
+    <color name="glass_fill">#99000000</color>
+    <color name="glass_stroke">#33FFFFFF</color>
 
     <color name="nav_home">@color/maroon_500</color>
     <color name="nav_communities">@color/maroon_600</color>
