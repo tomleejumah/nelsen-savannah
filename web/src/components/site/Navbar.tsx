@@ -70,9 +70,12 @@ function useWorkspaceNav() {
   }, []);
 
   return useMemo(() => {
-    const learning = { to: "/learning", label: "Learning" };
-    const extras = workspacesForMe(me).filter((w) => w.to !== "/learning");
-    return [learning, ...extras];
+    if (!me || me.userRole === "Mentee") {
+      const learning = { to: "/learning", label: "Learning" };
+      const extras = workspacesForMe(me).filter((w) => w.to !== "/learning");
+      return [learning, ...extras];
+    }
+    return workspacesForMe(me);
   }, [me]);
 }
 
