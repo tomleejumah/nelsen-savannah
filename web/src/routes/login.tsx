@@ -18,6 +18,12 @@ import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next:
+      typeof s.next === "string" && s.next.startsWith("/join/")
+        ? s.next
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — Nelsen Savannah" },
@@ -56,6 +62,7 @@ function authErrorMessage(err: unknown): string {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [user, setUser] = useState<User | null>(null);
   const [me, setMe] = useState<MeDto | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,13 +113,21 @@ function LoginPage() {
   // After sign-in: send them to their role home (no manual URLs)
   useEffect(() => {
     if (!user || !me || busy || redirecting) return;
-    const home = shellHomePath(shellFromMe(me));
+    const home =
+      next && next.startsWith("/join/")
+        ? next
+        : shellHomePath(shellFromMe(me));
     setRedirecting(true);
     const t = window.setTimeout(() => {
-      void navigate({ to: home });
+      if (next && next.startsWith("/join/")) {
+        const joinToken = next.slice("/join/".length);
+        void navigate({ to: "/join/$token", params: { token: joinToken } });
+      } else {
+        void navigate({ to: home });
+      }
     }, 600);
     return () => window.clearTimeout(t);
-  }, [user, me, busy, redirecting, navigate]);
+  }, [user, me, busy, redirecting, navigate, next]);
 
   async function onGoogleSignIn() {
     setBusy(true);

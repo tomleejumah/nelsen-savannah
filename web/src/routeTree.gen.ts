@@ -23,6 +23,7 @@ import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as TeachRouteImport } from './routes/teach'
 import { Route as TourismRouteImport } from './routes/tourism'
+import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as LearningTrackIdRouteImport } from './routes/learning.$trackId'
 import { Route as LearningCertificatesRouteImport } from './routes/learning.certificates'
 import { Route as LearningCourseworkRouteImport } from './routes/learning.coursework'
@@ -101,6 +102,11 @@ const TourismRoute = TourismRouteImport.update({
   path: '/tourism',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JoinTokenRoute = JoinTokenRouteImport.update({
+  id: '/join/$token',
+  path: '/join/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LearningTrackIdRoute = LearningTrackIdRouteImport.update({
   id: '/$trackId',
   path: '/$trackId',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRouteWithChildren
   '/tourism': typeof TourismRoute
+  '/join/$token': typeof JoinTokenRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRouteWithChildren
   '/tourism': typeof TourismRoute
+  '/join/$token': typeof JoinTokenRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/school': typeof SchoolRoute
   '/teach': typeof TeachRouteWithChildren
   '/tourism': typeof TourismRoute
+  '/join/$token': typeof JoinTokenRoute
   '/learning/$trackId': typeof LearningTrackIdRouteWithChildren
   '/learning/certificates': typeof LearningCertificatesRoute
   '/learning/coursework': typeof LearningCourseworkRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/teach'
     | '/tourism'
+    | '/join/$token'
     | '/learning/$trackId'
     | '/learning/certificates'
     | '/learning/coursework'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/teach'
     | '/tourism'
+    | '/join/$token'
     | '/learning/$trackId'
     | '/learning/certificates'
     | '/learning/coursework'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/school'
     | '/teach'
     | '/tourism'
+    | '/join/$token'
     | '/learning/$trackId'
     | '/learning/certificates'
     | '/learning/coursework'
@@ -295,6 +307,7 @@ export interface RootRouteChildren {
   SchoolRoute: typeof SchoolRoute
   TeachRoute: typeof TeachRouteWithChildren
   TourismRoute: typeof TourismRoute
+  JoinTokenRoute: typeof JoinTokenRoute
   SSchoolIdRoute: typeof SSchoolIdRoute
 }
 
@@ -396,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/tourism'
       fullPath: '/tourism'
       preLoaderRoute: typeof TourismRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join/$token': {
+      id: '/join/$token'
+      path: '/join/$token'
+      fullPath: '/join/$token'
+      preLoaderRoute: typeof JoinTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/learning/$trackId': {
@@ -515,6 +535,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolRoute: SchoolRoute,
   TeachRoute: TeachRouteWithChildren,
   TourismRoute: TourismRoute,
+  JoinTokenRoute: JoinTokenRoute,
   SSchoolIdRoute: SSchoolIdRoute,
 }
 export const routeTree = rootRouteImport

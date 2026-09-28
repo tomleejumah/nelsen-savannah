@@ -19,6 +19,7 @@ import {
 } from "../constants/lmsRoles.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
 import { setUserRole } from "./lmsMeService.js";
+import { inviteUrlForToken } from "./lmsMembershipService.js";
 
 function slugify(name) {
   return String(name || "school")
@@ -46,6 +47,7 @@ function mapMember(row) {
     userRole: normalizeRole(row.role || ROLES.Mentee),
     schoolId: row.school_id || DEFAULT_SCHOOL_ID,
     status: row.status || "active",
+    inviteUrl: inviteUrlForToken(row.invite_token) || null,
   };
 }
 
@@ -263,17 +265,20 @@ export async function appointSchoolAdmins(actorUid, schoolId, body = {}) {
 export async function listSchoolMembers(actorUid, schoolId) {
   await assertCanManageSchool(actorUid, schoolId);
   const rows = await dbAll(
-    `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,
-            'active' AS status
+    `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id,
+            COALESCE(m.role, r.role) AS role,
+            COALESCE(m.status, 'active') AS status, m.invite_token
      FROM users_mirror u
      LEFT JOIN roles r ON r.uid = u.uid
+     LEFT JOIN school_memberships m
+       ON m.school_id = u.school_id AND m.uid = u.uid
      WHERE u.school_id = ?
      ORDER BY u.display_name ASC
      LIMIT 500`,
     [schoolId],
   );
   const pending = await dbAll(
-    `SELECT uid, email, display_name, NULL AS photo_url, school_id, role, status
+    `SELECT uid, email, display_name, NULL AS photo_url, school_id, role, status, invite_token
      FROM school_memberships
      WHERE school_id = ? AND status = 'invited'
      ORDER BY created_at DESC
@@ -325,6 +330,7 @@ export async function registerSchoolMentor(actorUid, schoolId, body = {}) {
           email: invited.data.membership.email,
           displayName: body.displayName || "",
           status: invited.data.membership.status,
+          inviteUrl: invited.data.membership.inviteUrl || null,
         },
       },
     };
@@ -377,6 +383,7 @@ export async function registerSchoolMentee(actorUid, schoolId, body = {}) {
           email: invited.data.membership.email,
           displayName: body.displayName || "",
           status: invited.data.membership.status,
+          inviteUrl: invited.data.membership.inviteUrl || null,
         },
       },
     };
@@ -536,9 +543,12 @@ export async function importSchoolRoster(actorUid, schoolId, body = {}) {
 export async function schoolDashboard(actorUid, schoolId) {
   await assertCanManageSchool(actorUid, schoolId);
   const members = await dbAll(
-    `SELECT u.uid, u.display_name, u.email, r.role
+    `SELECT u.uid, u.display_name, u.email, r.role,
+            COALESCE(m.status, 'active') AS status
      FROM users_mirror u
      LEFT JOIN roles r ON r.uid = u.uid
+     LEFT JOIN school_memberships m
+       ON m.school_id = u.school_id AND m.uid = u.uid
      WHERE u.school_id = ?`,
     [schoolId],
   );
@@ -662,8 +672,10 @@ export async function schoolDashboard(actorUid, schoolId) {
       schoolId,
       schoolName: school?.name || "",
       rosterCount,
-      mentors: members.filter((m) => normalizeRole(m.role) === ROLES.Mentor)
-        .length,
+      mentors: members.filter(
+        (m) =>
+          normalizeRole(m.role) === ROLES.Mentor && m.status !== "suspended",
+      ).length,
       mentees: members.filter((m) => normalizeRole(m.role) === ROLES.Mentee)
         .length,
       enrollments: enrollments.length,
@@ -760,6 +772,102 @@ export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = 
         linkedAt: Number(r.linked_at) || 0,
       })),
     },
+  };
+}
+
+export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body = {}) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const uid = String(targetUid || "").trim();
+  if (!uid) {
+    const err = new Error("uid required");
+    err.status = 400;
+    throw err;
+  }
+  if (uid === actorUid) {
+    const err = new Error("Cannot change your own status");
+    err.status = 400;
+    throw err;
+  }
+  const next = String(body.status || "").trim().toLowerCase();
+  if (next !== "suspended" && next !== "active") {
+    const err = new Error("status must be active or suspended");
+    err.status = 400;
+    throw err;
+  }
+  const targetRole = await loadUserRole(uid);
+  if (isSuperAdmin(targetRole) || targetRole === ROLES.SchoolAdmin) {
+    const err = new Error("Cannot disable a school admin");
+    err.status = 403;
+    throw err;
+  }
+  const user = await dbGet(
+    "SELECT uid, email, display_name, school_id FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  if (!user || (user.school_id || DEFAULT_SCHOOL_ID) !== schoolId) {
+    const err = new Error("Member not found in this school");
+    err.status = 404;
+    throw err;
+  }
+  let mem = await dbGet(
+    `SELECT * FROM school_memberships WHERE school_id = ? AND uid = ?`,
+    [schoolId, uid],
+  );
+  const now = Date.now();
+  if (!mem) {
+    const id = `sm-${crypto.randomBytes(6).toString("hex")}`;
+    await dbRun(
+      `INSERT INTO school_memberships
+        (id, school_id, uid, email, role, status, display_name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        schoolId,
+        uid,
+        user.email || "",
+        targetRole || ROLES.Mentor,
+        next,
+        user.display_name || "",
+        now,
+        now,
+      ],
+    );
+    mem = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [id]);
+  } else {
+    await dbRun(
+      `UPDATE school_memberships SET status = ?, updated_at = ? WHERE id = ?`,
+      [next, now, mem.id],
+    );
+  }
+  if (next === "suspended") {
+    await dbRun(
+      `DELETE FROM track_mentors
+       WHERE uid = ? AND track_id IN (
+         SELECT track_id FROM tracks WHERE COALESCE(school_id, 'nelsen-digital') = ?
+       )`,
+      [uid, schoolId],
+    );
+    if (!isSuperAdmin(targetRole)) {
+      await setUserRole(uid, ROLES.Mentee);
+    }
+  } else {
+    const restore = normalizeRole(mem.role || targetRole);
+    if (restore === ROLES.Mentor) {
+      await setUserRole(uid, ROLES.Mentor);
+    }
+  }
+  const fresh = await dbGet(
+    `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,
+            m.status, m.invite_token
+     FROM users_mirror u
+     LEFT JOIN roles r ON r.uid = u.uid
+     LEFT JOIN school_memberships m ON m.school_id = ? AND m.uid = u.uid
+     WHERE u.uid = ?`,
+    [schoolId, uid],
+  );
+  return {
+    source: getPrimaryEngine(),
+    data: { member: mapMember(fresh || { ...user, role: targetRole, status: next }) },
   };
 }
 
