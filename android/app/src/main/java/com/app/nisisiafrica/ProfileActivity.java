@@ -51,6 +51,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.app.nisisiafrica.Adapters.MediaGridAdapter;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Utils.EdgeBlurImageView;
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
@@ -180,7 +181,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                 id = genericId;
                 isFromMentor = true;
                 FirebaseRemoteDataSource.INSTANCE.getOrAssignUserRole(genericId, s -> {
-                    if (s.equals("Mentor")) {
+                    if (Roles.actsAsMentor(s)) {
                         //getMentorDATA
                         isFromMentor = true;
                         isGeneric = true;
@@ -347,7 +348,7 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
 
         findViewById(R.id.iv_action).setOnClickListener(v -> {
             Intent intent1 = new Intent(ProfileActivity.this, EditProfileActivity.class);
-            boolean isMentor = userData != null && Objects.equals(userData.getUserRole(), "Mentor");
+            boolean isMentor = userData != null && Roles.actsAsMentor(userData.getUserRole());
             intent1.putExtra(Constants.IS_MENTOR, isMentor);
             intent1.putExtra(Constants.CURRENT_USER_ID, userData != null ? userData.getId() : id);
             startActivity(intent1);

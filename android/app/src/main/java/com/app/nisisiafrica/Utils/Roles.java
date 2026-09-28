@@ -6,6 +6,15 @@ import com.app.nisisiafrica.Constants;
  * Role checks + LMS shells (aligned with API /lms/me).
  *
  * Hierarchy: SuperAdmin (legacy Admin) → SchoolAdmin → Mentor → Mentee.
+ *
+ * Android mapping (temporary until school/admin shells land in-app):
+ * <pre>
+ *   SuperAdmin  → mentor UX  (Teach / create / course CMS) + canManageApp
+ *   SchoolAdmin → mentor UX  (same) + canManageSchoolUsers
+ *   Mentor      → mentor UX
+ *   Mentee      → student UX
+ * </pre>
+ * Web already has /school and /admin shells; app collapses staff → mentor first.
  */
 public final class Roles {
 
@@ -17,7 +26,9 @@ public final class Roles {
 
     public static final String SHELL_STUDENT = "student";
     public static final String SHELL_MENTOR = "mentor";
+    /** Reserved for a future in-app school console (web /school today). */
     public static final String SHELL_SCHOOL = "school";
+    /** Reserved for a future in-app platform console (web /admin today). */
     public static final String SHELL_ADMIN = "admin";
 
     private Roles() {}
@@ -46,37 +57,67 @@ public final class Roles {
         return isSuperAdmin();
     }
 
-    public static boolean isMentor() {
+    /**
+     * True mentor title only (not school/super admin).
+     * Prefer {@link #actsAsMentor()} for feature gates.
+     */
+    public static boolean isMentorTitle() {
         return MENTOR.equals(current());
     }
 
-    public static boolean isMentee() {
-        return !isSuperAdmin() && !isSchoolAdmin() && !isMentor();
+    public static boolean isMentorTitle(String role) {
+        return MENTOR.equals(role);
     }
 
-    /** LMS product shell for this role. */
+    /**
+     * Mentor-equivalent app UX: Mentor, SchoolAdmin, and SuperAdmin.
+     * Use this for course CMS, create events, teach chrome, etc.
+     */
+    public static boolean actsAsMentor() {
+        return actsAsMentor(current());
+    }
+
+    public static boolean actsAsMentor(String role) {
+        return isMentorTitle(role) || isSchoolAdmin(role) || isSuperAdmin(role);
+    }
+
+    /** @deprecated prefer {@link #actsAsMentor()} — kept so call sites keep compiling. */
+    public static boolean isMentor() {
+        return actsAsMentor();
+    }
+
+    /** @deprecated prefer {@link #actsAsMentor(String)}. */
+    public static boolean isMentor(String role) {
+        return actsAsMentor(role);
+    }
+
+    public static boolean isMentee() {
+        return !actsAsMentor();
+    }
+
+    public static boolean isMentee(String role) {
+        return !actsAsMentor(role);
+    }
+
+    /**
+     * In-app product shell. Staff collapse to mentor until dedicated UIs exist.
+     * (Web still uses school/admin shells.)
+     */
     public static String lmsShell() {
         return lmsShell(current());
     }
 
     public static String lmsShell(String role) {
-        if (isSuperAdmin(role)) return SHELL_ADMIN;
-        if (isSchoolAdmin(role)) return SHELL_SCHOOL;
-        if (MENTOR.equals(role)) return SHELL_MENTOR;
+        if (actsAsMentor(role)) return SHELL_MENTOR;
         return SHELL_STUDENT;
     }
 
+    /** Human label — still shows real role so SchoolAdmin ≠ plain Mentor in copy. */
     public static String lmsShellLabel() {
-        switch (lmsShell()) {
-            case SHELL_ADMIN:
-                return "Super admin";
-            case SHELL_SCHOOL:
-                return "School admin";
-            case SHELL_MENTOR:
-                return "Teach";
-            default:
-                return "Learning";
-        }
+        if (isSuperAdmin()) return "Super admin";
+        if (isSchoolAdmin()) return "School admin";
+        if (isMentorTitle()) return "Teach";
+        return "Learning";
     }
 
     /** Mentee-only: show mentor list / Book mentor.
@@ -90,7 +131,7 @@ public final class Roles {
     }
 
     public static boolean canCreate() {
-        return isSuperAdmin() || isSchoolAdmin() || isMentor();
+        return actsAsMentor();
     }
 
     public static boolean canManageApp() {
@@ -110,11 +151,7 @@ public final class Roles {
         return isSuperAdmin(role);
     }
 
-    public static boolean isMentor(String role) {
-        return MENTOR.equals(role);
-    }
-
     public static boolean canCreate(String role) {
-        return isSuperAdmin(role) || isSchoolAdmin(role) || isMentor(role);
+        return actsAsMentor(role);
     }
 }
