@@ -176,7 +176,9 @@
 
     <!-- Schools / courses -->
     <string name="schools_pick_hint">Pick a school to see courses — or explore others anytime.</string>
+    <string name="schools_search_hint">Search schools</string>
     <string name="schools_empty">No schools yet</string>
+    <string name="schools_empty_search">No schools match that search</string>
     <string name="courses_all">All Courses</string>
     <string name="courses_from_school">Courses from this school — apply to join, then enroll</string>
     <string name="school_apply_now">Apply now</string>

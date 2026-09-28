@@ -50,12 +50,50 @@
             android:textColor="@color/muted"
             android:textSize="14sp" />
 
-        <!-- Matches All Courses search-bar band so the wash height lines up. -->
-        <View
+        <LinearLayout
+            android:id="@+id/searchBar"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="16dp"
-            android:background="@android:color/transparent" />
+            android:background="@drawable/bg_search_field"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="14dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_search"
+                app:tint="@color/maroon_600"
+                tools:ignore="ContentDescription" />
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:fontFamily="@font/font_ui"
+                android:hint="@string/schools_search_hint"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColor="@color/ink"
+                android:textColorHint="@color/muted"
+                android:textSize="15sp" />
+
+            <ImageButton
+                android:id="@+id/btnClearSearch"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@null"
+                android:padding="6dp"
+                android:src="@drawable/ic_home_search_clear"
+                android:visibility="gone"
+                app:tint="@color/muted" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvSchoolCount"
