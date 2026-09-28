@@ -136,14 +136,14 @@ export function DownloadApkButton({
             Download our Android APK
           </p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Install the Nelsen Savannah app on your phone (sideload). Open the
-            file after download and allow installs from this browser if asked.
+            Install the Nelsen Savannah app on your phone. Open the file after
+            download and allow installs from this browser if asked.
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             {loading
               ? "Checking for a build…"
               : meta?.available
-                ? [versionLabel, sizeLabel, "any signed-in role"].filter(Boolean).join(" · ")
+                ? [versionLabel, sizeLabel].filter(Boolean).join(" · ")
                 : "Waiting for the next successful Android CI publish on main."}
           </p>
           {error ? (
