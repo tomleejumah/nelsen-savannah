@@ -103,7 +103,6 @@ public class ChatFragment extends Fragment {
     private ChatRoomAdapter pagedAdapter;
     private String currentChatId;
     private String currentReceiverId;
-    private boolean openedAnnouncementsDefault;
     private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
     private ActivityResultLauncher<PickVisualMediaRequest> videoPicker;
     private ActivityResultLauncher<String> documentPicker;
@@ -193,7 +192,6 @@ public class ChatFragment extends Fragment {
             pinnedAdapter.submitList(rooms);
             pinnedRooms = rooms != null ? rooms : new ArrayList<>();
             rebuildLoadedRooms();
-            maybeOpenAnnouncementsDefault(rooms);
         });
 
         chatRoomViewModel.getChatRooms().observe(getViewLifecycleOwner(), pagingData -> {
@@ -214,18 +212,6 @@ public class ChatFragment extends Fragment {
         if (pagedAdapter != null) {
             for (Chatroom room : pagedAdapter.snapshot().getItems()) {
                 if (room != null) loadedRooms.add(room);
-            }
-        }
-    }
-
-    /** Land everyone in Announcements when the chat tab first opens. */
-    private void maybeOpenAnnouncementsDefault(java.util.List<Chatroom> rooms) {
-        if (openedAnnouncementsDefault || currentChatId != null || rooms == null) return;
-        for (Chatroom room : rooms) {
-            if (room != null && "announcements".equals(room.getChatroomId())) {
-                openedAnnouncementsDefault = true;
-                openChat(room);
-                return;
             }
         }
     }
@@ -1185,14 +1171,13 @@ public class ChatFragment extends Fragment {
     private void showChatList() {
         if (binding == null) return;
         isChatOpen = false;
+        currentChatId = null;
         hideKeyboard();
         binding.chatDetailContainer.setVisibility(View.GONE);
         binding.chatListContainer.setVisibility(View.VISIBLE);
-        binding.etMessage.postDelayed(() -> {
-            if (!isChatOpen && getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).setChatConversationOpen(false);
-            }
-        }, 300);
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setChatConversationOpen(false);
+        }
         Util.saveState(Constants.IS_MENTOR, false);
         userData = null;
         selectedOtherUserId = null;
