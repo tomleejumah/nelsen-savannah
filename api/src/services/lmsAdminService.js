@@ -11,7 +11,12 @@ import {
   mirrorRole,
 } from "./lmsMirror.js";
 import { setUserRole } from "./lmsMeService.js";
-import { normalizeRole, isSuperAdmin, canMarkAssignments } from "../constants/lmsRoles.js";
+import {
+  normalizeRole,
+  isSuperAdmin,
+  isSchoolAdmin,
+  canMarkAssignments,
+} from "../constants/lmsRoles.js";
 import { patchLessonProgress } from "./lmsEnrollmentService.js";
 import { maybeIssueCertificate } from "./lmsCertificateService.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
@@ -34,14 +39,23 @@ async function assertCanEditTrack(actorUid, trackId) {
     err.status = 403;
     throw err;
   }
-  await linkTrackMentor(trackId, actorUid);
+  if (isSchoolAdmin(role)) return;
+  const linked = await dbGet(
+    "SELECT uid FROM track_mentors WHERE track_id = ? AND uid = ?",
+    [trackId, actorUid],
+  );
+  if (!linked) {
+    const err = new Error("Not assigned to this course");
+    err.status = 403;
+    throw err;
+  }
 }
 
 /** Mentors/school admins who edit a track get linked (multi-tutor); creators alone do not. */
 export async function linkTrackMentor(trackId, actorUid) {
   if (!trackId || !actorUid) return;
   const role = normalizeRole(await loadUserRole(actorUid));
-  if (role !== "Mentor" && role !== "SchoolAdmin") return;
+  if (role !== "Mentor") return;
   const now = Date.now();
   const displayName = await actorDisplayName(actorUid);
   const actorRow = await dbGet(
@@ -188,7 +202,6 @@ async function actorDisplayName(uid) {
 
 export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   await assertCanEditTrack(actorUid, trackId);
-  await linkTrackMentor(trackId, actorUid);
   const row = await dbGet("SELECT * FROM tracks WHERE track_id = ?", [trackId]);
   if (!row) {
     const err = new Error("Track not found");

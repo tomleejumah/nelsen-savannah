@@ -624,8 +624,30 @@ export async function schoolDashboard(actorUid, schoolId) {
       enrolled: r.enrolled,
       avgPercent: r.enrolled ? Math.round(r.percentSum / r.enrolled) : 0,
       avgAssignment: assignmentByTrack.get(r.trackId) || 0,
+      mentors: [],
     }))
     .sort((a, b) => b.enrolled - a.enrolled || a.title.localeCompare(b.title));
+  const mentorRows = await dbAll(
+    `SELECT tm.track_id, tm.uid, tm.display_name, tm.avatar_url
+     FROM track_mentors tm
+     JOIN tracks t ON t.track_id = tm.track_id
+     WHERE COALESCE(t.school_id, 'nelsen-digital') = ?
+     ORDER BY tm.linked_at ASC`,
+    [schoolId],
+  );
+  const mentorsByTrack = new Map();
+  for (const row of mentorRows) {
+    const list = mentorsByTrack.get(row.track_id) || [];
+    list.push({
+      uid: row.uid,
+      displayName: row.display_name || "",
+      avatarUrl: row.avatar_url || "",
+    });
+    mentorsByTrack.set(row.track_id, list);
+  }
+  for (const course of byCourse) {
+    course.mentors = mentorsByTrack.get(course.trackId) || [];
+  }
   const avgAssignment =
     byCourse.length === 0
       ? 0
@@ -651,6 +673,92 @@ export async function schoolDashboard(actorUid, schoolId) {
       atRisk,
       logoUrl: school?.logo_url || null,
       accentColor: school?.accent_color || null,
+    },
+  };
+}
+
+export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = {}) {
+  await assertCanManageSchool(actorUid, schoolId);
+  const track = await dbGet(
+    "SELECT track_id, school_id FROM tracks WHERE track_id = ?",
+    [trackId],
+  );
+  if (!track) {
+    const err = new Error("Track not found");
+    err.status = 404;
+    throw err;
+  }
+  if ((track.school_id || DEFAULT_SCHOOL_ID) !== schoolId) {
+    const err = new Error("Track is not in this school");
+    err.status = 403;
+    throw err;
+  }
+  const uids = [
+    ...new Set(
+      (Array.isArray(body.uids) ? body.uids : [])
+        .map((u) => String(u || "").trim())
+        .filter(Boolean),
+    ),
+  ];
+  for (const uid of uids) {
+    const member = await dbGet(
+      `SELECT u.uid, r.role FROM users_mirror u
+       LEFT JOIN roles r ON r.uid = u.uid
+       WHERE u.uid = ? AND COALESCE(u.school_id, 'nelsen-digital') = ?`,
+      [uid, schoolId],
+    );
+    if (!member || normalizeRole(member.role) !== ROLES.Mentor) {
+      const err = new Error("Each assignee must be a mentor of this school");
+      err.status = 400;
+      throw err;
+    }
+  }
+  const now = Date.now();
+  await dbRun("DELETE FROM track_mentors WHERE track_id = ?", [trackId]);
+  let lastName = "";
+  let lastAvatar = "";
+  let lastUid = "";
+  for (const uid of uids) {
+    const user = await dbGet(
+      "SELECT display_name, email, photo_url FROM users_mirror WHERE uid = ?",
+      [uid],
+    );
+    const displayName =
+      user?.display_name && user.display_name !== uid
+        ? user.display_name
+        : user?.email
+          ? String(user.email).split("@")[0]
+          : "Mentor";
+    const avatarUrl = user?.photo_url || "";
+    await dbRun(
+      `INSERT INTO track_mentors (track_id, uid, display_name, avatar_url, linked_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [trackId, uid, displayName, avatarUrl, now],
+    );
+    lastUid = uid;
+    lastName = displayName;
+    lastAvatar = avatarUrl;
+  }
+  await dbRun(
+    `UPDATE tracks SET tutor_id = ?, tutor_name = ?, tutor_avatar_url = ?, updated_at = ?
+     WHERE track_id = ?`,
+    [lastUid, lastName, lastAvatar, now, trackId],
+  );
+  const mentors = await dbAll(
+    `SELECT uid, display_name, avatar_url, linked_at
+     FROM track_mentors WHERE track_id = ? ORDER BY linked_at ASC`,
+    [trackId],
+  );
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      trackId,
+      mentors: (mentors || []).map((r) => ({
+        uid: r.uid,
+        displayName: r.display_name || "",
+        avatarUrl: r.avatar_url || "",
+        linkedAt: Number(r.linked_at) || 0,
+      })),
     },
   };
 }

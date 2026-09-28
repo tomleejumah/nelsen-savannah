@@ -152,10 +152,9 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       ) : null}
 
       <section id="courses">
-        <h2 className="font-display text-xl font-semibold">Your courses</h2>
+        <h2 className="font-display text-xl font-semibold">School courses</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Open a course for students and syllabus. Edit course opens a side panel
-          to add chapters and lessons.
+          View every course. Edit is only for trainers assigned to that course.
         </p>
         {tracks.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
@@ -165,6 +164,11 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
           <ul className="mt-4 space-y-3">
             {tracks.map((t) => {
               const stats = statsForTrack(t.trackId);
+              const canEdit =
+                me.userRole === "SchoolAdmin" ||
+                me.userRole === "SuperAdmin" ||
+                me.userRole === "Admin" ||
+                (t.mentors || []).some((m) => m.uid === me.uid);
               return (
                 <li
                   key={t.trackId}
@@ -184,13 +188,19 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                     >
                       Open
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => openSide(t.trackId, "update")}
-                      className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                    >
-                      Edit course
-                    </button>
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => openSide(t.trackId, "update")}
+                        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                      >
+                        Edit course
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        View only
+                      </span>
+                    )}
                   </div>
                 </li>
               );
