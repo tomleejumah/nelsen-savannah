@@ -737,7 +737,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 .setRequiresBatteryNotLow(false)
                 .build();
 
-        boolean isMentor = "Mentor".equals(userRole) || Util.getState(Constants.USER_ROLE, "Mentee").equals("Mentor");
+        boolean isMentor = Roles.actsAsMentor(userRole)
+                || Roles.actsAsMentor(Util.getState(Constants.USER_ROLE, "Mentee"));
 
         PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(
                 EventReminderWorker.class,

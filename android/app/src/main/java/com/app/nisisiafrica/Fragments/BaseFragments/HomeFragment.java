@@ -360,6 +360,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         rcCourses = view.findViewById(R.id.rcCourses);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         rcCourses.setLayoutManager(layoutManager);
+        // Let the home NestedScrollView own vertical flings; keep horizontal course swipe.
+        rcCourses.setNestedScrollingEnabled(false);
         coursesAdapter = new CoursesAdapter(getContext());
         rcCourses.setAdapter(coursesAdapter);
 
@@ -381,6 +383,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         RecyclerView rcProgrammes = view.findViewById(R.id.rcProgrammes);
         if (rcProgrammes != null) {
             rcProgrammes.setLayoutManager(new LinearLayoutManager(getContext()));
+            // Expand to full list height — no inner vertical scroll (parent NestedScrollView scrolls).
+            rcProgrammes.setNestedScrollingEnabled(false);
+            rcProgrammes.setHasFixedSize(false);
             ProgrammesAdapter programmesAdapter = new ProgrammesAdapter(false);
             rcProgrammes.setAdapter(programmesAdapter);
             programmesAdapter.setOnProgrammeClick(p ->

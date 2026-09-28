@@ -648,7 +648,7 @@ public class ChatFragment extends Fragment {
                             Glide.with(this).load(user.getPhotoUrl()).circleCrop()
                                     .placeholder(R.drawable.ic_person).into(binding.tvHeaderAvatar);
                             binding.tvChatRole.setText(user.getUserRole());
-                            selectedIsMentor = "Mentor".equals(user.getUserRole());
+                            selectedIsMentor = Roles.actsAsMentor(user.getUserRole());
                         } else {
                             // The partner is likely a mentor (stored under /mentors, not /users).
                             loadMentorProfileFallback(otherUserId, otherName);
