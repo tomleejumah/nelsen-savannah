@@ -449,6 +449,22 @@ async function ensureMigrations() {
     }
   }
 
+  /* Pre-existing Nelsen coding courses get IDE attached. */
+  try {
+    await dbRun(
+      `UPDATE tracks SET ide_enabled = 1
+       WHERE COALESCE(ide_enabled, 0) = 0
+         AND (
+           track_id IN ('track-software-engineering', 'track-codelab')
+           OR lower(COALESCE(title, '')) LIKE '%software engineering%'
+           OR lower(COALESCE(program_slug, '')) LIKE '%software-engineering%'
+           OR lower(COALESCE(program_slug, '')) LIKE '%codelab%'
+         )`,
+    );
+  } catch {
+    /* ignore if column unavailable */
+  }
+
   const additiveTables = [
     `CREATE TABLE IF NOT EXISTS cohorts (
       cohort_id TEXT PRIMARY KEY,

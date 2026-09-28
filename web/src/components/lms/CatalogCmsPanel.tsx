@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { AttachIdeCheckbox } from "@/components/lms/AttachIdeCheckbox";
 import {
   emptyQuestion,
   QuizQuestionsEditor,
@@ -652,23 +653,11 @@ export function CatalogCmsPanel({
                   }}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setTrackIdeEnabled((v) => !v)}
-                  className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
-                    trackIdeEnabled
-                      ? "border-ember bg-ember/10 text-foreground"
-                      : "border-border bg-background text-muted-foreground hover:bg-secondary/40"
-                  }`}
-                  aria-pressed={trackIdeEnabled}
-                >
-                  <span className="font-medium text-foreground">Attach IDE</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {trackIdeEnabled
-                      ? "On — new lessons default to the in-browser code lab"
-                      : "Off — add video, PDF, or text lessons as usual"}
-                  </span>
-                </button>
+                <AttachIdeCheckbox
+                  checked={trackIdeEnabled}
+                  onChange={setTrackIdeEnabled}
+                  hint="New lessons default to the in-browser code lab when checked."
+                />
                 <button
                   type="submit"
                   className="rounded-full bg-ember px-4 py-2 text-sm font-medium text-white"
@@ -736,29 +725,14 @@ export function CatalogCmsPanel({
               />
               Published
             </label>
-            <button
-              type="button"
-              onClick={() => {
-                setEditIdeEnabled((v) => {
-                  const next = !v;
-                  if (next) setLesType("code");
-                  return next;
-                });
+            <AttachIdeCheckbox
+              checked={editIdeEnabled}
+              onChange={(next) => {
+                setEditIdeEnabled(next);
+                if (next) setLesType("code");
               }}
-              className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
-                editIdeEnabled
-                  ? "border-ember bg-ember/10 text-foreground"
-                  : "border-border bg-background text-muted-foreground hover:bg-secondary/40"
-              }`}
-              aria-pressed={editIdeEnabled}
-            >
-              <span className="font-medium text-foreground">Attach IDE</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                {editIdeEnabled
-                  ? "On — Monaco code lab for coding lessons in this course"
-                  : "Off — enable for Software Engineering–style courses"}
-              </span>
-            </button>
+              hint="Monaco code lab for coding lessons in this course."
+            />
             <button
               type="submit"
               className="rounded-full bg-ember px-4 py-1.5 text-sm font-medium text-white"
