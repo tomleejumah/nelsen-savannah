@@ -99,9 +99,9 @@ function MentorsConsole({ user, me }: { user: User; me: MeDto }) {
                   </p>
                   <span className="text-xs text-muted-foreground">{app.email}</span>
                 </div>
-                {app.answers?.motivation ? (
+                {app.answers?.["motivation"] ? (
                   <p className="line-clamp-3 text-muted-foreground">
-                    {app.answers.motivation}
+                    {String(app.answers["motivation"])}
                   </p>
                 ) : null}
                 <div className="flex flex-wrap gap-2">

@@ -136,8 +136,8 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     const token = await user.getIdToken();
     const result = await registerSchoolMentor(token, schoolId, {
       email: mentorEmail.trim(),
-      displayName: mentorName.trim() || undefined,
-      uid: mentorUid.trim() || undefined,
+      ...(mentorName.trim() ? { displayName: mentorName.trim() } : {}),
+      ...(mentorUid.trim() ? { uid: mentorUid.trim() } : {}),
     });
     setMsg(
       result.ok
@@ -161,8 +161,8 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     const token = await user.getIdToken();
     const result = await registerSchoolMentee(token, schoolId, {
       email: menteeEmail.trim(),
-      displayName: menteeName.trim() || undefined,
-      uid: menteeUid.trim() || undefined,
+      ...(menteeName.trim() ? { displayName: menteeName.trim() } : {}),
+      ...(menteeUid.trim() ? { uid: menteeUid.trim() } : {}),
     });
     setMsg(
       result.ok
@@ -273,8 +273,8 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     setMsg(null);
     const token = await user.getIdToken();
     const result = await patchSchoolBranding(token, schoolId, {
-      accentColor: accent.trim() || undefined,
-      logoUrl: logoUrl.trim() || undefined,
+      ...(accent.trim() ? { accentColor: accent.trim() } : {}),
+      ...(logoUrl.trim() ? { logoUrl: logoUrl.trim() } : {}),
     });
     setMsg(result.ok ? "Branding saved." : result.error || "Failed");
   }
