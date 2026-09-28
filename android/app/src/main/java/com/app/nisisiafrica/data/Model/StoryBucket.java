@@ -17,7 +17,11 @@ public class StoryBucket {
     public String coverUrl() {
         if (stories.isEmpty()) return null;
         Story latest = stories.get(stories.size() - 1);
-        if (latest.logoUrl != null && !latest.logoUrl.isEmpty()) return latest.logoUrl;
+        // Prefer poster DP; ignore legacy rows that copied media into logoUrl.
+        if (latest.logoUrl != null && !latest.logoUrl.isEmpty()
+                && (latest.mediaUrl == null || !latest.logoUrl.equals(latest.mediaUrl))) {
+            return latest.logoUrl;
+        }
         return latest.mediaUrl;
     }
 
