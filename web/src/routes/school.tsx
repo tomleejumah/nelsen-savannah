@@ -99,6 +99,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
   const [mentees, setMentees] = useState<MenteeProgressDto[]>([]);
   const [assignTrackId, setAssignTrackId] = useState<string | null>(null);
   const [assignUids, setAssignUids] = useState<string[]>([]);
+  const [assignMsg, setAssignMsg] = useState<string | null>(null);
   const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
   const [applications, setApplications] = useState<SchoolApplicationDto[]>([]);
 
@@ -285,12 +286,50 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
     setMsg(result.ok ? "Branding saved." : result.error || "Failed");
   }
 
-  const schoolMentors = members.filter(
-    (m) => m.userRole === "Mentor" && m.uid && m.status !== "suspended",
-  );
+  const schoolMentors = (() => {
+    const byUid = new Map<
+      string,
+      { uid: string; email?: string; displayName?: string }
+    >();
+    for (const m of members) {
+      if (
+        m.userRole === "Mentor" &&
+        m.uid &&
+        m.status !== "suspended"
+      ) {
+        byUid.set(m.uid, m);
+      }
+    }
+    for (const m of dash?.assignableMentors || []) {
+      if (m.uid && !byUid.has(m.uid)) byUid.set(m.uid, m);
+    }
+    // Include anyone already on a course in this school (so current trainers appear).
+    for (const c of dash?.byCourse || []) {
+      for (const m of c.mentors || []) {
+        if (m.uid && !byUid.has(m.uid)) {
+          byUid.set(m.uid, {
+            uid: m.uid,
+            displayName: m.displayName,
+          });
+        }
+      }
+    }
+    return [...byUid.values()].sort((a, b) =>
+      String(a.displayName || a.uid).localeCompare(
+        String(b.displayName || b.uid),
+      ),
+    );
+  })();
 
   async function saveTrackMentors(trackId: string) {
     setMsg(null);
+    setAssignMsg(null);
+    if (schoolMentors.length === 0) {
+      setAssignMsg(
+        "Invite a mentor first (Invite mentor below), then assign them here.",
+      );
+      return;
+    }
     const token = await user.getIdToken();
     const result = await putSchoolTrackMentors(
       token,
@@ -298,11 +337,11 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
       trackId,
       assignUids,
     );
-    setMsg(
-      result.ok
-        ? "Trainers assigned to this course."
-        : result.error || "Failed",
-    );
+    const text = result.ok
+      ? "Trainers assigned to this course."
+      : result.error || "Failed";
+    setMsg(text);
+    setAssignMsg(result.ok ? null : text);
     if (result.ok) {
       setAssignTrackId(null);
       await load();
@@ -411,6 +450,7 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                       <button
                         type="button"
                         onClick={() => {
+                          setAssignMsg(null);
                           setAssignTrackId(
                             assignTrackId === c.trackId ? null : c.trackId,
                           );
@@ -428,8 +468,15 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                         <div className="mt-3 space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
                           {schoolMentors.length === 0 ? (
                             <p className="text-xs text-muted-foreground">
-                              Invite a mentor first (they must sign in before you
-                              can assign them).
+                              No mentors linked to this school yet. Use{" "}
+                              <a
+                                href="#invite-mentor"
+                                className="font-medium text-ember underline-offset-2 hover:underline"
+                              >
+                                Invite mentor
+                              </a>{" "}
+                              below — they must sign in once, then they show up
+                              here to assign.
                             </p>
                           ) : (
                             schoolMentors.map((m) => (
@@ -452,13 +499,18 @@ function SchoolConsole({ user, me }: { user: User; me: MeDto }) {
                               </label>
                             ))
                           )}
-                          <button
-                            type="button"
-                            onClick={() => void saveTrackMentors(c.trackId)}
-                            className="cursor-pointer rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
-                          >
-                            Save trainers
-                          </button>
+                          {assignMsg ? (
+                            <p className="text-xs text-destructive">{assignMsg}</p>
+                          ) : null}
+                          {schoolMentors.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => void saveTrackMentors(c.trackId)}
+                              className="cursor-pointer rounded-full bg-ember-gradient px-3 py-1.5 text-xs font-semibold text-maroon-foreground"
+                            >
+                              Save trainers
+                            </button>
+                          ) : null}
                         </div>
                       ) : null}
                     </li>

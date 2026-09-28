@@ -541,6 +541,80 @@ export async function importSchoolRoster(actorUid, schoolId, body = {}) {
   };
 }
 
+/** Mentors the school admin can assign to courses. */
+async function loadAssignableMentors(schoolId) {
+  const byUid = new Map();
+  const push = (row) => {
+    const uid = String(row?.uid || "").trim();
+    if (!uid || byUid.has(uid)) return;
+    byUid.set(uid, {
+      uid,
+      email: row.email || "",
+      displayName: row.display_name || row.displayName || row.email || uid,
+      photoUrl: row.photo_url || row.photoUrl || "",
+      status: row.status || "active",
+    });
+  };
+
+  // Rostered at this school with Mentor role (users_mirror.school_id).
+  const onSchool = await dbAll(
+    `SELECT u.uid, u.email, u.display_name, u.photo_url,
+            COALESCE(m.status, 'active') AS status
+     FROM users_mirror u
+     INNER JOIN roles r ON r.uid = u.uid
+     LEFT JOIN school_memberships m
+       ON m.school_id = ? AND m.uid = u.uid
+     WHERE u.school_id = ? AND r.role = ?`,
+    [schoolId, schoolId, ROLES.Mentor],
+  );
+  for (const row of onSchool || []) push(row);
+
+  // Membership row says Mentor (covers invited→active even if school_id lagged).
+  const viaMembership = await dbAll(
+    `SELECT COALESCE(m.uid, u.uid) AS uid, m.email, m.display_name,
+            u.photo_url, m.status, u.display_name AS user_display_name
+     FROM school_memberships m
+     LEFT JOIN users_mirror u ON u.uid = m.uid OR lower(u.email) = lower(m.email)
+     WHERE m.school_id = ? AND m.role = ? AND m.status != 'suspended'`,
+    [schoolId, ROLES.Mentor],
+  );
+  for (const row of viaMembership || []) {
+    push({
+      ...row,
+      display_name: row.display_name || row.user_display_name || "",
+    });
+  }
+
+  // Already tutoring a course in this school (even if school_id was never set).
+  const onTracks = await dbAll(
+    `SELECT tm.uid, u.email, COALESCE(tm.display_name, u.display_name) AS display_name,
+            COALESCE(tm.avatar_url, u.photo_url) AS photo_url, 'active' AS status
+     FROM track_mentors tm
+     INNER JOIN tracks t ON t.track_id = tm.track_id
+     LEFT JOIN users_mirror u ON u.uid = tm.uid
+     WHERE COALESCE(t.school_id, ?) = ?`,
+    [DEFAULT_SCHOOL_ID, schoolId],
+  );
+  for (const row of onTracks || []) push(row);
+
+  // Course tutor_id fallback (legacy single-tutor field).
+  const tutors = await dbAll(
+    `SELECT t.tutor_id AS uid, u.email,
+            COALESCE(t.tutor_name, u.display_name) AS display_name,
+            COALESCE(t.tutor_avatar_url, u.photo_url) AS photo_url,
+            'active' AS status
+     FROM tracks t
+     LEFT JOIN users_mirror u ON u.uid = t.tutor_id
+     WHERE COALESCE(t.school_id, ?) = ? AND t.tutor_id IS NOT NULL AND t.tutor_id != ''`,
+    [DEFAULT_SCHOOL_ID, schoolId],
+  );
+  for (const row of tutors || []) push(row);
+
+  return [...byUid.values()].sort((a, b) =>
+    String(a.displayName).localeCompare(String(b.displayName)),
+  );
+}
+
 export async function schoolDashboard(actorUid, schoolId) {
   await assertCanManageSchool(actorUid, schoolId);
   const members = await dbAll(
@@ -553,6 +627,7 @@ export async function schoolDashboard(actorUid, schoolId) {
      WHERE u.school_id = ?`,
     [schoolId],
   );
+  const assignableMentors = await loadAssignableMentors(schoolId);
   const enrollments = await dbAll(
     `SELECT e.uid, e.track_id, e.track_percent, e.last_active_at, u.display_name,
             u.email, COALESCE(t.title, e.track_id) AS track_title
@@ -674,10 +749,13 @@ export async function schoolDashboard(actorUid, schoolId) {
       schoolId,
       schoolName: school?.name || "",
       rosterCount,
-      mentors: members.filter(
-        (m) =>
-          normalizeRole(m.role) === ROLES.Mentor && m.status !== "suspended",
-      ).length,
+      mentors: Math.max(
+        members.filter(
+          (m) =>
+            normalizeRole(m.role) === ROLES.Mentor && m.status !== "suspended",
+        ).length,
+        assignableMentors.length,
+      ),
       mentees: members.filter((m) => normalizeRole(m.role) === ROLES.Mentee)
         .length,
       enrollments: enrollments.length,
@@ -685,6 +763,7 @@ export async function schoolDashboard(actorUid, schoolId) {
       avgAssignment,
       byCourse,
       atRisk,
+      assignableMentors,
       logoUrl: school?.logo_url || null,
       accentColor: school?.accent_color || null,
     },
@@ -715,16 +794,63 @@ export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = 
     ),
   ];
   for (const uid of uids) {
-    const member = await dbGet(
-      `SELECT u.uid, r.role FROM users_mirror u
+    const user = await dbGet(
+      `SELECT u.uid, u.school_id, r.role AS global_role, m.role AS member_role
+       FROM users_mirror u
        LEFT JOIN roles r ON r.uid = u.uid
-       WHERE u.uid = ? AND COALESCE(u.school_id, 'nelsen-digital') = ?`,
-      [uid, schoolId],
+       LEFT JOIN school_memberships m
+         ON m.uid = u.uid AND m.school_id = ?
+       WHERE u.uid = ?`,
+      [schoolId, uid],
     );
-    if (!member || normalizeRole(member.role) !== ROLES.Mentor) {
+    if (!user) {
       const err = new Error("Each assignee must be a mentor of this school");
       err.status = 400;
       throw err;
+    }
+    const isMentor =
+      normalizeRole(user.global_role) === ROLES.Mentor ||
+      normalizeRole(user.member_role) === ROLES.Mentor;
+    if (!isMentor) {
+      const err = new Error("Each assignee must be a mentor of this school");
+      err.status = 400;
+      throw err;
+    }
+    // Attach to school when assigning (tutors often have role Mentor but null school_id).
+    if (user.school_id !== schoolId || normalizeRole(user.member_role) !== ROLES.Mentor) {
+      await setMemberSchoolAndRole(uid, schoolId, ROLES.Mentor);
+      const nowAttach = Date.now();
+      const profile = await dbGet(
+        "SELECT email, display_name FROM users_mirror WHERE uid = ?",
+        [uid],
+      );
+      const existingMem = await dbGet(
+        "SELECT id FROM school_memberships WHERE school_id = ? AND uid = ?",
+        [schoolId, uid],
+      );
+      if (!existingMem) {
+        await dbRun(
+          `INSERT INTO school_memberships
+             (id, school_id, uid, email, role, status, display_name, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+          [
+            `sm-${schoolId}-${uid}`.slice(0, 80),
+            schoolId,
+            uid,
+            profile?.email || "",
+            ROLES.Mentor,
+            profile?.display_name || "",
+            nowAttach,
+            nowAttach,
+          ],
+        );
+      } else {
+        await dbRun(
+          `UPDATE school_memberships SET role = ?, status = 'active', updated_at = ?
+           WHERE school_id = ? AND uid = ?`,
+          [ROLES.Mentor, nowAttach, schoolId, uid],
+        );
+      }
     }
   }
   const now = Date.now();
