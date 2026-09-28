@@ -43,6 +43,13 @@ router.get(
   authenticateUser,
   lmsController.getAndroidAppRelease,
 );
+router.post(
+  "/app/android/download-url",
+  authenticateUser,
+  lmsController.postAndroidAppDownloadUrl,
+);
+// Signed query (no Bearer) — browser native download progress
+router.get("/app/android/file", lmsController.downloadAndroidAppFile);
 router.get(
   "/app/android/download",
   authenticateUser,
