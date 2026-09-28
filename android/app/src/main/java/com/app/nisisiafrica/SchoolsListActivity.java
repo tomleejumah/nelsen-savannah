@@ -50,6 +50,7 @@ public class SchoolsListActivity extends AppCompatActivity {
     private SchoolsAdapter adapter;
     private TextView tvEmpty;
     private TextView tvHint;
+    private TextView tvSchoolCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +74,7 @@ public class SchoolsListActivity extends AppCompatActivity {
 
         tvEmpty = findViewById(R.id.tvSchoolsEmpty);
         tvHint = findViewById(R.id.tvSchoolsHint);
+        tvSchoolCount = findViewById(R.id.tvSchoolCount);
 
         RecyclerView rv = findViewById(R.id.rvSchools);
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -178,6 +180,7 @@ public class SchoolsListActivity extends AppCompatActivity {
                 }
                 adapter.notifyDataSetChanged();
                 tvEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+                updateSchoolCount();
             }
 
             @Override
@@ -186,10 +189,19 @@ public class SchoolsListActivity extends AppCompatActivity {
                 rows.addAll(mineRows);
                 adapter.notifyDataSetChanged();
                 tvEmpty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+                updateSchoolCount();
                 Toast.makeText(SchoolsListActivity.this,
                         "Could not load schools", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void updateSchoolCount() {
+        if (tvSchoolCount == null) return;
+        int n = rows.size();
+        tvSchoolCount.setText(n == 1
+                ? getString(R.string.schools_count_one)
+                : getString(R.string.schools_count_label, n));
     }
 
     private String tracksMeta(String schoolId, boolean mine) {
