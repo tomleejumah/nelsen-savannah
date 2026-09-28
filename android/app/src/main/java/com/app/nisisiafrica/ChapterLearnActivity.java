@@ -655,7 +655,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.QuizEnvelope> response) {
                         LmsModels.QuizEnvelope env = response.body();
                         if (response.isSuccessful() && env != null && env.ok && env.data != null) {
-                            String msg = env.data.passed != null && env.data.passed
+                            String msg = env.data.quizPct >= 80f
                                     ? "Quiz passed"
                                     : "Quiz submitted";
                             result.setText(msg);
