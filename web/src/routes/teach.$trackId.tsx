@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
+import { CodeWorkspace } from "@/components/lms/CodeWorkspace";
 import {
   Sheet,
   SheetContent,
@@ -73,6 +74,7 @@ function TeachCourseBoard({
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [ideOpen, setIdeOpen] = useState(false);
   const [studentDetail, setStudentDetail] =
     useState<TrackStudentDetailDto | null>(null);
   const [studentBusy, setStudentBusy] = useState(false);
@@ -188,6 +190,15 @@ function TeachCourseBoard({
           >
             Edit course
           </button>
+          {trackCard?.ideEnabled ? (
+            <button
+              type="button"
+              onClick={() => setIdeOpen(true)}
+              className="rounded-full border border-ember/40 bg-ember/10 px-4 py-1.5 text-sm font-medium text-ember hover:bg-ember/20"
+            >
+              Go to IDE
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -382,6 +393,14 @@ function TeachCourseBoard({
           ) : null}
         </form>
       </section>
+
+      {ideOpen && trackCard?.ideEnabled ? (
+        <CodeWorkspace
+          user={user}
+          track={trackCard}
+          onClose={() => setIdeOpen(false)}
+        />
+      ) : null}
 
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
