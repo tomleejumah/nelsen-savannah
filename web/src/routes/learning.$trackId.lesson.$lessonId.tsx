@@ -6,15 +6,17 @@ import { toast } from "sonner";
 
 import { getFirebaseAuth } from "@/lib/firebase";
 import { PdfReader } from "@/components/lms/PdfReader";
-// import { CodeLab } from "@/components/lms/CodeLab";
 import { CodeWorkspace } from "@/components/lms/CodeWorkspace";
+// import { CodeLab } from "@/components/lms/CodeLab";
 import {
   fetchLmsLesson,
+  fetchLmsTrack,
   fetchMediaPlaybackUrl,
   patchLessonProgress,
   submitAssignment,
   submitLessonQuiz,
   type LessonDto,
+  type TrackCardDto,
 } from "@/lib/lmsApi";
 
 /** Re-sign this many seconds before the current URL dies. */
@@ -136,6 +138,9 @@ function SignedMediaPlayer({
             : "This link is time-limited and refreshes automatically while you watch."}
         </p>
       ) : null}
+      {ideOpen && user && track?.ideEnabled ? (
+        <CodeWorkspace user={user} track={track} onClose={() => setIdeOpen(false)} />
+      ) : null}
     </div>
   );
 }
@@ -152,6 +157,8 @@ function LessonPage() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [lesson, setLesson] = useState<LessonDto | null>(null);
+  const [track, setTrack] = useState<TrackCardDto | null>(null);
+  const [ideOpen, setIdeOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +168,6 @@ function LessonPage() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [assignmentText, setAssignmentText] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
-  const [ideOpen, setIdeOpen] = useState(false);
 
   const load = useCallback(
     async (u: User) => {
@@ -169,7 +175,11 @@ function LessonPage() {
       setError(null);
       try {
         const token = await u.getIdToken();
-        const envelope = await fetchLmsLesson(token, lessonId);
+        const [envelope, trackEnvelope] = await Promise.all([
+          fetchLmsLesson(token, lessonId),
+          fetchLmsTrack(token, trackId),
+        ]);
+        setTrack(trackEnvelope.data?.track || null);
         if (!envelope.ok || !envelope.data?.lesson) {
           setLesson(null);
           setError(envelope.error || "Could not load lesson");
@@ -189,7 +199,7 @@ function LessonPage() {
         setLoading(false);
       }
     },
-    [lessonId],
+    [lessonId, trackId],
   );
 
   useEffect(() => {
@@ -384,13 +394,24 @@ function LessonPage() {
       <div
         className={`mx-auto px-4 sm:px-8 ${lessonType === "pdf" ? "max-w-3xl" : lessonType === "code" ? "max-w-4xl" : "max-w-2xl"}`}
       >
-        <Link
-          to="/learning/$trackId"
-          params={{ trackId }}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to track
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            to="/learning/$trackId"
+            params={{ trackId }}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to track
+          </Link>
+          {track?.ideEnabled && user ? (
+            <button
+              type="button"
+              onClick={() => setIdeOpen(true)}
+              className="rounded-full border border-ember/40 bg-ember/10 px-4 py-2 text-sm font-semibold text-ember hover:bg-ember/20"
+            >
+              Go to IDE
+            </button>
+          ) : null}
+        </div>
 
         {!authReady || (user && loading && !lesson) ? (
           <p className="mt-10 text-sm text-muted-foreground">Loading lesson…</p>
@@ -461,27 +482,7 @@ function LessonPage() {
                         dangerouslySetInnerHTML={{ __html: lesson.bodyHtml }}
                       />
                     ) : null}
-                    {/* {lessonType === "code" && user ? (
-                      <CodeLab
-                        user={user}
-                        lesson={lesson}
-                        onProgress={(info) =>
-                          applyProgress(info.lessonPercent, info.status, info.trackPercent)
-                        }
-                      />
-                    ) : null} */}
-
-                    {lessonType === "code" && user ? (
-                      <button
-                        type="button"
-                        onClick={() => setIdeOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
-                      >
-                        Open IDE
-                      </button>
-                    ) : null}
-
-                    {lessonType === "video" && (lesson.playbackUrl || lesson.contentUrl) ? (
+{lessonType === "video" && (lesson.playbackUrl || lesson.contentUrl) ? (
                       <SignedMediaPlayer
                         user={user}
                         lesson={lesson}
@@ -704,15 +705,6 @@ function LessonPage() {
           </>
         ) : null}
       </div>
-
-      {ideOpen && lesson && user ? (
-        <CodeWorkspace
-          user={user}
-          lesson={lesson}
-          onClose={() => setIdeOpen(false)}
-          onProgress={(info) => applyProgress(info.lessonPercent, info.status, info.trackPercent)}
-        />
-      ) : null}
-    </div>
+</div>
   );
 }

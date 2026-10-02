@@ -32,12 +32,26 @@ The exact schema can be adjusted when the existing course API/model is updated.
 
 ## Phase 1 — Course-Based Web IDE
 
+### Current implementation status
+
+- [x] Course database support for `ide_enabled` already exists.
+- [x] Course/catalog API already exposes `ideEnabled`.
+- [x] Admin/CMS already reads and writes the course IDE setting.
+- [x] Development branch `feature/course-ide` created for isolated IDE work.
+- [x] Course sandbox runner endpoint implemented with enrollment/mentor authorization.
+- [x] Refactor `CodeWorkspace` from lesson-owned to course-owned.
+- [x] Add **Go to IDE** on enrolled course pages and keep it available while navigating lessons.
+- [x] Keep React Flow as the course IDE **Flow** tab, independent of lesson progress.
+- [x] Give linked course mentors access to the same sandbox from the mentor course cockpit.
+- [ ] Add Android WebView course IDE integration.
+
 ### Course/Admin
 
-- [ ] Add an `ideEnabled` setting to courses.
-- [ ] Allow the course creator/admin to enable or disable IDE support.
-- [ ] Persist the IDE configuration with the course.
-- [ ] Return IDE availability/configuration from the course API.
+- [x] Add an `ideEnabled` setting to courses.
+- [x] Allow the course creator/admin to enable or disable IDE support.
+- [x] Persist the IDE enable/disable configuration with the course.
+- [x] Return IDE availability from the course API.
+- [ ] Add/return additional course sandbox configuration only if required by the final IDE implementation.
 
 ### Learner UI
 

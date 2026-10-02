@@ -633,6 +633,12 @@ export const likeTrack = handle("[POST /lms/tracks/:trackId/like]", async (req) 
   return toggleTrackLike(req.user.uid, req.params.trackId, req.body?.liked);
 });
 
+export const runTrackIde = handle("[POST /lms/tracks/:trackId/ide/run]", async (req) => {
+  const { runTrackIde: run } = await import("../services/lmsLabService.js");
+  const data = await run(req.user.uid, req.params.trackId, req.body || {});
+  return { data, source: getPrimaryEngine() };
+});
+
 export const runLessonLab = handle("[POST /lms/lessons/:lessonId/run]", async (req) => {
   const { runLessonLab: run } = await import("../services/lmsLabService.js");
   const data = await run(req.user.uid, req.params.lessonId, req.body || {});

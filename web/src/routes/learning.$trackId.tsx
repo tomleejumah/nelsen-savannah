@@ -10,6 +10,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Layers, LogIn } from "lucide-react";
 
 import { getFirebaseAuth } from "@/lib/firebase";
 import { PdfThumb } from "@/components/lms/PdfThumb";
+import { CodeWorkspace } from "@/components/lms/CodeWorkspace";
 import {
   EnrollPaywallModal,
   formatTrackPrice,
@@ -61,6 +62,7 @@ function TrackDetailPage() {
   const [modules, setModules] = useState<ModuleWithLessons[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ideOpen, setIdeOpen] = useState(false);
 
   const load = useCallback(
     async (u: User) => {
@@ -286,15 +288,27 @@ function TrackDetailPage() {
                   </p>
                 ) : null}
 
-                {continueLessonId ? (
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  {track.ideEnabled ? (
+                    <button
+                      type="button"
+                      onClick={() => setIdeOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-full border border-ember/40 bg-ember/10 px-6 py-3 font-display text-sm font-semibold text-ember transition hover:bg-ember/20"
+                    >
+                      Go to IDE
+                    </button>
+                  ) : null}
+
+                  {continueLessonId ? (
                   <Link
                     to="/learning/$trackId/lesson/$lessonId"
                     params={{ trackId, lessonId: continueLessonId }}
-                    className="mt-8 inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
+                    className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
                   >
                     Continue learning <ArrowRight className="h-4 w-4" />
                   </Link>
-                ) : null}
+                  ) : null}
+                </div>
 
                 <button
                   type="button"
@@ -464,6 +478,13 @@ function TrackDetailPage() {
           </>
         ) : null}
       </div>
+      {ideOpen && user && track?.ideEnabled ? (
+        <CodeWorkspace
+          user={user}
+          track={track}
+          onClose={() => setIdeOpen(false)}
+        />
+      ) : null}
       {paywall.paywall ? (
         <EnrollPaywallModal
           paywall={paywall.paywall}
