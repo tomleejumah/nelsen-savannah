@@ -160,8 +160,30 @@ export async function ensureActiveSchool(uid, memberships) {
     [uid],
   );
 
-  // No membership → no school context (picker / deep link / enroll attaches later).
+  // No membership → keep an explicit browse pick if that school still exists;
+  // otherwise clear school context (picker / deep link / enroll attaches later).
+  const preferred =
+    user?.active_school_id || user?.school_id || null;
+
   if (!activeRows.length) {
+    if (preferred) {
+      const exists = await dbGet(
+        "SELECT school_id FROM schools WHERE school_id = ?",
+        [preferred],
+      );
+      if (exists) {
+        try {
+          await dbRun(
+            `UPDATE users_mirror SET active_school_id = ?, school_id = ?, updated_at = ?
+             WHERE uid = ?`,
+            [preferred, preferred, Date.now(), uid],
+          );
+        } catch {
+          /* column missing until migrate */
+        }
+        return preferred;
+      }
+    }
     try {
       await dbRun(
         `UPDATE users_mirror SET active_school_id = NULL, updated_at = ? WHERE uid = ?`,
@@ -173,16 +195,23 @@ export async function ensureActiveSchool(uid, memberships) {
     return null;
   }
 
-  let active = user?.active_school_id || user?.school_id || activeRows[0].schoolId;
+  // Honor the user's last switch (active_school_id) whenever that school exists.
+  // Do NOT snap back to memberships[0] (often the QA lab) just because they browsed
+  // another school — SchoolAdmin / SuperAdmin need to maneuver between schools.
+  let active = preferred || activeRows[0].schoolId;
 
-  if (!activeRows.some((m) => m.schoolId === active)) {
+  const preferredExists = active
+    ? await dbGet("SELECT school_id FROM schools WHERE school_id = ?", [active])
+    : null;
+  if (!preferredExists) {
     active = activeRows[0].schoolId;
   }
 
   try {
     await dbRun(
-      `UPDATE users_mirror SET active_school_id = ?, updated_at = ? WHERE uid = ?`,
-      [active, Date.now(), uid],
+      `UPDATE users_mirror SET active_school_id = ?, school_id = ?, updated_at = ?
+       WHERE uid = ?`,
+      [active, active, Date.now(), uid],
     );
   } catch {
     /* column missing until migrate */

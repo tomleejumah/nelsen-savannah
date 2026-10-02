@@ -6,7 +6,8 @@ import { toast } from "sonner";
 
 import { getFirebaseAuth } from "@/lib/firebase";
 import { PdfReader } from "@/components/lms/PdfReader";
-import { CodeLab } from "@/components/lms/CodeLab";
+// import { CodeLab } from "@/components/lms/CodeLab";
+import { CodeWorkspace } from "@/components/lms/CodeWorkspace";
 import {
   fetchLmsLesson,
   fetchMediaPlaybackUrl,
@@ -42,10 +43,7 @@ function SignedMediaPlayer({
   const [refreshing, setRefreshing] = useState(false);
   const lastReport = useRef(0);
   const mediaId = lesson.mediaId ?? null;
-  const isPdf =
-    lesson.type === "pdf" ||
-    lesson.isPdf === true ||
-    /\.pdf(\?|$)/i.test(url);
+  const isPdf = lesson.type === "pdf" || lesson.isPdf === true || /\.pdf(\?|$)/i.test(url);
 
   useEffect(() => {
     setUrl(lesson.playbackUrl || lesson.contentUrl || "");
@@ -97,9 +95,7 @@ function SignedMediaPlayer({
     onWatchProgress({ watchSeconds: watched, watchPct: pct });
   }
 
-  const playable =
-    !isPdf &&
-    (/\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/"));
+  const playable = !isPdf && (/\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/"));
 
   return (
     <div className="space-y-3">
@@ -165,6 +161,7 @@ function LessonPage() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [assignmentText, setAssignmentText] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
+  const [ideOpen, setIdeOpen] = useState(false);
 
   const load = useCallback(
     async (u: User) => {
@@ -204,11 +201,7 @@ function LessonPage() {
     });
   }, [load]);
 
-  function applyProgress(
-    lessonPercent?: number,
-    status?: string,
-    nextTrackPercent?: number,
-  ) {
+  function applyProgress(lessonPercent?: number, status?: string, nextTrackPercent?: number) {
     if (nextTrackPercent != null) setTrackPercent(nextTrackPercent);
     setLesson((prev) =>
       prev
@@ -243,10 +236,7 @@ function LessonPage() {
     }
   }
 
-  async function onWatchProgress(info: {
-    watchSeconds: number;
-    watchPct: number;
-  }) {
+  async function onWatchProgress(info: { watchSeconds: number; watchPct: number }) {
     if (!user) return;
     try {
       const token = await user.getIdToken();
@@ -304,8 +294,7 @@ function LessonPage() {
     try {
       const token = await user.getIdToken();
       const mode = lesson?.quiz?.mode;
-      const authored =
-        mode === "single_answer" || mode === "multi_answer";
+      const authored = mode === "single_answer" || mode === "multi_answer";
       if (mode === "single_answer" && !selectedOptionId) {
         setError("Choose an answer first.");
         setSaving(false);
@@ -340,11 +329,7 @@ function LessonPage() {
         setError(result.error || "Quiz submit failed");
         return;
       }
-      applyProgress(
-        result.data.lessonPercent,
-        undefined,
-        result.data.trackPercent ?? undefined,
-      );
+      applyProgress(result.data.lessonPercent, undefined, result.data.trackPercent ?? undefined);
       const pct = result.data.quizPct;
       toast.success(
         typeof pct === "number"
@@ -386,18 +371,19 @@ function LessonPage() {
   }
 
   const done = (lesson?.lessonPercent ?? 0) >= 80;
-  const lessonType =
-    lesson?.type === "read" ? "text" : lesson?.type || "text";
+  const lessonType = lesson?.type === "read" ? "text" : lesson?.type || "text";
   const showQuiz = Boolean(lesson?.hasQuiz || lesson?.quiz);
   const showAssignment = Boolean(
     lesson?.hasAssignment ||
-      (lessonType === "text" && lesson?.assignmentPrompt) ||
-      (lessonType === "text" && !lesson?.hasQuiz),
+    (lessonType === "text" && lesson?.assignmentPrompt) ||
+    (lessonType === "text" && !lesson?.hasQuiz),
   );
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
-      <div className={`mx-auto px-4 sm:px-8 ${lessonType === "pdf" ? "max-w-3xl" : lessonType === "code" ? "max-w-4xl" : "max-w-2xl"}`}>
+      <div
+        className={`mx-auto px-4 sm:px-8 ${lessonType === "pdf" ? "max-w-3xl" : lessonType === "code" ? "max-w-4xl" : "max-w-2xl"}`}
+      >
         <Link
           to="/learning/$trackId"
           params={{ trackId }}
@@ -427,8 +413,7 @@ function LessonPage() {
             <p className="eyebrow mt-8 capitalize text-ember">{lessonType}</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{lesson.title}</h1>
             {(() => {
-              const locked =
-                Boolean(lesson.milestone) && !lesson.milestone!.available;
+              const locked = Boolean(lesson.milestone) && !lesson.milestone!.available;
               if (locked) {
                 const reason = lesson.milestone!.lockedReason;
                 return (
@@ -476,21 +461,27 @@ function LessonPage() {
                         dangerouslySetInnerHTML={{ __html: lesson.bodyHtml }}
                       />
                     ) : null}
-                    {lessonType === "code" && user ? (
+                    {/* {lessonType === "code" && user ? (
                       <CodeLab
                         user={user}
                         lesson={lesson}
                         onProgress={(info) =>
-                          applyProgress(
-                            info.lessonPercent,
-                            info.status,
-                            info.trackPercent,
-                          )
+                          applyProgress(info.lessonPercent, info.status, info.trackPercent)
                         }
                       />
+                    ) : null} */}
+
+                    {lessonType === "code" && user ? (
+                      <button
+                        type="button"
+                        onClick={() => setIdeOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
+                      >
+                        Open IDE
+                      </button>
                     ) : null}
-                    {lessonType === "video" &&
-                    (lesson.playbackUrl || lesson.contentUrl) ? (
+
+                    {lessonType === "video" && (lesson.playbackUrl || lesson.contentUrl) ? (
                       <SignedMediaPlayer
                         user={user}
                         lesson={lesson}
@@ -498,8 +489,7 @@ function LessonPage() {
                       />
                     ) : null}
                   </div>
-                  {lessonType === "pdf" &&
-                  (lesson.playbackUrl || lesson.contentUrl) ? (
+                  {lessonType === "pdf" && (lesson.playbackUrl || lesson.contentUrl) ? (
                     <div className="mt-6">
                       <SignedMediaPlayer
                         user={user}
@@ -551,9 +541,7 @@ function LessonPage() {
                             type="button"
                             disabled={
                               saving ||
-                              (lesson.quiz.questions || []).some(
-                                (q) => !quizAnswers[q.id],
-                              )
+                              (lesson.quiz.questions || []).some((q) => !quizAnswers[q.id])
                             }
                             onClick={() => void onSubmitQuiz(true)}
                             className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground disabled:opacity-60"
@@ -563,9 +551,7 @@ function LessonPage() {
                         </div>
                       ) : (
                         <>
-                          <p className="text-sm text-muted-foreground">
-                            {lesson.quiz.prompt}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{lesson.quiz.prompt}</p>
                           <div className="space-y-2">
                             {(lesson.quiz.options || []).map((option) => (
                               <label
@@ -600,8 +586,7 @@ function LessonPage() {
                     <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
                       <h2 className="font-display text-lg font-semibold">Quiz</h2>
                       <p className="text-sm text-muted-foreground">
-                        {lesson.quiz?.prompt ||
-                          "Record how you did on this lesson’s quiz."}
+                        {lesson.quiz?.prompt || "Record how you did on this lesson’s quiz."}
                       </p>
                       <label className="block text-sm font-medium text-foreground">
                         Score: {quizScore}%
@@ -719,6 +704,15 @@ function LessonPage() {
           </>
         ) : null}
       </div>
+
+      {ideOpen && lesson && user ? (
+        <CodeWorkspace
+          user={user}
+          lesson={lesson}
+          onClose={() => setIdeOpen(false)}
+          onProgress={(info) => applyProgress(info.lessonPercent, info.status, info.trackPercent)}
+        />
+      ) : null}
     </div>
   );
 }
