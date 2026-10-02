@@ -12,7 +12,7 @@ import {
 import { Play, RotateCcw, X } from "lucide-react";
 import type { User } from "firebase/auth";
 
-import { patchLessonProgress, runLessonLab, type LessonDto } from "@/lib/lmsApi";
+import { runTrackIde, type TrackCardDto } from "@/lib/lmsApi";
 
 import "@xyflow/react/dist/style.css";
 
@@ -28,25 +28,26 @@ const MONACO_LANG: Record<string, string> = {
 
 export function CodeWorkspace({
   user,
-  lesson,
+  track,
   onClose,
-  onProgress,
 }: {
   user: User;
-  lesson: LessonDto;
+  track: TrackCardDto;
   onClose: () => void;
-  onProgress?: (info: {
-    lessonPercent?: number;
-    trackPercent?: number;
-    status?: string;
-  }) => void;
 }) {
-  const lab = lesson.lab;
-
-  const starter = lab?.starter || "print('hello')\n";
-
+  const starters: Record<string, string> = {
+    python: "print('hello')\n",
+    javascript: "console.log('hello');\n",
+    typescript: "console.log('hello');\n",
+    java: 'public class Main {\n  public static void main(String[] args) {\n    System.out.println("hello");\n  }\n}\n',
+    c: '#include <stdio.h>\nint main() {\n  printf("hello\\n");\n  return 0;\n}\n',
+    cpp: '#include <iostream>\nint main() {\n  std::cout << "hello\\n";\n  return 0;\n}\n',
+    html: "<h1>hello</h1>\n",
+  };
+  const [language, setLanguage] = useState("python");
+  const starter = starters[language] || starters.python;
   const [source, setSource] = useState(starter);
-  const [stdin, setStdin] = useState(lab?.stdin || "");
+  const [stdin, setStdin] = useState("");
 
   const [out, setOut] = useState("");
   const [err, setErr] = useState("");
@@ -59,8 +60,8 @@ export function CodeWorkspace({
   const [activeTab, setActiveTab] = useState<"code" | "flow">("code");
 
   const monacoLang = useMemo(
-    () => MONACO_LANG[lab?.language || "python"] || "python",
-    [lab?.language],
+    () => MONACO_LANG[language] || "python",
+    [language],
   );
 
   /*
@@ -73,11 +74,11 @@ export function CodeWorkspace({
   const nodes = useMemo<Node[]>(
     () => [
       {
-        id: "lesson",
+        id: "course",
         type: "input",
         position: { x: 40, y: 150 },
         data: {
-          label: "Lesson",
+          label: "Course",
         },
         sourcePosition: Position.Right,
       },
@@ -119,8 +120,8 @@ export function CodeWorkspace({
   const edges = useMemo<Edge[]>(
     () => [
       {
-        id: "lesson-code",
-        source: "lesson",
+        id: "course-code",
+        source: "course",
         target: "code",
         animated: true,
       },
@@ -148,7 +149,8 @@ export function CodeWorkspace({
     try {
       const token = await user.getIdToken();
 
-      const result = await runLessonLab(token, lesson.lessonId, {
+      const result = await runTrackIde(token, track.trackId, {
+        language,
         source,
         stdin,
       });
@@ -163,22 +165,6 @@ export function CodeWorkspace({
       setHtml(result.data.html || null);
       setPassed(result.data.passed);
 
-      /*
-       * Keep the existing LMS progress behaviour.
-       */
-      const progress = await patchLessonProgress(token, lesson.lessonId, {
-        opened: true,
-        contentPct: result.data.contentPct,
-        lastPlatform: "web",
-      });
-
-      if (progress.ok && progress.data) {
-        onProgress?.({
-          lessonPercent: progress.data.progress.lessonPercent,
-          trackPercent: progress.data.progress.trackPercent,
-          status: progress.data.progress.status,
-        });
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Run failed");
     } finally {
@@ -188,7 +174,7 @@ export function CodeWorkspace({
 
   function resetCode() {
     setSource(starter);
-    setStdin(lab?.stdin || "");
+    setStdin("");
     setOut("");
     setErr("");
     setHtml(null);
@@ -199,7 +185,7 @@ export function CodeWorkspace({
   return (
     <div className="fixed inset-0 z-50 flex bg-background">
       {/* =========================
-          LESSON SIDE
+          COURSE SIDE
           ========================= */}
       <section className="hidden min-w-0 flex-1 flex-col border-r border-border lg:flex">
         <header className="flex h-14 shrink-0 items-center border-b border-border px-5">
@@ -209,7 +195,7 @@ export function CodeWorkspace({
             </p>
 
             <p className="truncate font-semibold">
-              {lesson.title}
+              {track.courseTitle}
             </p>
           </div>
         </header>
@@ -217,18 +203,10 @@ export function CodeWorkspace({
         <div className="flex-1 overflow-y-auto p-8">
           <div className="max-w-3xl">
             <p className="text-sm leading-7 text-muted-foreground">
-              {lesson.does ||
-                "Work through the lesson and use the IDE to practice."}
+              {track.does ||
+                "Use this sandbox to practice code while working through the course."}
             </p>
 
-            {lesson.bodyHtml ? (
-              <div
-                className="prose mt-6 max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{
-                  __html: lesson.bodyHtml,
-                }}
-              />
-            ) : null}
           </div>
         </div>
       </section>
@@ -305,7 +283,7 @@ export function CodeWorkspace({
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {lab?.language || "python"} lab
+                  {language} sandbox
                 </p>
 
                 <p className="text-xs text-muted-foreground">
@@ -313,7 +291,27 @@ export function CodeWorkspace({
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={language}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setLanguage(next);
+                    setSource(starters[next] || starters.python);
+                    setStdin("");
+                    setOut("");
+                    setErr("");
+                    setHtml(null);
+                    setPassed(null);
+                    setError(null);
+                  }}
+                  className="rounded-full border border-border bg-background px-3 py-1.5 text-sm"
+                  aria-label="Sandbox language"
+                >
+                  {Object.keys(MONACO_LANG).map((lang) => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+                </select>
                 {/* RESET */}
                 <button
                   type="button"
@@ -363,7 +361,7 @@ export function CodeWorkspace({
             </div>
 
             {/* STDIN */}
-            {lab?.language !== "html" ? (
+            {language !== "html" ? (
               <label className="mt-3 block text-xs text-muted-foreground">
                 stdin (optional)
 
@@ -394,10 +392,8 @@ export function CodeWorkspace({
                 }`}
               >
                 {passed
-                  ? lab?.expectedStdout
-                    ? "Output matches the expected result."
-                    : "Code ran without errors."
-                  : "Not quite — check the output and try again."}
+                  ? "Code ran without errors."
+                  : "Check the output and try again."}
               </div>
             ) : null}
 
