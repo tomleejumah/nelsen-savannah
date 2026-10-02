@@ -184,12 +184,18 @@ export async function runTrackIde(uid, trackId, body = {}) {
     err.status = 403;
     throw err;
   }
-  const enrolled = await dbGet(
-    "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
-    [uid, trackId],
-  );
-  if (!enrolled) {
-    const err = new Error("Enroll in this course to use the IDE");
+  const [enrolled, linkedMentor] = await Promise.all([
+    dbGet(
+      "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
+      [uid, trackId],
+    ),
+    dbGet(
+      "SELECT uid FROM track_mentors WHERE uid = ? AND track_id = ?",
+      [uid, trackId],
+    ),
+  ]);
+  if (!enrolled && !linkedMentor) {
+    const err = new Error("Course enrollment or mentor access is required to use the IDE");
     err.status = 403;
     throw err;
   }
