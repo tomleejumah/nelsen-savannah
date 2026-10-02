@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { PdfReader } from "@/components/lms/PdfReader";
 // import { CodeLab } from "@/components/lms/CodeLab";
-import { CodeWorkspace } from "@/components/lms/CodeWorkspace";
 import {
   fetchLmsLesson,
   fetchMediaPlaybackUrl,
@@ -161,7 +160,6 @@ function LessonPage() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [assignmentText, setAssignmentText] = useState("");
   const [submittedOk, setSubmittedOk] = useState(false);
-  const [ideOpen, setIdeOpen] = useState(false);
 
   const load = useCallback(
     async (u: User) => {
@@ -461,27 +459,7 @@ function LessonPage() {
                         dangerouslySetInnerHTML={{ __html: lesson.bodyHtml }}
                       />
                     ) : null}
-                    {/* {lessonType === "code" && user ? (
-                      <CodeLab
-                        user={user}
-                        lesson={lesson}
-                        onProgress={(info) =>
-                          applyProgress(info.lessonPercent, info.status, info.trackPercent)
-                        }
-                      />
-                    ) : null} */}
-
-                    {lessonType === "code" && user ? (
-                      <button
-                        type="button"
-                        onClick={() => setIdeOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
-                      >
-                        Open IDE
-                      </button>
-                    ) : null}
-
-                    {lessonType === "video" && (lesson.playbackUrl || lesson.contentUrl) ? (
+{lessonType === "video" && (lesson.playbackUrl || lesson.contentUrl) ? (
                       <SignedMediaPlayer
                         user={user}
                         lesson={lesson}
@@ -704,15 +682,6 @@ function LessonPage() {
           </>
         ) : null}
       </div>
-
-      {ideOpen && lesson && user ? (
-        <CodeWorkspace
-          user={user}
-          lesson={lesson}
-          onClose={() => setIdeOpen(false)}
-          onProgress={(info) => applyProgress(info.lessonPercent, info.status, info.trackPercent)}
-        />
-      ) : null}
-    </div>
+</div>
   );
 }
