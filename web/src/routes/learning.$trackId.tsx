@@ -303,7 +303,7 @@ function TrackDetailPage() {
                   <Link
                     to="/learning/$trackId/lesson/$lessonId"
                     params={{ trackId, lessonId: continueLessonId }}
-                    className="mt-8 inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
+                    className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-6 py-3 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow"
                   >
                     Continue learning <ArrowRight className="h-4 w-4" />
                   </Link>
