@@ -38,10 +38,11 @@ The exact schema can be adjusted when the existing course API/model is updated.
 - [x] Course/catalog API already exposes `ideEnabled`.
 - [x] Admin/CMS already reads and writes the course IDE setting.
 - [x] Development branch `feature/course-ide` created for isolated IDE work.
-- [ ] Course sandbox runner endpoint — in progress.
-- [ ] Refactor `CodeWorkspace` from lesson-owned to course-owned.
-- [ ] Add persistent **Go to IDE** entry point for IDE-enabled enrolled courses.
-- [ ] Keep React Flow as the course IDE **Flow** tab, independent of lesson progress.
+- [x] Course sandbox runner endpoint implemented with enrollment/mentor authorization.
+- [x] Refactor `CodeWorkspace` from lesson-owned to course-owned.
+- [x] Add **Go to IDE** on enrolled course pages and keep it available while navigating lessons.
+- [x] Keep React Flow as the course IDE **Flow** tab, independent of lesson progress.
+- [x] Give linked course mentors access to the same sandbox from the mentor course cockpit.
 - [ ] Add Android WebView course IDE integration.
 
 ### Course/Admin
