@@ -58,7 +58,7 @@ export function serializeLab(body = {}) {
   return JSON.stringify(lab);
 }
 
-function defaultStarter(lang) {
+export function defaultStarter(lang) {
   if (lang === "javascript") return "console.log('hello');\n";
   if (lang === "html") return "<h1>hello</h1>\n";
   if (lang === "java") {
@@ -109,6 +109,93 @@ async function pistonRuntime(language) {
   return hit;
 }
 
+async function executeSource(uid, language, body = {}, expectedStdout = null) {
+  let lang = String(language || "python").toLowerCase().trim();
+  if (lang === "js") lang = "javascript";
+  if (lang === "py") lang = "python";
+  if (lang === "c++") lang = "cpp";
+  if (!LANG_FILES[lang]) {
+    const err = new Error(`Language ${lang} is not available`);
+    err.status = 400;
+    throw err;
+  }
+
+  const source = String(body.source ?? "");
+  if (!source.trim()) {
+    const err = new Error("Write some code first");
+    err.status = 400;
+    throw err;
+  }
+  if (source.length > MAX_SOURCE) {
+    const err = new Error("Source is too large");
+    err.status = 413;
+    throw err;
+  }
+  rateLimit(uid);
+
+  if (lang === "html") {
+    return { language: "html", html: source, stdout: "", stderr: "", passed: true };
+  }
+
+  const runtime = await pistonRuntime(lang);
+  const res = await fetch(`${PISTON}/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      language: runtime.language,
+      version: runtime.version,
+      files: [{ name: LANG_FILES[lang] || "main.txt", content: source }],
+      stdin: String(body.stdin ?? ""),
+      compile_timeout: 10000,
+      run_timeout: 8000,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) {
+    const err = new Error("Code runner failed");
+    err.status = 502;
+    throw err;
+  }
+
+  const data = await res.json();
+  const stdout = `${data.compile?.stdout || ""}${data.run?.stdout || ""}`;
+  const stderr = `${data.compile?.stderr || ""}${data.run?.stderr || ""}`;
+  const exitCode = Number(data.run?.code ?? 1);
+  const passed =
+    expectedStdout != null && expectedStdout !== ""
+      ? normalizeOut(stdout) === normalizeOut(expectedStdout)
+      : exitCode === 0 && !stderr.trim();
+
+  return { language: lang, stdout, stderr, exitCode, passed };
+}
+
+export async function runTrackIde(uid, trackId, body = {}) {
+  const track = await dbGet(
+    "SELECT track_id, ide_enabled FROM tracks WHERE track_id = ? AND published = 1",
+    [trackId],
+  );
+  if (!track) {
+    const err = new Error("Course not found");
+    err.status = 404;
+    throw err;
+  }
+  if (!Boolean(Number(track.ide_enabled || 0))) {
+    const err = new Error("IDE is not enabled for this course");
+    err.status = 403;
+    throw err;
+  }
+  const enrolled = await dbGet(
+    "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
+    [uid, trackId],
+  );
+  if (!enrolled) {
+    const err = new Error("Enroll in this course to use the IDE");
+    err.status = 403;
+    throw err;
+  }
+  return executeSource(uid, body.language || "python", body);
+}
+
 export async function runLessonLab(uid, lessonId, body = {}) {
   const lesson = await dbGet("SELECT * FROM lessons WHERE lesson_id = ?", [
     lessonId,
@@ -135,70 +222,14 @@ export async function runLessonLab(uid, lessonId, body = {}) {
   }
 
   const lab = parseLab(lesson);
-  const source = String(body.source ?? "");
-  if (!source.trim()) {
-    const err = new Error("Write some code first");
-    err.status = 400;
-    throw err;
-  }
-  if (source.length > MAX_SOURCE) {
-    const err = new Error("Source is too large");
-    err.status = 413;
-    throw err;
-  }
-  rateLimit(uid);
-
-  if (lab.language === "html") {
-    return {
-      language: "html",
-      html: source,
-      stdout: "",
-      stderr: "",
-      passed: true,
-      contentPct: 100,
-    };
-  }
-
-  const runtime = await pistonRuntime(lab.language);
-  const res = await fetch(`${PISTON}/execute`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      language: runtime.language,
-      version: runtime.version,
-      files: [
-        {
-          name: LANG_FILES[lab.language] || "main.txt",
-          content: source,
-        },
-      ],
-      stdin: String(body.stdin ?? lab.stdin ?? ""),
-      compile_timeout: 10000,
-      run_timeout: 8000,
-    }),
-    signal: AbortSignal.timeout(20000),
-  });
-  if (!res.ok) {
-    const err = new Error("Code runner failed");
-    err.status = 502;
-    throw err;
-  }
-  const data = await res.json();
-  const stdout = `${data.compile?.stdout || ""}${data.run?.stdout || ""}`;
-  const stderr = `${data.compile?.stderr || ""}${data.run?.stderr || ""}`;
-  const exitCode = Number(data.run?.code ?? 1);
-  let passed;
-  if (lab.expectedStdout != null && lab.expectedStdout !== "") {
-    passed = normalizeOut(stdout) === normalizeOut(lab.expectedStdout);
-  } else {
-    passed = exitCode === 0 && !stderr.trim();
-  }
+  const result = await executeSource(
+    uid,
+    lab.language,
+    { ...body, stdin: body.stdin ?? lab.stdin ?? "" },
+    lab.expectedStdout,
+  );
   return {
-    language: lab.language,
-    stdout,
-    stderr,
-    exitCode,
-    passed,
-    contentPct: passed ? 100 : 50,
+    ...result,
+    contentPct: result.passed ? 100 : 50,
   };
 }
