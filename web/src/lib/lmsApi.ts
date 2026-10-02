@@ -431,6 +431,25 @@ export async function fetchLmsLesson(idToken: string, lessonId: string) {
   );
 }
 
+export async function runTrackIde(
+  idToken: string,
+  trackId: string,
+  body: { language: string; source: string; stdin?: string },
+) {
+  return lmsFetch<{
+    language: string;
+    stdout: string;
+    stderr: string;
+    html?: string;
+    exitCode?: number;
+    passed: boolean;
+  }>(`/lms/tracks/${encodeURIComponent(trackId)}/ide/run`, idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 export async function runLessonLab(
   idToken: string,
   lessonId: string,
