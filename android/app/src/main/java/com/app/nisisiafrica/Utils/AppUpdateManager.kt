@@ -7,11 +7,14 @@ import android.util.Log
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.app.nisisiafrica.BuildConfig
 import com.app.nisisiafrica.Worker.AppUpdateDownloadWorker
+import com.app.nisisiafrica.Worker.AppUpdateCheckWorker
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.app.nisisiafrica.data.remote.ApiClient
 import retrofit2.Call
@@ -19,6 +22,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
 object AppUpdateManager {
     private const val TAG = "AppUpdateManager"
@@ -64,6 +68,20 @@ object AppUpdateManager {
                 onReady?.invoke()
             }
         })
+    }
+
+    @JvmStatic
+    fun scheduleBackgroundChecks(context: Context) {
+        val request = PeriodicWorkRequestBuilder<AppUpdateCheckWorker>(6, TimeUnit.HOURS)
+            .setConstraints(
+                Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build(),
+            )
+            .build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "app-update-prefetch",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request,
+        )
     }
 
     @JvmStatic
