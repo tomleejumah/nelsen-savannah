@@ -1362,6 +1362,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         stopWatchLoop();
         pdfExec.shutdownNow();
         if (pdfView != null) pdfView.recycle();
+        if (networkStatusBanner != null) networkStatusBanner.stop();
         super.onDestroy();
     }
 
@@ -1369,9 +1370,4 @@ public class TrackLearnActivity extends AppCompatActivity {
         void onToken(String bearer);
     }
 
-    @Override
-    protected void onDestroy() {
-        if (networkStatusBanner != null) networkStatusBanner.stop();
-        super.onDestroy();
-    }
 }
