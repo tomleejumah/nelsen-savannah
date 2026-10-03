@@ -36,7 +36,7 @@ class LmsStudySyncWorker(context: Context, params: WorkerParameters) : Coroutine
             }
             // Pull authoritative progress for every locally cached track touched by
             // pending work. Merge is monotonic, so server refresh cannot move progress backwards.
-            val trackIds = repo.cachedTracks(user.uid).mapNotNull { it.trackId ?: it.courseId }.distinct()
+            val trackIds = repo.cachedTrackIds(user.uid)
             for (trackId in trackIds) {
                 val pull = ApiClient.getLmsService().myProgress("Bearer $token", trackId).execute()
                 if (pull.isSuccessful) {
