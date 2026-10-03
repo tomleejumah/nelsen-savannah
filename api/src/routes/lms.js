@@ -52,6 +52,7 @@ router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
 router.get("/tracks", authenticateUser, lmsController.listTracks);
 router.get("/tracks/:trackId", authenticateUser, lmsController.getTrack);
+router.get("/tracks/:trackId/ide", authenticateUser, lmsController.getTrackIdeConfig);
 router.post(
   "/tracks/:trackId/ide/run",
   authenticateUser,
