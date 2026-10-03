@@ -49,7 +49,12 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
                     }
                 }
             }
-            if (!AppUpdateManager.verifySha256(temp, expectedSha)) { temp.delete(); return retryOrFail() }
+            if (!AppUpdateManager.verifySha256(temp, expectedSha)) {
+                temp.delete()
+                return Result.failure(
+                    Data.Builder().putString(KEY_ERROR, "Downloaded APK verification failed").build()
+                )
+            }
             val target = AppUpdateManager.downloadedApk(applicationContext, versionCode)
             if (target.exists()) target.delete()
             if (!temp.renameTo(target)) { temp.copyTo(target, overwrite = true); temp.delete() }
@@ -66,5 +71,6 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
         const val KEY_VERSION_CODE = "version_code"
         const val KEY_SHA256 = "sha256"
         const val KEY_PROGRESS = "progress"
+        const val KEY_ERROR = "error"
     }
 }
