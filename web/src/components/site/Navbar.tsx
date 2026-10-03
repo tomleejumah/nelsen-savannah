@@ -5,7 +5,7 @@ import { ChevronDown, Menu, X } from "lucide-react";
 
 import { PROGRAMS } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration } from "@/lib/lmsAuth";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { workspacesForMe } from "@/lib/lmsCapabilities";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ function useWorkspaceNav() {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (user) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(user?.uid ?? null);
       if (!user) {
         setMe(null);
         return;
