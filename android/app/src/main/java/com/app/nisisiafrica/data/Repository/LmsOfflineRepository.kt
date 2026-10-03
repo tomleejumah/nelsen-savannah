@@ -25,6 +25,10 @@ class LmsOfflineRepository(context: Context) {
         })
     }
 
+    suspend fun cachedTrackIds(uid:String):List<String> = withContext(Dispatchers.IO) {
+        dao.tracks(uid).map { it.trackId }.distinct()
+    }
+
     suspend fun cachedTracks(uid:String,schoolId:String=""):List<LmsModels.TrackCard> = withContext(Dispatchers.IO) {
         val rows=if(schoolId.isBlank()) dao.tracks(uid) else dao.schoolTracks(uid,schoolId)
         rows.map { gson.fromJson(it.payloadJson,LmsModels.TrackCard::class.java) }
