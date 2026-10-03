@@ -175,6 +175,16 @@ Android learning screens should remain responsive on slow or unavailable network
 
 ---
 
+### Explicit offline material downloads
+
+- [ ] Add opt-in **Download for offline** controls; never automatically download large lesson media/materials just because a learner enrolls.
+- [ ] Let learners cherry-pick downloads at course, module, lesson, and individual material/media level where practical.
+- [ ] Show estimated/download size before starting and current storage used by offline LMS material.
+- [ ] Add Wi-Fi-only preference for large downloads, plus download progress, pause/cancel/retry, and clear/remove controls.
+- [ ] Store downloaded PDFs/images/video/material files safely and make lesson playback/viewing resolve to the local copy while offline.
+- [ ] Detect changed/removed server material and refresh or invalidate the local file without deleting unrelated offline study data.
+
+
 ## Phase 4 — Video Lesson Controls
 
 Improve video lessons on both Web and Android.
