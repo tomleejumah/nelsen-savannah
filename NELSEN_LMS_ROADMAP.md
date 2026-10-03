@@ -43,7 +43,7 @@ The exact schema can be adjusted when the existing course API/model is updated.
 - [x] Add **Go to IDE** on enrolled course pages and keep it available while navigating lessons.
 - [x] Keep React Flow as the course IDE **Flow** tab, independent of lesson progress.
 - [x] Give linked course mentors access to the same sandbox from the mentor course cockpit.
-- [ ] Add Android WebView course IDE integration.
+- [x] Android uses the native course IDE; WebView integration was intentionally superseded.
 
 ### Course/Admin
 
@@ -124,7 +124,7 @@ Android Course
 - [x] Show **Go to IDE** for IDE-enabled courses.
 - [x] Replace the current WebView IDE implementation with a native Android IDE activity.
 - [ ] Add a native code editor with syntax highlighting, line numbers, indentation, and course-language support.
-- [ ] Load course IDE configuration/starter files from the LMS API.
+- [x] Load course IDE configuration/starter files from the LMS API.
 - [ ] Connect Run/Submit actions to the existing authorized course sandbox/execution API.
 - [x] Persist learner workspace locally so edits survive navigation/restarts.
 - [ ] Handle editor loading, execution, output, and error states natively.
@@ -141,11 +141,11 @@ Android learning screens should remain responsive on slow or unavailable network
 
 ### Course action menu
 
-- [ ] Replace stacked secondary course action buttons with a top-right **⋮ overflow menu**.
-- [ ] Move **Go to IDE** into the overflow menu when IDE is enabled.
-- [ ] Move **Leave Course** into the overflow menu.
-- [ ] Keep the primary learning/navigation action directly accessible instead of hiding it in the overflow menu.
-- [ ] Keep destructive actions such as leaving a course clearly identified and confirmed before execution.
+- [x] Replace stacked secondary course action buttons with a top-right **⋮ overflow menu**.
+- [x] Move **Go to IDE** into the overflow menu when IDE is enabled.
+- [x] Move **Leave Course** into the overflow menu.
+- [x] Keep the primary learning/navigation action directly accessible instead of hiding it in the overflow menu.
+- [x] Keep destructive actions such as leaving a course clearly identified and confirmed before execution.
 
 ### Loading UX
 
