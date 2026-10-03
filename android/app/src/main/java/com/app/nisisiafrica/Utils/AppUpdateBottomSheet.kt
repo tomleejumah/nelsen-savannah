@@ -18,6 +18,7 @@ import com.app.nisisiafrica.R
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import androidx.lifecycle.Observer
+import androidx.fragment.app.FragmentActivity
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import java.io.File
@@ -25,7 +26,7 @@ import java.io.File
 object AppUpdateBottomSheet {
     private const val TAG = "AppUpdateBottomSheet"
     fun show(
-        activity: Activity,
+        activity: FragmentActivity,
         release: LmsModels.AppReleaseDto,
         mandatory: Boolean = true,
         onNoUpdateBlock: (() -> Unit)? = null
