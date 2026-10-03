@@ -563,6 +563,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                         if (response.isSuccessful() && envelope != null && envelope.data != null
                                 && envelope.data.progress != null && current != null && offlineCache != null) {
                             offlineCache.mergeProgress(current.getUid(), envelope.data.progress);
+                            offlineCache.markProgressSynced(current.getUid(), lessonId);
                         } else {
                             LmsStudySync.INSTANCE.request(getApplicationContext());
                         }
