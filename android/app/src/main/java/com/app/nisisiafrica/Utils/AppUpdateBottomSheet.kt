@@ -54,12 +54,17 @@ object AppUpdateBottomSheet {
             number.text = pct.toString()
             description.text = text
         }
-        fun ready() {
+        var installPromptLaunched = false
+        fun ready(autoInstall: Boolean = false) {
             val apk = AppUpdateManager.downloadedApk(activity, code)
             if (!apk.exists() || !AppUpdateManager.verifySha256(apk, release.sha256.orEmpty())) return
             showProgress(100, "Update downloaded. Tap to install.")
             description.setOnClickListener { promptInstall(activity, apk) }
             view.setOnClickListener { promptInstall(activity, apk) }
+            if (autoInstall && !installPromptLaunched) {
+                installPromptLaunched = true
+                promptInstall(activity, apk)
+            }
         }
         fun retry() {
             description.text = "Download failed. Tap to retry."
@@ -83,10 +88,21 @@ object AppUpdateBottomSheet {
             val work = infos.lastOrNull() ?: return@Observer
             val pct = work.progress.getInt(AppUpdateDownloadWorker.KEY_PROGRESS, progress.progress)
             when (work.state) {
-                WorkInfo.State.SUCCEEDED -> ready()
+                WorkInfo.State.SUCCEEDED -> ready(autoInstall = true)
                 WorkInfo.State.RUNNING -> showProgress(pct, "Downloading update…")
                 WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> showProgress(pct, "Waiting for network / retry…")
-                WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> retry()
+                WorkInfo.State.FAILED -> {
+                    val error = work.outputData.getString(AppUpdateDownloadWorker.KEY_ERROR)
+                    if (!error.isNullOrBlank()) {
+                        description.text = "$error. Tap to retry."
+                        description.setOnClickListener {
+                            description.setOnClickListener(null)
+                            showProgress(0, "Waiting for network / retry…")
+                            AppUpdateManager.enqueueDownload(activity, release, restart = true)
+                        }
+                    } else retry()
+                }
+                WorkInfo.State.CANCELLED -> retry()
             }
         }
         liveData.observe(activity, observer)
