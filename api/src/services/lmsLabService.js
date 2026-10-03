@@ -169,6 +169,33 @@ async function executeSource(uid, language, body = {}, expectedStdout = null) {
   return { language: lang, stdout, stderr, exitCode, passed };
 }
 
+export async function getTrackIdeConfig(uid, trackId) {
+  const track = await dbGet(
+    "SELECT track_id, ide_enabled FROM tracks WHERE track_id = ? AND published = 1",
+    [trackId],
+  );
+  if (!track) { const err = new Error("Course not found"); err.status = 404; throw err; }
+  if (!Boolean(Number(track.ide_enabled || 0))) { const err = new Error("IDE is not enabled for this course"); err.status = 403; throw err; }
+  const [enrolled, linkedMentor] = await Promise.all([
+    dbGet("SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?", [uid, trackId]),
+    dbGet("SELECT uid FROM track_mentors WHERE uid = ? AND track_id = ?", [uid, trackId]),
+  ]);
+  if (!enrolled && !linkedMentor) { const err = new Error("Course enrollment or mentor access is required to use the IDE"); err.status = 403; throw err; }
+  const lesson = await dbGet(
+    "SELECT lab_json FROM lessons WHERE track_id = ? AND lower(type) IN ('code','lab','ide') ORDER BY sort_order ASC LIMIT 1",
+    [trackId],
+  );
+  const lab = lesson ? parseLab(lesson) : parseLab({});
+  return {
+    trackId,
+    language: lab.language,
+    languages: Object.keys(LANG_FILES),
+    starter: lab.starter,
+    stdin: lab.stdin,
+    maxSourceBytes: MAX_SOURCE,
+  };
+}
+
 export async function runTrackIde(uid, trackId, body = {}) {
   const track = await dbGet(
     "SELECT track_id, ide_enabled FROM tracks WHERE track_id = ? AND published = 1",
