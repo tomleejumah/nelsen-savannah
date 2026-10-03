@@ -154,6 +154,10 @@ dependencies {
     implementation libs.gson
     implementation libs.work.runtime
 
+    // Native course IDE
+    implementation(platform('io.github.rosemoe:editor-bom:0.24.6'))
+    implementation 'io.github.rosemoe:editor'
+
     //ui
     implementation 'com.github.vipulasri:timelineview:1.1.5'
     implementation("com.kizitonwose.calendar:view:2.8.0")
