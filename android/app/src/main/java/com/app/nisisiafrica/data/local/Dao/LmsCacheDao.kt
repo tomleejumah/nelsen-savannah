@@ -20,6 +20,10 @@ interface LmsCacheDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun putProgress(row: LmsProgressCacheEntity)
 
+    @Query("SELECT * FROM lms_tracks WHERE uid=:uid ORDER BY cachedAt DESC")
+    suspend fun tracks(uid: String): List<LmsTrackCacheEntity>
+    @Query("SELECT * FROM lms_tracks WHERE uid=:uid AND schoolId=:schoolId ORDER BY cachedAt DESC")
+    suspend fun schoolTracks(uid: String, schoolId: String): List<LmsTrackCacheEntity>
     @Query("SELECT * FROM lms_tracks WHERE uid=:uid AND enrolled=1 ORDER BY cachedAt DESC")
     suspend fun enrolledTracks(uid: String): List<LmsTrackCacheEntity>
     @Query("SELECT * FROM lms_tracks WHERE uid=:uid AND trackId=:trackId LIMIT 1")
