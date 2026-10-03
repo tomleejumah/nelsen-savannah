@@ -42,12 +42,13 @@ interface LmsCacheDao {
         assignmentPct = MAX(assignmentPct, :assignmentPct),
         opened = CASE WHEN opened = 1 OR :opened = 1 THEN 1 ELSE 0 END,
         payloadJson = :payloadJson,
+        pendingBodyJson = CASE WHEN :pendingSync = 1 THEN :pendingBodyJson ELSE pendingBodyJson END,
         pendingSync = CASE WHEN pendingSync = 1 OR :pendingSync = 1 THEN 1 ELSE 0 END,
         updatedAt = MAX(updatedAt, :updatedAt)
         WHERE uid=:uid AND lessonId=:lessonId""")
-    suspend fun advanceProgress(uid:String, lessonId:String, lessonPercent:Float, contentPct:Float, quizPct:Float, assignmentPct:Float, opened:Boolean, payloadJson:String, pendingSync:Boolean, updatedAt:Long): Int
+    suspend fun advanceProgress(uid:String, lessonId:String, lessonPercent:Float, contentPct:Float, quizPct:Float, assignmentPct:Float, opened:Boolean, payloadJson:String, pendingBodyJson:String, pendingSync:Boolean, updatedAt:Long): Int
 
-    @Query("UPDATE lms_progress SET pendingSync=0 WHERE uid=:uid AND lessonId=:lessonId")
+    @Query("UPDATE lms_progress SET pendingSync=0, pendingBodyJson='' WHERE uid=:uid AND lessonId=:lessonId")
     suspend fun markProgressSynced(uid:String, lessonId:String)
 
     @Query("DELETE FROM lms_tracks WHERE uid=:uid AND cachedAt < :before AND enrolled=0")
