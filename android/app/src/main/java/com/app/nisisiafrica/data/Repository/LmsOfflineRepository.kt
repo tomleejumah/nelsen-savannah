@@ -78,7 +78,7 @@ class LmsOfflineRepository(context: Context) {
                 status=row["status"] as? String; lastPlatform=row["lastPlatform"] as? String
                 updatedAt=(row["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis()
             }
-            mergeServerProgress(uid,p,false,null)
+            mergeProgress(uid,p,false,null)
         }
     }
 
