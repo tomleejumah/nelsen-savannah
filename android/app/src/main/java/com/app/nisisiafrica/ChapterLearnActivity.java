@@ -235,7 +235,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             offlineCache.moduleLessons(current.getUid(), moduleId, cached -> {
                 if (cached != null && !cached.isEmpty()) {
                     progress.setVisibility(View.GONE);
-                    renderLessons(cached);
+                    renderLessons(new ArrayList<>(cached));
                 }
                 return kotlin.Unit.INSTANCE;
             });
