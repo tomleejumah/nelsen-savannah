@@ -90,19 +90,24 @@ public class LoginFragment extends Fragment {
         // Initialize the Facebook Auth Helper
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
+            if (!isAdded() || getContext() == null) return Unit.INSTANCE;
             sharedUserViewModel.saveUserData(userData);
             sharedUserViewModel.setUserData(userData);
             String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
                     ? userData.getFirstName() : "back";
-            snackbarHandler.showSnackbar("Welcome back, " + name + "!", Snackbar.LENGTH_LONG, 4);
-            Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
+            if (snackbarHandler != null) {
+                snackbarHandler.showSnackbar("Welcome back, " + name + "!", Snackbar.LENGTH_LONG, 4);
+            }
+            Util.navigateToMainScreen(getContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
 
         facebookAuthHelper.addOnLoginErrorListener(exception -> {
             // Handle login error
             Log.e("Facebook", "Login failed", exception);
-            snackbarHandler.showSnackbar("Login failed please retry", Snackbar.LENGTH_SHORT, 3);
+            if (isAdded() && snackbarHandler != null) {
+                snackbarHandler.showSnackbar("Login failed please retry", Snackbar.LENGTH_SHORT, 3);
+            }
             return Unit.INSTANCE;
         });
     }
@@ -248,15 +253,17 @@ public class LoginFragment extends Fragment {
     private void login(String email, String password) {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
+            if (!isAdded() || getContext() == null) return;
             if (task.isSuccessful()) {
                 com.google.firebase.auth.FirebaseUser currentUser = mAuth.getCurrentUser();
                 if (currentUser == null) {
-                    snackbarHandler.showSnackbar("Sign-in failed. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    if (snackbarHandler != null) snackbarHandler.showSnackbar("Sign-in failed. Please try again.", Snackbar.LENGTH_SHORT, 3);
                     return;
                 }
                 FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser.getUid(), userData -> {
+                    if (!isAdded() || getContext() == null) return Unit.INSTANCE;
                     if (userData == null) {
-                        snackbarHandler.showSnackbar("Account data not found. Please contact support.", Snackbar.LENGTH_LONG, 3);
+                        if (snackbarHandler != null) snackbarHandler.showSnackbar("Account data not found. Please contact support.", Snackbar.LENGTH_LONG, 3);
                         return Unit.INSTANCE;
                     }
                     String userId = currentUser.getUid();
@@ -268,12 +275,14 @@ public class LoginFragment extends Fragment {
                     Log.d(TAG, "login: Success");
                     return Unit.INSTANCE;
                 }, e -> {
-                    snackbarHandler.showSnackbar("Could not load profile. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    if (isAdded() && snackbarHandler != null) {
+                        snackbarHandler.showSnackbar("Could not load profile. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    }
                     return Unit.INSTANCE;
                 });
             } else {
                 String failureMessage = Util.getErrorString(task);
-                snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
+                if (snackbarHandler != null) snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
             }
         });
     }
@@ -283,24 +292,31 @@ public class LoginFragment extends Fragment {
                 data,
                 GoogleSignInMode.LOGIN,
                 userData -> {
-                    goToNextActivity(userData);
+                    if (isAdded() && getContext() != null) {
+                        goToNextActivity(userData);
+                    }
                     return Unit.INSTANCE;
                 },
                 exception -> {
                     Log.e("Auth", "Sign in failed", exception);
-                    snackbarHandler.showSnackbar(exception.getMessage() != null
-                            ? exception.getMessage() : "Sign in failed", Snackbar.LENGTH_SHORT, 3);
+                    if (isAdded() && snackbarHandler != null) {
+                        snackbarHandler.showSnackbar(exception.getMessage() != null
+                                ? exception.getMessage() : "Sign in failed", Snackbar.LENGTH_SHORT, 3);
+                    }
                     return Unit.INSTANCE;
                 }
         );
     }
 
     private void goToNextActivity(UserData userData) {
+        if (!isAdded() || getContext() == null) return;
         sharedUserViewModel.saveUserData(userData);
         sharedUserViewModel.setUserData(userData);
         String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
                 ? userData.getFirstName() : "back";
-        snackbarHandler.showSnackbar("Welcome back, " + name + "!", Snackbar.LENGTH_LONG, 4);
-        Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
+        if (snackbarHandler != null) {
+            snackbarHandler.showSnackbar("Welcome back, " + name + "!", Snackbar.LENGTH_LONG, 4);
+        }
+        Util.navigateToMainScreen(getContext(), MainActivity.class, true);
     }
 }

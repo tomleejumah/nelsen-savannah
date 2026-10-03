@@ -100,19 +100,24 @@ public class SignUpFragment extends Fragment {
         facebookAuthHelper = new FacebookAuthHelper(requireActivity());
 
         facebookAuthHelper.addOnLoginSuccessListener(userData -> {
+            if (!isAdded() || getContext() == null) return Unit.INSTANCE;
             sharedUserViewModel.saveUserData(userData);
             sharedUserViewModel.setUserData(userData);
             Util.saveState(Constants.CURRENT_USER_ID, userData.getId());
             String name = userData.getFirstName() != null && !userData.getFirstName().isEmpty()
                     ? userData.getFirstName() : "there";
-            snackbarHandler.showSnackbar("Welcome, " + name + "!", Snackbar.LENGTH_LONG, 4);
-            Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
+            if (snackbarHandler != null) {
+                snackbarHandler.showSnackbar("Welcome, " + name + "!", Snackbar.LENGTH_LONG, 4);
+            }
+            Util.navigateToMainScreen(getContext(), MainActivity.class, true);
             return Unit.INSTANCE;
         });
 
         facebookAuthHelper.addOnLoginErrorListener(exception -> {
             // Handle login error
-            snackbarHandler.showSnackbar("Login failed: " + exception.getMessage(), Snackbar.LENGTH_SHORT, 3);
+            if (isAdded() && snackbarHandler != null) {
+                snackbarHandler.showSnackbar("Login failed: " + exception.getMessage(), Snackbar.LENGTH_SHORT, 3);
+            }
             return Unit.INSTANCE;
         });
     }
@@ -336,45 +341,54 @@ public class SignUpFragment extends Fragment {
                                 // Send verification email
                                 user.sendEmailVerification()
                                         .addOnSuccessListener(vv -> {
+                                            if (!isAdded() || getContext() == null) return;
                                             // Save state: waiting for verification
                                             Util.saveState("AUTH_STATE", "VERIFY_EMAIL");
 
-                                            snackbarHandler.showSnackbar(
-                                                    "Verification email sent. Check your inbox.",
-                                                    Snackbar.LENGTH_LONG,
-                                                    3
-                                            );
+                                            if (snackbarHandler != null) {
+                                                snackbarHandler.showSnackbar(
+                                                        "Verification email sent. Check your inbox.",
+                                                        Snackbar.LENGTH_LONG,
+                                                        3
+                                                );
+                                            }
 
                                             // Navigate to Verify screen, NOT Main
                                             Util.navigateToMainScreen(
-                                                    requireContext(),
+                                                    getContext(),
                                                     VerifyEmailActivity.class,
                                                     true
                                             );
                                         })
                                         .addOnFailureListener(e -> {
-                                            snackbarHandler.showSnackbar(
-                                                    "Failed to send verification email",
-                                                    Snackbar.LENGTH_SHORT,
-                                                    3
-                                            );
+                                            if (isAdded() && snackbarHandler != null) {
+                                                snackbarHandler.showSnackbar(
+                                                        "Failed to send verification email",
+                                                        Snackbar.LENGTH_SHORT,
+                                                        3
+                                                );
+                                            }
                                         });
 
                             })
                             .addOnFailureListener(e -> {
-                                snackbarHandler.showSnackbar(
-                                        e.getMessage(),
-                                        Snackbar.LENGTH_SHORT,
-                                        3
-                                );
+                                if (isAdded() && snackbarHandler != null) {
+                                    snackbarHandler.showSnackbar(
+                                            e.getMessage(),
+                                            Snackbar.LENGTH_SHORT,
+                                            3
+                                    );
+                                }
                             });
                 })
                 .addOnFailureListener(e -> {
-                    snackbarHandler.showSnackbar(
-                            e.getMessage(),
-                            Snackbar.LENGTH_SHORT,
-                            3
-                    );
+                    if (isAdded() && snackbarHandler != null) {
+                        snackbarHandler.showSnackbar(
+                                e.getMessage(),
+                                Snackbar.LENGTH_SHORT,
+                                3
+                        );
+                    }
                 });
     }
     private void handleGoogleSignIn(Intent data) {
@@ -384,6 +398,7 @@ public class SignUpFragment extends Fragment {
                 userData -> {
                     FirebaseDatabase.getInstance().getReference("users").child(userData.getId()).get()
                             .addOnCompleteListener(task -> {
+                                if (!isAdded() || getContext() == null) return;
                                 boolean exists = task.isSuccessful() && task.getResult().exists();
                                 goToNextActivity(userData, exists);
                             });
@@ -391,17 +406,21 @@ public class SignUpFragment extends Fragment {
                 },
                 exception -> {
                     Log.e("Auth", "Sign in failed", exception);
-                    snackbarHandler.showSnackbar(exception.getMessage() != null
-                            ? exception.getMessage() : "Sign in failed", Snackbar.LENGTH_SHORT, 3);
+                    if (isAdded() && snackbarHandler != null) {
+                        snackbarHandler.showSnackbar(exception.getMessage() != null
+                                ? exception.getMessage() : "Sign in failed", Snackbar.LENGTH_SHORT, 3);
+                    }
                     return Unit.INSTANCE;
                 }
         );
     }
 
     private void goToNextActivity(UserData userData, boolean isExistingUser) {
+        if (!isAdded() || getContext() == null) return;
         googleAuthHelper.saveUserToFirebase(
                 userData,
                 isSuccess -> {
+                    if (!isAdded() || getContext() == null) return Unit.INSTANCE;
                     if (isSuccess) {
                         FirebaseUser authUser = FirebaseAuth.getInstance().getCurrentUser();
                         if (authUser != null) {
@@ -415,13 +434,17 @@ public class SignUpFragment extends Fragment {
                         String message = isExistingUser
                                 ? "Welcome back, " + name + "!"
                                 : "Welcome, " + name + "!";
-                        snackbarHandler.showSnackbar(message, Snackbar.LENGTH_LONG, 4);
-                        Util.navigateToMainScreen(requireContext(), MainActivity.class, true);
+                        if (snackbarHandler != null) {
+                            snackbarHandler.showSnackbar(message, Snackbar.LENGTH_LONG, 4);
+                        }
+                        Util.navigateToMainScreen(getContext(), MainActivity.class, true);
                     }
                     return Unit.INSTANCE;
                 },
                 exception -> {
-                    snackbarHandler.showSnackbar("Could not save account. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    if (isAdded() && snackbarHandler != null) {
+                        snackbarHandler.showSnackbar("Could not save account. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    }
                     return Unit.INSTANCE;
                 }
         );

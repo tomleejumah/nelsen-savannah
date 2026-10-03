@@ -2,6 +2,7 @@ package com.app.nisisiafrica.ViewModel;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -11,13 +12,10 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.app.nisisiafrica.App;
 import com.app.nisisiafrica.data.Model.Booking;
-import com.app.nisisiafrica.data.Repository.CoursesRepository;
-import com.app.nisisiafrica.data.Repository.MentorRepository;
 import com.app.nisisiafrica.data.Repository.UserRepository;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.data.Model.UserData;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -25,7 +23,6 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-//todo switch to kotlin
 public class UserViewModel extends AndroidViewModel {
     private static final String TAG = "SharedUserViewModel";
     private final MutableLiveData<UserData> userData = new MutableLiveData<>();
@@ -43,20 +40,25 @@ public class UserViewModel extends AndroidViewModel {
     }
 
     public void setUserData(UserData data) {
-        Log.d(TAG, "setUserData: " + userData.toString());
-        userData.setValue(data);
+        if (data != null) {
+            Log.d(TAG, "setUserData: " + data.getFirstName());
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            userData.setValue(data);
+        } else {
+            userData.postValue(data);
+        }
     }
 
     @SuppressLint("CheckResult")
     public LiveData<UserData> fetchingCurrentUserDataFromDB(String id) {
-
         disposables.add(
                 userDao.getUserByIdRx(id)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
                                 user -> {
-                                    userData.setValue(user);
+                                    setUserData(user);
                                 },
                                 throwable -> Log.e(TAG, "Error fetching user data", throwable),
                                 () -> Log.d(TAG, "No user found for id: " + id)
@@ -67,15 +69,21 @@ public class UserViewModel extends AndroidViewModel {
 
     @SuppressLint("CheckResult")
     public void saveUserData(UserData userData) {
-        userDao.insertUserRx(userData)
-                .subscribe(() -> {
-                    Log.d("ViewModel", "User inserted successfully");
-                }, throwable -> {
-                    Log.e("ViewModel", "Error inserting user", throwable);
-                });
+        if (userData == null) return;
+        disposables.add(
+                userDao.insertUserRx(userData)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(() -> {
+                            Log.d("ViewModel", "User inserted successfully");
+                        }, throwable -> {
+                            Log.e("ViewModel", "Error inserting user", throwable);
+                        })
+        );
     }
 
     public void updateUserData(UserData userData) {
+        if (userData == null) return;
         disposables.add(
                 userDao.updateUserRx(userData)
                         .subscribeOn(Schedulers.io())
@@ -87,14 +95,13 @@ public class UserViewModel extends AndroidViewModel {
         );
     }
 
-
     public Completable updateUserDataa(UserData userData) {
         return userDao.updateUserRx(userData)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
-    public LiveData<List<Booking>>getBookedDates(String userId){
+    public LiveData<List<Booking>> getBookedDates(String userId){
         return userRepository.getUserBookedDatesLive(userId);
     }
 
