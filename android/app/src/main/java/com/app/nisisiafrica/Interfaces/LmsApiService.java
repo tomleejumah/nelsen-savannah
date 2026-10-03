@@ -161,4 +161,11 @@ public interface LmsApiService {
     Call<LmsModels.DeleteHubEventEnvelope> deleteHubEvent(
             @Header("Authorization") String bearer,
             @Path("eventId") String eventId);
+
+    @GET("lms/app/android")
+    Call<LmsModels.AppReleaseEnvelope> getAppRelease();
+
+    @POST("lms/app/android/download-url")
+    Call<LmsModels.AppReleaseEnvelope> getAppDownloadUrl(
+            @Header("Authorization") String bearer);
 }
