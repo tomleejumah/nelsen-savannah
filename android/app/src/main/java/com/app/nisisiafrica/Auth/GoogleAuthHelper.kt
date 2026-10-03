@@ -132,23 +132,13 @@ class GoogleAuthHelper(
             userId,
             onSuccess = { remote ->
                 val resolved = remote ?: fallback
-                FirebaseRemoteDataSource.getOrAssignUserRole(
-                    firebaseUserId = userId,
-                    onSuccess = { role ->
-                        resolved.userRole = role
-                        resolved.id = userId
-                        FirebaseDatabase.getInstance()
-                            .getReference("users")
-                            .child(userId)
-                            .child("lastLogin")
-                            .setValue(ServerValue.TIMESTAMP)
-                        onSuccess(resolved)
-                    },
-                    onError = { e ->
-                        Log.e(TAG, "Role fetch failed", e)
-                        onError(e)
-                    }
-                )
+                resolved.id = userId
+                FirebaseDatabase.getInstance()
+                    .getReference("users")
+                    .child(userId)
+                    .child("lastLogin")
+                    .setValue(ServerValue.TIMESTAMP)
+                onSuccess(resolved)
             },
             onError = { e ->
                 Log.e(TAG, "Remote user fetch failed", e)
