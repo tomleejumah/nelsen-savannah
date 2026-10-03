@@ -717,6 +717,10 @@ public final class LmsModels {
         public String error;
     }
 
+    public static class IdeRunBody { public String language, source, stdin; public IdeRunBody(String language,String source,String stdin){this.language=language;this.source=source;this.stdin=stdin;} }
+    public static class IdeRunResult { public String language,stdout,stderr,html; public Integer exitCode; public boolean passed; }
+    public static class IdeRunEnvelope { public boolean ok; public IdeRunResult data; public String source,error; }
+
     public static class AppReleaseDto {
         public boolean available;
         public String fileName;

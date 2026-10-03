@@ -56,6 +56,9 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("lessonId") String lessonId);
 
+    @POST("lms/tracks/{trackId}/ide/run")
+    Call<LmsModels.IdeRunEnvelope> runTrackIde(@Header("Authorization") String bearer, @Path("trackId") String trackId, @Body LmsModels.IdeRunBody body);
+
     @POST("lms/tracks/{trackId}/like")
     Call<LmsModels.MapEnvelope> likeTrack(
             @Header("Authorization") String bearer,
