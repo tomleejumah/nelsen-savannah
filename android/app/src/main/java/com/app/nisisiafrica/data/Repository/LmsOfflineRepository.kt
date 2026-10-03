@@ -58,6 +58,26 @@ class LmsOfflineRepository(context: Context) {
 
     suspend fun mergeServerProgress(uid:String,p:LmsModels.Progress) = mergeProgress(uid,p,false,null)
 
+    suspend fun mergeServerProgressMap(uid:String,trackId:String,map:Map<String,Any>?) {
+        if(map==null) return
+        for((lessonId,value) in map) {
+            val row=value as? Map<*,*> ?: continue
+            fun number(name:String)= (row[name] as? Number)?.toFloat() ?: 0f
+            val p=LmsModels.Progress().apply {
+                this.lessonId=lessonId
+                this.trackId=(row["trackId"] as? String) ?: trackId
+                this.moduleId=row["moduleId"] as? String
+                opened=(row["opened"] as? Boolean) ?: false
+                contentPct=number("contentPct"); quizPct=number("quizPct")
+                assignmentPct=number("assignmentPct"); lessonPercent=number("lessonPercent")
+                trackPercent=number("trackPercent"); modulePercent=number("modulePercent")
+                status=row["status"] as? String; lastPlatform=row["lastPlatform"] as? String
+                updatedAt=(row["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis()
+            }
+            mergeServerProgress(uid,p,false,null)
+        }
+    }
+
     suspend fun queueLocalProgress(uid:String,trackId:String,lessonId:String,body:LmsModels.ProgressBody) {
         val p=LmsModels.Progress().apply {
             this.trackId=trackId; this.lessonId=lessonId; opened=body.opened
