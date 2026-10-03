@@ -155,7 +155,7 @@ dependencies {
     implementation libs.work.runtime
 
     // Native course IDE
-    implementation(platform('io.github.rosemoe:editor-bom:0.24.6'))
+    implementation(platform('io.github.rosemoe:editor-bom:0.23.7'))
     implementation 'io.github.rosemoe:editor'
 
     //ui
