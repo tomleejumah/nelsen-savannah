@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import com.app.nisisiafrica.Utils.NetworkStatusBanner;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -66,6 +67,7 @@ import retrofit2.Response;
  * Lesson-level progress uses LMS status when present — otherwise UI stubs locked/current.
  */
 public class TrackLearnActivity extends AppCompatActivity {
+    private NetworkStatusBanner networkStatusBanner;
 
     public static final String EXTRA_TRACK_ID = "extra_track_id";
     public static final String EXTRA_TITLE = "extra_title";
@@ -127,6 +129,8 @@ public class TrackLearnActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_track_learn);
+        networkStatusBanner = new NetworkStatusBanner(this);
+        networkStatusBanner.start();
         View heroBand = findViewById(R.id.heroBand);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -1363,5 +1367,11 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     private interface BearerCallback {
         void onToken(String bearer);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (networkStatusBanner != null) networkStatusBanner.stop();
+        super.onDestroy();
     }
 }
