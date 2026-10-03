@@ -715,4 +715,22 @@ public final class LmsModels {
         public DeleteHubEventData data;
         public String error;
     }
+
+    public static class AppReleaseDto {
+        public boolean available;
+        public String fileName;
+        public String versionName;
+        public Integer versionCode;
+        public Long sizeBytes;
+        public String sha256;
+        public String updatedAt;
+        public String downloadUrl;
+        public Long downloadExpiresAt;
+    }
+
+    public static class AppReleaseEnvelope {
+        public boolean ok;
+        public AppReleaseDto data;
+        public String error;
+    }
 }
