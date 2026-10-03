@@ -101,9 +101,7 @@ Refactor this so `CodeWorkspace` can operate as a course workspace.
 
 ## Phase 2 — Android Course IDE
 
-Do **not** rebuild Monaco/React Flow as a native Android editor.
-
-Android should open the same Nelsen web IDE inside a WebView.
+Android should provide a **native course IDE experience**. Do not redirect learners into the web IDE/WebView.
 
 Target flow:
 
@@ -115,34 +113,59 @@ Android Course
       └── Go to IDE
               │
               ▼
-        IDE Activity/WebView
+        Native Course IDE
               │
               ▼
-        Nelsen Web Course IDE
+        Nelsen sandbox/execution API
 ```
 
 ### Android work
 
 - [x] Show **Go to IDE** for IDE-enabled courses.
-- [x] Create an IDE Activity/Fragment with WebView.
-- [x] Enable JavaScript and DOM storage.
-- [x] Load the course-specific IDE URL.
-- [x] Handle back navigation/fullscreen correctly.
-- [x] Handle loading/error states.
-- [ ] Implement secure authentication/session handoff between Android Firebase authentication and the web IDE.
-- [ ] Verify Monaco keyboard/input behaviour inside Android WebView.
+- [ ] Replace the current WebView IDE implementation with a native Android IDE activity.
+- [ ] Add a native code editor with syntax highlighting, line numbers, indentation, and course-language support.
+- [ ] Load course IDE configuration/starter files from the LMS API.
+- [ ] Connect Run/Submit actions to the existing authorized course sandbox/execution API.
+- [ ] Persist learner workspace locally so edits survive navigation/restarts.
+- [ ] Handle editor loading, execution, output, and error states natively.
+- [ ] Verify keyboard/input behaviour and larger-screen layouts.
 
-Possible route:
-
-```text
-/learning/{trackId}/ide
-```
-
-or another course-specific route selected during implementation.
+The exact native editor dependency must be approved before implementation.
 
 ---
 
-## Phase 3 — Video Lesson Controls
+## Phase 3 — Android Loading, Offline Cache & Study Sync
+
+Android learning screens should remain responsive on slow or unavailable networks and clearly communicate loading state.
+
+### Loading UX
+
+- [ ] Show a spinner/progress state while loading course catalogs, tracks, course details, lessons, and study progress.
+- [ ] Do not show an empty-state message until the corresponding API request has completed.
+- [ ] Preserve already-cached content while refreshing in the background where possible.
+- [ ] Show retry/error state when neither network nor cached content is available.
+
+### Offline cache
+
+- [ ] Cache course/track metadata required by enrolled learners.
+- [ ] Cache lesson metadata/content that is safe and practical for offline study.
+- [ ] Cache learner study/progress state locally.
+- [ ] Define cache freshness/expiry rules so stale server data is refreshed without destroying offline usability.
+- [ ] Make cached enrolled-course content available when the device is offline.
+
+### WorkManager sync
+
+- [ ] Add a network-constrained WorkManager study-sync worker.
+- [ ] Queue locally changed study/progress records for synchronization instead of losing them when offline.
+- [ ] Push pending local progress to the LMS API when connectivity returns.
+- [ ] Pull relevant server-side progress/content changes and reconcile the local cache.
+- [ ] Make sync retry-safe/idempotent so repeated worker runs do not duplicate progress.
+- [ ] Expose syncing/synced/offline state where useful to the learner.
+- [ ] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
+
+---
+
+## Phase 4 — Video Lesson Controls
 
 Improve video lessons on both Web and Android.
 
@@ -167,7 +190,7 @@ Android can use the native video player controls while Web exposes equivalent co
 
 ---
 
-## Phase 4 — YouTube Live Learning
+## Phase 5 — YouTube Live Learning
 
 Nelsen will **not process, relay, transcode, or store the live video stream**.
 
@@ -259,13 +282,15 @@ Watch Live
 2. Add course IDE configuration/API support.
 3. Refactor the Web `CodeWorkspace` into a course workspace.
 4. Add persistent **Go to IDE** course UI.
-5. Add Android WebView IDE integration.
-6. Solve Android → Web IDE authentication/session handoff.
-7. Improve Web/Android video controls.
-8. Add YouTube Live session creation/linking.
-9. Add FCM live notifications.
-10. Add Web/Android live viewers.
-11. Add live session history and ended-live handling.
+5. Replace Android WebView IDE with the native course IDE.
+6. Add Android loading states/spinners across course/track/lesson fetches.
+7. Add Android offline course/study cache.
+8. Add WorkManager offline study-progress/API synchronization.
+9. Improve Web/Android video controls.
+10. Add YouTube Live session creation/linking.
+11. Add FCM live notifications.
+12. Add Web/Android live viewers.
+13. Add live session history and ended-live handling.
 
 ---
 
