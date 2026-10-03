@@ -1,6 +1,5 @@
 package com.app.nisisiafrica.Utils
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -9,22 +8,24 @@ import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.FileProvider
-import com.app.nisisiafrica.R
-import com.app.nisisiafrica.data.Model.LmsModels
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import androidx.lifecycle.Observer
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Observer
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.app.nisisiafrica.R
+import com.app.nisisiafrica.Worker.AppUpdateDownloadWorker
+import com.app.nisisiafrica.data.Model.LmsModels
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.io.File
 
 object AppUpdateBottomSheet {
     private const val TAG = "AppUpdateBottomSheet"
+
     fun show(
         activity: FragmentActivity,
         release: LmsModels.AppReleaseDto,
@@ -34,61 +35,70 @@ object AppUpdateBottomSheet {
         if (activity.isFinishing || activity.isDestroyed) return
         val code = release.versionCode ?: return
         val dialog = BottomSheetDialog(activity)
-        val view = LayoutInflater.from(activity).inflate(R.layout.sheet_app_update, null)
-        val txtVersion = view.findViewById<TextView>(R.id.txtUpdateVersion)
-        val txtSize = view.findViewById<TextView>(R.id.txtUpdateSize)
-        val btnUpdate = view.findViewById<Button>(R.id.btnUpdateNow)
-        val btnLater = view.findViewById<Button>(R.id.btnUpdateLater)
-        val progressBar = view.findViewById<ProgressBar>(R.id.updateProgressBar)
-        val txtProgress = view.findViewById<TextView>(R.id.txtUpdateProgress)
+        val view = LayoutInflater.from(activity).inflate(R.layout.progress_layout, null)
+        val progressText = view.findViewById<TextView>(R.id.operateProgressTv)
+        val description = view.findViewById<TextView>(R.id.operateDescTv)
+        val progressBar = view.findViewById<ProgressBar>(R.id.progressbar)
+        val closeButton = view.findViewById<AppCompatImageView>(R.id.btnStopExecutor)
 
-        txtVersion.text = "Version ${release.versionName ?: "Latest"} (Build $code)"
-        txtSize.text = release.sizeBytes?.let {
-            String.format("%.1f MB", it.toDouble() / (1024 * 1024))
-        } ?: "New build"
-
-        dialog.setContentView(view)
-        dialog.setCancelable(!mandatory)
-        dialog.setCanceledOnTouchOutside(!mandatory)
-        btnLater.visibility = if (mandatory) View.GONE else View.VISIBLE
-        btnLater.setOnClickListener {
+        progressBar.max = 100
+        progressBar.isIndeterminate = false
+        closeButton.visibility = if (mandatory) View.GONE else View.VISIBLE
+        closeButton.setOnClickListener {
             dialog.dismiss()
             onNoUpdateBlock?.invoke()
         }
 
-        fun refresh() {
+        dialog.setContentView(view)
+        dialog.setCancelable(!mandatory)
+        dialog.setCanceledOnTouchOutside(!mandatory)
+
+        fun showReadyState() {
             val apk = AppUpdateManager.downloadedApk(activity, code)
-            val ready = apk.exists() && AppUpdateManager.verifySha256(apk, release.sha256.orEmpty())
-            if (ready) {
-                progressBar.visibility = View.GONE
-                txtProgress.visibility = View.VISIBLE
-                txtProgress.text = "Update downloaded and ready to install."
-                btnUpdate.isEnabled = true
-                btnUpdate.text = "Install Update"
-                btnUpdate.setOnClickListener { promptInstall(activity, apk) }
-            } else {
-                progressBar.visibility = View.VISIBLE
-                progressBar.isIndeterminate = true
-                txtProgress.visibility = View.VISIBLE
-                txtProgress.text = "Downloading update in the background..."
-                btnUpdate.isEnabled = true
-                btnUpdate.text = "Download Update"
-                btnUpdate.setOnClickListener {
-                    AppUpdateManager.enqueueDownload(activity, release)
-                    txtProgress.text = "Downloading update in the background..."
-                }
-            }
+            if (!apk.exists() || !AppUpdateManager.verifySha256(apk, release.sha256.orEmpty())) return
+            progressText.text = "100"
+            progressBar.progress = 100
+            description.text = "Update ready — tap to install"
+            view.isClickable = true
+            view.setOnClickListener { promptInstall(activity, apk) }
         }
 
-        refresh()
+        fun showDownloadState(progress: Int) {
+            val safeProgress = progress.coerceIn(0, 100)
+            progressText.text = safeProgress.toString()
+            progressBar.progress = safeProgress
+            description.text = "Downloading update..."
+            view.isClickable = false
+            view.setOnClickListener(null)
+        }
+
+        val apk = AppUpdateManager.downloadedApk(activity, code)
+        if (apk.exists() && AppUpdateManager.verifySha256(apk, release.sha256.orEmpty())) {
+            showReadyState()
+        } else {
+            showDownloadState(0)
+        }
+
         val liveData = WorkManager.getInstance(activity)
             .getWorkInfosForUniqueWorkLiveData("app-update-$code")
         val observer = Observer<List<WorkInfo>> { infos ->
-            if (infos.any { it.state == WorkInfo.State.SUCCEEDED }) refresh()
-            if (infos.any { it.state == WorkInfo.State.FAILED }) {
-                txtProgress.text = "Download failed. Check your connection and retry."
-                btnUpdate.text = "Retry Download"
-                btnUpdate.isEnabled = true
+            val work = infos.maxByOrNull { it.runAttemptCount } ?: return@Observer
+            when (work.state) {
+                WorkInfo.State.SUCCEEDED -> showReadyState()
+                WorkInfo.State.RUNNING -> {
+                    val progress = work.progress.getInt(AppUpdateDownloadWorker.KEY_PROGRESS, 0)
+                    showDownloadState(progress)
+                }
+                WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+                    description.text = if (work.runAttemptCount > 0) {
+                        "Waiting to retry download..."
+                    } else {
+                        "Preparing download..."
+                    }
+                }
+                WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+                    description.text = "Download failed. Reopen the app to retry."
+                }
             }
         }
         liveData.observe(activity, observer)
