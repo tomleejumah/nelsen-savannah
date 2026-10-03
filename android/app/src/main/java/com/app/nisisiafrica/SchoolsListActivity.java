@@ -153,10 +153,30 @@ public class SchoolsListActivity extends AppCompatActivity {
             finish();
             return;
         }
-        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
-            String bearer = "Bearer " + tokenResult.getToken();
-            loadEnrolledTrackCounts(bearer, () -> loadMemberships(bearer));
-        });
+        tvEmpty.setVisibility(View.VISIBLE);
+        tvEmpty.setText("Loading schools…");
+        user.getIdToken(false)
+                .addOnSuccessListener(tokenResult -> {
+                    String token = tokenResult.getToken();
+                    if (TextUtils.isEmpty(token)) {
+                        showLoadError("Could not authenticate. Check your connection and try again.");
+                        return;
+                    }
+                    String bearer = "Bearer " + token;
+                    // Do not block school discovery on the optional enrollment-count request.
+                    loadMemberships(bearer);
+                    loadEnrolledTrackCounts(bearer, this::applyFilter);
+                })
+                .addOnFailureListener(e ->
+                        showLoadError("Could not authenticate. Check your connection and try again."));
+    }
+
+    private void showLoadError(String message) {
+        if (tvEmpty != null) {
+            tvEmpty.setVisibility(View.VISIBLE);
+            tvEmpty.setText(message);
+        }
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     private void loadEnrolledTrackCounts(String bearer, Runnable next) {
@@ -248,8 +268,12 @@ public class SchoolsListActivity extends AppCompatActivity {
                 allRows.clear();
                 allRows.addAll(mineRows);
                 applyFilter();
-                Toast.makeText(SchoolsListActivity.this,
-                        "Could not load schools", Toast.LENGTH_SHORT).show();
+                if (mineRows.isEmpty()) {
+                    showLoadError("Could not load schools. Check your connection and try again.");
+                } else {
+                    Toast.makeText(SchoolsListActivity.this,
+                            "Could not refresh school catalog", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
