@@ -168,7 +168,17 @@ public class ChapterLearnActivity extends AppCompatActivity {
             return;
         }
         offlineCache = new LmsCacheBridge(getApplicationContext());
+        loadCachedProgress();
         loadProgressThenModule();
+    }
+
+    private void loadCachedProgress() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || offlineCache == null || TextUtils.isEmpty(trackId)) return;
+        offlineCache.progress(user.getUid(), trackId, cached -> {
+            if (cached != null && !cached.isEmpty()) lessonPercents.putAll(cached);
+            return kotlin.Unit.INSTANCE;
+        });
     }
 
     private void loadProgressThenModule() {
