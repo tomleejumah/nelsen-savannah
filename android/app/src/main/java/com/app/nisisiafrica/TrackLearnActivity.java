@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.PopupMenu;
 import android.widget.RadioButton;
@@ -968,6 +969,9 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (playerFrame != null) playerFrame.setVisibility(View.VISIBLE);
         tvPlayerPlaceholder.setVisibility(View.GONE);
         videoView.setVisibility(View.VISIBLE);
+        MediaController controller = new MediaController(this);
+        controller.setAnchorView(videoView);
+        videoView.setMediaController(controller);
         videoView.setVideoURI(Uri.parse(url));
         videoView.setOnPreparedListener(mp -> {
             mp.start();
