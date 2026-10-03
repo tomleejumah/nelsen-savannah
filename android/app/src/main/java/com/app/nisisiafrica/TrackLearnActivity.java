@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import com.app.nisisiafrica.Utils.NetworkStatusBanner;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -33,6 +34,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.Repository.LmsCacheBridge;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
 import com.github.barteksc.pdfviewer.PDFView;
@@ -65,6 +67,7 @@ import retrofit2.Response;
  * Lesson-level progress uses LMS status when present — otherwise UI stubs locked/current.
  */
 public class TrackLearnActivity extends AppCompatActivity {
+    private NetworkStatusBanner networkStatusBanner;
 
     public static final String EXTRA_TRACK_ID = "extra_track_id";
     public static final String EXTRA_TITLE = "extra_title";
@@ -118,12 +121,16 @@ public class TrackLearnActivity extends AppCompatActivity {
     private LmsModels.LessonDto resumeLesson;
     private LmsModels.CohortRunDto cohortRun;
     private LmsModels.TrackPrice trackPrice;
+    private LmsCacheBridge offlineCache;
+    private boolean cachedTrackDisplayed;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_track_learn);
+        networkStatusBanner = new NetworkStatusBanner(this);
+        networkStatusBanner.start();
         View heroBand = findViewById(R.id.heroBand);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -181,6 +188,8 @@ public class TrackLearnActivity extends AppCompatActivity {
             }
         });
         if (btnCourseMore != null) btnCourseMore.setOnClickListener(this::showCourseActions);
+        offlineCache = new LmsCacheBridge(getApplicationContext());
+        loadCachedProgress();
         loadTrack();
     }
 
@@ -287,6 +296,23 @@ public class TrackLearnActivity extends AppCompatActivity {
             return;
         }
         progress.setVisibility(View.VISIBLE);
+        FirebaseUser cachedUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (cachedUser != null && offlineCache != null) {
+            final LmsModels.TrackDetailData cachedData = new LmsModels.TrackDetailData();
+            offlineCache.track(cachedUser.getUid(), trackId, cachedTrack -> {
+                cachedData.track = cachedTrack;
+                offlineCache.modules(cachedUser.getUid(), trackId, cachedModules -> {
+                    cachedData.modules = cachedModules;
+                    if (cachedTrack != null || (cachedModules != null && !cachedModules.isEmpty())) {
+                        progress.setVisibility(View.GONE);
+                        cachedTrackDisplayed = true;
+                        bindTrack(cachedData);
+                    }
+                    return kotlin.Unit.INSTANCE;
+                });
+                return kotlin.Unit.INSTANCE;
+            });
+        }
         withBearer(bearer -> {
             LmsApiService api = ApiClient.getLmsService();
             api.track(bearer, trackId).enqueue(new Callback<>() {
@@ -296,9 +322,14 @@ public class TrackLearnActivity extends AppCompatActivity {
                     progress.setVisibility(View.GONE);
                     LmsModels.TrackDetailEnvelope body = response.body();
                     if (response.isSuccessful() && body != null && body.ok && body.data != null) {
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null && offlineCache != null) {
+                            if (body.data.track != null) offlineCache.saveTrack(user.getUid(), body.data.track);
+                            if (body.data.modules != null) offlineCache.saveModules(user.getUid(), body.data.modules);
+                        }
                         bindTrack(body.data);
                         resumeProgress();
-                    } else {
+                    } else if (!cachedTrackDisplayed) {
                         showFallback();
                     }
                 }
@@ -306,9 +337,20 @@ public class TrackLearnActivity extends AppCompatActivity {
                 @Override
                 public void onFailure(Call<LmsModels.TrackDetailEnvelope> call, Throwable t) {
                     progress.setVisibility(View.GONE);
-                    showFallback();
+                    if (!cachedTrackDisplayed) showFallback();
                 }
             });
+        });
+    }
+
+    private void loadCachedProgress() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || offlineCache == null || TextUtils.isEmpty(trackId)) return;
+        offlineCache.progress(user.getUid(), trackId, cached -> {
+            if (cached != null && !cached.isEmpty()) {
+                lessonPercents.putAll(cached);
+            }
+            return kotlin.Unit.INSTANCE;
         });
     }
 
@@ -1332,10 +1374,12 @@ public class TrackLearnActivity extends AppCompatActivity {
         stopWatchLoop();
         pdfExec.shutdownNow();
         if (pdfView != null) pdfView.recycle();
+        if (networkStatusBanner != null) networkStatusBanner.stop();
         super.onDestroy();
     }
 
     private interface BearerCallback {
         void onToken(String bearer);
     }
+
 }

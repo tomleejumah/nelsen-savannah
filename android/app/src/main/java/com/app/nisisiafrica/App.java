@@ -7,6 +7,7 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Utils.LocaleHelper;
+import com.app.nisisiafrica.Utils.LmsStudySync;
 import com.app.nisisiafrica.Utils.ThemeManager;
 import com.app.nisisiafrica.Utils.Util;
 
@@ -25,6 +26,7 @@ public class App extends Application {
         ThemeManager.applyPersistedMode();
         LocaleHelper.applyPersisted(this);
         appDatabase = AppDatabase.getInstance(this);
+        LmsStudySync.INSTANCE.schedule(this);
         DiditSdk.INSTANCE.initialize(this);
         ProcessLifecycleOwner.get().getLifecycle()
                 .addObserver(new AppLifecycleObserver(this));
