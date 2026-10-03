@@ -300,6 +300,9 @@ The Nelsen backend should not become a video streaming server.
 - [x] Prevent duplicate update downloads with unique WorkManager jobs.
 - [x] Clean stale APKs and incomplete update files to control storage usage.
 - [x] Install through FileProvider / Android package installer.
+- [x] Release the launcher splash when a mandatory update is detected so the update sheet is visible without continuing into the app.
+- [x] Show the update sheet immediately when a newer version is detected while WorkManager downloads the APK in the background.
+- [x] Keep normal app navigation blocked for a mandatory update until the update path is handled.
 
 ---
 
