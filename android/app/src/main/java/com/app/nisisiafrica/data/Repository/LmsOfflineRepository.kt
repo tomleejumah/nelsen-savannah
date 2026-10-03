@@ -77,6 +77,14 @@ class LmsOfflineRepository(context: Context) {
     suspend fun cachedProgress(uid:String,trackId:String):Map<String,Float> = withContext(Dispatchers.IO) {
         dao.progress(uid,trackId).associate { it.lessonId to it.lessonPercent }
     }
+    suspend fun pruneStaleCache(uid:String) = withContext(Dispatchers.IO) {
+        // Keep enrolled study content indefinitely for offline access. Only non-enrolled
+        // catalog/content older than 30 days is removed.
+        val before=System.currentTimeMillis() - 30L*24*60*60*1000
+        dao.pruneLessons(uid,before)
+        dao.pruneModules(uid,before)
+        dao.pruneCatalog(uid,before)
+    }
     suspend fun pendingProgress(uid:String)=withContext(Dispatchers.IO){dao.pendingProgress(uid)}
     suspend fun markProgressSynced(uid:String,lessonId:String)=withContext(Dispatchers.IO){dao.markProgressSynced(uid,lessonId)}
     fun progressBody(json:String):LmsModels.ProgressBody = gson.fromJson(json,LmsModels.ProgressBody::class.java)
