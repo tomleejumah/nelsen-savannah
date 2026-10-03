@@ -123,12 +123,12 @@ Android Course
 
 ### Android work
 
-- [ ] Show **Go to IDE** for IDE-enabled courses.
-- [ ] Create an IDE Activity/Fragment with WebView.
-- [ ] Enable JavaScript and DOM storage.
-- [ ] Load the course-specific IDE URL.
-- [ ] Handle back navigation/fullscreen correctly.
-- [ ] Handle loading/error states.
+- [x] Show **Go to IDE** for IDE-enabled courses.
+- [x] Create an IDE Activity/Fragment with WebView.
+- [x] Enable JavaScript and DOM storage.
+- [x] Load the course-specific IDE URL.
+- [x] Handle back navigation/fullscreen correctly.
+- [x] Handle loading/error states.
 - [ ] Implement secure authentication/session handoff between Android Firebase authentication and the web IDE.
 - [ ] Verify Monaco keyboard/input behaviour inside Android WebView.
 

@@ -146,6 +146,10 @@
             android:name=".AllCoursesActivity"
             android:exported="false" />
         <activity
+            android:name=".CourseIdeActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
             android:name=".TrackLearnActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />

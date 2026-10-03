@@ -221,6 +221,7 @@ public final class LmsModels {
         public String does;
         public float trackPercent;
         public boolean enrolled;
+        public boolean ideEnabled;
         public List<String> audience;
         public int moduleCount;
         public TrackPrice price;

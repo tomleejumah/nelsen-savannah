@@ -100,6 +100,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private int pdfMaxPage;
     private MaterialButton btnEnroll;
     private MaterialButton btnLeaveCourse;
+    private MaterialButton btnCourseIde;
     private boolean enrolledOnTrack = false;
     private int lessonDone;
     private int lessonProgress;
@@ -161,6 +162,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         modulesContainer = findViewById(R.id.modulesContainer);
         btnEnroll = findViewById(R.id.btnEnroll);
         btnLeaveCourse = findViewById(R.id.btnLeaveCourse);
+        btnCourseIde = findViewById(R.id.btnCourseIde);
         tutorRow = findViewById(R.id.tutorRow);
         tvTutorName = findViewById(R.id.tvTutorName);
         ivTutorAvatar = findViewById(R.id.ivTutorAvatar);
@@ -180,7 +182,20 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (btnLeaveCourse != null) {
             btnLeaveCourse.setOnClickListener(v -> confirmLeaveCourse());
         }
+        if (btnCourseIde != null) {
+            btnCourseIde.setOnClickListener(v -> openCourseIde());
+        }
         loadTrack();
+    }
+
+    private void openCourseIde() {
+        if (TextUtils.isEmpty(trackId)) {
+            Toast.makeText(this, "Course IDE unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, CourseIdeActivity.class);
+        intent.putExtra(CourseIdeActivity.EXTRA_TRACK_ID, trackId);
+        startActivity(intent);
     }
 
     private void bindTutorRow(String id, String name, String avatarUrl) {
@@ -354,6 +369,9 @@ public class TrackLearnActivity extends AppCompatActivity {
             trackProgress.setProgress(pct);
             tvProgressLabel.setText(
                     String.format(Locale.getDefault(), "Overall progress · %d%%", pct));
+            if (btnCourseIde != null) {
+                btnCourseIde.setVisibility(track.enrolled && track.ideEnabled ? View.VISIBLE : View.GONE);
+            }
             if (track.enrolled) {
                 enrolledOnTrack = true;
                 btnEnroll.setText(R.string.enroll_continue);
