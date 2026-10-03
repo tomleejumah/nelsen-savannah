@@ -804,12 +804,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         stopWatchLoop();
         hidePlayers();
         pdfExec.shutdownNow();
-        super.onDestroy();
-    }
-
-    @Override
-    protected void onDestroy() {
         if (networkStatusBanner != null) networkStatusBanner.stop();
         super.onDestroy();
     }
+
 }
