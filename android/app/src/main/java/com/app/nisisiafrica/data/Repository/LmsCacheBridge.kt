@@ -23,4 +23,5 @@ class LmsCacheBridge(context: Context) {
         scope.launch { repo.queueLocalProgress(uid,trackId,lessonId,body) }
     }
     fun mergeProgress(uid:String,progress:LmsModels.Progress) { scope.launch { repo.mergeServerProgress(uid,progress) } }
+    fun markProgressSynced(uid:String,lessonId:String) { scope.launch { repo.markProgressSynced(uid,lessonId) } }
 }
