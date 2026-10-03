@@ -74,6 +74,9 @@ class LmsOfflineRepository(context: Context) {
         if(changed==0) dao.putProgress(LmsProgressCacheEntity(uid,p.lessonId,p.trackId,json,pendingJson,p.lessonPercent,p.contentPct,p.quizPct,p.assignmentPct,p.opened,pending,p.updatedAt))
     }
 
+    suspend fun cachedProgress(uid:String,trackId:String):Map<String,Float> = withContext(Dispatchers.IO) {
+        dao.progress(uid,trackId).associate { it.lessonId to it.lessonPercent }
+    }
     suspend fun pendingProgress(uid:String)=withContext(Dispatchers.IO){dao.pendingProgress(uid)}
     suspend fun markProgressSynced(uid:String,lessonId:String)=withContext(Dispatchers.IO){dao.markProgressSynced(uid,lessonId)}
     fun progressBody(json:String):LmsModels.ProgressBody = gson.fromJson(json,LmsModels.ProgressBody::class.java)
