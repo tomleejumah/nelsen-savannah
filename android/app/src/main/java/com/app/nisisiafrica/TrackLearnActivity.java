@@ -120,6 +120,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private LmsModels.CohortRunDto cohortRun;
     private LmsModels.TrackPrice trackPrice;
     private LmsCacheBridge offlineCache;
+    private boolean cachedTrackDisplayed;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -299,6 +300,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                     cachedData.modules = cachedModules;
                     if (cachedTrack != null || (cachedModules != null && !cachedModules.isEmpty())) {
                         progress.setVisibility(View.GONE);
+                        cachedTrackDisplayed = true;
                         bindTrack(cachedData);
                     }
                     return kotlin.Unit.INSTANCE;
@@ -322,7 +324,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                         }
                         bindTrack(body.data);
                         resumeProgress();
-                    } else {
+                    } else if (!cachedTrackDisplayed) {
                         showFallback();
                     }
                 }
@@ -330,7 +332,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                 @Override
                 public void onFailure(Call<LmsModels.TrackDetailEnvelope> call, Throwable t) {
                     progress.setVisibility(View.GONE);
-                    showFallback();
+                    if (!cachedTrackDisplayed) showFallback();
                 }
             });
         });
