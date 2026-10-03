@@ -34,9 +34,18 @@ class LauncherActivity : AppCompatActivity() {
         }
 
         AppUpdateManager.scheduleBackgroundChecks(applicationContext)
-        AppUpdateManager.checkForUpdates(this, false) {
-            continueLaunch()
-        }
+        AppUpdateManager.checkForUpdates(
+            activity = this,
+            forceShow = false,
+            onUpdateRequired = {
+                // The mandatory update UI lives in this activity, so let the
+                // system splash disappear without continuing into the app.
+                isReady = true
+            },
+            onReady = {
+                continueLaunch()
+            },
+        )
     }
 
     private fun continueLaunch() {

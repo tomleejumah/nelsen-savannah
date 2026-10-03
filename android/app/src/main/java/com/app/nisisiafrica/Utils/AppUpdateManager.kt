@@ -34,6 +34,7 @@ object AppUpdateManager {
     fun checkForUpdates(
         activity: FragmentActivity,
         forceShow: Boolean = false,
+        onUpdateRequired: (() -> Unit)? = null,
         onReady: (() -> Unit)? = null,
     ) {
         if (activity.isFinishing || activity.isDestroyed) return
@@ -54,6 +55,7 @@ object AppUpdateManager {
 
                 cleanupUpdateFiles(activity, serverCode)
                 enqueueDownload(activity, release)
+                onUpdateRequired?.invoke()
                 AppUpdateBottomSheet.show(
                     activity = activity,
                     release = release,
