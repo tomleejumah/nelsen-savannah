@@ -33,6 +33,7 @@ class LauncherActivity : AppCompatActivity() {
             insets
         }
 
+        AppUpdateManager.scheduleBackgroundChecks(applicationContext)
         AppUpdateManager.checkForUpdates(this, false) {
             continueLaunch()
         }
