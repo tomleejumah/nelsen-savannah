@@ -129,7 +129,6 @@ Android Course
 - [x] Persist learner workspace locally so edits survive navigation/restarts.
 - [ ] Handle editor loading, execution, output, and error states natively.
 - [ ] Verify keyboard/input behaviour and larger-screen layouts.
-- [ ] Self-host Piston code execution on Nelsen infrastructure and set `PISTON_URL` to the private runner. The former public EMKC Piston API requires authorization as of 2026-02-15; until this is deployed, non-HTML Run requests may return 502 on both Web and Android.
 
 The exact native editor dependency must be approved before implementation.
 
@@ -338,6 +337,18 @@ The Nelsen backend should not become a video streaming server.
 - [x] Release the launcher splash when a mandatory update is detected so the update sheet is visible without continuing into the app.
 - [x] Show the update sheet immediately when a newer version is detected while WorkManager downloads the APK in the background.
 - [x] Keep normal app navigation blocked for a mandatory update until the update path is handled.
+
+---
+
+## Final Deferred Infrastructure — Piston Code Runner
+
+Do this **after the LMS/live roadmap work above**, alongside the final Didit/distribution work.
+
+- [ ] Self-host Piston code execution on Nelsen infrastructure.
+- [ ] Set `PISTON_URL` to the private Nelsen runner.
+- [ ] Verify Web and Android Run/Submit execution against the private runner.
+- [ ] Verify runner isolation, resource/time limits, supported course languages, failure handling, and production monitoring.
+- [ ] Remove dependence on the former public EMKC Piston endpoint. Until the private runner is deployed, non-HTML Run requests may return 502 on both Web and Android.
 
 ---
 
