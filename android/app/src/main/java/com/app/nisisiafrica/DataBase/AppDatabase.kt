@@ -58,7 +58,7 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_lms_lessons_uid ON lms_lessons(uid)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_lms_lessons_trackId ON lms_lessons(trackId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_lms_lessons_moduleId ON lms_lessons(moduleId)")
-                db.execSQL("CREATE TABLE IF NOT EXISTS lms_progress (uid TEXT NOT NULL, lessonId TEXT NOT NULL, trackId TEXT NOT NULL, payloadJson TEXT NOT NULL, lessonPercent REAL NOT NULL, contentPct REAL NOT NULL, quizPct REAL NOT NULL, assignmentPct REAL NOT NULL, opened INTEGER NOT NULL, pendingSync INTEGER NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY(uid, lessonId))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS lms_progress (uid TEXT NOT NULL, lessonId TEXT NOT NULL, trackId TEXT NOT NULL, payloadJson TEXT NOT NULL, pendingBodyJson TEXT NOT NULL, lessonPercent REAL NOT NULL, contentPct REAL NOT NULL, quizPct REAL NOT NULL, assignmentPct REAL NOT NULL, opened INTEGER NOT NULL, pendingSync INTEGER NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY(uid, lessonId))")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_lms_progress_uid ON lms_progress(uid)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_lms_progress_trackId ON lms_progress(trackId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_lms_progress_pendingSync ON lms_progress(pendingSync)")
