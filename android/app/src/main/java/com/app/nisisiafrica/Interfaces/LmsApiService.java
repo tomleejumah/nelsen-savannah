@@ -95,6 +95,12 @@ public interface LmsApiService {
             @Path("lessonId") String lessonId,
             @Body LmsModels.ProgressBody body);
 
+    @POST("lms/progress/sync")
+    Call<LmsModels.ProgressSyncEnvelope> syncProgress(
+            @Header("Authorization") String bearer,
+            @Header("Idempotency-Key") String idempotencyKey,
+            @Body LmsModels.ProgressSyncBody body);
+
     @GET("lms/progress/me")
     Call<LmsModels.ProgressMapEnvelope> myProgress(
             @Header("Authorization") String bearer,
