@@ -35,6 +35,7 @@ import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.Repository.LmsCacheBridge;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
@@ -76,6 +77,7 @@ public class AllCoursesActivity extends AppCompatActivity {
     /** null = unknown/loading, true = active member, false = not, "pending" handled separately */
     private Boolean schoolMemberActive = null;
     private boolean schoolJoinPending = false;
+    private LmsCacheBridge offlineCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +86,7 @@ public class AllCoursesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_all_courses);
         networkStatusBanner = new NetworkStatusBanner(this);
         networkStatusBanner.start();
+        offlineCache = new LmsCacheBridge(getApplicationContext());
         View headerContent = findViewById(R.id.headerContent);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -192,12 +195,41 @@ public class AllCoursesActivity extends AppCompatActivity {
         btnClearSearch.setOnClickListener(v -> etSearch.setText(""));
     }
 
+    private CourseItem courseItem(LmsModels.TrackCard card) {
+        if (card == null) return null;
+        String id = card.courseId != null ? card.courseId : card.trackId;
+        if (TextUtils.isEmpty(id)) return null;
+        if (card.enrolled) enrolledTrackIds.add(id);
+        return new CourseItem(id,
+                card.tutorId != null ? card.tutorId : "",
+                card.courseImageUrl != null ? card.courseImageUrl : "",
+                card.tutorAvatarUrl != null ? card.tutorAvatarUrl : "",
+                card.tutorName != null ? card.tutorName : "",
+                card.courseTitle != null ? card.courseTitle : "",
+                card.durationString(), card.lessonsString(),
+                card.courseLink != null ? card.courseLink : "",
+                card.isLiked, card.programSlug != null ? card.programSlug : "");
+    }
+
     private void loadTracksForSchool(String schoolId) {
         tvResultCount.setText(R.string.courses_loading);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             tvResultCount.setText(R.string.courses_sign_in_required);
             return;
+        }
+        if (offlineCache != null) {
+            offlineCache.tracks(user.getUid(), schoolId, cached -> {
+                if (cached != null && !cached.isEmpty()) {
+                    allCourses.clear();
+                    for (LmsModels.TrackCard card : cached) {
+                        CourseItem item = courseItem(card);
+                        if (item != null) allCourses.add(item);
+                    }
+                    applyFilter();
+                }
+                return Unit.INSTANCE;
+            });
         }
         user.getIdToken(false).addOnSuccessListener(r ->
                 ApiClient.getLmsService()
@@ -210,24 +242,12 @@ public class AllCoursesActivity extends AppCompatActivity {
                                 LmsModels.TracksEnvelope body = response.body();
                                 if (response.isSuccessful() && body != null && body.ok
                                         && body.data != null && body.data.tracks != null) {
+                                    if (offlineCache != null) {
+                                        offlineCache.saveTracks(user.getUid(), body.data.tracks, schoolId);
+                                    }
                                     for (LmsModels.TrackCard card : body.data.tracks) {
-                                        if (card == null) continue;
-                                        String id = card.courseId != null ? card.courseId : card.trackId;
-                                        if (id == null || id.isEmpty()) continue;
-                                        if (card.enrolled) enrolledTrackIds.add(id);
-                                        allCourses.add(new CourseItem(
-                                                id,
-                                                card.tutorId != null ? card.tutorId : "",
-                                                card.courseImageUrl != null ? card.courseImageUrl : "",
-                                                card.tutorAvatarUrl != null ? card.tutorAvatarUrl : "",
-                                                card.tutorName != null ? card.tutorName : "",
-                                                card.courseTitle != null ? card.courseTitle : "",
-                                                card.durationString(),
-                                                card.lessonsString(),
-                                                card.courseLink != null ? card.courseLink : "",
-                                                card.isLiked,
-                                                card.programSlug != null ? card.programSlug : ""
-                                        ));
+                                        CourseItem item = courseItem(card);
+                                        if (item != null) allCourses.add(item);
                                     }
                                 }
                                 applyFilter();
@@ -236,8 +256,10 @@ public class AllCoursesActivity extends AppCompatActivity {
                             @Override
                             public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call,
                                                   @NonNull Throwable t) {
-                                tvResultCount.setText(R.string.courses_load_failed);
-                                emptyState.setVisibility(View.VISIBLE);
+                                if (allCourses.isEmpty()) {
+                                    tvResultCount.setText(R.string.courses_load_failed);
+                                    emptyState.setVisibility(View.VISIBLE);
+                                }
                             }
                         }));
     }
