@@ -406,6 +406,29 @@ public final class LmsModels {
         }
     }
 
+    public static class ProgressSyncItem {
+        public String lessonId;
+        public ProgressBody progress;
+        public ProgressSyncItem(String lessonId, ProgressBody progress) {
+            this.lessonId = lessonId;
+            this.progress = progress;
+        }
+    }
+    public static class ProgressSyncBody {
+        public List<ProgressSyncItem> updates;
+        public ProgressSyncBody(List<ProgressSyncItem> updates) { this.updates = updates; }
+    }
+    public static class ProgressSyncData {
+        public String idempotencyKey;
+        public List<ProgressData> results;
+    }
+    public static class ProgressSyncEnvelope {
+        public boolean ok;
+        public String source;
+        public ProgressSyncData data;
+        public String error;
+    }
+
     public static class QuizBody {
         public Integer score;
         public Boolean passed;
