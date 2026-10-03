@@ -323,6 +323,47 @@ export async function patchProgress(req, res) {
   }
 }
 
+export async function postProgressSync(req, res) {
+  try {
+    const idempotencyKey = String(req.get("Idempotency-Key") || "").trim();
+    if (!idempotencyKey || idempotencyKey.length > 128) {
+      return lmsErr(res, "Valid Idempotency-Key header required", 400, getPrimaryEngine());
+    }
+    const updates = Array.isArray(req.body?.updates) ? req.body.updates : [];
+    if (updates.length === 0 || updates.length > 100) {
+      return lmsErr(res, "updates must contain 1 to 100 progress records", 400, getPrimaryEngine());
+    }
+
+    const { dbGet, dbRun } = await import("../db/lmsDb.js");
+    await dbRun(`CREATE TABLE IF NOT EXISTS progress_sync_requests (
+      uid TEXT NOT NULL, idempotency_key TEXT NOT NULL, response_json TEXT NOT NULL,
+      created_at BIGINT NOT NULL, PRIMARY KEY (uid, idempotency_key)
+    )`);
+    const prior = await dbGet(
+      "SELECT response_json FROM progress_sync_requests WHERE uid = ? AND idempotency_key = ?",
+      [req.user.uid, idempotencyKey],
+    );
+    if (prior) return lmsOk(res, JSON.parse(prior.response_json), getPrimaryEngine());
+
+    const results = [];
+    for (const item of updates) {
+      const lessonId = String(item?.lessonId || "");
+      if (!lessonId) return lmsErr(res, "Every update requires lessonId", 400, getPrimaryEngine());
+      const result = await patchLessonProgress(profileFromReq(req), lessonId, item.progress || {});
+      results.push(result.data);
+    }
+    const data = { idempotencyKey, results };
+    await dbRun(
+      "INSERT INTO progress_sync_requests (uid, idempotency_key, response_json, created_at) VALUES (?, ?, ?, ?)",
+      [req.user.uid, idempotencyKey, JSON.stringify(data), Date.now()],
+    );
+    return lmsOk(res, data, getPrimaryEngine());
+  } catch (err) {
+    console.error("[POST /lms/progress/sync]", err);
+    return lmsErr(res, err.message || "Progress sync failed", err.status || 500, getPrimaryEngine());
+  }
+}
+
 export async function getProgressMe(req, res) {
   try {
     const result = await getMyProgress(req.user.uid, {
