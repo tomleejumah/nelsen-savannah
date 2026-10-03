@@ -382,23 +382,23 @@ export async function patchLessonProgress(profile, lessonId, body = {}) {
     body.opened !== undefined ? Boolean(body.opened) : Boolean(prev?.opened);
   let contentPct =
     body.contentPct !== undefined
-      ? clampPct(body.contentPct)
+      ? Math.max(Number(prev?.content_pct ?? 0), clampPct(body.contentPct))
       : Number(prev?.content_pct ?? 0);
   const quizPct =
     body.quizPct !== undefined
-      ? clampPct(body.quizPct)
+      ? Math.max(Number(prev?.quiz_pct ?? 0), clampPct(body.quizPct))
       : Number(prev?.quiz_pct ?? 0);
   const assignmentPct =
     body.assignmentPct !== undefined
-      ? clampPct(body.assignmentPct)
+      ? Math.max(Number(prev?.assignment_pct ?? 0), clampPct(body.assignmentPct))
       : Number(prev?.assignment_pct ?? 0);
   let watchSeconds =
     body.watchSeconds !== undefined
-      ? Math.max(0, Math.floor(Number(body.watchSeconds) || 0))
+      ? Math.max(Number(prev?.watch_seconds ?? 0), Math.max(0, Math.floor(Number(body.watchSeconds) || 0)))
       : Number(prev?.watch_seconds ?? 0);
   let watchPct =
     body.watchPct !== undefined
-      ? clampPct(body.watchPct)
+      ? Math.max(Number(prev?.watch_pct ?? 0), clampPct(body.watchPct))
       : Number(prev?.watch_pct ?? 0);
   // Video: watch pct drives content signal when client reports it.
   if (
