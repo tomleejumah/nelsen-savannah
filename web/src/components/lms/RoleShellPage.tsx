@@ -5,7 +5,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { CapabilitiesBoard } from "@/components/lms/CapabilitiesBoard";
 import { DownloadApkButton } from "@/components/lms/DownloadApkButton";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration } from "@/lib/lmsAuth";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import {
   canAccessShell,
@@ -55,7 +55,7 @@ export function RoleShellPage({ shell, title, blurb, wide, children }: Props) {
   useEffect(() => {
     const auth = getFirebaseAuth();
     return onAuthStateChanged(auth, (next) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(next?.uid ?? null);
       setUser(next);
       if (next) void loadMe(next, gen);
       else {
