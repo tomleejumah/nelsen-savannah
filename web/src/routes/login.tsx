@@ -12,7 +12,7 @@ import { LogIn, LogOut, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 import { getFirebaseAuth, googleProvider } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import { workspacesForMe } from "@/lib/lmsCapabilities";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
@@ -99,7 +99,7 @@ function LoginPage() {
   useEffect(() => {
     const auth = getFirebaseAuth();
     return onAuthStateChanged(auth, (next) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(next?.uid ?? null);
       setUser(next);
       if (next) {
         void loadMe(next, gen);

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import {
   fetchLmsMe,
   fetchMyEnrollments,
@@ -85,7 +85,7 @@ function ProfilePage() {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(next?.uid ?? null);
       setUser(next);
       setAuthReady(true);
       if (next) void load(next, gen);
