@@ -171,6 +171,7 @@ Android learning screens should remain responsive on slow or unavailable network
 - [ ] Expose syncing/synced/offline state where useful to the learner.
 - [ ] Show a persistent, compact Telegram-style **Offline / Waiting for network** indicator while connectivity is unavailable; remove it automatically when connectivity/sync recovers.
 - [ ] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
+- [ ] **Final Phase 3 task:** add an authenticated batch progress-sync API with idempotency keys; update Android WorkManager to batch queued progress, safely retry the same request, and reconcile the authoritative server response without allowing progress to move backwards.
 
 ---
 
