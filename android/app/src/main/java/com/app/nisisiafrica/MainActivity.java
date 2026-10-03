@@ -42,7 +42,6 @@ import com.app.nisisiafrica.Fragments.BaseFragments.ProfileFragment;
 import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.Interfaces.SnackbarHandler;
-import com.app.nisisiafrica.Utils.AppUpdateManager;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.LocaleHelper;
@@ -183,7 +182,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         getUserBookedDates(this);
 
         // Check for app update from server
-        AppUpdateManager.checkForUpdates(this, false);
     }
 
     /**
