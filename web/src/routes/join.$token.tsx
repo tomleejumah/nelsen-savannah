@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { onAuthStateChanged } from "firebase/auth";
 
 import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration } from "@/lib/lmsAuth";
 import {
   acceptJoinInvite,
   fetchJoinInvite,
@@ -65,7 +65,7 @@ function JoinPage() {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (user) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(user?.uid ?? null);
       setSignedIn(Boolean(user));
       if (!user) return;
       void user.getIdToken().then((t) => claim(t, gen));
