@@ -55,10 +55,10 @@ The exact schema can be adjusted when the existing course API/model is updated.
 
 ### Learner UI
 
-- [ ] Show **Go to IDE** whenever the current course has IDE enabled.
-- [ ] Do not depend on `lessonType === "code"`.
-- [ ] Keep the button available throughout the course UI.
-- [ ] Hide the button for courses without IDE support.
+- [x] Show **Go to IDE** whenever the current course has IDE enabled.
+- [x] Do not depend on `lessonType === "code"`.
+- [x] Keep the button available throughout the course UI.
+- [x] Hide the button for courses without IDE support.
 
 ### IDE Workspace
 
@@ -287,3 +287,29 @@ Nelsen owns users, courses, metadata, permissions, UI and notifications.
 ```
 
 The Nelsen backend should not become a video streaming server.
+
+---
+
+## Completed Platform Maintenance — Android In-App Updates
+
+- [x] Check the release API before allowing normal app launch when a newer mandatory version exists.
+- [x] Download APK updates with WorkManager so downloads survive backgrounding/activity changes.
+- [x] Periodically check for updates and prefetch newer APKs in the background.
+- [x] Reuse a prefetched APK and prompt the user to install when it is ready.
+- [x] Verify downloaded APK SHA-256 when the release API provides a checksum.
+- [x] Prevent duplicate update downloads with unique WorkManager jobs.
+- [x] Clean stale APKs and incomplete update files to control storage usage.
+- [x] Install through FileProvider / Android package installer.
+
+---
+
+## Final Deferred Decision — Didit SDK / APK Size
+
+Do this **after the LMS/live roadmap work above**.
+
+The current Android app bundles `me.didit:didit-sdk` and its native/media dependencies, which materially increases distribution size.
+
+- [ ] Measure the final APK/AAB contribution from Didit and its transitive dependencies.
+- [ ] Decide whether KYC should remain bundled, move to Didit's hosted/web verification flow, or be isolated into an Android dynamic feature where distribution supports it.
+- [ ] Do not implement arbitrary post-install loading of the Maven/native SDK as an asset; choose a supported delivery architecture first.
+- [ ] Preserve the existing KYC flow until this decision is made.
