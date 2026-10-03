@@ -123,6 +123,12 @@ function TrackDetailPage() {
   });
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("ide") === "1") {
+      setIdeOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
       setUser(next);
       setAuthReady(true);
