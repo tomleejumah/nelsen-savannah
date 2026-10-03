@@ -14,7 +14,7 @@ import { RequireMentee } from "@/components/lms/RequireMentee";
 import { LMS_TRACKS, modulesForTrack } from "@/data/lms-roadmap.js";
 import { LMS_FEATURES } from "@/data/site";
 import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration, signOutFully } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration, signOutFully } from "@/lib/lmsAuth";
 import {
   fetchLmsMe,
   fetchLmsTracks,
@@ -172,7 +172,7 @@ function LearningPage() {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (next) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(next?.uid ?? null);
       setUser(next);
       setAuthReady(true);
       if (next) {
