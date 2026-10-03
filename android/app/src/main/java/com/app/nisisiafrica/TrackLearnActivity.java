@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.PopupMenu;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -99,8 +100,8 @@ public class TrackLearnActivity extends AppCompatActivity {
     private long lastPdfReport;
     private int pdfMaxPage;
     private MaterialButton btnEnroll;
-    private MaterialButton btnLeaveCourse;
-    private MaterialButton btnCourseIde;
+    private MaterialButton btnCourseMore;
+    private boolean courseIdeAvailable;
     private boolean enrolledOnTrack = false;
     private int lessonDone;
     private int lessonProgress;
@@ -161,8 +162,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         lessonPanel = findViewById(R.id.lessonPanel);
         modulesContainer = findViewById(R.id.modulesContainer);
         btnEnroll = findViewById(R.id.btnEnroll);
-        btnLeaveCourse = findViewById(R.id.btnLeaveCourse);
-        btnCourseIde = findViewById(R.id.btnCourseIde);
+        btnCourseMore = findViewById(R.id.btnCourseMore);
         tutorRow = findViewById(R.id.tutorRow);
         tvTutorName = findViewById(R.id.tvTutorName);
         ivTutorAvatar = findViewById(R.id.ivTutorAvatar);
@@ -179,13 +179,20 @@ public class TrackLearnActivity extends AppCompatActivity {
                 enroll();
             }
         });
-        if (btnLeaveCourse != null) {
-            btnLeaveCourse.setOnClickListener(v -> confirmLeaveCourse());
-        }
-        if (btnCourseIde != null) {
-            btnCourseIde.setOnClickListener(v -> openCourseIde());
-        }
+        if (btnCourseMore != null) btnCourseMore.setOnClickListener(this::showCourseActions);
         loadTrack();
+    }
+
+    private void showCourseActions(View anchor) {
+        PopupMenu menu = new PopupMenu(this, anchor);
+        if (courseIdeAvailable) menu.getMenu().add("Go to IDE");
+        if (enrolledOnTrack) menu.getMenu().add("Leave course");
+        menu.setOnMenuItemClickListener(item -> {
+            if ("Go to IDE".contentEquals(item.getTitle())) { openCourseIde(); return true; }
+            if ("Leave course".contentEquals(item.getTitle())) { confirmLeaveCourse(); return true; }
+            return false;
+        });
+        menu.show();
     }
 
     private void openCourseIde() {
@@ -369,21 +376,20 @@ public class TrackLearnActivity extends AppCompatActivity {
             trackProgress.setProgress(pct);
             tvProgressLabel.setText(
                     String.format(Locale.getDefault(), "Overall progress · %d%%", pct));
-            if (btnCourseIde != null) {
-                btnCourseIde.setVisibility(track.enrolled && track.ideEnabled ? View.VISIBLE : View.GONE);
-            }
+            courseIdeAvailable = track.enrolled && track.ideEnabled;
+            if (btnCourseMore != null) btnCourseMore.setVisibility(track.enrolled ? View.VISIBLE : View.GONE);
             if (track.enrolled) {
                 enrolledOnTrack = true;
                 btnEnroll.setText(R.string.enroll_continue);
-                if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.VISIBLE);
+
             } else if (track.price != null && track.price.isPaid) {
                 enrolledOnTrack = false;
                 btnEnroll.setText(getString(R.string.enroll_now) + " · " + formatPrice(track.price));
-                if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
+
             } else {
                 enrolledOnTrack = false;
                 btnEnroll.setText(R.string.enroll_now);
-                if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
+
             }
         }
         modulesContainer.removeAllViews();
@@ -1125,7 +1131,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                         if (response.isSuccessful() && body != null && body.ok) {
                             enrolledOnTrack = true;
                             btnEnroll.setText(R.string.enroll_continue);
-                            if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.VISIBLE);
+            
                             Toast.makeText(TrackLearnActivity.this, "Enrolled", Toast.LENGTH_SHORT).show();
                             loadTrack();
                             return;
@@ -1171,7 +1177,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                         if (response.isSuccessful()) {
                             enrolledOnTrack = false;
                             resumeLesson = null;
-                            if (btnLeaveCourse != null) btnLeaveCourse.setVisibility(View.GONE);
+            
                             btnEnroll.setText(trackPrice != null && trackPrice.isPaid
                                     ? getString(R.string.enroll_now) + " · " + formatPrice(trackPrice)
                                     : getString(R.string.enroll_now));
