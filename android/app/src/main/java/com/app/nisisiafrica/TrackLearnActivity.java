@@ -189,6 +189,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         });
         if (btnCourseMore != null) btnCourseMore.setOnClickListener(this::showCourseActions);
         offlineCache = new LmsCacheBridge(getApplicationContext());
+        loadCachedProgress();
         loadTrack();
     }
 
@@ -339,6 +340,17 @@ public class TrackLearnActivity extends AppCompatActivity {
                     if (!cachedTrackDisplayed) showFallback();
                 }
             });
+        });
+    }
+
+    private void loadCachedProgress() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || offlineCache == null || TextUtils.isEmpty(trackId)) return;
+        offlineCache.progress(user.getUid(), trackId, cached -> {
+            if (cached != null && !cached.isEmpty()) {
+                lessonPercents.putAll(cached);
+            }
+            return kotlin.Unit.INSTANCE;
         });
     }
 
