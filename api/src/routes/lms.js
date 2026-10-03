@@ -37,12 +37,8 @@ router.patch(
 );
 router.get("/health", lmsController.getLmsHealth);
 
-// Android sideload APK — any authenticated role
-router.get(
-  "/app/android",
-  authenticateUser,
-  lmsController.getAndroidAppRelease,
-);
+// Android sideload APK — public so logged-out installs can update before login.
+router.get("/app/android", lmsController.getAndroidAppRelease);
 router.post(
   "/app/android/download-url",
   authenticateUser,
@@ -50,11 +46,7 @@ router.post(
 );
 // Signed query (no Bearer) — browser native download progress
 router.get("/app/android/file", lmsController.downloadAndroidAppFile);
-router.get(
-  "/app/android/download",
-  authenticateUser,
-  lmsController.downloadAndroidApp,
-);
+router.get("/app/android/download", lmsController.downloadAndroidApp);
 router.get("/join/:token", lmsController.getJoinInvite);
 router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
