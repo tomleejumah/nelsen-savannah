@@ -122,13 +122,14 @@ Android Course
 ### Android work
 
 - [x] Show **Go to IDE** for IDE-enabled courses.
-- [ ] Replace the current WebView IDE implementation with a native Android IDE activity.
+- [x] Replace the current WebView IDE implementation with a native Android IDE activity.
 - [ ] Add a native code editor with syntax highlighting, line numbers, indentation, and course-language support.
 - [ ] Load course IDE configuration/starter files from the LMS API.
 - [ ] Connect Run/Submit actions to the existing authorized course sandbox/execution API.
-- [ ] Persist learner workspace locally so edits survive navigation/restarts.
+- [x] Persist learner workspace locally so edits survive navigation/restarts.
 - [ ] Handle editor loading, execution, output, and error states natively.
 - [ ] Verify keyboard/input behaviour and larger-screen layouts.
+- [ ] Self-host Piston code execution on Nelsen infrastructure and set `PISTON_URL` to the private runner. The former public EMKC Piston API requires authorization as of 2026-02-15; until this is deployed, non-HTML Run requests may return 502 on both Web and Android.
 
 The exact native editor dependency must be approved before implementation.
 
