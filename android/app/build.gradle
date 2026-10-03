@@ -47,6 +47,19 @@ def facebookAppId = localProperties.getProperty('FACEBOOK_APP_ID')
 def facebookClientToken = localProperties.getProperty('FACEBOOK_CLIENT_TOKEN')
 def fbLoginScheme = localProperties.getProperty('FB_LOGIN_PROTOCOL_SCHEME')
 
+// Permanent release signing. CI supplies these through GitHub Actions secrets.
+def releaseKeystorePath = System.getenv('ANDROID_KEYSTORE_PATH')
+def releaseKeystorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('ANDROID_KEY_PASSWORD')
+def hasReleaseSigning = [
+        releaseKeystorePath,
+        releaseKeystorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword,
+].every { it != null && !it.trim().isEmpty() } &&
+        file(releaseKeystorePath).exists()
+
 android {
     namespace 'com.app.nisisiafrica'
     compileSdk 35
@@ -75,12 +88,24 @@ android {
     }
 
 
-    // Sideload releases: sign with debug keystore until a Play upload keystore is wired in CI.
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            // PR/local builds can still compile without secrets. Published CI releases always
+            // provide the permanent keystore and are rejected by CI if a secret is missing.
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
         }
     }
 
