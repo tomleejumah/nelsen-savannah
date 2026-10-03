@@ -31,6 +31,9 @@ class LmsCacheBridge(context: Context) {
     }
     fun saveTrack(uid:String,track:LmsModels.TrackCard) { scope.launch { repo.cacheTrack(uid,track) } }
     fun saveModules(uid:String,modules:List<LmsModels.ModuleDto>) { scope.launch { repo.cacheModules(uid,modules) } }
+    fun progress(uid:String,trackId:String,callback:(Map<String,Float>)->Unit) {
+        scope.launch { val value=repo.cachedProgress(uid,trackId); withContext(Dispatchers.Main){callback(value)} }
+    }
     fun queueProgress(uid:String,trackId:String,lessonId:String,body:LmsModels.ProgressBody) {
         scope.launch { repo.queueLocalProgress(uid,trackId,lessonId,body) }
     }
