@@ -17,6 +17,19 @@ class LmsOfflineRepository(context: Context) {
         dao.putTracks(listOf(LmsTrackCacheEntity(uid,id,schoolId,gson.toJson(track),track.enrolled,System.currentTimeMillis())))
     }
 
+    suspend fun cacheTracks(uid:String,tracks:List<LmsModels.TrackCard>,schoolId:String="") = withContext(Dispatchers.IO) {
+        val now=System.currentTimeMillis()
+        dao.putTracks(tracks.mapNotNull { track ->
+            val id=track.trackId ?: track.courseId ?: return@mapNotNull null
+            LmsTrackCacheEntity(uid,id,schoolId,gson.toJson(track),track.enrolled,now)
+        })
+    }
+
+    suspend fun cachedTracks(uid:String,schoolId:String=""):List<LmsModels.TrackCard> = withContext(Dispatchers.IO) {
+        val rows=if(schoolId.isBlank()) dao.tracks(uid) else dao.schoolTracks(uid,schoolId)
+        rows.map { gson.fromJson(it.payloadJson,LmsModels.TrackCard::class.java) }
+    }
+
     suspend fun cachedTrack(uid:String, trackId:String): LmsModels.TrackCard? = withContext(Dispatchers.IO) {
         dao.track(uid,trackId)?.let { gson.fromJson(it.payloadJson,LmsModels.TrackCard::class.java) }
     }
