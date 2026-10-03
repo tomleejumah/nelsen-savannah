@@ -3,7 +3,7 @@ import { Link, Navigate } from "@tanstack/react-router";
 import { onAuthStateChanged } from "firebase/auth";
 
 import { getFirebaseAuth } from "@/lib/firebase";
-import { bumpAuthGeneration, getAuthGeneration } from "@/lib/lmsAuth";
+import { getAuthGeneration, syncAuthGeneration } from "@/lib/lmsAuth";
 import { fetchLmsMe, type MeDto } from "@/lib/lmsApi";
 import { canAccessShell, shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 
@@ -28,7 +28,7 @@ export function RequireMentee({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return onAuthStateChanged(getFirebaseAuth(), (user) => {
-      const gen = bumpAuthGeneration();
+      const gen = syncAuthGeneration(user?.uid ?? null);
       setSignedIn(Boolean(user));
       if (!user) {
         setMe(null);
