@@ -302,7 +302,7 @@ public class TrackLearnActivity extends AppCompatActivity {
             offlineCache.track(cachedUser.getUid(), trackId, cachedTrack -> {
                 cachedData.track = cachedTrack;
                 offlineCache.modules(cachedUser.getUid(), trackId, cachedModules -> {
-                    cachedData.modules = cachedModules;
+                    cachedData.modules = new ArrayList<>(cachedModules);
                     if (cachedTrack != null || (cachedModules != null && !cachedModules.isEmpty())) {
                         progress.setVisibility(View.GONE);
                         cachedTrackDisplayed = true;
