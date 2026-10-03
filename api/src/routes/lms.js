@@ -90,6 +90,7 @@ router.patch(
   lmsController.patchProgress,
 );
 router.get("/progress/me", authenticateUser, lmsController.getProgressMe);
+router.post("/progress/sync", authenticateUser, lmsController.postProgressSync);
 
 router.post("/checkout", authenticateUser, lmsController.postCheckout);
 router.get("/purchases/me", authenticateUser, lmsController.getMyPurchases);

@@ -155,22 +155,23 @@ Android learning screens should remain responsive on slow or unavailable network
 
 ### Offline cache
 
-- [ ] Cache course/track metadata required by enrolled learners.
-- [ ] Cache lesson metadata/content that is safe and practical for offline study.
-- [ ] Cache learner study/progress state locally.
-- [ ] Define cache freshness/expiry rules so stale server data is refreshed without destroying offline usability.
-- [ ] Make cached enrolled-course content available when the device is offline.
+- [x] Cache course/track metadata required by enrolled learners.
+- [x] Cache lesson metadata/content that is safe and practical for offline study.
+- [x] Cache learner study/progress state locally.
+- [x] Define cache freshness/expiry rules so stale server data is refreshed without destroying offline usability.
+- [x] Make cached enrolled-course content available when the device is offline.
 
 ### WorkManager sync
 
-- [ ] Add a network-constrained WorkManager study-sync worker.
-- [ ] Queue locally changed study/progress records for synchronization instead of losing them when offline.
-- [ ] Push pending local progress to the LMS API when connectivity returns.
-- [ ] Pull relevant server-side progress/content changes and reconcile the local cache.
-- [ ] Make sync retry-safe/idempotent so repeated worker runs do not duplicate progress.
+- [x] Add a network-constrained WorkManager study-sync worker.
+- [x] Queue locally changed study/progress records for synchronization instead of losing them when offline.
+- [x] Push pending local progress to the LMS API when connectivity returns.
+- [x] Pull relevant server-side progress/content changes and reconcile the local cache.
+- [x] Make sync retry-safe/idempotent so repeated worker runs do not duplicate progress.
 - [ ] Expose syncing/synced/offline state where useful to the learner.
-- [ ] Show a persistent, compact Telegram-style **Offline / Waiting for network** indicator while connectivity is unavailable; remove it automatically when connectivity/sync recovers.
-- [ ] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
+- [x] Show a persistent, compact Telegram-style **Offline / Waiting for network** indicator while connectivity is unavailable; remove it automatically when connectivity/sync recovers.
+- [x] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
+- [x] **Final Phase 3 task:** add an authenticated batch progress-sync API with idempotency keys; update Android WorkManager to batch queued progress, safely retry the same request, and reconcile the authoritative server response without allowing progress to move backwards.
 
 ---
 

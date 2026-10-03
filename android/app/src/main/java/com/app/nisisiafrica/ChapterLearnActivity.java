@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import com.app.nisisiafrica.Utils.NetworkStatusBanner;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -31,6 +32,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.Repository.LmsCacheBridge;
+import com.app.nisisiafrica.Utils.LmsStudySync;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.github.barteksc.pdfviewer.PDFView;
 import com.google.android.material.button.MaterialButton;
@@ -61,6 +64,7 @@ import retrofit2.Response;
  * and progress is reported via PATCH /lms/progress/:lessonId.
  */
 public class ChapterLearnActivity extends AppCompatActivity {
+    private NetworkStatusBanner networkStatusBanner;
 
     public static final String EXTRA_TRACK_ID = "extra_track_id";
     public static final String EXTRA_MODULE_ID = "extra_module_id";
@@ -92,6 +96,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private String openLessonId;
     private String activeLessonId;
     private long releaseAt;
+    private LmsCacheBridge offlineCache;
     private long dueAt;
     private int pdfMaxPage;
     private long lastPdfReport;
@@ -105,6 +110,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_chapter_learn);
+        networkStatusBanner = new NetworkStatusBanner(this);
+        networkStatusBanner.start();
         View headerContent = findViewById(R.id.headerContent);
         View lessonsSheet = findViewById(R.id.lessonsSheet);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -160,7 +167,18 @@ public class ChapterLearnActivity extends AppCompatActivity {
             finish();
             return;
         }
+        offlineCache = new LmsCacheBridge(getApplicationContext());
+        loadCachedProgress();
         loadProgressThenModule();
+    }
+
+    private void loadCachedProgress() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || offlineCache == null || TextUtils.isEmpty(trackId)) return;
+        offlineCache.progress(user.getUid(), trackId, cached -> {
+            if (cached != null && !cached.isEmpty()) lessonPercents.putAll(cached);
+            return kotlin.Unit.INSTANCE;
+        });
     }
 
     private void loadProgressThenModule() {
@@ -212,6 +230,16 @@ public class ChapterLearnActivity extends AppCompatActivity {
     }
 
     private void loadModule() {
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current != null && offlineCache != null) {
+            offlineCache.moduleLessons(current.getUid(), moduleId, cached -> {
+                if (cached != null && !cached.isEmpty()) {
+                    progress.setVisibility(View.GONE);
+                    renderLessons(cached);
+                }
+                return kotlin.Unit.INSTANCE;
+            });
+        }
         withBearer(bearer -> ApiClient.getLmsService().module(bearer, moduleId)
                 .enqueue(new Callback<>() {
                     @Override
@@ -235,6 +263,10 @@ public class ChapterLearnActivity extends AppCompatActivity {
                             if (body.data.module.dueAt != null) {
                                 dueAt = body.data.module.dueAt;
                             }
+                        }
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null && offlineCache != null) {
+                            offlineCache.saveLessons(user.getUid(), body.data.lessons);
                         }
                         renderLessons(body.data.lessons);
                     }
@@ -329,6 +361,13 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private void openLesson(LmsModels.LessonDto lesson) {
         if (lesson == null || TextUtils.isEmpty(lesson.lessonId)) return;
         highlightLesson(lesson.lessonId);
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current != null && offlineCache != null) {
+            offlineCache.lesson(current.getUid(), lesson.lessonId, cached -> {
+                if (cached != null) presentLesson(cached);
+                return kotlin.Unit.INSTANCE;
+            });
+        }
         withBearer(bearer -> ApiClient.getLmsService().lesson(bearer, lesson.lessonId)
                 .enqueue(new Callback<>() {
                     @Override
@@ -337,6 +376,10 @@ public class ChapterLearnActivity extends AppCompatActivity {
                         LmsModels.LessonDetailEnvelope body = response.body();
                         if (response.isSuccessful() && body != null && body.ok
                                 && body.data != null && body.data.lesson != null) {
+                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                            if (user != null && offlineCache != null) {
+                                offlineCache.saveLessons(user.getUid(), java.util.Collections.singletonList(body.data.lesson));
+                            }
                             presentLesson(body.data.lesson);
                         } else {
                             Toast.makeText(ChapterLearnActivity.this,
@@ -519,15 +562,30 @@ public class ChapterLearnActivity extends AppCompatActivity {
 
     private void patchProgress(String lessonId, LmsModels.ProgressBody body) {
         if (TextUtils.isEmpty(lessonId) || body == null) return;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null && offlineCache != null && !TextUtils.isEmpty(trackId)) {
+            offlineCache.queueProgress(user.getUid(), trackId, lessonId, body);
+        }
         withBearer(bearer -> ApiClient.getLmsService()
                 .patchProgress(bearer, lessonId, body)
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(Call<LmsModels.ProgressEnvelope> call,
-                                           Response<LmsModels.ProgressEnvelope> response) {}
-
+                                           Response<LmsModels.ProgressEnvelope> response) {
+                        LmsModels.ProgressEnvelope envelope = response.body();
+                        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+                        if (response.isSuccessful() && envelope != null && envelope.data != null
+                                && envelope.data.progress != null && current != null && offlineCache != null) {
+                            offlineCache.mergeProgress(current.getUid(), envelope.data.progress);
+                            offlineCache.markProgressSynced(current.getUid(), lessonId);
+                        } else {
+                            LmsStudySync.INSTANCE.request(getApplicationContext());
+                        }
+                    }
                     @Override
-                    public void onFailure(Call<LmsModels.ProgressEnvelope> call, Throwable t) {}
+                    public void onFailure(Call<LmsModels.ProgressEnvelope> call, Throwable t) {
+                        LmsStudySync.INSTANCE.request(getApplicationContext());
+                    }
                 }));
     }
 
@@ -756,6 +814,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         stopWatchLoop();
         hidePlayers();
         pdfExec.shutdownNow();
+        if (networkStatusBanner != null) networkStatusBanner.stop();
         super.onDestroy();
     }
+
 }
