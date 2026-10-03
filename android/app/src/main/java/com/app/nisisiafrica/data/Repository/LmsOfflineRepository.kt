@@ -35,6 +35,10 @@ class LmsOfflineRepository(context: Context) {
         dao.putLessons(lessons.mapNotNull { l -> if(l.lessonId.isNullOrBlank()||l.trackId.isNullOrBlank()) null else LmsLessonCacheEntity(uid,l.lessonId,l.moduleId?:"",l.trackId,gson.toJson(l),now) })
     }
 
+    suspend fun cachedModuleLessons(uid:String,moduleId:String):List<LmsModels.LessonDto> = withContext(Dispatchers.IO) {
+        dao.moduleLessons(uid,moduleId).map { gson.fromJson(it.payloadJson,LmsModels.LessonDto::class.java) }
+    }
+
     suspend fun cachedLesson(uid:String,lessonId:String):LmsModels.LessonDto? = withContext(Dispatchers.IO) {
         dao.lesson(uid,lessonId)?.let { gson.fromJson(it.payloadJson,LmsModels.LessonDto::class.java) }
     }
