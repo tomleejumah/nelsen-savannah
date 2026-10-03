@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import com.app.nisisiafrica.Utils.NetworkStatusBanner;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -55,6 +56,7 @@ import retrofit2.Response;
  * Tap opens {@link TrackLearnActivity}.
  */
 public class AllCoursesActivity extends AppCompatActivity {
+    private NetworkStatusBanner networkStatusBanner;
 
     public static final String EXTRA_SCHOOL_ID = "schoolId";
     public static final String EXTRA_SCHOOL_NAME = "schoolName";
@@ -80,6 +82,8 @@ public class AllCoursesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_all_courses);
+        networkStatusBanner = new NetworkStatusBanner(this);
+        networkStatusBanner.start();
         View headerContent = findViewById(R.id.headerContent);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -681,5 +685,11 @@ public class AllCoursesActivity extends AppCompatActivity {
                                         "Could not load assignments", Toast.LENGTH_SHORT).show();
                             }
                         }));
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (networkStatusBanner != null) networkStatusBanner.stop();
+        super.onDestroy();
     }
 }
