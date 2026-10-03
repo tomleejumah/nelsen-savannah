@@ -77,6 +77,10 @@ jobs:
             echo "No version change"
           else
             git commit -m "Bump Android version for release"
+            # Another main commit may land while this build is running. Rebase the
+            # version-only commit onto the latest main before pushing.
+            git fetch origin "${{ github.ref_name }}"
+            git rebase "origin/${{ github.ref_name }}"
             git push origin HEAD:${{ github.ref_name }}
           fi
       - name: Assemble release APK
