@@ -12,6 +12,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.firebase.auth.FirebaseAuth
 import androidx.lifecycle.lifecycleScope
 import com.app.nisisiafrica.Utils.Util
+import com.app.nisisiafrica.Utils.AppUpdateManager
 import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
@@ -32,6 +33,13 @@ class LauncherActivity : AppCompatActivity() {
             insets
         }
 
+        AppUpdateManager.scheduleBackgroundChecks(applicationContext)
+        AppUpdateManager.checkForUpdates(this, false) {
+            continueLaunch()
+        }
+    }
+
+    private fun continueLaunch() {
         lifecycleScope.launch {
             val isFirstTime = Util.getState("is-FirstTime", true)
             val auth = FirebaseAuth.getInstance()

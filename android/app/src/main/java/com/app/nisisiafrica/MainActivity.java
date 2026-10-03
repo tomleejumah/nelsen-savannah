@@ -180,6 +180,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         initFCM();
 
         getUserBookedDates(this);
+
+        // Check for app update from server
     }
 
     /**
@@ -549,6 +551,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void handleFreshUserData(UserData userData) {
+        if (userData == null) {
+            Log.w(TAG, "handleFreshUserData received null local userData, syncing from remote...");
+            syncUserDataFromRemote();
+            return;
+        }
         userRole = userData.getUserRole();
 
         if (TextUtils.isEmpty(userRole)) {
