@@ -59,4 +59,8 @@ interface LmsCacheDao {
 
     @Query("DELETE FROM lms_tracks WHERE uid=:uid AND cachedAt < :before AND enrolled=0")
     suspend fun pruneCatalog(uid:String, before:Long)
+    @Query("DELETE FROM lms_modules WHERE uid=:uid AND cachedAt < :before AND trackId NOT IN (SELECT trackId FROM lms_tracks WHERE uid=:uid AND enrolled=1)")
+    suspend fun pruneModules(uid:String, before:Long)
+    @Query("DELETE FROM lms_lessons WHERE uid=:uid AND cachedAt < :before AND trackId NOT IN (SELECT trackId FROM lms_tracks WHERE uid=:uid AND enrolled=1)")
+    suspend fun pruneLessons(uid:String, before:Long)
 }
