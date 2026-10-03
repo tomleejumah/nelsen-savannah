@@ -22,17 +22,28 @@ class LmsStudySyncWorker(context: Context, params: WorkerParameters) : Coroutine
         if (token.isNullOrBlank()) return@withContext Result.retry()
         val repo = LmsOfflineRepository(applicationContext)
         try {
-            for (row in repo.pendingProgress(user.uid)) {
-                if (row.pendingBodyJson.isBlank()) continue
-                val response = ApiClient.getLmsService()
-                    .patchProgress("Bearer $token", row.lessonId, repo.progressBody(row.pendingBodyJson))
-                    .execute()
+            val pending = repo.pendingProgress(user.uid).filter { row -> row.pendingBodyJson.isNotBlank() }
+            if (pending.isNotEmpty()) {
+                val items = pending.map { row ->
+                    com.app.nisisiafrica.data.Model.LmsModels.ProgressSyncItem(
+                        row.lessonId, repo.progressBody(row.pendingBodyJson)
+                    )
+                }
+                // Deterministic for this queued snapshot: retries send the same key/body.
+                val snapshot = pending.joinToString("-") { row -> "${row.lessonId}:${row.updatedAt}" }
+                val idempotencyKey = "android-" + user.uid.take(16) + "-" + snapshot.hashCode().toUInt().toString(16)
+                val response = ApiClient.getLmsService().syncProgress(
+                    "Bearer $token", idempotencyKey,
+                    com.app.nisisiafrica.data.Model.LmsModels.ProgressSyncBody(items)
+                ).execute()
                 if (!response.isSuccessful) {
                     if (response.code() == 401 || response.code() == 408 || response.code() == 429 || response.code() >= 500) return@withContext Result.retry()
-                    continue // retain pending data; do not silently discard a rejected progress update
+                    return@withContext Result.failure()
                 }
-                response.body()?.data?.progress?.let { repo.mergeServerProgress(user.uid, it) }
-                repo.markProgressSynced(user.uid, row.lessonId)
+                response.body()?.data?.results?.forEach { result ->
+                    result.progress?.let { progress -> repo.mergeServerProgress(user.uid, progress) }
+                }
+                pending.forEach { row -> repo.markProgressSynced(user.uid, row.lessonId) }
             }
             // Pull authoritative progress for every locally cached track touched by
             // pending work. Merge is monotonic, so server refresh cannot move progress backwards.
