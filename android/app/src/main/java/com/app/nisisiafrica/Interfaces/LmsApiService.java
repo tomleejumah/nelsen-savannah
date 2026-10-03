@@ -56,6 +56,9 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("lessonId") String lessonId);
 
+    @GET("lms/tracks/{trackId}/ide")
+    Call<LmsModels.IdeConfigEnvelope> trackIdeConfig(@Header("Authorization") String bearer, @Path("trackId") String trackId);
+
     @POST("lms/tracks/{trackId}/ide/run")
     Call<LmsModels.IdeRunEnvelope> runTrackIde(@Header("Authorization") String bearer, @Path("trackId") String trackId, @Body LmsModels.IdeRunBody body);
 
