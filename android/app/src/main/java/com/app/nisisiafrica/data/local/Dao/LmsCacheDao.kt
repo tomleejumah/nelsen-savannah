@@ -28,6 +28,8 @@ interface LmsCacheDao {
     suspend fun modules(uid: String, trackId: String): List<LmsModuleCacheEntity>
     @Query("SELECT * FROM lms_lessons WHERE uid=:uid AND trackId=:trackId")
     suspend fun lessons(uid: String, trackId: String): List<LmsLessonCacheEntity>
+    @Query("SELECT * FROM lms_lessons WHERE uid=:uid AND moduleId=:moduleId")
+    suspend fun moduleLessons(uid: String, moduleId: String): List<LmsLessonCacheEntity>
     @Query("SELECT * FROM lms_lessons WHERE uid=:uid AND lessonId=:lessonId LIMIT 1")
     suspend fun lesson(uid: String, lessonId: String): LmsLessonCacheEntity?
     @Query("SELECT * FROM lms_progress WHERE uid=:uid AND trackId=:trackId")
