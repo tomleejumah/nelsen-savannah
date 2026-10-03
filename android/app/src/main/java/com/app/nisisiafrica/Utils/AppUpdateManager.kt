@@ -1,6 +1,6 @@
 package com.app.nisisiafrica.Utils
 
-import android.app.Activity
+import androidx.fragment.app.FragmentActivity
 import android.content.Context
 import android.os.Environment
 import android.util.Log
@@ -32,7 +32,7 @@ object AppUpdateManager {
     @JvmStatic
     @JvmOverloads
     fun checkForUpdates(
-        activity: Activity,
+        activity: FragmentActivity,
         forceShow: Boolean = false,
         onReady: (() -> Unit)? = null,
     ) {
