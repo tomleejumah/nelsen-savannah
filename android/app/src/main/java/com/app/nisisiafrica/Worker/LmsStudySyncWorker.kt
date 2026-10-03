@@ -7,13 +7,18 @@ import com.app.nisisiafrica.data.Repository.LmsOfflineRepository
 import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import kotlinx.coroutines.withContext
 
 class LmsStudySyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val user = FirebaseAuth.getInstance().currentUser ?: return@withContext Result.success()
-        val token = try { user.getIdToken(true).await().token } catch (_: Exception) { return@withContext Result.retry() }
+        val token = suspendCancellableCoroutine<String?> { cont ->
+            user.getIdToken(true)
+                .addOnSuccessListener { cont.resume(it.token) }
+                .addOnFailureListener { cont.resume(null) }
+        }
         if (token.isNullOrBlank()) return@withContext Result.retry()
         val repo = LmsOfflineRepository(applicationContext)
         try {
