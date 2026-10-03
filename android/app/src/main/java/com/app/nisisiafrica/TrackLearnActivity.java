@@ -33,6 +33,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.Repository.LmsCacheBridge;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
 import com.github.barteksc.pdfviewer.PDFView;
@@ -118,6 +119,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private LmsModels.LessonDto resumeLesson;
     private LmsModels.CohortRunDto cohortRun;
     private LmsModels.TrackPrice trackPrice;
+    private LmsCacheBridge offlineCache;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -181,6 +183,7 @@ public class TrackLearnActivity extends AppCompatActivity {
             }
         });
         if (btnCourseMore != null) btnCourseMore.setOnClickListener(this::showCourseActions);
+        offlineCache = new LmsCacheBridge(getApplicationContext());
         loadTrack();
     }
 
@@ -287,6 +290,22 @@ public class TrackLearnActivity extends AppCompatActivity {
             return;
         }
         progress.setVisibility(View.VISIBLE);
+        FirebaseUser cachedUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (cachedUser != null && offlineCache != null) {
+            final LmsModels.TrackDetailData cachedData = new LmsModels.TrackDetailData();
+            offlineCache.track(cachedUser.getUid(), trackId, cachedTrack -> {
+                cachedData.track = cachedTrack;
+                offlineCache.modules(cachedUser.getUid(), trackId, cachedModules -> {
+                    cachedData.modules = cachedModules;
+                    if (cachedTrack != null || (cachedModules != null && !cachedModules.isEmpty())) {
+                        progress.setVisibility(View.GONE);
+                        bindTrack(cachedData);
+                    }
+                    return kotlin.Unit.INSTANCE;
+                });
+                return kotlin.Unit.INSTANCE;
+            });
+        }
         withBearer(bearer -> {
             LmsApiService api = ApiClient.getLmsService();
             api.track(bearer, trackId).enqueue(new Callback<>() {
@@ -296,6 +315,11 @@ public class TrackLearnActivity extends AppCompatActivity {
                     progress.setVisibility(View.GONE);
                     LmsModels.TrackDetailEnvelope body = response.body();
                     if (response.isSuccessful() && body != null && body.ok && body.data != null) {
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null && offlineCache != null) {
+                            if (body.data.track != null) offlineCache.saveTrack(user.getUid(), body.data.track);
+                            if (body.data.modules != null) offlineCache.saveModules(user.getUid(), body.data.modules);
+                        }
                         bindTrack(body.data);
                         resumeProgress();
                     } else {
