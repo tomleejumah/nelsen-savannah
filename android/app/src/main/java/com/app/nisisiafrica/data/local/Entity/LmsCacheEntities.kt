@@ -54,6 +54,7 @@ data class LmsProgressCacheEntity(
     val lessonId: String,
     val trackId: String,
     val payloadJson: String,
+    val pendingBodyJson: String = "",
     val lessonPercent: Float,
     val contentPct: Float,
     val quizPct: Float,
