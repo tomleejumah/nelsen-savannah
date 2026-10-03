@@ -138,6 +138,14 @@ The exact native editor dependency must be approved before implementation.
 
 Android learning screens should remain responsive on slow or unavailable networks and clearly communicate loading state.
 
+### Course action menu
+
+- [ ] Replace stacked secondary course action buttons with a top-right **⋮ overflow menu**.
+- [ ] Move **Go to IDE** into the overflow menu when IDE is enabled.
+- [ ] Move **Leave Course** into the overflow menu.
+- [ ] Keep the primary learning/navigation action directly accessible instead of hiding it in the overflow menu.
+- [ ] Keep destructive actions such as leaving a course clearly identified and confirmed before execution.
+
 ### Loading UX
 
 - [ ] Show a spinner/progress state while loading course catalogs, tracks, course details, lessons, and study progress.
@@ -161,6 +169,7 @@ Android learning screens should remain responsive on slow or unavailable network
 - [ ] Pull relevant server-side progress/content changes and reconcile the local cache.
 - [ ] Make sync retry-safe/idempotent so repeated worker runs do not duplicate progress.
 - [ ] Expose syncing/synced/offline state where useful to the learner.
+- [ ] Show a persistent, compact Telegram-style **Offline / Waiting for network** indicator while connectivity is unavailable; remove it automatically when connectivity/sync recovers.
 - [ ] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
 
 ---
