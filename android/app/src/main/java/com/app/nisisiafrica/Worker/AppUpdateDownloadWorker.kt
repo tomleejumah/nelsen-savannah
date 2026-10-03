@@ -5,9 +5,6 @@ import android.os.Environment
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.app.nisisiafrica.Utils.AppUpdateManager
-import com.app.nisisiafrica.data.remote.ApiClient
-import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.tasks.await
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -31,15 +28,7 @@ class AppUpdateDownloadWorker(
         }
 
         return try {
-            val user = FirebaseAuth.getInstance().currentUser
-            val bearer = user?.getIdToken(false)?.await()?.token?.let { "Bearer $it" }
-            val envelope = if (bearer != null) {
-                ApiClient.getLmsService().getAppDownloadUrl(bearer).execute()
-            } else null
-            val signedUrl = envelope?.body()?.data?.downloadUrl
-            val url = signedUrl?.takeIf { it.isNotBlank() }
-                ?: "https://api.nelsen-savannah.co.ke/lms/app/android/download"
-
+            val url = "https://api.nelsen-savannah.co.ke/lms/app/android/download"
             val client = OkHttpClient()
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 if (!response.isSuccessful) return Result.retry()
