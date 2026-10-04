@@ -730,6 +730,15 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             sheet.dismiss();
             startActivity(new Intent(getActivity(), CreateEventActivity.class));
         });
+        View optGoLive = sheetView.findViewById(R.id.optGoLive);
+        optGoLive.setVisibility(Roles.canCreate() ? View.VISIBLE : View.GONE);
+        optGoLive.setOnClickListener(v -> {
+            if (!Roles.canCreate()) return;
+            sheet.dismiss();
+            Intent intent = new Intent(getActivity(), CreateEventActivity.class);
+            intent.putExtra(CreateEventActivity.EXTRA_LIVE_MODE, true);
+            startActivity(intent);
+        });
         sheetView.findViewById(R.id.optCreateStory).setOnClickListener(v -> {
             sheet.dismiss();
             startActivity(new Intent(getActivity(), CreateStoryActivity.class));

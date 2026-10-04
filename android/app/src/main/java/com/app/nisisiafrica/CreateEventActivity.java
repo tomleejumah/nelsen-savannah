@@ -15,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.Util;
 import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.LmsModels;
@@ -45,12 +46,16 @@ public class CreateEventActivity extends AppCompatActivity {
 
     public static final String EXTRA_COMMUNITY_ID = "extra_community_id";
     public static final String EXTRA_COMMUNITY_NAME = "extra_community_name";
+    public static final String EXTRA_LIVE_MODE = "extra_live_mode";
 
     private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink, etSeats, etPrice;
     private MaterialAutoCompleteTextView etProgram;
     private TextView tvDate, tvStart, tvEnd;
     private MaterialButton btnSave, btnModeOnline;
     private TextInputLayout tilLocation, tilMeetingLink;
+    private MaterialButtonToggleGroup toggleMode;
+    private View eventCommercialRow;
+    private boolean liveMode = false;
 
     private final Calendar dateCal = Calendar.getInstance();
     private boolean dateSet = false;
@@ -75,7 +80,16 @@ public class CreateEventActivity extends AppCompatActivity {
 
         communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
         communityName = getIntent().getStringExtra(EXTRA_COMMUNITY_NAME);
-        if (communityId != null && !communityId.isEmpty()) {
+        liveMode = getIntent().getBooleanExtra(EXTRA_LIVE_MODE, false);
+        if (liveMode && !Roles.canCreate()) {
+            Toast.makeText(this, "Only mentors and admins can start live sessions", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        if (liveMode) {
+            toolbar.setTitle("Link YouTube Live");
+            toolbar.setSubtitle("Nelsen YouTube channel");
+        } else if (communityId != null && !communityId.isEmpty()) {
             toolbar.setTitle(R.string.group_create_event);
             if (communityName != null && !communityName.isEmpty()) {
                 toolbar.setSubtitle(communityName);
@@ -96,6 +110,8 @@ public class CreateEventActivity extends AppCompatActivity {
         btnModeOnline = findViewById(R.id.btnModeOnline);
         tilLocation = findViewById(R.id.tilLocation);
         tilMeetingLink = findViewById(R.id.tilMeetingLink);
+        toggleMode = findViewById(R.id.toggleMode);
+        eventCommercialRow = findViewById(R.id.eventCommercialRow);
 
         ProgrammesDataSource.fetch(programmes -> {
             List<String> titles = new ArrayList<>();
@@ -114,7 +130,6 @@ public class CreateEventActivity extends AppCompatActivity {
         tilLocation = findViewById(R.id.tilLocation);
         tilMeetingLink = findViewById(R.id.tilMeetingLink);
 
-        MaterialButtonToggleGroup toggleMode = findViewById(R.id.toggleMode);
         toggleMode.check(R.id.btnModePhysical);
         toggleMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) return;
@@ -122,6 +137,16 @@ public class CreateEventActivity extends AppCompatActivity {
             tilMeetingLink.setVisibility(online ? View.VISIBLE : View.GONE);
             tilLocation.setVisibility(online ? View.GONE : View.VISIBLE);
         });
+
+        if (liveMode) {
+            toggleMode.check(R.id.btnModeOnline);
+            toggleMode.setVisibility(View.GONE);
+            tilLocation.setVisibility(View.GONE);
+            tilMeetingLink.setVisibility(View.VISIBLE);
+            tilMeetingLink.setHint("Nelsen YouTube Live URL");
+            if (eventCommercialRow != null) eventCommercialRow.setVisibility(View.GONE);
+            btnSave.setText("Link Live Session");
+        }
 
         tvDate.setOnClickListener(v -> pickDate());
         tvStart.setOnClickListener(v -> pickTime(true));
@@ -181,15 +206,19 @@ public class CreateEventActivity extends AppCompatActivity {
 
         long eventMillis = dateCal.getTimeInMillis();
 
-        boolean online = btnModeOnline.isChecked();
+        boolean online = liveMode || btnModeOnline.isChecked();
         String location = etLocation.getText() != null ? etLocation.getText().toString().trim() : "";
         String meetingLink = etMeetingLink.getText() != null ? etMeetingLink.getText().toString().trim() : "";
 
         if (online && meetingLink.isEmpty()) {
-            etMeetingLink.setError("Add a meeting link");
+            etMeetingLink.setError(liveMode ? "Add the Nelsen YouTube Live URL" : "Add a meeting link");
             return;
         }
-        if (!online && location.isEmpty()) {
+        if (liveMode && !isYoutubeUrl(meetingLink)) {
+            etMeetingLink.setError("Use a youtube.com or youtu.be link");
+            return;
+        }
+        if (!liveMode && !online && location.isEmpty()) {
             etLocation.setError("Add a location");
             return;
         }
@@ -209,7 +238,7 @@ public class CreateEventActivity extends AppCompatActivity {
 
         btnSave.setEnabled(false);
 
-        if (communityId != null && !communityId.isEmpty()) {
+        if (!liveMode && communityId != null && !communityId.isEmpty()) {
             saveCommunityEvent(title, description, location, meetingLink,
                     online ? "online" : "physical", eventMillis, program, seats, price);
             return;
@@ -225,9 +254,13 @@ public class CreateEventActivity extends AppCompatActivity {
                 location,
                 meetingLink,
                 program,
-                seats,
-                price
+                liveMode ? 0 : seats,
+                liveMode ? "" : price
         );
+        if (liveMode) {
+            body.eventType = "live";
+            body.liveStatus = "scheduled";
+        }
 
         FirebaseUser authUser = FirebaseAuth.getInstance().getCurrentUser();
         if (authUser == null) {
@@ -244,11 +277,15 @@ public class CreateEventActivity extends AppCompatActivity {
                     if (ok) {
                         WorkManager.getInstance(getApplicationContext())
                                 .enqueue(new OneTimeWorkRequest.Builder(EventReminderWorker.class).build());
-                        Toast.makeText(this, "Event published to Hub & site", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                liveMode ? "Live session linked" : "Event published to Hub & site",
+                                Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
                         btnSave.setEnabled(true);
-                        Toast.makeText(this, "Failed to create event", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                liveMode ? "Failed to link live session" : "Failed to create event",
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
             });
@@ -256,6 +293,20 @@ public class CreateEventActivity extends AppCompatActivity {
             btnSave.setEnabled(true);
             Toast.makeText(this, "Auth failed", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private static boolean isYoutubeUrl(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return false;
+        try {
+            android.net.Uri uri = android.net.Uri.parse(raw.trim());
+            String host = uri.getHost();
+            if (host == null) return false;
+            host = host.toLowerCase(Locale.US);
+            if (host.startsWith("www.")) host = host.substring(4);
+            return "youtube.com".equals(host) || host.endsWith(".youtube.com") || "youtu.be".equals(host);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private void saveCommunityEvent(
