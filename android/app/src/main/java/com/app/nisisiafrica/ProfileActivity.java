@@ -220,49 +220,26 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         joinedTittle = findViewById(R.id.joinedTittle);
 
         if (isFromMentor) {
-            setupMentorRating(id);
-            FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
-                        if (mentors != null) {
-
-                            Glide.with(ProfileActivity.this)
-                                    .load(mentors.getMentorImageUrl())
-                                    .apply(RequestOptions.circleCropTransform())
-                                    .into(imgDp);
-                            tvProfileName.setText(mentors.getMentorName());
-                            tvRole.setText("Mentor");
-
-                            FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(
-                                    Objects.requireNonNull(id),
-                                    user -> {
-                                        long lastLoginMillis = user.getLastLogin();
-                                        Date lastLoginDate = new Date(lastLoginMillis);
-                                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                                        String formattedDate = sdf.format(lastLoginDate);
-                                        joinedTittle.setText("Last Login");
-                                        tvJoined.setText(formattedDate);
-                                        tvAbout.setText(mentors.getMentorDescription());
-                                        tagMentorSchool(id, mentors.getMentorDescription());
-                                        return Unit.INSTANCE;
-                                    }, e -> {
-                                        e.printStackTrace();
-                                        return Unit.INSTANCE;
-                                    });
-
-//            tvDescription.setText(mentors.getMentorDescription());
-//            tv_username.setText(mentors.getMentorName());
-//            loadAndStyle(mentors.getMentorImageUrl());
-                        } else {
-                            // Handle null case
-                            blurViewDesc.setVisibility(View.GONE);
-                            tvDescription.setText("");
-                            tv_username.setText("");
-                        }
-                        return Unit.INSTANCE;
-                    }, e -> {
-                        Log.d(TAG, "onCreate: Failed to fetch mentor" + e.getMessage());
-                        return Unit.INSTANCE;
+            if (TextUtils.isEmpty(id)) {
+                renderMentorUnavailable();
+            } else {
+                // A Mentor role can be assigned from web/admin without ever creating
+                // the legacy /mentors/{uid} record. Render the canonical user first,
+                // then overlay mentor-specific fields when they exist.
+                setupMentorRating(id);
+                loadMentorUserBaseline(id);
+                FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
+                    if (mentors != null) {
+                        renderMentorDetails(mentors);
+                    } else {
+                        Log.i(TAG, "Mentor metadata missing for " + id + "; using user profile");
                     }
-            );
+                    return Unit.INSTANCE;
+                }, e -> {
+                    Log.w(TAG, "Mentor metadata unavailable for " + id, e);
+                    return Unit.INSTANCE;
+                });
+            }
         } else {
             if (!isGeneric) {
                 sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
@@ -369,6 +346,83 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             menuBtn.setOnClickListener(v -> showToolsSheet());
         }
         initMediaGrid();
+    }
+
+    private void loadMentorUserBaseline(@NonNull String mentorId) {
+        FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(mentorId, data -> {
+            if (data == null) return Unit.INSTANCE;
+            userData = data;
+
+            String first = data.getFirstName() == null ? "" : data.getFirstName().trim();
+            String last = data.getLastName() == null ? "" : data.getLastName().trim();
+            String displayName = (first + " " + last).trim();
+            if (displayName.isEmpty()) displayName = "Mentor";
+
+            tvProfileName.setText(displayName);
+            tvRole.setText("Mentor");
+            tvAbout.setText(TextUtils.isEmpty(data.getBio()) ? "" : data.getBio());
+            tvDescription.setText(TextUtils.isEmpty(data.getBio()) ? "" : data.getBio());
+            blurViewDesc.setVisibility(TextUtils.isEmpty(data.getBio()) ? View.GONE : View.VISIBLE);
+
+            Glide.with(ProfileActivity.this)
+                    .load(data.getPhotoUrl())
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(imgDp);
+
+            long lastLoginMillis = data.getLastLogin();
+            if (lastLoginMillis > 0L) {
+                joinedTittle.setText("Last Login");
+                tvJoined.setText(new SimpleDateFormat(
+                        "dd/MM/yyyy HH:mm", Locale.getDefault())
+                        .format(new Date(lastLoginMillis)));
+            } else {
+                joinedTittle.setText("");
+                tvJoined.setText("");
+            }
+
+            tagMentorSchool(mentorId, data.getBio());
+            return Unit.INSTANCE;
+        }, e -> {
+            Log.w(TAG, "User profile unavailable for mentor " + mentorId, e);
+            return Unit.INSTANCE;
+        });
+    }
+
+    private void renderMentorDetails(@NonNull MentorItem mentor) {
+        String name = mentor.getMentorName();
+        String description = mentor.getMentorDescription();
+
+        if (!TextUtils.isEmpty(name)) tvProfileName.setText(name);
+        tvRole.setText("Mentor");
+        if (!TextUtils.isEmpty(description)) {
+            tvAbout.setText(description);
+            tvDescription.setText(description);
+            blurViewDesc.setVisibility(View.VISIBLE);
+        }
+
+        if (!TextUtils.isEmpty(mentor.getMentorImageUrl())) {
+            Glide.with(ProfileActivity.this)
+                    .load(mentor.getMentorImageUrl())
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(imgDp);
+        }
+
+        tagMentorSchool(id, description);
+    }
+
+    private void renderMentorUnavailable() {
+        tvProfileName.setText("Mentor");
+        tvRole.setText("Mentor");
+        tvAbout.setText("");
+        tvDescription.setText("");
+        tvJoined.setText("");
+        joinedTittle.setText("");
+        blurViewDesc.setVisibility(View.GONE);
+        Glide.with(this).load(R.drawable.ic_person).into(imgDp);
     }
 
     /** Message (1:1 chat) or Book — replaces the old full-width Book Now FAB. */
