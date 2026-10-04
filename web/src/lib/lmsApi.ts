@@ -1585,6 +1585,10 @@ export type HubEventDto = {
   price: string;
   facilitators?: string[];
   isPublic?: boolean;
+  audienceScope?: "course" | "school" | "platform" | null;
+  schoolId?: string;
+  trackId?: string;
+  liveNotifiedAt?: number | null;
 };
 
 export async function fetchPublicHubEvents() {
