@@ -21,6 +21,7 @@ import {
   fetchLmsMe,
   fetchMyEnrollments,
   fetchMyPurchases,
+  patchMyProfile,
   type EnrollmentDto,
   type MeDto,
   type PurchaseDto,
@@ -48,6 +49,7 @@ function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState("");
+  const [bioDraft, setBioDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
 
@@ -69,6 +71,7 @@ function ProfilePage() {
       } else {
         setMe(meEnv.data);
         setNameDraft(meEnv.data.displayName || u.displayName || "");
+        setBioDraft(meEnv.data.bio || "");
       }
       setEnrollments(enrollEnv.data?.enrollments || []);
       setPurchases(payEnv.data?.purchases || []);
@@ -94,6 +97,7 @@ function ProfilePage() {
         setEnrollments([]);
         setPurchases([]);
         setNameDraft("");
+        setBioDraft("");
       }
     });
   }, [load]);
@@ -111,10 +115,18 @@ function ProfilePage() {
     setSavedNote(null);
     try {
       await updateProfile(user, { displayName: nextName });
-      await user.getIdToken(true);
+      const token = await user.getIdToken(true);
+      const saved = await patchMyProfile(token, {
+        displayName: nextName,
+        bio: bioDraft.trim(),
+        photoUrl: user.photoURL || me?.photoUrl || "",
+      });
+      if (!saved.ok || !saved.data) {
+        throw new Error(saved.error || "Could not save profile");
+      }
       const gen = getAuthGeneration();
       await load(user, gen);
-      setSavedNote("Name updated");
+      setSavedNote("Profile updated");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save name");
     } finally {
@@ -214,6 +226,17 @@ function ProfilePage() {
               />
             </label>
             <label className="block text-sm">
+              <span className="font-medium text-foreground">Bio</span>
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                className="mt-1.5 w-full resize-y rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+                placeholder="Tell learners a little about yourself"
+              />
+            </label>
+            <label className="block text-sm">
               <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                 <Mail className="h-3.5 w-3.5 text-ember" /> Email
               </span>
@@ -231,7 +254,7 @@ function ProfilePage() {
               disabled={saving}
               className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save name"}
+              {saving ? "Saving…" : "Save profile"}
             </button>
           </form>
         </section>
