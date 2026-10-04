@@ -1,5 +1,6 @@
 package com.app.nisisiafrica.data.remote;
 
+import com.app.nisisiafrica.BuildConfig;
 import com.app.nisisiafrica.Interfaces.InquiryApiService;
 import com.app.nisisiafrica.Interfaces.LmsApiService;
 import com.app.nisisiafrica.Interfaces.NotificationApiService;
@@ -18,7 +19,13 @@ public class ApiClient {
     public static Retrofit getClient() {
         if (retrofit == null) {
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-            interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            // Never log response bodies: /lms/youtube/live returns an ephemeral
+            // RTMPS endpoint containing the YouTube stream key.
+            interceptor.setLevel(
+                    BuildConfig.DEBUG
+                            ? HttpLoggingInterceptor.Level.BASIC
+                            : HttpLoggingInterceptor.Level.NONE
+            );
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(interceptor)
