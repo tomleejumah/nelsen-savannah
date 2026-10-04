@@ -19,6 +19,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <queries>
@@ -72,6 +73,11 @@
             android:name=".LiveViewerActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".GoLiveActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.NelsenSavannah" />
 
         <service
             android:name=".Service.FCMService"
