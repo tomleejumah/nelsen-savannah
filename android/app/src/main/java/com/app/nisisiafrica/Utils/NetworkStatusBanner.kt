@@ -12,6 +12,8 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.setPadding
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
@@ -45,8 +47,23 @@ class NetworkStatusBanner(private val activity: Activity) {
     fun start() {
         if (banner.parent == null) {
             val root = activity.findViewById<ViewGroup>(android.R.id.content)
-            root.addView(banner, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+            val params = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
+            )
+            root.addView(banner, params)
+            ViewCompat.setOnApplyWindowInsetsListener(banner) { view, insets ->
+                val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                (view.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+                    if (lp.bottomMargin != nav.bottom) {
+                        lp.bottomMargin = nav.bottom
+                        view.layoutParams = lp
+                    }
+                }
+                insets
+            }
+            ViewCompat.requestApplyInsets(banner)
         }
         if (!registered) {
             try { cm.registerDefaultNetworkCallback(callback); registered = true } catch (_: Exception) {}
