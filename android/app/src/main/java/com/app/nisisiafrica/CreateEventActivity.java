@@ -90,8 +90,12 @@ public class CreateEventActivity extends AppCompatActivity {
         communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
         communityName = getIntent().getStringExtra(EXTRA_COMMUNITY_NAME);
         liveMode = getIntent().getBooleanExtra(EXTRA_LIVE_MODE, false);
-        if (liveMode && !Roles.canCreate()) {
-            Toast.makeText(this, "Only mentors and admins can start live sessions", Toast.LENGTH_SHORT).show();
+        if (!Roles.canCreate()) {
+            Toast.makeText(
+                    this,
+                    "Only mentors, school admins and super admins can create events",
+                    Toast.LENGTH_SHORT
+            ).show();
             finish();
             return;
         }
