@@ -15,8 +15,9 @@ export type AppEvent = {
   menteeId: string;
   mentorName: string;
   menteeName: string;
-  /** 0 upcoming · 1 completed · 2 today */
+  /** Legacy numeric event state. Live events also expose liveStatus. */
   status: number;
+  liveStatus?: "scheduled" | "live" | "ended" | null;
   description: string | null;
   mode: "physical" | "online";
   location: string;
@@ -33,7 +34,40 @@ export function eventFormat(e: AppEvent): "In person" | "Online" {
   return e.mode === "online" ? "Online" : "In person";
 }
 
+export function isLiveEvent(e: AppEvent): boolean {
+  return e.eventType?.toLowerCase() === "live";
+}
+
+export function liveStatusLabel(e: AppEvent): "SCHEDULED LIVE" | "LIVE NOW" | "REPLAY" {
+  if (e.liveStatus === "live") return "LIVE NOW";
+  if (e.liveStatus === "ended") return "REPLAY";
+  return "SCHEDULED LIVE";
+}
+
+export function youtubeVideoId(raw: string): string {
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (host === "youtu.be") return url.pathname.split("/").filter(Boolean)[0] || "";
+    if (host === "youtube.com" || host.endsWith(".youtube.com")) {
+      const watchId = url.searchParams.get("v");
+      if (watchId) return watchId;
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (["embed", "live", "shorts"].includes(parts[0] || "")) return parts[1] || "";
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+export function youtubeEmbedUrl(raw: string): string {
+  const id = youtubeVideoId(raw);
+  return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?playsinline=1&rel=0&modestbranding=1` : "";
+}
+
 export function eventVenue(e: AppEvent): string {
+  if (isLiveEvent(e)) return "YouTube Live";
   if (e.mode === "online") return e.meetingLink ? "Online meeting" : "Online";
   return e.location || "TBA";
 }

@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.app.nisisiafrica.R
+import com.app.nisisiafrica.Utils.EventActions
 import com.app.nisisiafrica.data.Model.Event
 import com.github.vipulasri.timelineview.TimelineView
 import com.google.android.material.button.MaterialButton
@@ -102,8 +103,16 @@ class EventAdapter(
                 tvProgramTag.visibility = View.GONE
             }
 
+            val liveEvent = EventActions.isLive(event)
+            val liveStatus = EventActions.liveStatus(event)
             val online = "online".equals(event.mode, ignoreCase = true)
-            tvFormatTag.text = if (online) "ONLINE" else "IN PERSON"
+            tvFormatTag.text = if (liveEvent) {
+                when (liveStatus) {
+                    "live" -> "LIVE NOW"
+                    "ended" -> "REPLAY"
+                    else -> "SCHEDULED LIVE"
+                }
+            } else if (online) "ONLINE" else "IN PERSON"
 
             val time = when {
                 event.startTime.isNotBlank() && event.endTime.isNotBlank() ->
@@ -127,7 +136,21 @@ class EventAdapter(
                 tvEventPrice.visibility = View.GONE
             }
 
-            if (event.reservedByMe) {
+            if (liveEvent) {
+                seatsBlock.visibility = View.GONE
+                tvEventPrice.visibility = View.GONE
+                tvEventFootnote.text = when (liveStatus) {
+                    "live" -> "Streaming now on Nelsen"
+                    "ended" -> "Replay available"
+                    else -> "Starts at the scheduled time"
+                }
+                btnReserve.isEnabled = event.meetingLink.isNotBlank()
+                btnReserve.text = when (liveStatus) {
+                    "live" -> "Watch live"
+                    "ended" -> "Watch replay"
+                    else -> "View live"
+                }
+            } else if (event.reservedByMe) {
                 seatsBlock.visibility = View.GONE
                 tvEventFootnote.text = itemView.context.getString(R.string.home_reserved)
                 btnReserve.isEnabled = false
@@ -163,7 +186,9 @@ class EventAdapter(
             val open = { onEventClick?.onClick(event) }
             eventCard.setOnClickListener { open() }
             btnReserve.setOnClickListener {
-                if (event.reservedByMe) {
+                if (liveEvent) {
+                    onEventClick?.onClick(event) ?: EventActions.openLiveViewer(itemView.context, event)
+                } else if (event.reservedByMe) {
                     open()
                 } else if (event.seats > 0 && event.eventType != "announcement") {
                     onReserveClick?.onClick(event) ?: open()
