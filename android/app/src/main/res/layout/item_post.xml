@@ -135,14 +135,6 @@
                 android:textStyle="bold"
                 tools:text="388" />
 
-            <ImageView
-                android:id="@+id/btnDownvote"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="@null"
-                android:rotation="180"
-                android:src="@drawable/ic_like"
-                app:tint="@color/muted" />
         </LinearLayout>
 
         <LinearLayout
