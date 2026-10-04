@@ -22,6 +22,14 @@ import {
 /** Re-sign this many seconds before the current URL dies. */
 const RESIGN_LEAD_SECONDS = 60;
 
+function formatMediaTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const total = Math.floor(seconds);
+  const minutes = Math.floor(total / 60);
+  const secs = String(total % 60).padStart(2, "0");
+  return `${minutes}:${secs}`;
+}
+
 /**
  * Playback URLs are deliberately short-lived, so the player has to be able to
  * swap in a fresh signature without losing the viewer's position. Seeking issues
@@ -43,6 +51,12 @@ function SignedMediaPlayer({
   const [url, setUrl] = useState(lesson.playbackUrl || lesson.contentUrl || "");
   const [expiresAt, setExpiresAt] = useState(lesson.playbackExpiresAt ?? null);
   const [refreshing, setRefreshing] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [speed, setSpeed] = useState(1);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
   const lastReport = useRef(0);
   const mediaId = lesson.mediaId ?? null;
   const isPdf = lesson.type === "pdf" || lesson.isPdf === true || /\.pdf(\?|$)/i.test(url);
@@ -50,7 +64,14 @@ function SignedMediaPlayer({
   useEffect(() => {
     setUrl(lesson.playbackUrl || lesson.contentUrl || "");
     setExpiresAt(lesson.playbackExpiresAt ?? null);
-  }, [lesson.playbackUrl, lesson.contentUrl, lesson.playbackExpiresAt]);
+    setPosition(0);
+    setDuration(0);
+    setPlaying(false);
+  }, [lesson.lessonId, lesson.playbackUrl, lesson.contentUrl, lesson.playbackExpiresAt]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = speed;
+  }, [speed]);
 
   const resign = useCallback(async () => {
     if (!user || !mediaId || refreshing) return;
@@ -97,6 +118,44 @@ function SignedMediaPlayer({
     onWatchProgress({ watchSeconds: watched, watchPct: pct });
   }
 
+  function togglePlay() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused || video.ended) void video.play();
+    else video.pause();
+  }
+
+  function seekBy(seconds: number) {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.duration)) return;
+    video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + seconds));
+    setPosition(video.currentTime);
+  }
+
+  function setVideoVolume(next: number) {
+    const video = videoRef.current;
+    if (!video) return;
+    const value = Math.max(0, Math.min(1, next));
+    video.volume = value;
+    video.muted = value === 0;
+    setVolume(value);
+    setMuted(video.muted);
+  }
+
+  function toggleMute() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  }
+
+  async function toggleFullscreen() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else if (video.requestFullscreen) await video.requestFullscreen();
+  }
+
   const playable = !isPdf && (/\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/"));
 
   return (
@@ -112,16 +171,98 @@ function SignedMediaPlayer({
         />
       ) : null}
       {playable ? (
-        <video
-          ref={videoRef}
-          className="w-full rounded-xl bg-black"
-          controls
-          src={url || undefined}
-          onError={() => void resign()}
-          onTimeUpdate={reportWatch}
-          onPause={reportWatch}
-          onEnded={reportWatch}
-        />
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-black">
+          <video
+            ref={videoRef}
+            className="aspect-video w-full bg-black"
+            src={url || undefined}
+            playsInline
+            onError={() => void resign()}
+            onLoadedMetadata={(e) => {
+              setDuration(e.currentTarget.duration || 0);
+              e.currentTarget.playbackRate = speed;
+            }}
+            onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
+            onPlay={() => setPlaying(true)}
+            onPause={(e) => {
+              setPlaying(false);
+              reportWatch();
+              setPosition(e.currentTarget.currentTime);
+            }}
+            onTimeUpdate={(e) => {
+              setPosition(e.currentTarget.currentTime);
+              reportWatch();
+            }}
+            onEnded={(e) => {
+              setPlaying(false);
+              setPosition(e.currentTarget.duration || e.currentTarget.currentTime);
+              reportWatch();
+            }}
+            onVolumeChange={(e) => {
+              setMuted(e.currentTarget.muted);
+              setVolume(e.currentTarget.volume);
+            }}
+          />
+          <div className="space-y-3 bg-card px-3 py-3 text-foreground">
+            <input
+              aria-label="Video progress"
+              type="range"
+              min={0}
+              max={Math.max(duration, 0)}
+              step={0.1}
+              value={Math.min(position, duration || 0)}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                if (videoRef.current) videoRef.current.currentTime = next;
+                setPosition(next);
+              }}
+              className="w-full accent-ember"
+            />
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <button type="button" onClick={() => seekBy(-10)} className="rounded-full border border-border px-3 py-1.5 font-semibold">
+                −10s
+              </button>
+              <button type="button" onClick={togglePlay} className="rounded-full bg-ember-gradient px-4 py-1.5 font-semibold text-maroon-foreground">
+                {playing ? "Pause" : "Play"}
+              </button>
+              <button type="button" onClick={() => seekBy(10)} className="rounded-full border border-border px-3 py-1.5 font-semibold">
+                +10s
+              </button>
+              <span className="min-w-[72px] text-muted-foreground">
+                {formatMediaTime(position)} / {formatMediaTime(duration)}
+              </span>
+              <button type="button" onClick={toggleMute} className="rounded-full border border-border px-3 py-1.5 font-semibold">
+                {muted ? "Unmute" : "Mute"}
+              </button>
+              <label className="flex items-center gap-2 text-muted-foreground">
+                Volume
+                <input
+                  aria-label="Volume"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={muted ? 0 : volume}
+                  onChange={(e) => setVideoVolume(Number(e.target.value))}
+                  className="w-20 accent-ember"
+                />
+              </label>
+              <select
+                aria-label="Playback speed"
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                className="rounded-full border border-border bg-background px-3 py-1.5 font-semibold"
+              >
+                {[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => (
+                  <option key={value} value={value}>{value}x</option>
+                ))}
+              </select>
+              <button type="button" onClick={() => void toggleFullscreen()} className="rounded-full border border-border px-3 py-1.5 font-semibold">
+                Fullscreen
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
       <a
         href={url || "#"}
@@ -137,9 +278,6 @@ function SignedMediaPlayer({
             ? "Refreshing secure link…"
             : "This link is time-limited and refreshes automatically while you watch."}
         </p>
-      ) : null}
-      {ideOpen && user && track?.ideEnabled ? (
-        <CodeWorkspace user={user} track={track} onClose={() => setIdeOpen(false)} />
       ) : null}
     </div>
   );
@@ -705,6 +843,9 @@ function LessonPage() {
           </>
         ) : null}
       </div>
-</div>
+      {ideOpen && user && track?.ideEnabled ? (
+        <CodeWorkspace user={user} track={track} onClose={() => setIdeOpen(false)} />
+      ) : null}
+    </div>
   );
 }

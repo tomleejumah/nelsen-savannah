@@ -19,6 +19,7 @@ import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -30,6 +31,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Repository.LmsCacheBridge;
@@ -85,6 +88,15 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private LinearLayout lessonsContainer;
     private LinearLayout lessonPanel;
     private TextView tvScreenTitle;
+    private View headerContent;
+    private View lessonsSheet;
+    private View videoControls;
+    private TextView btnRewind10;
+    private TextView btnMuteVideo;
+    private TextView btnSpeedVideo;
+    private TextView btnForward10;
+    private TextView btnFullscreenVideo;
+    private SeekBar volumeSeek;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService pdfExec = Executors.newSingleThreadExecutor();
@@ -97,6 +109,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private String activeLessonId;
     private long releaseAt;
     private LmsCacheBridge offlineCache;
+    private boolean cachedLessonsDisplayed;
     private long dueAt;
     private int pdfMaxPage;
     private long lastPdfReport;
@@ -104,6 +117,12 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private final Map<String, Float> lessonPercents = new LinkedHashMap<>();
     private final List<LmsModels.LessonDto> lessons = new ArrayList<>();
     private LmsModels.CohortRunDto cohortRun;
+    private MediaPlayer activeMediaPlayer;
+    private boolean videoMuted;
+    private boolean videoFullscreen;
+    private float videoVolume = 1f;
+    private final float[] videoSpeeds = new float[]{0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f};
+    private int videoSpeedIndex = 2;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -112,8 +131,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chapter_learn);
         networkStatusBanner = new NetworkStatusBanner(this);
         networkStatusBanner.start();
-        View headerContent = findViewById(R.id.headerContent);
-        View lessonsSheet = findViewById(R.id.lessonsSheet);
+        headerContent = findViewById(R.id.headerContent);
+        lessonsSheet = findViewById(R.id.lessonsSheet);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             headerContent.setPadding(
@@ -156,6 +175,14 @@ public class ChapterLearnActivity extends AppCompatActivity {
         tvChapterDoes = findViewById(R.id.tvChapterDoes);
         lessonsContainer = findViewById(R.id.lessonsContainer);
         lessonPanel = findViewById(R.id.lessonPanel);
+        videoControls = findViewById(R.id.videoControls);
+        btnRewind10 = findViewById(R.id.btnRewind10);
+        btnMuteVideo = findViewById(R.id.btnMuteVideo);
+        btnSpeedVideo = findViewById(R.id.btnSpeedVideo);
+        btnForward10 = findViewById(R.id.btnForward10);
+        btnFullscreenVideo = findViewById(R.id.btnFullscreenVideo);
+        volumeSeek = findViewById(R.id.volumeSeek);
+        setupVideoControls();
 
         if (!TextUtils.isEmpty(does)) {
             tvChapterDoes.setVisibility(View.VISIBLE);
@@ -235,6 +262,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             offlineCache.moduleLessons(current.getUid(), moduleId, cached -> {
                 if (cached != null && !cached.isEmpty()) {
                     progress.setVisibility(View.GONE);
+                    cachedLessonsDisplayed = true;
                     renderLessons(new ArrayList<>(cached));
                 }
                 return kotlin.Unit.INSTANCE;
@@ -249,8 +277,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                         LmsModels.ModuleDetailEnvelope body = response.body();
                         if (!response.isSuccessful() || body == null || !body.ok
                                 || body.data == null || body.data.lessons == null) {
-                            Toast.makeText(ChapterLearnActivity.this,
-                                    "Could not load chapter", Toast.LENGTH_SHORT).show();
+                            if (!cachedLessonsDisplayed) showChapterLoadError();
                             return;
                         }
                         if (body.data.module != null) {
@@ -274,13 +301,23 @@ public class ChapterLearnActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {
                         progress.setVisibility(View.GONE);
-                        Toast.makeText(ChapterLearnActivity.this,
-                                "Network error", Toast.LENGTH_SHORT).show();
+                        if (!cachedLessonsDisplayed) showChapterLoadError();
                     }
                 }));
     }
 
+    private void showChapterLoadError() {
+        progress.setVisibility(View.GONE);
+        tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setText("Could not load this chapter. Tap to retry.");
+        tvPlayerPlaceholder.setOnClickListener(v -> {
+            tvPlayerPlaceholder.setOnClickListener(null);
+            loadProgressThenModule();
+        });
+    }
+
     private void renderLessons(List<LmsModels.LessonDto> list) {
+        tvPlayerPlaceholder.setOnClickListener(null);
         lessons.clear();
         lessonsContainer.removeAllViews();
         long now = System.currentTimeMillis();
@@ -430,16 +467,118 @@ public class ChapterLearnActivity extends AppCompatActivity {
         return url != null && url.matches("(?i).*\\.pdf(\\?.*)?$");
     }
 
+    private void setupVideoControls() {
+        btnRewind10.setOnClickListener(v -> seekVideoBy(-10_000));
+        btnForward10.setOnClickListener(v -> seekVideoBy(10_000));
+        btnMuteVideo.setOnClickListener(v -> {
+            videoMuted = !videoMuted;
+            applyVideoVolume();
+        });
+        btnSpeedVideo.setOnClickListener(v -> {
+            videoSpeedIndex = (videoSpeedIndex + 1) % videoSpeeds.length;
+            applyPlaybackSpeed();
+        });
+        btnFullscreenVideo.setOnClickListener(v -> setVideoFullscreen(!videoFullscreen));
+        volumeSeek.setMax(100);
+        volumeSeek.setProgress(100);
+        volumeSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
+                if (!fromUser) return;
+                videoVolume = value / 100f;
+                videoMuted = value == 0;
+                applyVideoVolume();
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        updateVideoControlLabels();
+    }
+
+    private void seekVideoBy(int deltaMs) {
+        if (videoView == null) return;
+        int duration = videoView.getDuration();
+        int next = Math.max(0, videoView.getCurrentPosition() + deltaMs);
+        if (duration > 0) next = Math.min(duration, next);
+        videoView.seekTo(next);
+    }
+
+    private void applyVideoVolume() {
+        if (activeMediaPlayer != null) {
+            float level = videoMuted ? 0f : videoVolume;
+            activeMediaPlayer.setVolume(level, level);
+        }
+        updateVideoControlLabels();
+    }
+
+    private void applyPlaybackSpeed() {
+        float speed = videoSpeeds[videoSpeedIndex];
+        if (activeMediaPlayer != null) {
+            try {
+                activeMediaPlayer.setPlaybackParams(activeMediaPlayer.getPlaybackParams().setSpeed(speed));
+            } catch (Exception ignored) {
+                // Device/player does not support changing speed for this stream.
+            }
+        }
+        updateVideoControlLabels();
+    }
+
+    private void updateVideoControlLabels() {
+        if (btnMuteVideo != null) btnMuteVideo.setText(videoMuted ? "Unmute" : "Mute");
+        if (btnSpeedVideo != null) {
+            float speed = videoSpeeds[videoSpeedIndex];
+            String label = speed == Math.round(speed)
+                    ? String.format(Locale.US, "%.0fx", speed)
+                    : String.format(Locale.US, "%.2fx", speed).replace("0x", "x");
+            btnSpeedVideo.setText(label);
+        }
+        if (btnFullscreenVideo != null) btnFullscreenVideo.setText(videoFullscreen ? "Exit" : "Full");
+    }
+
+    private void setVideoFullscreen(boolean fullscreen) {
+        if (playerFrame == null || headerContent == null || lessonsSheet == null) return;
+        videoFullscreen = fullscreen;
+        headerContent.setVisibility(fullscreen ? View.GONE : View.VISIBLE);
+        lessonsSheet.setVisibility(fullscreen ? View.GONE : View.VISIBLE);
+
+        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) playerFrame.getLayoutParams();
+        if (fullscreen) {
+            lp.topToBottom = ConstraintSet.UNSET;
+            lp.bottomToTop = ConstraintSet.UNSET;
+            lp.topToTop = ConstraintSet.PARENT_ID;
+            lp.bottomToBottom = ConstraintSet.PARENT_ID;
+        } else {
+            lp.topToTop = ConstraintSet.UNSET;
+            lp.bottomToBottom = ConstraintSet.UNSET;
+            lp.topToBottom = R.id.headerContent;
+            lp.bottomToTop = R.id.lessonsSheet;
+        }
+        playerFrame.setLayoutParams(lp);
+
+        WindowInsetsControllerCompat controller =
+                ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (controller != null) {
+            if (fullscreen) controller.hide(WindowInsetsCompat.Type.systemBars());
+            else controller.show(WindowInsetsCompat.Type.systemBars());
+        }
+        updateVideoControlLabels();
+    }
+
     private void playUrl(String url) {
         hidePdf();
         tvPlayerPlaceholder.setVisibility(View.GONE);
         if (tvPageHint != null) tvPageHint.setVisibility(View.GONE);
         videoView.setVisibility(View.VISIBLE);
+        videoControls.setVisibility(View.VISIBLE);
         MediaController controller = new MediaController(this);
         controller.setAnchorView(videoView);
         videoView.setMediaController(controller);
         videoView.setVideoURI(Uri.parse(url));
         videoView.setOnPreparedListener((MediaPlayer mp) -> {
+            activeMediaPlayer = mp;
+            applyVideoVolume();
+            applyPlaybackSpeed();
             mp.start();
             lastWatchReport = 0;
             mainHandler.removeCallbacks(watchTick);
@@ -454,6 +593,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     }
 
     private void openPdf(String url, int lastPage) {
+        if (videoFullscreen) setVideoFullscreen(false);
         hideVideo();
         pdfView.setVisibility(View.VISIBLE);
         tvPlayerPlaceholder.setVisibility(View.VISIBLE);
@@ -769,6 +909,9 @@ public class ChapterLearnActivity extends AppCompatActivity {
 
     private void hideVideo() {
         stopWatchLoop();
+        if (videoFullscreen) setVideoFullscreen(false);
+        activeMediaPlayer = null;
+        if (videoControls != null) videoControls.setVisibility(View.GONE);
         if (videoView != null) {
             videoView.stopPlayback();
             videoView.setVisibility(View.GONE);
@@ -795,11 +938,16 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private void withBearer(BearerAction action) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
+            if (progress != null) progress.setVisibility(View.GONE);
             Toast.makeText(this, "Sign in required", Toast.LENGTH_SHORT).show();
             return;
         }
-        user.getIdToken(false).addOnSuccessListener(r ->
-                action.run("Bearer " + r.getToken()));
+        user.getIdToken(false)
+                .addOnSuccessListener(r -> action.run("Bearer " + r.getToken()))
+                .addOnFailureListener(e -> {
+                    if (progress != null) progress.setVisibility(View.GONE);
+                    if (!cachedLessonsDisplayed) showChapterLoadError();
+                });
     }
 
     @Override
@@ -807,6 +955,15 @@ public class ChapterLearnActivity extends AppCompatActivity {
         super.onPause();
         reportVideoPosition(true);
         stopWatchLoop();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (videoFullscreen) {
+            setVideoFullscreen(false);
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override
