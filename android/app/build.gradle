@@ -241,6 +241,9 @@ dependencies {
 
     implementation("io.github.oothp:android-pdf-viewer:3.2.0-beta06")
 
+    // Camera + microphone publisher for YouTube RTMPS live ingest.
+    implementation 'com.github.pedroSG94.RootEncoder:library:2.8.1'
+
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
 
