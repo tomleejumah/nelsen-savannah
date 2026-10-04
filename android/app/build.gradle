@@ -155,6 +155,9 @@ dependencies {
     implementation libs.gson
     implementation libs.work.runtime
 
+    // Native YouTube Live publisher — camera/mic encode directly to YouTube RTMPS.
+    implementation "com.github.pedroSG94.RootEncoder:library:2.8.1"
+
     // Native course IDE
     implementation(platform('io.github.rosemoe:editor-bom:0.23.7'))
     implementation 'io.github.rosemoe:editor'
