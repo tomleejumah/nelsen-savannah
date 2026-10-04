@@ -214,6 +214,16 @@ Android can use the native video player controls while Web exposes equivalent co
 
 **Approved architecture:** Only Mentor, SchoolAdmin, and Admin roles may create/start a live session. Mentees are viewers only. All live broadcasts use the single Nelsen-owned YouTube channel; creators do not connect personal YouTube channels.
 
+### Future school-owned YouTube channels
+
+For the current rollout, Nelsen owns the channel and therefore retains the platform's learning-video/replay library. Multi-school channel ownership is a later Super Admin milestone.
+
+- [ ] Add optional YouTube channel connection/configuration when a Super Admin creates or manages a school.
+- [ ] Allow each school to use its own YouTube channel for school-owned live sessions and replays.
+- [ ] Keep the Nelsen-owned YouTube channel as the default/fallback for schools without a connected channel.
+- [ ] Store school-level channel ownership/connection metadata securely; never expose YouTube OAuth credentials or stream keys to learner clients.
+- [ ] Route live creation, replay ownership, moderation, and history to the correct school channel.
+- [ ] Add channel connection/health/reconnect controls to the Super Admin school dashboard.
 
 Nelsen will **not process, relay, transcode, or store the live video stream**.
 
@@ -255,13 +265,18 @@ FCM
 Users
 ```
 
-### Mentee
+### Hosts — Mentor / SchoolAdmin / Admin
 
 - [ ] Add **Go Live** UI.
 - [ ] Create/link a YouTube Live session.
 - [ ] Associate the live session with the Nelsen user/course/event.
 - [ ] Store live metadata in Nelsen.
 - [ ] Track live status: scheduled/live/ended.
+
+### Mentees / viewers
+
+- [ ] Mentees can discover, join, and watch live sessions but cannot create/start broadcasts.
+- [ ] Apply course/school/event visibility rules before exposing a live session.
 
 ### Notifications
 
@@ -296,6 +311,18 @@ Watch Live
 - [ ] Store live session metadata/history.
 - [ ] Show ended sessions where appropriate.
 - [ ] Link to replay when a YouTube replay is available.
+
+---
+
+## Social Milestone — Story/Status Viewer Receipts
+
+Current stories maintain an aggregate view count and local seen state. To show the owner exactly who viewed a status/story:
+
+- [ ] Record one viewer receipt per story as `viewers/{uid}: timestamp` instead of only incrementing a count.
+- [ ] Prevent duplicate viewer receipts while keeping the aggregate view count.
+- [ ] Add an owner-only **Viewed by** sheet/list with avatar, name, and viewed time.
+- [ ] Add Firebase rules so a viewer can only write their own receipt and only the story owner can read the viewer list.
+- [ ] Decide retention behavior when a story expires/closes/deletes so viewer identities are not retained longer than intended.
 
 ---
 

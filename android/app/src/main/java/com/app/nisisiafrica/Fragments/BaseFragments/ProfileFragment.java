@@ -28,6 +28,7 @@ import com.app.nisisiafrica.data.remote.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.android.material.appbar.AppBarLayout;
 import com.bumptech.glide.Glide;
 
 import java.util.Locale;
@@ -62,6 +63,19 @@ public class ProfileFragment extends Fragment {
         TextView about = view.findViewById(R.id.profileAbout);
 
         View header = view.findViewById(R.id.profileHeader);
+        AppBarLayout appBar = view.findViewById(R.id.appBarLayout);
+        if (header != null && appBar != null) {
+            appBar.addOnOffsetChangedListener((layout, verticalOffset) -> {
+                int range = Math.max(1, layout.getTotalScrollRange());
+                float progress = Math.min(1f, Math.abs(verticalOffset) / (float) range);
+                // Twitter/X style: the large identity header leaves with the scroll
+                // while the app shell's compact top bar remains pinned.
+                header.setAlpha(1f - progress);
+                float scale = 1f - (0.08f * progress);
+                avatar.setScaleX(scale);
+                avatar.setScaleY(scale);
+            });
+        }
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
                 int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
