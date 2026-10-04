@@ -892,6 +892,10 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
      * and either join the meeting (online, when it's time) or view the location.
      */
     private void showEventActions(Event event) {
+        if (com.app.nisisiafrica.Utils.EventActions.isLive(event)) {
+            com.app.nisisiafrica.Utils.EventActions.openLiveViewer(requireContext(), event);
+            return;
+        }
         com.google.android.material.bottomsheet.BottomSheetDialog dialog =
                 new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
         View sheet = LayoutInflater.from(requireContext())

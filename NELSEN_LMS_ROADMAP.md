@@ -277,7 +277,7 @@ Users
 
 ### Mentees / viewers
 
-- [ ] Mentees can discover, join, and watch live sessions but cannot create/start broadcasts.
+- [x] Mentees can discover, join, and watch linked live sessions but cannot create/start broadcasts.
 - [ ] Apply course/school/event visibility rules before exposing a live session.
 
 ### Notifications
@@ -302,10 +302,10 @@ Watch Live
 
 ### Viewer
 
-- [ ] Add **Live Now** UI/section.
-- [ ] Play/embed the YouTube Live stream inside Nelsen Web.
-- [ ] Play/embed the YouTube Live stream inside Nelsen Android.
-- [ ] Show relevant Nelsen UI around the stream.
+- [x] Add **Live Now / Scheduled Live / Replay** state to Nelsen event cards.
+- [x] Play/embed the linked YouTube Live/replay stream inside Nelsen Web.
+- [x] Play/embed the linked YouTube Live/replay stream inside Nelsen Android.
+- [x] Show Nelsen event title/status/actions around the stream on Web and Android.
 - [ ] Handle scheduled, live, offline, and ended states.
 
 ### History

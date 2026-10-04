@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.provider.CalendarContract;
 import android.widget.Toast;
 
+import com.app.nisisiafrica.LiveViewerActivity;
 import com.app.nisisiafrica.data.Model.Event;
 
 import java.util.Calendar;
@@ -24,6 +25,33 @@ public final class EventActions {
 
     public static boolean isOnline(Event e) {
         return "online".equalsIgnoreCase(e.getMode());
+    }
+
+    public static boolean isLive(Event e) {
+        return e != null && "live".equalsIgnoreCase(e.getEventType());
+    }
+
+    public static String liveStatus(Event e) {
+        if (!isLive(e)) return "";
+        String value = e.getLiveStatus();
+        if (value != null && !value.trim().isEmpty()) return value.trim().toLowerCase();
+        if (e.getStatus() == 1) return "live";
+        if (e.getStatus() == 2) return "ended";
+        return "scheduled";
+    }
+
+    public static void openLiveViewer(Context ctx, Event e) {
+        if (!isLive(e)) return;
+        String link = e.getMeetingLink();
+        if (link == null || link.trim().isEmpty()) {
+            Toast.makeText(ctx, "Live stream link is unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(ctx, LiveViewerActivity.class)
+                .putExtra(LiveViewerActivity.EXTRA_TITLE, e.getTitle())
+                .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, link)
+                .putExtra(LiveViewerActivity.EXTRA_LIVE_STATUS, liveStatus(e));
+        ctx.startActivity(intent);
     }
 
     /** Start time in epoch millis, combining the event date with its startTime (HH:mm). */
