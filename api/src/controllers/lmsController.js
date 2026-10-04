@@ -1,4 +1,4 @@
-import { getMe, getStoreHealth } from "../services/lmsMeService.js";
+import { getMe, getStoreHealth, updateMyProfile } from "../services/lmsMeService.js";
 import {
   getLessonById,
   getModuleById,
@@ -36,6 +36,21 @@ export async function getLmsMe(req, res) {
       res,
       "Failed to load profile",
       500,
+      getPrimaryEngine() || "sqlite",
+    );
+  }
+}
+
+export async function patchLmsMeProfile(req, res) {
+  try {
+    const result = await updateMyProfile(profileFromReq(req), req.body || {});
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[PATCH /lms/me/profile]", err);
+    return lmsErr(
+      res,
+      err.message || "Failed to update profile",
+      err.status || 500,
       getPrimaryEngine() || "sqlite",
     );
   }
