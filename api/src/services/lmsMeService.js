@@ -155,10 +155,10 @@ export async function upsertUserFromToken(profile) {
         await dbRun(
           `UPDATE users_mirror
            SET email = COALESCE(NULLIF(?, ''), email),
-               display_name = COALESCE(NULLIF(?, ''), display_name),
-               first_name = COALESCE(NULLIF(?, ''), first_name),
-               last_name = COALESCE(NULLIF(?, ''), last_name),
-               photo_url = COALESCE(NULLIF(?, ''), photo_url),
+               display_name = COALESCE(NULLIF(display_name, ''), NULLIF(?, ''), display_name),
+               first_name = COALESCE(NULLIF(first_name, ''), NULLIF(?, ''), first_name),
+               last_name = COALESCE(NULLIF(last_name, ''), NULLIF(?, ''), last_name),
+               photo_url = COALESCE(NULLIF(photo_url, ''), NULLIF(?, ''), photo_url),
                updated_at = ?
            WHERE uid = ?`,
           [
@@ -201,13 +201,18 @@ export async function upsertUserFromToken(profile) {
           [profile.uid, ROLES.Mentee, now],
         );
       }
+      const stored = await dbGet(
+        "SELECT email, display_name, first_name, last_name, photo_url, bio FROM users_mirror WHERE uid = ?",
+        [profile.uid],
+      );
       return {
         uid: profile.uid,
-        email,
-        displayName,
-        firstName,
-        lastName,
-        photoUrl,
+        email: stored?.email || email,
+        displayName: stored?.display_name || displayName,
+        firstName: stored?.first_name || firstName,
+        lastName: stored?.last_name || lastName,
+        photoUrl: stored?.photo_url || photoUrl,
+        bio: stored?.bio || "",
         role: roleRow?.role || ROLES.Mentee,
       };
     },
@@ -218,6 +223,7 @@ export async function upsertUserFromToken(profile) {
         firstName: row.firstName,
         lastName: row.lastName,
         photoUrl: row.photoUrl,
+        bio: row.bio || "",
       });
       if (!row.role || row.role === ROLES.Mentee) {
         const rtdbRole = await readRoleFromRtdb(row.uid);
