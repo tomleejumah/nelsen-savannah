@@ -41,7 +41,6 @@ import com.app.nisisiafrica.Fragments.BaseFragments.HomeFragment;
 import com.app.nisisiafrica.Fragments.BaseFragments.ProfileFragment;
 import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.Interfaces.FirebaseCallback;
-import com.app.nisisiafrica.Interfaces.SnackbarHandler;
 import com.app.nisisiafrica.Utils.NotificationCounter;
 import com.app.nisisiafrica.Utils.Roles;
 import com.app.nisisiafrica.Utils.LocaleHelper;
@@ -651,28 +650,29 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                                             .setValue(userRole);
                                 }
 
-                                updateUserDataAndShowWelcome(userData);
+                                updateUserData(userData);
                             },
                             error -> {
                                 Log.e(TAG, "Failed to fetch role", error);
                                 userRole = "Mentee"; // Default fallback
-                                updateUserDataAndShowWelcome(userData);
+                                updateUserData(userData);
                             }
                     );
             disposables.add(disposable);
         } else {
-            updateUserDataAndShowWelcome(userData);
+            updateUserData(userData);
         }
     }
 
-    private void updateUserDataAndShowWelcome(UserData userData) {
+    /**
+     * Keep MainActivity focused on session/profile hydration.
+     * LoginFragment and SignUpFragment own the one-time welcome message; showing
+     * it here makes ordinary activity recreation/resume look like a fresh login.
+     */
+    private void updateUserData(UserData userData) {
         Util.saveState(Constants.USER_ROLE, userRole);
         userData.setUserRole(userRole);
         sharedUserViewModel1.updateUserData(userData);
-        SnackbarHandler snackbarHandler = (message, duration, type) -> {
-            CustomSnackbar.show(MainActivity.this, message, duration, type);
-        };
-        snackbarHandler.showSnackbar("Welcome, " + userData.getFirstName() + "!", Snackbar.LENGTH_LONG, 4);
     }
 
     public void navigateToHomeTab() {
