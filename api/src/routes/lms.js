@@ -421,7 +421,11 @@ router.get(
   optionalAuthenticate,
   lmsController.getPublicHubEvents,
 );
-router.get("/events/public/:eventId", lmsController.getPublicHubEvent);
+router.get(
+  "/events/public/:eventId",
+  optionalAuthenticate,
+  lmsController.getPublicHubEvent,
+);
 router.post(
   "/events",
   authenticateUser,
