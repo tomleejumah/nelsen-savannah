@@ -1,6 +1,7 @@
 package com.app.nisisiafrica.Adapters;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -10,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.R;
@@ -88,6 +90,15 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
         holder.body.setVisibility(TextUtils.isEmpty(p.getBody()) ? View.GONE : View.VISIBLE);
         holder.votes.setText(String.valueOf(p.getUpvoteCount()));
         holder.comments.setText(String.valueOf(p.getCommentCount()));
+        holder.boundPostId = p.getId();
+        applyUpvoteStyle(holder, false);
+        if (!TextUtils.isEmpty(communityId) && !TextUtils.isEmpty(p.getId())) {
+            repository.hasUpvoted(communityId, p.getId(), upvoted -> {
+                if (TextUtils.equals(holder.boundPostId, p.getId())) {
+                    applyUpvoteStyle(holder, upvoted);
+                }
+            });
+        }
 
         if (!TextUtils.isEmpty(communityIconUrl)) {
             Glide.with(holder.icon.getContext())
@@ -113,7 +124,11 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
 
         holder.upvote.setOnClickListener(v -> {
             if (TextUtils.isEmpty(communityId) || TextUtils.isEmpty(p.getId())) return;
-            repository.toggleUpvote(communityId, p.getId(), (ok, nowUpvoted) -> {});
+            repository.toggleUpvote(communityId, p.getId(), (ok, nowUpvoted) -> {
+                if (ok && TextUtils.equals(holder.boundPostId, p.getId())) {
+                    applyUpvoteStyle(holder, nowUpvoted);
+                }
+            });
         });
         holder.voteBar.setOnClickListener(v -> holder.upvote.performClick());
 
@@ -138,11 +153,19 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
         return items.size();
     }
 
+    private void applyUpvoteStyle(ViewHolder holder, boolean upvoted) {
+        int color = upvoted
+                ? Color.rgb(229, 57, 53)
+                : ContextCompat.getColor(holder.itemView.getContext(), R.color.ink);
+        holder.upvote.setColorFilter(color);
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView community, meta, title, body, votes, comments, joined;
         ShapeableImageView icon, image;
         ImageView upvote, share;
         View voteBar, commentBar;
+        String boundPostId = "";
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
