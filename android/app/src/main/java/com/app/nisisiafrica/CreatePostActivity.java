@@ -8,11 +8,15 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
 import com.app.nisisiafrica.data.remote.StorageUploader;
@@ -37,7 +41,9 @@ public class CreatePostActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_post);
+        applySystemBarInsets();
 
         String communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
         if (communityId == null) {
@@ -88,6 +94,17 @@ public class CreatePostActivity extends AppCompatActivity {
                 post(communityId, title, body, authorName, "", btnPost);
             }
         });
+    }
+
+    private void applySystemBarInsets() {
+        View main = findViewById(R.id.main);
+        ViewCompat.setOnApplyWindowInsetsListener(main, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, ime.bottom));
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(main);
     }
 
     private void post(String communityId, String title, String body, String authorName,
