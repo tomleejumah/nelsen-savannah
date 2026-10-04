@@ -178,6 +178,11 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Body LmsModels.CreateHubEventBody body);
 
+    @POST("lms/youtube/live")
+    Call<LmsModels.YouTubeLiveEnvelope> createYouTubeLive(
+            @Header("Authorization") String bearer,
+            @Body LmsModels.CreateHubEventBody body);
+
     @POST("lms/events/{eventId}/reserve")
     Call<LmsModels.ReserveEventEnvelope> reserveEvent(
             @Header("Authorization") String bearer,
