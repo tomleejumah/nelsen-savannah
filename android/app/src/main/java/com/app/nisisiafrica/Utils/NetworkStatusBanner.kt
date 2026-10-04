@@ -53,7 +53,7 @@ class NetworkStatusBanner(private val activity: Activity) {
         }
         val owner = activity as? LifecycleOwner
         if (owner != null && syncObserver == null) {
-            syncObserver = Observer { infos ->
+            val observer = Observer<List<WorkInfo>> { infos: List<WorkInfo> ->
                 syncState = infos.lastOrNull()?.state
                 refresh()
                 if (syncState == WorkInfo.State.SUCCEEDED) {
@@ -64,7 +64,9 @@ class NetworkStatusBanner(private val activity: Activity) {
                         }
                     }, 1800)
                 }
-            }.also { syncWork.observe(owner, it) }
+            }
+            syncObserver = observer
+            syncWork.observe(owner, observer)
         }
         refresh()
     }
