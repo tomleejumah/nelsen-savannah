@@ -52,7 +52,17 @@ async function actorSchool(uid) {
     "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  return String(row?.active_school_id || row?.school_id || "").trim();
+  const direct = String(row?.active_school_id || row?.school_id || "").trim();
+  if (direct) return direct;
+
+  const membership = await dbGet(
+    `SELECT school_id FROM school_memberships
+     WHERE uid = ? AND status = 'active'
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [uid],
+  );
+  return String(membership?.school_id || "").trim();
 }
 
 async function hasActiveSchoolMembership(uid, schoolId) {
