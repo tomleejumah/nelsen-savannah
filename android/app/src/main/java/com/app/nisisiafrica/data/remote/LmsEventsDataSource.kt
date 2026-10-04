@@ -14,6 +14,13 @@ object LmsEventsDataSource {
         runBlocking { createHubEvent(bearer, payload) }
 
     @JvmStatic
+    fun createYouTubeLiveBlocking(
+        bearer: String,
+        payload: LmsModels.CreateHubEventBody,
+    ): Pair<LmsModels.YouTubeLiveData?, String?> =
+        runBlocking { createYouTubeLive(bearer, payload) }
+
+    @JvmStatic
     fun reserveSeatBlocking(
         bearer: String,
         eventId: String,
@@ -80,6 +87,33 @@ object LmsEventsDataSource {
                 false
             }
         }
+
+    suspend fun createYouTubeLive(
+        bearer: String,
+        payload: LmsModels.CreateHubEventBody,
+    ): Pair<LmsModels.YouTubeLiveData?, String?> = withContext(Dispatchers.IO) {
+        try {
+            val res = ApiClient.getLmsService().createYouTubeLive(bearer, payload).execute()
+            val body = res.body()
+            if (res.isSuccessful && body?.ok == true && body.data != null) {
+                return@withContext body.data to null
+            }
+
+            val apiError = body?.error ?: run {
+                val raw = res.errorBody()?.string().orEmpty()
+                if (raw.isBlank()) null
+                else try {
+                    val parsed = com.google.gson.Gson().fromJson(raw, LmsModels.YouTubeLiveEnvelope::class.java)
+                    parsed?.error
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            null to (apiError ?: "Could not create YouTube live (HTTP ${res.code()})")
+        } catch (e: Exception) {
+            null to (e.message ?: "Network error")
+        }
+    }
 
     suspend fun reserveSeat(
         bearer: String,

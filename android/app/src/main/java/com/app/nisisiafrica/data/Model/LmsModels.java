@@ -689,6 +689,7 @@ public final class LmsModels {
         public String audienceScope;
         public String schoolId;
         public String trackId;
+        public String youtubePrivacy;
         public Long liveNotifiedAt;
     }
 
@@ -730,6 +731,7 @@ public final class LmsModels {
         public String audienceScope;
         public String schoolId;
         public String trackId;
+        public String youtubePrivacy = "unlisted";
 
         public CreateHubEventBody(
                 String title,
@@ -755,6 +757,23 @@ public final class LmsModels {
             this.seats = seats;
             this.price = price;
         }
+    }
+
+    public static class YouTubeLiveData {
+        public HubEventDto event;
+        public String broadcastId;
+        public String streamId;
+        public String channelId;
+        public String channelTitle;
+        public String youtubeUrl;
+        /** Ephemeral RTMPS endpoint including the stream name/key. Never persist this. */
+        public String ingestUrl;
+    }
+
+    public static class YouTubeLiveEnvelope {
+        public boolean ok;
+        public YouTubeLiveData data;
+        public String error;
     }
 
     public static class LiveStatusBody {

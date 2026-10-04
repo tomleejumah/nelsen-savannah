@@ -37,6 +37,26 @@ router.patch(
 );
 router.get("/health", lmsController.getLmsHealth);
 
+router.get("/youtube/oauth/callback", lmsController.getYouTubeOAuthCallback);
+router.post(
+  "/youtube/connect-url",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin", "SuperAdmin"),
+  lmsController.postYouTubeConnectUrl,
+);
+router.get(
+  "/youtube/connection",
+  authenticateUser,
+  requireRoles("SchoolAdmin", "Admin", "SuperAdmin"),
+  lmsController.getYouTubeConnection,
+);
+router.post(
+  "/youtube/live",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin", "SuperAdmin"),
+  lmsController.postYouTubeLive,
+);
+
 router.post(
   "/stories/:storyId/view",
   authenticateUser,

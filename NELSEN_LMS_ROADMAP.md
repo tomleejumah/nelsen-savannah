@@ -267,14 +267,18 @@ FCM
 Users
 ```
 
-### Hosts — Mentor / SchoolAdmin / Admin
+### Hosts — Mentor / SchoolAdmin / SuperAdmin
 
-- [x] Add host-only **Link YouTube Live** UI on Android using the existing event form; direct YouTube broadcast creation/control remains.
-- [x] Link an existing Nelsen YouTube Live session; automatic creation through the YouTube API remains.
+- [x] Replace manual **Link YouTube Live** with **Go Live**: hosts never create or paste a YouTube link.
+- [x] Create a YouTube broadcast + ingest stream through the Live Streaming API, bind them, create the Nelsen live event, and return the ephemeral RTMPS ingest target to Android.
+- [x] Publish Android camera + microphone directly to YouTube over RTMPS; Nelsen does not relay video bytes.
 - [x] Associate the live session with the Nelsen creator and an explicit course, school, or platform audience.
-- [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status, audience scope, school/track association).
+- [x] Store live metadata in Nelsen using the existing `hub_events` model plus `youtube_live_sessions` broadcast/stream metadata. Never persist the RTMPS stream secret.
 - [x] Track live status as scheduled/live/ended and sync those transitions server-side from YouTube Data API when `YOUTUBE_API_KEY` is configured.
-- [ ] When school creation/settings are expanded in Super Admin, allow each school to configure its own YouTube channel/account; keep the current Nelsen channel as the platform/default channel until then.
+- [x] Use one Nelsen Google OAuth project/client with encrypted channel refresh tokens stored per platform or per school. School lives prefer their own connected channel and fall back to the Nelsen platform channel.
+- [x] Add SchoolAdmin and SuperAdmin channel connection UI. SchoolAdmin can connect only their school; SuperAdmin can connect the platform/default channel and any school channel.
+- [ ] Complete production Google OAuth configuration/verification and add the production redirect URI before enabling automatic Go Live in production. Do not leave the OAuth app in Testing for school rollout because non-basic test authorizations expire after seven days.
+- [ ] Request a YouTube Data API quota increase before high-volume multi-school rollout. Creating a fresh live currently uses three 50-unit write calls (broadcast insert + stream insert + bind), before low-cost status reads.
 
 ### Mentees / viewers
 
