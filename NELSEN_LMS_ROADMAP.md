@@ -351,6 +351,18 @@ The Nelsen backend should not become a video streaming server.
 
 ---
 
+## Final Deferred Android — Profile Update
+
+Do this later after the current LMS roadmap work.
+
+- [ ] Add Android **Edit profile** UI.
+- [ ] Allow the learner to update supported profile fields and profile photo where applicable.
+- [ ] Validate fields and show saving/saved/error states.
+- [ ] Persist changes through the existing profile API/data source and refresh the Android user/profile cache after a successful update.
+- [ ] Keep role/identity/security-sensitive fields read-only unless the backend explicitly allows them.
+
+---
+
 ## Final Deferred Infrastructure — Piston Code Runner
 
 Do this **after the LMS/live roadmap work above**, alongside the final Didit/distribution work.
