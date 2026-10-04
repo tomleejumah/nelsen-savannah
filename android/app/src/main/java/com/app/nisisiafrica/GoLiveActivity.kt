@@ -115,7 +115,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         if (!prepared) {
             status.text = "Preparing camera and microphone…"
             prepared = try {
-                stream.prepareVideo(1280, 720, 2_500_000) &&
+                stream.prepareVideo(1280, 720, 2_500_000, rotation = 90) &&
                     stream.prepareAudio(44_100, true, 128_000)
             } catch (e: Exception) {
                 false
