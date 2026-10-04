@@ -329,38 +329,66 @@ class ChatRepository(private val appDatabase: AppDatabase) {
     }
 
     fun syncMessages(chatroomId: String) {
-
         listenerRegistration?.remove()
 
-        listenerRegistration = FirebaseFirestore.getInstance()
+        val messagesRef = FirebaseFirestore.getInstance()
             .collection("chatRooms").document(chatroomId)
             .collection("messages")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
-            .limit(50)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
 
-                val messages = snapshot?.toObjects(ChatMessage::class.java) ?: return@addSnapshotListener
+        // Announcements contains legacy/system-authored documents from before the
+        // DM schema was standardised. Some of those rows have no timestamp and/or
+        // messageId. Firestore orderBy("timestamp") silently excludes documents
+        // missing that field, which made an existing announcement appear empty.
+        val query = if (chatroomId == "announcements") {
+            messagesRef.limit(100)
+        } else {
+            messagesRef.orderBy("timestamp", Query.Direction.ASCENDING).limit(50)
+        }
 
-                scope.launch {
-                    messages.forEach { msg ->
-                        dao.insert(ChatMessageEntity(
-                            messageId = msg.messageId,
-                            chatroomId = chatroomId,
-                            senderId = msg.senderId,
-                            senderName = msg.senderName,
-                            message = msg.message,
-                            timestamp = msg.timestamp?.toDate()?.time ?: System.currentTimeMillis(),
-                            type = msg.type,
-                            status = "sent",
-                            replyToId = msg.replyToId,
-                            replyToSender = msg.replyToSender,
-                            replyToSnippet = msg.replyToSnippet,
-                            deleted = msg.deleted
-                        ))
-                    }
-                }
+        listenerRegistration = query.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e("ChatRepository", "message sync failed room=$chatroomId", e)
+                return@addSnapshotListener
             }
+            val docs = snapshot?.documents ?: return@addSnapshotListener
+
+            val normalized = docs.mapNotNull { doc ->
+                val msg = doc.toObject(ChatMessage::class.java) ?: return@mapNotNull null
+                val messageId = msg.messageId.ifBlank { doc.id }
+                if (messageId.isBlank()) return@mapNotNull null
+
+                val timestampMs = msg.timestamp?.toDate()?.time
+                    ?: doc.getTimestamp("createdAt")?.toDate()?.time
+                    ?: doc.getLong("timestamp")
+                    ?: doc.getLong("createdAt")
+                    ?: 0L
+
+                ChatMessageEntity(
+                    messageId = messageId,
+                    chatroomId = chatroomId,
+                    senderId = msg.senderId.ifBlank {
+                        doc.getString("senderId") ?: "nelsen"
+                    },
+                    senderName = msg.senderName.ifBlank {
+                        doc.getString("senderName") ?: "Nelsen"
+                    },
+                    message = msg.message.ifBlank {
+                        doc.getString("text") ?: doc.getString("body") ?: ""
+                    },
+                    timestamp = timestampMs,
+                    type = msg.type.ifBlank { "text" },
+                    status = "sent",
+                    replyToId = msg.replyToId,
+                    replyToSender = msg.replyToSender,
+                    replyToSnippet = msg.replyToSnippet,
+                    deleted = msg.deleted
+                )
+            }.sortedBy { it.timestamp }
+
+            scope.launch {
+                normalized.forEach { dao.insert(it) }
+            }
+        }
     }
 
     companion object {

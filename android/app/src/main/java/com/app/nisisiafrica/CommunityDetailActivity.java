@@ -30,6 +30,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.widget.NestedScrollView;
 
 import com.app.nisisiafrica.Adapters.CommunityEventAdapter;
 import com.app.nisisiafrica.Adapters.CommunityPostAdapter;
@@ -81,6 +82,7 @@ public class CommunityDetailActivity extends AppCompatActivity {
     private ActivityResultLauncher<PickVisualMediaRequest> logoPicker;
     private ActivityResultLauncher<PickVisualMediaRequest> bannerPicker;
     private boolean pickingBanner = false;
+    private MaterialToolbar topAppBar;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -97,8 +99,8 @@ public class CommunityDetailActivity extends AppCompatActivity {
             return;
         }
 
-        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
-        setSupportActionBar(toolbar);
+        topAppBar = findViewById(R.id.topAppBar);
+        setSupportActionBar(topAppBar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             getSupportActionBar().setTitle("");
@@ -130,8 +132,28 @@ public class CommunityDetailActivity extends AppCompatActivity {
         ViewCompat.requestApplyInsets(btnBack);
 
         if (!TextUtils.isEmpty(communityName)) {
-            tvGroupName.setText(stripPrefix(communityName));
+            String title = stripPrefix(communityName);
+            tvGroupName.setText(title);
+            topAppBar.setTitle(title);
         }
+
+        topAppBar.setNavigationOnClickListener(v -> finish());
+        ViewCompat.setOnApplyWindowInsetsListener(topAppBar, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), bars.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(topAppBar);
+
+        NestedScrollView groupScroll = findViewById(R.id.groupScroll);
+        groupScroll.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener)
+                (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                    float progress = Math.min(1f, Math.max(0f, scrollY / (float) dp(120)));
+                    topAppBar.setAlpha(progress);
+                    topAppBar.setVisibility(progress > 0.02f ? View.VISIBLE : View.INVISIBLE);
+                    WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
+                            .setAppearanceLightStatusBars(progress > 0.55f);
+                });
 
         logoPicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
@@ -437,7 +459,9 @@ public class CommunityDetailActivity extends AppCompatActivity {
             if (c == null) return;
             createdBy = c.getCreatedBy();
             communityName = c.getName();
-            tvGroupName.setText(stripPrefix(communityName));
+            String title = stripPrefix(communityName);
+            tvGroupName.setText(title);
+            if (topAppBar != null) topAppBar.setTitle(title);
             tvDescription.setText(c.getDescription());
             tvDescription.setVisibility(TextUtils.isEmpty(c.getDescription()) ? View.GONE : View.VISIBLE);
             bindStats(c.getMemberCount());

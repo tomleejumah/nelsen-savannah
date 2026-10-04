@@ -425,14 +425,20 @@ router.get("/events/public/:eventId", lmsController.getPublicHubEvent);
 router.post(
   "/events",
   authenticateUser,
-  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
   lmsController.postHubEvent,
 );
 router.delete(
   "/events/:eventId",
   authenticateUser,
-  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
   lmsController.deleteHubEvent,
+);
+router.patch(
+  "/events/:eventId/live-status",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
+  lmsController.patchHubLiveStatus,
 );
 router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
 router.post(
