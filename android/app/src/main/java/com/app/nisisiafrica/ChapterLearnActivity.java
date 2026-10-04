@@ -97,6 +97,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private String activeLessonId;
     private long releaseAt;
     private LmsCacheBridge offlineCache;
+    private boolean cachedLessonsDisplayed;
     private long dueAt;
     private int pdfMaxPage;
     private long lastPdfReport;
@@ -235,6 +236,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             offlineCache.moduleLessons(current.getUid(), moduleId, cached -> {
                 if (cached != null && !cached.isEmpty()) {
                     progress.setVisibility(View.GONE);
+                    cachedLessonsDisplayed = true;
                     renderLessons(new ArrayList<>(cached));
                 }
                 return kotlin.Unit.INSTANCE;
@@ -249,8 +251,10 @@ public class ChapterLearnActivity extends AppCompatActivity {
                         LmsModels.ModuleDetailEnvelope body = response.body();
                         if (!response.isSuccessful() || body == null || !body.ok
                                 || body.data == null || body.data.lessons == null) {
-                            Toast.makeText(ChapterLearnActivity.this,
-                                    "Could not load chapter", Toast.LENGTH_SHORT).show();
+                            if (!cachedLessonsDisplayed) {
+                                Toast.makeText(ChapterLearnActivity.this,
+                                        "Could not load chapter. Tap back and retry.", Toast.LENGTH_SHORT).show();
+                            }
                             return;
                         }
                         if (body.data.module != null) {
@@ -274,8 +278,10 @@ public class ChapterLearnActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {
                         progress.setVisibility(View.GONE);
-                        Toast.makeText(ChapterLearnActivity.this,
-                                "Network error", Toast.LENGTH_SHORT).show();
+                        if (!cachedLessonsDisplayed) {
+                            Toast.makeText(ChapterLearnActivity.this,
+                                    "Could not load chapter. Check your connection and retry.", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }));
     }
