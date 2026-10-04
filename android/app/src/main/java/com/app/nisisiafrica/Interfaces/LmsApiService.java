@@ -26,6 +26,11 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Body LmsModels.ProfileUpdateBody body);
 
+    @GET("lms/users/{uid}/materials")
+    Call<LmsModels.UploadedMaterialsEnvelope> userMaterials(
+            @Header("Authorization") String bearer,
+            @Path("uid") String uid);
+
     @POST("lms/stories/{storyId}/view")
     Call<LmsModels.MapEnvelope> recordStoryView(
             @Header("Authorization") String bearer,
