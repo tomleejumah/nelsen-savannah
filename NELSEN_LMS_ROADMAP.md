@@ -148,10 +148,10 @@ Android learning screens should remain responsive on slow or unavailable network
 
 ### Loading UX
 
-- [ ] Show a spinner/progress state while loading course catalogs, tracks, course details, lessons, and study progress.
-- [ ] Do not show an empty-state message until the corresponding API request has completed.
-- [ ] Preserve already-cached content while refreshing in the background where possible.
-- [ ] Show retry/error state when neither network nor cached content is available.
+- [x] Show a spinner/progress state while loading course catalogs, tracks, course details, lessons, and study progress.
+- [x] Do not show an empty-state message until the corresponding API request has completed.
+- [x] Preserve already-cached content while refreshing in the background where possible.
+- [x] Show retry/error state when neither network nor cached content is available.
 
 ### Offline cache
 
@@ -168,7 +168,7 @@ Android learning screens should remain responsive on slow or unavailable network
 - [x] Push pending local progress to the LMS API when connectivity returns.
 - [x] Pull relevant server-side progress/content changes and reconcile the local cache.
 - [x] Make sync retry-safe/idempotent so repeated worker runs do not duplicate progress.
-- [ ] Expose syncing/synced/offline state where useful to the learner.
+- [x] Expose syncing/synced/offline state where useful to the learner.
 - [x] Show a persistent, compact Telegram-style **Offline / Waiting for network** indicator while connectivity is unavailable; remove it automatically when connectivity/sync recovers.
 - [x] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
 - [x] **Final Phase 3 task:** add an authenticated batch progress-sync API with idempotency keys; update Android WorkManager to batch queued progress, safely retry the same request, and reconcile the authoritative server response without allowing progress to move backwards.

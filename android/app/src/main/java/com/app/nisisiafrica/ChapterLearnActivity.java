@@ -251,10 +251,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                         LmsModels.ModuleDetailEnvelope body = response.body();
                         if (!response.isSuccessful() || body == null || !body.ok
                                 || body.data == null || body.data.lessons == null) {
-                            if (!cachedLessonsDisplayed) {
-                                Toast.makeText(ChapterLearnActivity.this,
-                                        "Could not load chapter. Tap back and retry.", Toast.LENGTH_SHORT).show();
-                            }
+                            if (!cachedLessonsDisplayed) showChapterLoadError();
                             return;
                         }
                         if (body.data.module != null) {
@@ -278,15 +275,23 @@ public class ChapterLearnActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {
                         progress.setVisibility(View.GONE);
-                        if (!cachedLessonsDisplayed) {
-                            Toast.makeText(ChapterLearnActivity.this,
-                                    "Could not load chapter. Check your connection and retry.", Toast.LENGTH_SHORT).show();
-                        }
+                        if (!cachedLessonsDisplayed) showChapterLoadError();
                     }
                 }));
     }
 
+    private void showChapterLoadError() {
+        progress.setVisibility(View.GONE);
+        tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setText("Could not load this chapter. Tap to retry.");
+        tvPlayerPlaceholder.setOnClickListener(v -> {
+            tvPlayerPlaceholder.setOnClickListener(null);
+            loadProgressThenModule();
+        });
+    }
+
     private void renderLessons(List<LmsModels.LessonDto> list) {
+        tvPlayerPlaceholder.setOnClickListener(null);
         lessons.clear();
         lessonsContainer.removeAllViews();
         long now = System.currentTimeMillis();
@@ -801,11 +806,16 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private void withBearer(BearerAction action) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
+            if (progress != null) progress.setVisibility(View.GONE);
             Toast.makeText(this, "Sign in required", Toast.LENGTH_SHORT).show();
             return;
         }
-        user.getIdToken(false).addOnSuccessListener(r ->
-                action.run("Bearer " + r.getToken()));
+        user.getIdToken(false)
+                .addOnSuccessListener(r -> action.run("Bearer " + r.getToken()))
+                .addOnFailureListener(e -> {
+                    if (progress != null) progress.setVisibility(View.GONE);
+                    if (!cachedLessonsDisplayed) showChapterLoadError();
+                });
     }
 
     @Override
