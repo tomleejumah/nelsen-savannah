@@ -35,7 +35,13 @@ export async function sendFCMNotification(receiverId, notification) {
       body = notification.text
         ? `${senderName} ${notification.text}`
         : notification.eventTitle || "A new event was scheduled";
+    } else if (notification.type === "live") {
+      title = notification.title || "Live now";
+      body = notification.body || notification.eventTitle || "A live session has started";
     }
+
+    if (notification.title) title = notification.title;
+    if (notification.body) body = notification.body;
 
     // NEW FCM V1 API
     const message = {
@@ -50,6 +56,9 @@ export async function sendFCMNotification(receiverId, notification) {
         notificationId: notification.notificationId || "",
         ...(notification.courseID && { courseId: notification.courseID }),
         ...(notification.eventId && { eventId: notification.eventId }),
+        ...(notification.schoolId && { schoolId: notification.schoolId }),
+        ...(notification.trackId && { trackId: notification.trackId }),
+        ...(notification.audienceScope && { audienceScope: notification.audienceScope }),
         ...(notification.conversationId && {
           conversationId: notification.conversationId,
         }),
