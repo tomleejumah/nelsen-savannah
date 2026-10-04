@@ -3,6 +3,7 @@ import type { User } from "firebase/auth";
 
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import { SchoolAdminChrome } from "@/components/lms/schoolAdmin/SchoolAdminChrome";
+import { YouTubeConnectionPanel } from "@/components/lms/YouTubeConnectionPanel";
 import { useSchoolAdmin } from "@/components/lms/schoolAdmin/useSchoolAdmin";
 import type { MeDto } from "@/lib/lmsApi";
 
@@ -39,6 +40,13 @@ function SettingsConsole({ user, me }: { user: User; me: MeDto }) {
           {a.error}
         </p>
       ) : null}
+
+      <YouTubeConnectionPanel
+        user={user}
+        schoolId={a.schoolId}
+        title="School YouTube Live channel"
+        blurb="Authorize this school's YouTube channel once. Mentors and school admins can then tap Go Live in Nelsen without creating or pasting a YouTube link."
+      />
 
       <form onSubmit={(e) => void a.onBrand(e)} className="space-y-3">
         <h3 className="font-display text-lg font-semibold">Branding</h3>
