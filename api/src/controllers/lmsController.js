@@ -324,7 +324,7 @@ export async function downloadAndroidApp(_req, res) {
 
 export async function listTracks(req, res) {
   try {
-    const result = await getTracks(req.user.uid, {
+    const result = await getTracks(req.user?.uid || null, {
       audience: req.query.audience,
       enrolled: req.query.enrolled,
       schoolId: req.query.schoolId,
@@ -338,7 +338,7 @@ export async function listTracks(req, res) {
 
 export async function getTrack(req, res) {
   try {
-    const result = await getTrackById(req.user.uid, req.params.trackId);
+    const result = await getTrackById(req.user?.uid || null, req.params.trackId);
     if (result.notFound) {
       return lmsErr(res, "Track not found", 404, result.source);
     }
@@ -1045,7 +1045,7 @@ export const listSchoolsCatalog = handle(
   "[GET /lms/schools/catalog]",
   async (req) => {
     const svc = await import("../services/lmsSchoolService.js");
-    return svc.listSchoolsCatalog(req.user.uid);
+    return svc.listSchoolsCatalog(req.user?.uid || null);
   },
 );
 
