@@ -191,20 +191,20 @@ Improve video lessons on both Web and Android.
 
 Controls:
 
-- [ ] Play / Pause
-- [ ] Mute / Unmute
-- [ ] Volume
-- [ ] Seek/progress bar
-- [ ] Current time / duration
-- [ ] Fullscreen
-- [ ] Playback speed:
+- [x] Play / Pause
+- [x] Mute / Unmute
+- [x] Volume
+- [x] Seek/progress bar
+- [x] Current time / duration
+- [x] Fullscreen
+- [x] Playback speed:
   - 0.5x
   - 0.75x
   - 1x
   - 1.25x
   - 1.5x
   - 2x
-- [ ] Optional 10-second rewind/forward controls.
+- [x] Optional 10-second rewind/forward controls.
 
 Android can use the native video player controls while Web exposes equivalent controls.
 

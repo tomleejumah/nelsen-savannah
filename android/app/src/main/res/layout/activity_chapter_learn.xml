@@ -106,6 +106,72 @@
             android:padding="16dp"
             android:text="Pick a lesson below"
             android:textColor="@color/muted" />
+
+        <LinearLayout
+            android:id="@+id/videoControls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#B3000000"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/btnRewind10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="-10s"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnMuteVideo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="Mute"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/volumeSeek"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="100"
+                android:progress="100" />
+
+            <TextView
+                android:id="@+id/btnSpeedVideo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="1x"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnForward10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="+10s"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnFullscreenVideo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="Full"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+        </LinearLayout>
     </FrameLayout>
 
     <LinearLayout
