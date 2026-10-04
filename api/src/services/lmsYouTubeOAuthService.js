@@ -453,6 +453,15 @@ export async function createYouTubeLiveSession(actor, body = {}) {
     stream = await createStream(accessToken, body.title);
     await bindBroadcast(accessToken, broadcast.id, stream.id);
 
+    const ingestion = stream.cdn?.ingestionInfo || {};
+    const base = String(
+      ingestion.rtmpsIngestionAddress || ingestion.ingestionAddress || "",
+    ).replace(/\/$/, "");
+    const streamName = String(ingestion.streamName || "");
+    if (!base || !streamName) {
+      throw httpError("YouTube did not return an ingest endpoint", 502, "YOUTUBE_INGEST_MISSING");
+    }
+
     const youtubeUrl = `https://www.youtube.com/watch?v=${broadcast.id}`;
     const event = await createHubEvent(actor, {
       ...body,
@@ -465,34 +474,29 @@ export async function createYouTubeLiveSession(actor, body = {}) {
       price: "",
     });
 
-    await dbRun(
-      `INSERT INTO youtube_live_sessions
-        (event_id, broadcast_id, stream_id, channel_id, scope_type, scope_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(event_id) DO UPDATE SET
-         broadcast_id = excluded.broadcast_id,
-         stream_id = excluded.stream_id,
-         channel_id = excluded.channel_id,
-         scope_type = excluded.scope_type,
-         scope_id = excluded.scope_id`,
-      [
-        event.eventId,
-        broadcast.id,
-        stream.id,
-        connection.channel_id,
-        connection.scope_type,
-        connection.scope_id,
-        Date.now(),
-      ],
-    );
-
-    const ingestion = stream.cdn?.ingestionInfo || {};
-    const base = String(
-      ingestion.rtmpsIngestionAddress || ingestion.ingestionAddress || "",
-    ).replace(/\/$/, "");
-    const streamName = String(ingestion.streamName || "");
-    if (!base || !streamName) {
-      throw httpError("YouTube did not return an ingest endpoint", 502, "YOUTUBE_INGEST_MISSING");
+    try {
+      await dbRun(
+        `INSERT INTO youtube_live_sessions
+          (event_id, broadcast_id, stream_id, channel_id, scope_type, scope_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(event_id) DO UPDATE SET
+           broadcast_id = excluded.broadcast_id,
+           stream_id = excluded.stream_id,
+           channel_id = excluded.channel_id,
+           scope_type = excluded.scope_type,
+           scope_id = excluded.scope_id`,
+        [
+          event.eventId,
+          broadcast.id,
+          stream.id,
+          connection.channel_id,
+          connection.scope_type,
+          connection.scope_id,
+          Date.now(),
+        ],
+      );
+    } catch (metadataErr) {
+      console.warn("[youtube-live] session metadata:", metadataErr.message);
     }
 
     return {
@@ -505,10 +509,8 @@ export async function createYouTubeLiveSession(actor, body = {}) {
       ingestUrl: `${base}/${streamName}`,
     };
   } catch (err) {
-    if (!broadcast?.id || !stream?.id) {
-      await deleteYoutubeResource(accessToken, "liveBroadcasts", broadcast?.id);
-      await deleteYoutubeResource(accessToken, "liveStreams", stream?.id);
-    }
+    await deleteYoutubeResource(accessToken, "liveBroadcasts", broadcast?.id);
+    await deleteYoutubeResource(accessToken, "liveStreams", stream?.id);
     throw err;
   }
 }
