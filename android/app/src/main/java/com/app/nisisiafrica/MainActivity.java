@@ -82,6 +82,7 @@ import kotlin.Unit;
 public class MainActivity extends AppCompatActivity implements HomeFragment.onScrollChangeListener, FirebaseCallback {
     private static final String TAG = "MainActivity";
     private static final String CHANNEL_ID = "nisisi_notifications";
+    private static final String STATE_CURRENT_TAB = "state_current_tab";
     private static int REQUEST_CODE_NOTIFICATIONS = 210;
 
     /** Profile → Message opens MainActivity on chat with these extras. */
@@ -172,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         setupBlurBars();
         setupBottomNav();
-        selectTab(currentTabId, false);
+        syncChromeToVisibleFragment();
         // After initial tab so chat open isn't overwritten by home select.
         handleOpenChatIntent(getIntent());
 
@@ -219,44 +220,77 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (chatFragment == null) chatFragment = new ChatFragment();
         if (profileFragment == null) profileFragment = new ProfileFragment();
 
-        if (homeFragment.isVisible()) {
-            currentlyDisplayedFragment = homeFragment;
-            currentTabId = R.id.homeFragment;
-        } else if (communitiesFragment.isVisible()) {
-            currentlyDisplayedFragment = communitiesFragment;
-            currentTabId = R.id.communitiesFragment;
-        } else if (chatFragment.isVisible()) {
-            currentlyDisplayedFragment = chatFragment;
-            currentTabId = R.id.chatFragment;
-        } else if (profileFragment.isVisible()) {
-            currentlyDisplayedFragment = profileFragment;
-            currentTabId = R.id.profileFragment;
-        } else {
-            currentlyDisplayedFragment = homeFragment;
-            currentTabId = R.id.homeFragment;
-            replaceFragment(homeFragment);
-        }
+        Fragment restoredVisible = findVisibleTabFragment();
+        int restoredTab = savedInstanceState.getInt(
+                STATE_CURRENT_TAB,
+                restoredVisible != null ? tabIdForFragment(restoredVisible) : R.id.homeFragment
+        );
+        Fragment target = fragmentForTab(restoredTab);
+        if (target == null) target = restoredVisible != null ? restoredVisible : homeFragment;
+        normalizeVisibleTab(target);
     }
 
     private void replaceFragment(Fragment fragmentToShow) {
         if (fragmentToShow == null) return;
-        if (fragmentToShow == currentlyDisplayedFragment && fragmentToShow.isVisible()) return;
+        normalizeVisibleTab(fragmentToShow);
+        syncChromeToVisibleFragment();
+    }
 
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        if (currentlyDisplayedFragment != null && currentlyDisplayedFragment.isAdded()) {
-            fragmentTransaction.hide(currentlyDisplayedFragment);
+    /**
+     * Ensures exactly one root tab is visible. This is deliberately stricter
+     * than hiding only the previously selected tab so a config/theme restore
+     * can never leave two restored fragments competing for nav focus.
+     */
+    private void normalizeVisibleTab(Fragment fragmentToShow) {
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        Fragment[] tabs = new Fragment[]{homeFragment, communitiesFragment, chatFragment, profileFragment};
+        for (Fragment tab : tabs) {
+            if (tab == null || tab == fragmentToShow || !tab.isAdded()) continue;
+            ft.hide(tab);
         }
-
         if (fragmentToShow.isAdded()) {
-            fragmentTransaction.show(fragmentToShow);
+            ft.show(fragmentToShow);
         } else {
-            String tag = tagFor(fragmentToShow);
-            fragmentTransaction.add(R.id.fragmentContainer, fragmentToShow, tag);
+            ft.add(R.id.fragmentContainer, fragmentToShow, tagFor(fragmentToShow));
         }
-
-        fragmentTransaction.commitNowAllowingStateLoss();
+        ft.commitNowAllowingStateLoss();
         currentlyDisplayedFragment = fragmentToShow;
+        currentTabId = tabIdForFragment(fragmentToShow);
+    }
+
+    private Fragment fragmentForTab(int tabId) {
+        if (tabId == R.id.homeFragment) return homeFragment;
+        if (tabId == R.id.communitiesFragment) return communitiesFragment;
+        if (tabId == R.id.chatFragment) return chatFragment;
+        if (tabId == R.id.profileFragment) return profileFragment;
+        return null;
+    }
+
+    private int tabIdForFragment(Fragment fragment) {
+        if (fragment == communitiesFragment) return R.id.communitiesFragment;
+        if (fragment == chatFragment) return R.id.chatFragment;
+        if (fragment == profileFragment) return R.id.profileFragment;
+        return R.id.homeFragment;
+    }
+
+    private Fragment findVisibleTabFragment() {
+        Fragment[] tabs = new Fragment[]{homeFragment, communitiesFragment, chatFragment, profileFragment};
+        for (Fragment tab : tabs) {
+            if (tab != null && tab.isAdded() && !tab.isHidden()) return tab;
+        }
+        return null;
+    }
+
+    /** The fragment actually on screen is the single source of truth for nav chrome. */
+    private void syncChromeToVisibleFragment() {
+        Fragment visible = findVisibleTabFragment();
+        if (visible == null) visible = currentlyDisplayedFragment;
+        if (visible == null) visible = homeFragment;
+        currentlyDisplayedFragment = visible;
+        currentTabId = tabIdForFragment(visible);
+        applyNavSelection(currentTabId);
+        applyTopBarContext(currentTabId);
+        applyFabContext(currentTabId);
     }
 
     private String tagFor(Fragment f) {
@@ -405,20 +439,33 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void selectTab(int tabId, boolean switchFragment) {
+        Fragment target = fragmentForTab(tabId);
+        if (target == null) return;
         if (switchFragment) {
-            if (tabId == R.id.homeFragment) {
-                replaceFragment(homeFragment);
-            } else if (tabId == R.id.communitiesFragment) {
-                replaceFragment(communitiesFragment);
-            } else if (tabId == R.id.chatFragment) {
-                replaceFragment(chatFragment);
-            } else if (tabId == R.id.profileFragment) {
-                replaceFragment(profileFragment);
-            }
+            replaceFragment(target);
+        } else {
+            syncChromeToVisibleFragment();
         }
-        currentTabId = tabId;
-        applyNavSelection(tabId);
-        applyTopBarContext(tabId);
+    }
+
+    private void applyFabContext(int tabId) {
+        if (fabCard == null || fabIcon == null) return;
+        boolean hiddenForConversation =
+                tabId == R.id.chatFragment && chatConversationOpen && !keepChatChrome;
+        fabCard.setVisibility(hiddenForConversation ? View.GONE : View.VISIBLE);
+        if (tabId == R.id.chatFragment) {
+            fabIcon.setImageResource(R.drawable.ic_chat);
+            fabCard.setContentDescription("New chat");
+        } else if (tabId == R.id.profileFragment) {
+            fabIcon.setImageResource(R.drawable.ic_edit);
+            fabCard.setContentDescription("Edit profile");
+        } else if (tabId == R.id.communitiesFragment) {
+            fabIcon.setImageResource(R.drawable.ic_add);
+            fabCard.setContentDescription("Create post");
+        } else {
+            fabIcon.setImageResource(R.drawable.ic_add);
+            fabCard.setContentDescription("Create");
+        }
     }
 
     private void applyNavSelection(int tabId) {
@@ -457,6 +504,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             bottomBarRow.setVisibility(hide ? View.GONE : View.VISIBLE);
         }
         applyTopBarContext(currentTabId);
+        applyFabContext(currentTabId);
         applyMainInsets();
     }
 
@@ -791,6 +839,22 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void redirectToLogin() {
         startActivity(new Intent(this, LoginSignUpActivity.class));
         finish();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (fragmentManager != null) syncChromeToVisibleFragment();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        Fragment visible = findVisibleTabFragment();
+        outState.putInt(
+                STATE_CURRENT_TAB,
+                visible != null ? tabIdForFragment(visible) : currentTabId
+        );
+        super.onSaveInstanceState(outState);
     }
 
     @Override
