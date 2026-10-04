@@ -54,15 +54,24 @@ export async function recordStoryView(actor, storyId) {
     };
   }
 
-  const countTxn = await ref.child("views").transaction((current) =>
-    (Number(current) || 0) + 1,
-  );
+  try {
+    const countTxn = await ref.child("views").transaction((current) =>
+      (Number(current) || 0) + 1,
+    );
 
-  return {
-    storyId,
-    recorded: true,
-    views: Number(countTxn.snapshot?.val()) || (Number(story.views) || 0) + 1,
-  };
+    return {
+      storyId,
+      recorded: true,
+      views: Number(countTxn.snapshot?.val()) || (Number(story.views) || 0) + 1,
+    };
+  } catch (err) {
+    // Keep aggregate + unique receipt consistent enough for a safe retry.
+    await dbRun(
+      "DELETE FROM story_view_receipts WHERE story_id = ? AND uid = ?",
+      [storyId, uid],
+    );
+    throw err;
+  }
 }
 
 function viewerName(user = {}) {
