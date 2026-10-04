@@ -21,6 +21,7 @@ export type MeDto = {
   firstName: string;
   lastName: string;
   photoUrl: string;
+  bio?: string;
   userRole: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
   schoolId?: string | null;
   schoolName?: string | null;
@@ -347,6 +348,23 @@ async function lmsFetch<T>(
 
 export async function fetchLmsMe(idToken: string) {
   return lmsFetch<MeDto>("/lms/me", idToken);
+}
+
+export async function patchMyProfile(
+  idToken: string,
+  body: {
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    photoUrl?: string;
+    bio?: string;
+  },
+) {
+  return lmsFetch<MeDto>("/lms/me/profile", idToken, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 export type AndroidAppReleaseDto = {
