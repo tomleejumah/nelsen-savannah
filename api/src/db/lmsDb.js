@@ -440,6 +440,12 @@ async function ensureMigrations() {
     "ALTER TABLE lessons ADD COLUMN lab_json TEXT",
     "ALTER TABLE school_memberships ADD COLUMN invite_token TEXT",
     "ALTER TABLE tracks ADD COLUMN ide_enabled INTEGER DEFAULT 0",
+    "ALTER TABLE hub_events ADD COLUMN audience_scope TEXT",
+    "ALTER TABLE hub_events ADD COLUMN school_id TEXT",
+    "ALTER TABLE hub_events ADD COLUMN track_id TEXT",
+    engine === "postgres"
+      ? "ALTER TABLE hub_events ADD COLUMN live_notified_at BIGINT"
+      : "ALTER TABLE hub_events ADD COLUMN live_notified_at INTEGER",
   ];
   for (const sql of alters) {
     try {
@@ -646,6 +652,10 @@ async function ensureMigrations() {
       price TEXT,
       is_public INTEGER NOT NULL DEFAULT 1,
       facilitators_json TEXT,
+      audience_scope TEXT,
+      school_id TEXT,
+      track_id TEXT,
+      live_notified_at BIGINT,
       created_by TEXT,
       created_at BIGINT NOT NULL,
       updated_at BIGINT NOT NULL
