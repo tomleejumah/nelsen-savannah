@@ -367,6 +367,24 @@ export async function patchMyProfile(
   });
 }
 
+export async function uploadProfilePhoto(idToken: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", "profile_media");
+  const res = await fetch(`${LMS_API_BASE}/media/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: form,
+  });
+  const json = (await res.json().catch(() => null)) as
+    | { success?: boolean; url?: string; error?: string }
+    | null;
+  if (!res.ok || !json?.success || !json.url) {
+    throw new Error(json?.error || `Photo upload failed (HTTP ${res.status})`);
+  }
+  return json.url;
+}
+
 export type AndroidAppReleaseDto = {
   available: boolean;
   fileName?: string;
