@@ -22,6 +22,7 @@ import {
   fetchMyEnrollments,
   fetchMyPurchases,
   patchMyProfile,
+  uploadProfilePhoto,
   type EnrollmentDto,
   type MeDto,
   type PurchaseDto,
@@ -51,6 +52,8 @@ function ProfilePage() {
   const [nameDraft, setNameDraft] = useState("");
   const [bioDraft, setBioDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [photoDraft, setPhotoDraft] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
 
   const load = useCallback(async (u: User, gen: number) => {
@@ -72,6 +75,7 @@ function ProfilePage() {
         setMe(meEnv.data);
         setNameDraft(meEnv.data.displayName || u.displayName || "");
         setBioDraft(meEnv.data.bio || "");
+        setPhotoDraft(meEnv.data.photoUrl || u.photoURL || null);
       }
       setEnrollments(enrollEnv.data?.enrollments || []);
       setPurchases(payEnv.data?.purchases || []);
@@ -98,6 +102,7 @@ function ProfilePage() {
         setPurchases([]);
         setNameDraft("");
         setBioDraft("");
+        setPhotoDraft(null);
       }
     });
   }, [load]);
@@ -119,7 +124,7 @@ function ProfilePage() {
       const saved = await patchMyProfile(token, {
         displayName: nextName,
         bio: bioDraft.trim(),
-        photoUrl: user.photoURL || me?.photoUrl || "",
+        photoUrl: photoDraft || user.photoURL || me?.photoUrl || "",
       });
       if (!saved.ok || !saved.data) {
         throw new Error(saved.error || "Could not save profile");
@@ -131,6 +136,33 @@ function ProfilePage() {
       setError(err instanceof Error ? err.message : "Could not save name");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onPhotoPicked(file: File | null) {
+    if (!user || !file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Profile photo must be 8 MB or smaller");
+      return;
+    }
+    setPhotoUploading(true);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const url = await uploadProfilePhoto(token, file);
+      const saved = await patchMyProfile(token, { photoUrl: url });
+      if (!saved.ok) throw new Error(saved.error || "Could not save profile photo");
+      await updateProfile(user, { photoURL: url });
+      setPhotoDraft(url);
+      setSavedNote("Profile photo updated");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload profile photo");
+    } finally {
+      setPhotoUploading(false);
     }
   }
 
@@ -193,17 +225,29 @@ function ProfilePage() {
 
         <section className="mt-10 rounded-3xl border border-border/70 bg-card p-6 sm:p-8">
           <div className="flex items-start gap-4">
-            {user.photoURL || me?.photoUrl ? (
-              <img
-                src={user.photoURL || me?.photoUrl}
-                alt=""
-                className="h-14 w-14 rounded-full object-cover"
+            <label className="group relative cursor-pointer" title="Change profile photo">
+              {photoDraft || user.photoURL || me?.photoUrl ? (
+                <img
+                  src={photoDraft || user.photoURL || me?.photoUrl || ""}
+                  alt=""
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+              ) : (
+                <span className="icon-chip-lg">
+                  <UserRound className="h-5 w-5" />
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={photoUploading}
+                onChange={(e) => void onPhotoPicked(e.target.files?.[0] || null)}
               />
-            ) : (
-              <span className="icon-chip-lg">
-                <UserRound className="h-5 w-5" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-background px-2 py-0.5 text-[10px] shadow">
+                {photoUploading ? "Uploading…" : "Change"}
               </span>
-            )}
+            </label>
             <div className="min-w-0 flex-1">
               <p className="font-display text-lg font-semibold">
                 {me?.displayName || user.displayName || "Learner"}
