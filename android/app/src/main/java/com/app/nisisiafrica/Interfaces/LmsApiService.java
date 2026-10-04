@@ -56,6 +56,11 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("lessonId") String lessonId);
 
+    @GET("lms/media/{mediaId}/url")
+    Call<LmsModels.MediaPlaybackEnvelope> mediaPlaybackUrl(
+            @Header("Authorization") String bearer,
+            @Path("mediaId") String mediaId);
+
     @GET("lms/tracks/{trackId}/ide")
     Call<LmsModels.IdeConfigEnvelope> trackIdeConfig(@Header("Authorization") String bearer, @Path("trackId") String trackId);
 
