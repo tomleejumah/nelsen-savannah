@@ -212,6 +212,9 @@ Android can use the native video player controls while Web exposes equivalent co
 
 ## Phase 5 — YouTube Live Learning
 
+**Approved architecture:** Only Mentor, SchoolAdmin, and Admin roles may create/start a live session. Mentees are viewers only. All live broadcasts use the single Nelsen-owned YouTube channel; creators do not connect personal YouTube channels.
+
+
 Nelsen will **not process, relay, transcode, or store the live video stream**.
 
 YouTube handles the video infrastructure.
