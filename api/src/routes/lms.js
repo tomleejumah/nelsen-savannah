@@ -30,6 +30,7 @@ const upload = multer({
 const router = express.Router();
 
 router.get("/me", authenticateUser, lmsController.getLmsMe);
+router.patch("/me/profile", authenticateUser, lmsController.patchLmsMeProfile);
 router.patch(
   "/me/active-school",
   authenticateUser,
