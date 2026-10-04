@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Adapters.EventAdapter;
+import com.app.nisisiafrica.Utils.EventActions;
 import com.app.nisisiafrica.Utils.EventSeatReservation;
 import com.app.nisisiafrica.ViewModel.EventViewModel;
 import com.app.nisisiafrica.ViewModel.EventViewModelFactory;
@@ -57,6 +58,9 @@ public class AllSchedulesActivity extends AppCompatActivity {
         RecyclerView rv = findViewById(R.id.rvSchedules);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new EventAdapter(false);
+        adapter.setOnEventClick(event -> {
+            if (EventActions.isLive(event)) EventActions.openLiveViewer(this, event);
+        });
         adapter.setOnReserveClick(event ->
                 EventSeatReservation.show(this, event, userData, e -> load()));
         rv.setAdapter(adapter);

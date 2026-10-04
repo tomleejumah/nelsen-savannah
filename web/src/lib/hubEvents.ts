@@ -15,6 +15,7 @@ export function hubEventToAppEvent(e: HubEventDto): AppEvent {
     mentorName: e.mentorName,
     menteeName: e.menteeName,
     status: e.status,
+    liveStatus: e.liveStatus ?? null,
     description: e.description,
     mode: e.mode,
     location: e.location,
