@@ -54,17 +54,12 @@ object AppUpdateBottomSheet {
             number.text = pct.toString()
             description.text = text
         }
-        var installPromptLaunched = false
-        fun ready(autoInstall: Boolean = false) {
+        fun ready() {
             val apk = AppUpdateManager.downloadedApk(activity, code)
             if (!apk.exists() || !AppUpdateManager.verifySha256(apk, release.sha256.orEmpty())) return
-            showProgress(100, "Update downloaded. Tap to install.")
+            showProgress(100, "Update downloaded.\nTap to install.")
             description.setOnClickListener { promptInstall(activity, apk) }
             view.setOnClickListener { promptInstall(activity, apk) }
-            if (autoInstall && !installPromptLaunched) {
-                installPromptLaunched = true
-                promptInstall(activity, apk)
-            }
         }
         fun retry() {
             description.text = "Download failed. Tap to retry."
@@ -88,7 +83,7 @@ object AppUpdateBottomSheet {
             val work = infos.lastOrNull() ?: return@Observer
             val pct = work.progress.getInt(AppUpdateDownloadWorker.KEY_PROGRESS, progress.progress)
             when (work.state) {
-                WorkInfo.State.SUCCEEDED -> ready(autoInstall = true)
+                WorkInfo.State.SUCCEEDED -> ready()
                 WorkInfo.State.RUNNING -> showProgress(pct, "Downloading update…")
                 WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> showProgress(pct, "Waiting for network / retry…")
                 WorkInfo.State.FAILED -> {
