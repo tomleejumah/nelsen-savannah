@@ -210,7 +210,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
             collapseSpeedDial();
             if (plusIcon != null) {
-                plusIcon.setVisibility(Roles.canCreate(userData.getUserRole()) ? View.VISIBLE : View.GONE);
+                plusIcon.setVisibility(View.GONE);
+                plusIcon.setOnClickListener(null);
             }
 
             // Mentors are shown in-course only (tutor on a track), not as a home rail.
@@ -279,7 +280,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         }
 
         if (plusIcon != null) {
-            plusIcon.setOnClickListener(v -> showCreateSheet());
+            plusIcon.setVisibility(View.GONE);
+            plusIcon.setOnClickListener(null);
         }
         View calendarLayout = view.findViewById(R.id.layoutCalendar);
         if (calendarLayout != null) {
