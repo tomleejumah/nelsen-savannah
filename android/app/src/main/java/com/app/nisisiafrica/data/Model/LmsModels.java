@@ -217,6 +217,7 @@ public final class LmsModels {
         public String courseLink;
         public boolean isLiked;
         public String trackId;
+        public String schoolId;
         public String programSlug;
         public String does;
         public float trackPercent;
