@@ -179,6 +179,12 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("eventId") String eventId);
 
+    @PATCH("lms/events/{eventId}/live-status")
+    Call<LmsModels.HubEventEnvelope> updateHubLiveStatus(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId,
+            @Body LmsModels.LiveStatusBody body);
+
     @GET("lms/app/android")
     Call<LmsModels.AppReleaseEnvelope> getAppRelease();
 

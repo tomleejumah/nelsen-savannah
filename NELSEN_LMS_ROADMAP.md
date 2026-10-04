@@ -272,8 +272,8 @@ Users
 - [ ] Add **Go Live** UI.
 - [ ] Create/link a YouTube Live session.
 - [ ] Associate the live session with the Nelsen user/course/event.
-- [ ] Store live metadata in Nelsen.
-- [ ] Track live status: scheduled/live/ended.
+- [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status).
+- [x] Track live status in the API contract as scheduled/live/ended; automatic YouTube-driven transitions still remain.
 
 ### Mentees / viewers
 

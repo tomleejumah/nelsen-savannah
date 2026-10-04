@@ -1573,6 +1573,7 @@ export type HubEventDto = {
   mentorName: string;
   menteeName: string;
   status: number;
+  liveStatus?: "scheduled" | "live" | "ended" | null;
   description: string | null;
   mode: "physical" | "online";
   location: string;
@@ -1588,6 +1589,23 @@ export type HubEventDto = {
 
 export async function fetchPublicHubEvents() {
   return lmsFetch<{ events: HubEventDto[] }>("/lms/events/public");
+}
+
+export async function patchHubLiveStatus(
+  idToken: string,
+  eventId: string,
+  liveStatus: "scheduled" | "live" | "ended",
+  meetingLink?: string,
+) {
+  return lmsFetch<{ event: HubEventDto }>(
+    `/lms/events/${encodeURIComponent(eventId)}/live-status`,
+    idToken,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ liveStatus, ...(meetingLink ? { meetingLink } : {}) }),
+    },
+  );
 }
 
 export async function fetchEventReservationCounts() {

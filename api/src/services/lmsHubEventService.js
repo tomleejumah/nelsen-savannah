@@ -3,6 +3,33 @@ import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
+const LIVE_STATUS = Object.freeze({ scheduled: 0, live: 1, ended: 2 });
+
+function liveStatusName(status) {
+  if (Number(status) === LIVE_STATUS.live) return "live";
+  if (Number(status) === LIVE_STATUS.ended) return "ended";
+  return "scheduled";
+}
+
+function parseLiveStatus(value, fallback = LIVE_STATUS.scheduled) {
+  if (typeof value === "string") {
+    const key = value.trim().toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(LIVE_STATUS, key)) return LIVE_STATUS[key];
+  }
+  const n = Number(value);
+  return [0, 1, 2].includes(n) ? n : fallback;
+}
+
+function isYoutubeUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    return host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be";
+  } catch {
+    return false;
+  }
+}
+
 function parseJson(raw, fallback = null) {
   if (!raw) return fallback;
   try {
@@ -25,6 +52,7 @@ function rowToEvent(row, seatsTaken = 0) {
     mentorName: row.mentor_name || "",
     menteeName: row.mentee_name || "",
     status: Number(row.status) || 0,
+    liveStatus: row.event_type === "live" ? liveStatusName(row.status) : null,
     description: row.description || null,
     mode: row.mode || "physical",
     location: row.location || "",
@@ -146,11 +174,18 @@ export async function createHubEvent(actor, body = {}) {
     throw err;
   }
 
-  const mode = body.mode === "online" ? "online" : "physical";
+  const eventType = String(body.eventType || body.event_type || "event").trim().toLowerCase() || "event";
+  const isLive = eventType === "live";
+  const mode = isLive ? "online" : body.mode === "online" ? "online" : "physical";
   const location = String(body.location || "").trim();
   const meetingLink = String(body.meetingLink || body.meeting_link || "").trim();
   if (mode === "online" && !meetingLink) {
-    const err = new Error("Meeting link is required for online events");
+    const err = new Error(isLive ? "YouTube Live link is required" : "Meeting link is required for online events");
+    err.status = 400;
+    throw err;
+  }
+  if (isLive && !isYoutubeUrl(meetingLink)) {
+    const err = new Error("Live sessions must use a YouTube link");
     err.status = 400;
     throw err;
   }
@@ -160,7 +195,10 @@ export async function createHubEvent(actor, body = {}) {
     throw err;
   }
 
-  const seats = Math.max(0, Number(body.seats) || 0);
+  const seats = isLive ? 0 : Math.max(0, Number(body.seats) || 0);
+  const status = isLive
+    ? parseLiveStatus(body.liveStatus ?? body.status)
+    : Number(body.status) || 0;
   const eventId = id();
   const now = Date.now();
   const uid = actor?.uid || "";
@@ -180,12 +218,12 @@ export async function createHubEvent(actor, body = {}) {
       dateMs,
       String(body.startTime || body.start_time || "").trim(),
       String(body.endTime || body.end_time || "").trim(),
-      String(body.eventType || body.event_type || "event").trim() || "event",
+      eventType,
       String(body.mentorId || uid).trim(),
       String(body.menteeId || uid).trim(),
       String(body.mentorName || displayName).trim(),
       String(body.menteeName || displayName).trim(),
-      Number(body.status) || 0,
+      status,
       body.description ? String(body.description).trim() : null,
       mode,
       location,
@@ -202,6 +240,37 @@ export async function createHubEvent(actor, body = {}) {
     ],
   );
 
+  return getHubEvent(eventId);
+}
+
+export async function updateHubLiveStatus(eventId, body = {}) {
+  const existing = await getHubEvent(eventId);
+  if (!existing) {
+    const err = new Error("Unknown event");
+    err.status = 404;
+    throw err;
+  }
+  if (existing.eventType !== "live") {
+    const err = new Error("Event is not a live session");
+    err.status = 400;
+    throw err;
+  }
+
+  const status = parseLiveStatus(body.liveStatus ?? body.status, existing.status);
+  let meetingLink = existing.meetingLink;
+  if (body.meetingLink !== undefined || body.meeting_link !== undefined) {
+    meetingLink = String(body.meetingLink ?? body.meeting_link ?? "").trim();
+    if (!isYoutubeUrl(meetingLink)) {
+      const err = new Error("Live sessions must use a YouTube link");
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  await dbRun(
+    `UPDATE hub_events SET status = ?, meeting_link = ?, updated_at = ? WHERE event_id = ?`,
+    [status, meetingLink, Date.now(), eventId],
+  );
   return getHubEvent(eventId);
 }
 
