@@ -92,6 +92,64 @@ export async function getLmsHealth(_req, res) {
   }
 }
 
+export async function postYouTubeConnectUrl(req, res) {
+  try {
+    const svc = await import("../services/lmsYouTubeOAuthService.js");
+    const data = await svc.createYouTubeConnectUrl(profileFromReq(req), req.body || {});
+    return lmsOk(res, data, getPrimaryEngine());
+  } catch (err) {
+    console.error("[POST /lms/youtube/connect-url]", err);
+    return lmsErr(res, err.message || "Could not start YouTube connection", err.status || 500);
+  }
+}
+
+export async function getYouTubeConnection(req, res) {
+  try {
+    const svc = await import("../services/lmsYouTubeOAuthService.js");
+    const data = await svc.getYouTubeConnection(profileFromReq(req), {
+      schoolId: req.query.schoolId,
+    });
+    return lmsOk(res, data, getPrimaryEngine());
+  } catch (err) {
+    console.error("[GET /lms/youtube/connection]", err);
+    return lmsErr(res, err.message || "Could not load YouTube connection", err.status || 500);
+  }
+}
+
+export async function getYouTubeOAuthCallback(req, res) {
+  try {
+    if (req.query.error) {
+      return res.status(400).type("text/plain").send(
+        "YouTube connection cancelled: " + String(req.query.error_description || req.query.error),
+      );
+    }
+    const svc = await import("../services/lmsYouTubeOAuthService.js");
+    const data = await svc.completeYouTubeOAuth({
+      code: req.query.code,
+      state: req.query.state,
+    });
+    return res.type("text/plain").send(
+      "YouTube connected: " + data.channelTitle + ". You can return to Nelsen.",
+    );
+  } catch (err) {
+    console.error("[GET /lms/youtube/oauth/callback]", err);
+    return res.status(err.status || 500).type("text/plain").send(
+      "YouTube connection failed: " + (err.message || "Unknown error"),
+    );
+  }
+}
+
+export async function postYouTubeLive(req, res) {
+  try {
+    const svc = await import("../services/lmsYouTubeOAuthService.js");
+    const data = await svc.createYouTubeLiveSession(profileFromReq(req), req.body || {});
+    return lmsOk(res, data, getPrimaryEngine());
+  } catch (err) {
+    console.error("[POST /lms/youtube/live]", err);
+    return lmsErr(res, err.message || "Could not create YouTube live", err.status || 500);
+  }
+}
+
 export async function postStoryView(req, res) {
   try {
     const { recordStoryView } = await import("../services/lmsStoryViewService.js");
