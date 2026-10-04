@@ -1,6 +1,5 @@
 package com.app.nisisiafrica;
 
-import com.app.nisisiafrica.Utils.NetworkStatusBanner;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -67,7 +66,6 @@ import retrofit2.Response;
  * and progress is reported via PATCH /lms/progress/:lessonId.
  */
 public class ChapterLearnActivity extends AppCompatActivity {
-    private NetworkStatusBanner networkStatusBanner;
 
     public static final String EXTRA_TRACK_ID = "extra_track_id";
     public static final String EXTRA_MODULE_ID = "extra_module_id";
@@ -107,6 +105,10 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private String moduleId;
     private String openLessonId;
     private String activeLessonId;
+    private String activeMediaId;
+    private String mediaRefreshAttemptedLessonId;
+    private boolean activeLessonIsPdf;
+    private int activeLessonLastPage;
     private long releaseAt;
     private LmsCacheBridge offlineCache;
     private boolean cachedLessonsDisplayed;
@@ -129,8 +131,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_chapter_learn);
-        networkStatusBanner = new NetworkStatusBanner(this);
-        networkStatusBanner.start();
         headerContent = findViewById(R.id.headerContent);
         lessonsSheet = findViewById(R.id.lessonsSheet);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -445,13 +445,23 @@ public class ChapterLearnActivity extends AppCompatActivity {
 
     private void presentLesson(LmsModels.LessonDto lesson) {
         if (lesson == null) return;
+        boolean changedLesson = !TextUtils.equals(activeLessonId, lesson.lessonId);
         activeLessonId = lesson.lessonId;
+        activeMediaId = lesson.mediaId;
+        activeLessonLastPage = Math.max(0, lesson.lastPage);
+        if (changedLesson) mediaRefreshAttemptedLessonId = null;
         stopWatchLoop();
+
         String url = !TextUtils.isEmpty(lesson.playbackUrl) ? lesson.playbackUrl : lesson.contentUrl;
-        if (isPdfLesson(lesson, url)) {
-            openPdf(url, Math.max(0, lesson.lastPage));
-        } else if (!TextUtils.isEmpty(url)) {
+        activeLessonIsPdf = isPdfLesson(lesson, url);
+        if (activeLessonIsPdf && !TextUtils.isEmpty(url)) {
+            openPdf(url, activeLessonLastPage);
+        } else if (!activeLessonIsPdf && !TextUtils.isEmpty(url)) {
             playUrl(url);
+        } else if (!TextUtils.isEmpty(activeMediaId) && refreshActiveMedia()) {
+            hidePlayers();
+            tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+            tvPlayerPlaceholder.setText("Refreshing lesson media…");
         } else {
             hidePlayers();
             tvPlayerPlaceholder.setVisibility(View.VISIBLE);
@@ -460,6 +470,68 @@ public class ChapterLearnActivity extends AppCompatActivity {
         }
         bindLessonWork(lesson);
         reportOpened(lesson.lessonId);
+    }
+
+    private boolean refreshActiveMedia() {
+        if (TextUtils.isEmpty(activeMediaId) || TextUtils.isEmpty(activeLessonId)
+                || TextUtils.equals(mediaRefreshAttemptedLessonId, activeLessonId)) {
+            return false;
+        }
+        mediaRefreshAttemptedLessonId = activeLessonId;
+        final String lessonId = activeLessonId;
+        final String mediaId = activeMediaId;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return false;
+
+        tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setText("Refreshing lesson media…");
+        user.getIdToken(false)
+                .addOnSuccessListener(result ->
+                        ApiClient.getLmsService()
+                                .mediaPlaybackUrl("Bearer " + result.getToken(), mediaId)
+                                .enqueue(new Callback<>() {
+                                    @Override
+                                    public void onResponse(
+                                            Call<LmsModels.MediaPlaybackEnvelope> call,
+                                            Response<LmsModels.MediaPlaybackEnvelope> response) {
+                                        if (!TextUtils.equals(lessonId, activeLessonId)) return;
+                                        LmsModels.MediaPlaybackEnvelope body = response.body();
+                                        String freshUrl = body != null && body.data != null
+                                                ? body.data.url : null;
+                                        if (response.isSuccessful() && body != null && body.ok
+                                                && !TextUtils.isEmpty(freshUrl)) {
+                                            if (activeLessonIsPdf) {
+                                                openPdf(freshUrl, activeLessonLastPage);
+                                            } else {
+                                                playUrl(freshUrl);
+                                            }
+                                        } else {
+                                            showMediaLoadError();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(
+                                            Call<LmsModels.MediaPlaybackEnvelope> call,
+                                            Throwable t) {
+                                        if (TextUtils.equals(lessonId, activeLessonId)) {
+                                            showMediaLoadError();
+                                        }
+                                    }
+                                }))
+                .addOnFailureListener(e -> showMediaLoadError());
+        return true;
+    }
+
+    private void showMediaLoadError() {
+        hidePlayers();
+        tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setText("Could not load lesson media. Tap to retry.");
+        tvPlayerPlaceholder.setOnClickListener(v -> {
+            mediaRefreshAttemptedLessonId = null;
+            tvPlayerPlaceholder.setOnClickListener(null);
+            refreshActiveMedia();
+        });
     }
 
     private static boolean isPdfLesson(LmsModels.LessonDto lesson, String url) {
@@ -586,7 +658,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         });
         videoView.setOnCompletionListener(mp -> reportVideoPosition(true));
         videoView.setOnErrorListener((mp, what, extra) -> {
-            Toast.makeText(this, "Playback failed", Toast.LENGTH_SHORT).show();
+            activeMediaPlayer = null;
+            if (!refreshActiveMedia()) showMediaLoadError();
             return true;
         });
         videoView.start();
@@ -616,8 +689,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
                 mainHandler.post(() -> showPdfFile(out, start, lessonId));
             } catch (Exception e) {
                 mainHandler.post(() -> {
-                    tvPlayerPlaceholder.setText("Could not open PDF");
-                    Toast.makeText(this, "Could not open PDF", Toast.LENGTH_SHORT).show();
+                    if (!TextUtils.equals(lessonId, activeLessonId)) return;
+                    if (!refreshActiveMedia()) showMediaLoadError();
                 });
             }
         });
@@ -652,7 +725,9 @@ public class ChapterLearnActivity extends AppCompatActivity {
                     patchProgress(lessonId, body);
                     updateLessonPercentUi(lessonId, pct);
                 })
-                .onError(t -> Toast.makeText(this, "PDF error", Toast.LENGTH_SHORT).show())
+                .onError(t -> {
+                    if (!refreshActiveMedia()) showMediaLoadError();
+                })
                 .load();
     }
 
@@ -971,7 +1046,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
         stopWatchLoop();
         hidePlayers();
         pdfExec.shutdownNow();
-        if (networkStatusBanner != null) networkStatusBanner.stop();
         super.onDestroy();
     }
 

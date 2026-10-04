@@ -296,6 +296,30 @@ Watch Live
 
 ---
 
+## Phase 6 — Android Deep Links & Sharing
+
+Make app content shareable with links that open the exact destination in Nelsen Android when installed and fall back safely to Web when it is not.
+
+### Link targets
+
+- [ ] Share/open a specific **community post**.
+- [ ] Share/open a specific **story/status**.
+- [ ] Share/open a specific **course/track**.
+- [ ] Share/open a specific **school**.
+- [ ] Preserve the target through sign-in so a logged-out user lands on the shared content after authentication.
+
+### Android App Links
+
+- [ ] Define stable HTTPS routes for posts, stories/statuses, courses, and schools.
+- [ ] Add Android intent filters for verified **App Links** on the Nelsen domain.
+- [ ] Publish and verify `assetlinks.json` for the production Android signing certificate.
+- [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
+- [ ] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
+- [ ] Add native **Share** actions for stories/statuses, courses, and schools using canonical HTTPS links rather than app-only custom schemes.
+- [ ] Keep a Web fallback page for users who do not have the app installed.
+- [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community content.
+
+---
 ## Implementation Order
 
 1. Convert IDE availability from lesson-based to **course-based**.
@@ -311,6 +335,7 @@ Watch Live
 11. Add FCM live notifications.
 12. Add Web/Android live viewers.
 13. Add live session history and ended-live handling.
+14. Add verified Android deep links + sharing for community posts, stories/statuses, courses, and schools.
 
 ---
 
