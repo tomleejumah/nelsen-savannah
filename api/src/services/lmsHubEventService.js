@@ -157,6 +157,60 @@ async function resolveLiveAudience(actor, body) {
   return { audienceScope: scope, schoolId, trackId };
 }
 
+async function hasActiveTrackEnrollment(uid, trackId) {
+  if (!uid || !trackId) return false;
+  const row = await dbGet(
+    `SELECT 1 AS ok FROM enrollments
+     WHERE uid = ? AND track_id = ?
+       AND lower(COALESCE(status, 'in_progress')) NOT IN ('cancelled', 'dropped', 'suspended')
+     LIMIT 1`,
+    [uid, trackId],
+  );
+  return Boolean(row);
+}
+
+async function isTrackMentor(uid, trackId) {
+  if (!uid || !trackId) return false;
+  const row = await dbGet(
+    "SELECT 1 AS ok FROM track_mentors WHERE uid = ? AND track_id = ? LIMIT 1",
+    [uid, trackId],
+  );
+  return Boolean(row);
+}
+
+export async function canViewHubEvent(event, uid = null) {
+  if (!event || !event.isPublic) return false;
+  if (event.eventType !== "live" || !event.audienceScope) return true;
+  if (!uid) return false;
+
+  const viewerUid = String(uid);
+  if (event.createdBy && String(event.createdBy) === viewerUid) return true;
+
+  const role = await actorRole(viewerUid);
+  if (role === "Admin" || role === "SuperAdmin") return true;
+
+  if (event.audienceScope === "platform") return true;
+
+  if (event.audienceScope === "school") {
+    if (!event.schoolId) return false;
+    return (await actorSchool(viewerUid)) === event.schoolId
+      || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+  }
+
+  if (event.audienceScope === "course") {
+    if (!event.trackId) return false;
+    if (await hasActiveTrackEnrollment(viewerUid, event.trackId)) return true;
+    if (await isTrackMentor(viewerUid, event.trackId)) return true;
+    if (role === "SchoolAdmin" && event.schoolId) {
+      return (await actorSchool(viewerUid)) === event.schoolId
+        || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+    }
+    return false;
+  }
+
+  return false;
+}
+
 async function notifyLiveIfNeeded(eventId) {
   const event = await getHubEvent(eventId);
   if (!event || event.eventType !== "live" || event.status !== LIVE_STATUS.live || event.liveNotifiedAt) {
@@ -298,7 +352,13 @@ export async function listPublicHubEvents({ filter = "upcoming", uid = null } = 
       [now],
     );
   }
-  const ids = rows.map((r) => r.event_id);
+  const candidates = rows.map((row) => rowToEvent(row, 0));
+  const visibility = await Promise.all(
+    candidates.map((event) => canViewHubEvent(event, uid)),
+  );
+  const visibleRows = rows.filter((_row, index) => visibility[index]);
+
+  const ids = visibleRows.map((r) => r.event_id);
   const taken = await seatsTakenMap(ids);
   let reservedIds = new Set();
   if (uid) {
@@ -309,7 +369,7 @@ export async function listPublicHubEvents({ filter = "upcoming", uid = null } = 
     reservedIds = new Set(rsv.map((r) => r.event_id));
   }
   return {
-    events: rows.map((row) => ({
+    events: visibleRows.map((row) => ({
       ...rowToEvent(row, taken[row.event_id] || 0),
       reservedByMe: reservedIds.has(row.event_id),
     })),

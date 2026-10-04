@@ -29,10 +29,13 @@ export function hubEventToAppEvent(e: HubEventDto): AppEvent {
   };
 }
 
-export async function loadHubEvents(): Promise<AppEvent[]> {
-  const res = await fetchPublicHubEvents();
-  if (res.ok && res.data?.events?.length) {
-    return res.data.events.map(hubEventToAppEvent);
+export async function loadHubEvents(
+  idToken?: string | null,
+  filter: "upcoming" | "past" | "all" = "upcoming",
+): Promise<AppEvent[]> {
+  const res = await fetchPublicHubEvents(idToken, filter);
+  if (res.ok && res.data) {
+    return (res.data.events || []).map(hubEventToAppEvent);
   }
-  return FALLBACK_EVENTS;
+  return filter === "upcoming" ? FALLBACK_EVENTS : [];
 }

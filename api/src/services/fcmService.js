@@ -59,6 +59,9 @@ export async function sendFCMNotification(receiverId, notification) {
         ...(notification.schoolId && { schoolId: notification.schoolId }),
         ...(notification.trackId && { trackId: notification.trackId }),
         ...(notification.audienceScope && { audienceScope: notification.audienceScope }),
+        ...(notification.youtubeUrl && { youtubeUrl: notification.youtubeUrl }),
+        ...(notification.liveStatus && { liveStatus: notification.liveStatus }),
+        ...(notification.eventTitle && { eventTitle: notification.eventTitle }),
         ...(notification.conversationId && {
           conversationId: notification.conversationId,
         }),

@@ -21,6 +21,7 @@ import com.app.nisisiafrica.Worker.EventReminderWorker;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.ProgrammeItem;
 import com.app.nisisiafrica.data.Repository.CommunityRepository;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.remote.LmsEventsDataSource;
 import com.app.nisisiafrica.data.remote.ProgrammesDataSource;
 import android.view.View;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class CreateEventActivity extends AppCompatActivity {
 
@@ -49,13 +51,20 @@ public class CreateEventActivity extends AppCompatActivity {
     public static final String EXTRA_LIVE_MODE = "extra_live_mode";
 
     private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink, etSeats, etPrice;
-    private MaterialAutoCompleteTextView etProgram;
-    private TextView tvDate, tvStart, tvEnd;
+    private MaterialAutoCompleteTextView etProgram, etLiveAudience, etLiveCourse;
+    private TextView tvDate, tvStart, tvEnd, tvLiveAudienceHint;
     private MaterialButton btnSave, btnModeOnline;
-    private TextInputLayout tilLocation, tilMeetingLink;
+    private TextInputLayout tilLocation, tilMeetingLink, tilProgram, tilLiveCourse;
     private MaterialButtonToggleGroup toggleMode;
-    private View eventCommercialRow;
+    private View eventCommercialRow, liveAudienceSection;
     private boolean liveMode = false;
+
+    private final List<LmsModels.TrackCard> liveTrackOptions = new ArrayList<>();
+    private String liveAudienceScope = "school";
+    private String liveSchoolId = "";
+    private String liveSchoolName = "";
+    private String liveTrackId = "";
+    private String liveTrackTitle = "";
 
     private final Calendar dateCal = Calendar.getInstance();
     private boolean dateSet = false;
@@ -101,6 +110,8 @@ public class CreateEventActivity extends AppCompatActivity {
         etLocation = findViewById(R.id.etEventLocation);
         etMeetingLink = findViewById(R.id.etMeetingLink);
         etProgram = findViewById(R.id.etProgram);
+        etLiveAudience = findViewById(R.id.etLiveAudience);
+        etLiveCourse = findViewById(R.id.etLiveCourse);
         etSeats = findViewById(R.id.etSeats);
         etPrice = findViewById(R.id.etPrice);
         tvDate = findViewById(R.id.tvDate);
@@ -110,6 +121,10 @@ public class CreateEventActivity extends AppCompatActivity {
         btnModeOnline = findViewById(R.id.btnModeOnline);
         tilLocation = findViewById(R.id.tilLocation);
         tilMeetingLink = findViewById(R.id.tilMeetingLink);
+        tilProgram = findViewById(R.id.tilProgram);
+        tilLiveCourse = findViewById(R.id.tilLiveCourse);
+        tvLiveAudienceHint = findViewById(R.id.tvLiveAudienceHint);
+        liveAudienceSection = findViewById(R.id.liveAudienceSection);
         toggleMode = findViewById(R.id.toggleMode);
         eventCommercialRow = findViewById(R.id.eventCommercialRow);
 
@@ -145,6 +160,10 @@ public class CreateEventActivity extends AppCompatActivity {
             tilMeetingLink.setVisibility(View.VISIBLE);
             tilMeetingLink.setHint("Nelsen YouTube Live URL");
             if (eventCommercialRow != null) eventCommercialRow.setVisibility(View.GONE);
+            if (tilProgram != null) tilProgram.setVisibility(View.GONE);
+            if (liveAudienceSection != null) liveAudienceSection.setVisibility(View.VISIBLE);
+            setupLiveAudienceControls();
+            loadLiveAudienceContext();
             btnSave.setText("Link Live Session");
         }
 
@@ -152,6 +171,117 @@ public class CreateEventActivity extends AppCompatActivity {
         tvStart.setOnClickListener(v -> pickTime(true));
         tvEnd.setOnClickListener(v -> pickTime(false));
         btnSave.setOnClickListener(v -> saveEvent());
+    }
+
+    private void setupLiveAudienceControls() {
+        List<String> scopes = new ArrayList<>();
+        scopes.add("Course");
+        scopes.add("School");
+        if (Roles.isSuperAdmin()) scopes.add("Platform");
+
+        etLiveAudience.setAdapter(new ArrayAdapter<>(
+                this, android.R.layout.simple_dropdown_item_1line, scopes));
+        etLiveAudience.setText("School", false);
+        etLiveAudience.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = String.valueOf(parent.getItemAtPosition(position));
+            if ("Course".equals(selected)) liveAudienceScope = "course";
+            else if ("Platform".equals(selected)) liveAudienceScope = "platform";
+            else liveAudienceScope = "school";
+            liveTrackId = "";
+            liveTrackTitle = "";
+            etLiveCourse.setText("", false);
+            updateLiveAudienceUi();
+        });
+        updateLiveAudienceUi();
+    }
+
+    private void updateLiveAudienceUi() {
+        if (!liveMode) return;
+        boolean course = "course".equals(liveAudienceScope);
+        tilLiveCourse.setVisibility(course ? View.VISIBLE : View.GONE);
+        if (course) {
+            tvLiveAudienceHint.setText(
+                    liveTrackOptions.isEmpty()
+                            ? "Choose a course. Enrolled learners will be notified when you go live."
+                            : "Only learners enrolled in the selected course will see this live session.");
+        } else if ("platform".equals(liveAudienceScope)) {
+            tvLiveAudienceHint.setText("All signed-in Nelsen users will see this live session.");
+        } else if (liveSchoolId.isEmpty()) {
+            tvLiveAudienceHint.setText("Uses your active school. Select an active school before linking this live.");
+        } else {
+            String label = liveSchoolName.isEmpty() ? liveSchoolId : liveSchoolName;
+            tvLiveAudienceHint.setText("Only active members of " + label + " will see this live session.");
+        }
+    }
+
+    private void loadLiveAudienceContext() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(tokenResult -> {
+            String bearer = "Bearer " + tokenResult.getToken();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                String schoolId = "";
+                String schoolName = "";
+                List<LmsModels.TrackCard> tracks = new ArrayList<>();
+                try {
+                    retrofit2.Response<LmsModels.MeEnvelope> meRes =
+                            ApiClient.getLmsService().me(bearer).execute();
+                    LmsModels.MeEnvelope me = meRes.body();
+                    if (meRes.isSuccessful() && me != null && me.ok && me.data != null) {
+                        schoolId = value(me.data.get("activeSchoolId"));
+                        if (schoolId.isEmpty()) schoolId = value(me.data.get("schoolId"));
+                        schoolName = value(me.data.get("schoolName"));
+                    }
+
+                    retrofit2.Response<LmsModels.TracksEnvelope> trackRes =
+                            ApiClient.getLmsService().tracks(
+                                    bearer, schoolId.isEmpty() ? null : schoolId).execute();
+                    LmsModels.TracksEnvelope trackBody = trackRes.body();
+                    if (trackRes.isSuccessful()
+                            && trackBody != null
+                            && trackBody.ok
+                            && trackBody.data != null
+                            && trackBody.data.tracks != null) {
+                        tracks.addAll(trackBody.data.tracks);
+                    }
+                } catch (Exception ignored) {
+                }
+
+                final String resolvedSchoolId = schoolId;
+                final String resolvedSchoolName = schoolName;
+                final List<LmsModels.TrackCard> resolvedTracks = tracks;
+                runOnUiThread(() -> {
+                    liveSchoolId = resolvedSchoolId;
+                    liveSchoolName = resolvedSchoolName;
+                    liveTrackOptions.clear();
+                    liveTrackOptions.addAll(resolvedTracks);
+
+                    List<String> labels = new ArrayList<>();
+                    for (LmsModels.TrackCard track : liveTrackOptions) {
+                        String title = track.courseTitle != null && !track.courseTitle.trim().isEmpty()
+                                ? track.courseTitle.trim()
+                                : track.trackId;
+                        labels.add(title + " · " + track.trackId);
+                    }
+                    etLiveCourse.setAdapter(new ArrayAdapter<>(
+                            this, android.R.layout.simple_dropdown_item_1line, labels));
+                    etLiveCourse.setOnItemClickListener((parent, view, position, id) -> {
+                        if (position < 0 || position >= liveTrackOptions.size()) return;
+                        LmsModels.TrackCard selected = liveTrackOptions.get(position);
+                        liveTrackId = selected.trackId != null ? selected.trackId : "";
+                        liveTrackTitle = selected.courseTitle != null ? selected.courseTitle : "";
+                        if (selected.schoolId != null && !selected.schoolId.trim().isEmpty()) {
+                            liveSchoolId = selected.schoolId.trim();
+                        }
+                    });
+                    updateLiveAudienceUi();
+                });
+            });
+        });
+    }
+
+    private static String value(Object raw) {
+        return raw == null ? "" : String.valueOf(raw).trim();
     }
 
     private void pickDate() {
@@ -236,6 +366,23 @@ public class CreateEventActivity extends AppCompatActivity {
             }
         }
 
+        if (liveMode) {
+            if ("course".equals(liveAudienceScope)) {
+                if (liveTrackId.isEmpty()) {
+                    tilLiveCourse.setError("Select a course");
+                    return;
+                }
+                tilLiveCourse.setError(null);
+                if (!liveTrackTitle.isEmpty()) program = liveTrackTitle;
+            } else if ("school".equals(liveAudienceScope) && liveSchoolId.isEmpty()) {
+                Toast.makeText(this, "Select an active school before linking this live", Toast.LENGTH_SHORT).show();
+                return;
+            } else if ("platform".equals(liveAudienceScope) && !Roles.isSuperAdmin()) {
+                Toast.makeText(this, "Only a super admin can create a platform live", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
         btnSave.setEnabled(false);
 
         if (!liveMode && communityId != null && !communityId.isEmpty()) {
@@ -260,6 +407,9 @@ public class CreateEventActivity extends AppCompatActivity {
         if (liveMode) {
             body.eventType = "live";
             body.liveStatus = "scheduled";
+            body.audienceScope = liveAudienceScope;
+            body.schoolId = "platform".equals(liveAudienceScope) ? "" : liveSchoolId;
+            body.trackId = "course".equals(liveAudienceScope) ? liveTrackId : "";
         }
 
         FirebaseUser authUser = FirebaseAuth.getInstance().getCurrentUser();

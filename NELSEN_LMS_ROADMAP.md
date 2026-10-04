@@ -271,14 +271,15 @@ Users
 
 - [x] Add host-only **Link YouTube Live** UI on Android using the existing event form; direct YouTube broadcast creation/control remains.
 - [x] Link an existing Nelsen YouTube Live session; automatic creation through the YouTube API remains.
-- [ ] Associate the live session with the Nelsen user/course/event.
-- [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status).
-- [x] Track live status in the API contract as scheduled/live/ended; automatic YouTube-driven transitions still remain.
+- [x] Associate the live session with the Nelsen creator and an explicit course, school, or platform audience.
+- [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status, audience scope, school/track association).
+- [x] Track live status as scheduled/live/ended and sync those transitions server-side from YouTube Data API when `YOUTUBE_API_KEY` is configured.
+- [ ] When school creation/settings are expanded in Super Admin, allow each school to configure its own YouTube channel/account; keep the current Nelsen channel as the platform/default channel until then.
 
 ### Mentees / viewers
 
 - [x] Mentees can discover, join, and watch linked live sessions but cannot create/start broadcasts.
-- [ ] Apply course/school/event visibility rules before exposing a live session.
+- [x] Apply scoped visibility before exposing a live session: course → enrolled learners/linked staff, school → active school members, platform → signed-in Nelsen users.
 
 ### Notifications
 
@@ -296,9 +297,10 @@ Users receive "X is live now"
 Watch Live
 ```
 
-- [ ] Send FCM live-start notification.
-- [ ] Notification opens the correct live session.
-- [ ] Avoid duplicate live notifications.
+- [x] Send FCM live-start notification when Nelsen transitions the session to `live`.
+- [x] Notification opens the correct linked live session on Android, including foreground and background notification-tap paths.
+- [x] Avoid duplicate live notifications with a one-time `live_notified_at` claim before fanout.
+- [x] Detect the YouTube broadcast state automatically and drive scheduled → live → ended transitions without a manual client status update when `YOUTUBE_API_KEY` is configured.
 
 ### Viewer
 
@@ -310,9 +312,10 @@ Watch Live
 
 ### History
 
-- [ ] Store live session metadata/history.
-- [ ] Show ended sessions where appropriate.
-- [ ] Link to replay when a YouTube replay is available.
+- [x] Store live session metadata/history in `hub_events`; ending a live does not delete its audience association or YouTube URL.
+- [x] Show ended sessions in Android **Past** schedules and the Web **Live history** replay surface.
+- [x] Link ended sessions back to the same YouTube video for replay when the replay remains available.
+- [ ] Detect replay/offline availability from YouTube rather than assuming every ended YouTube URL is still playable.
 
 ---
 
@@ -320,11 +323,11 @@ Watch Live
 
 Current stories maintain an aggregate view count and local seen state. To show the owner exactly who viewed a status/story:
 
-- [ ] Record one viewer receipt per story as `viewers/{uid}: timestamp` instead of only incrementing a count.
-- [ ] Prevent duplicate viewer receipts while keeping the aggregate view count.
-- [ ] Add an owner-only **Viewed by** sheet/list with avatar, name, and viewed time.
-- [ ] Add Firebase rules so a viewer can only write their own receipt and only the story owner can read the viewer list.
-- [ ] Decide retention behavior when a story expires/closes/deletes so viewer identities are not retained longer than intended.
+- [x] Record one authenticated viewer receipt per story in the private LMS `story_view_receipts` table instead of exposing viewer identities under the client-readable RTDB story node.
+- [x] Prevent duplicate viewer receipts with a `(story_id, uid)` primary key while keeping the RTDB aggregate `views` count.
+- [x] Add an owner-only **Viewed by** bottom sheet with avatar, name, and viewed time.
+- [x] Enforce receipt privacy through authenticated API endpoints: viewers can only record their own authenticated view and only the story owner can list receipts.
+- [x] Expire viewer identities with the story's `expiresAt`; the server reaper removes expired receipts hourly, including receipts for stories closed/deleted before that original expiry.
 
 ---
 
