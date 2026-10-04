@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { onAuthStateChanged } from "firebase/auth";
 import { Clock, ExternalLink, MapPin, Radio, Ticket, UserRound, Users } from "lucide-react";
 
 import { ReserveSeatDialog } from "@/components/site/ReserveSeatDialog";
@@ -14,6 +15,7 @@ import {
   liveStatusLabel,
   youtubeEmbedUrl,
 } from "@/data/events";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { loadHubEvents } from "@/lib/hubEvents";
 
 export const Route = createFileRoute("/events")({
@@ -44,12 +46,18 @@ function EventsPage() {
   const [activeEvent, setActiveEvent] = useState<AppEvent | null>(null);
 
   const refreshEvents = useCallback(async () => {
-    const list = await loadHubEvents();
+    const user = getFirebaseAuth().currentUser;
+    const token = user ? await user.getIdToken() : null;
+    const list = await loadHubEvents(token);
     setEvents(list);
   }, []);
 
   useEffect(() => {
-    void refreshEvents();
+    const auth = getFirebaseAuth();
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      void refreshEvents();
+    });
+    return unsubscribe;
   }, [refreshEvents]);
 
   const featured = events[0];
