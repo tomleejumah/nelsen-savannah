@@ -770,14 +770,16 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     //todo create multiple channels based with action also migrate them to enum class
     private void requestNotificationPermission() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        REQUEST_CODE_NOTIFICATIONS);
-            }
-        } else createNotificationChannel();
+        // Channels are independent of the Android 13+ runtime permission and must
+        // exist even when the user has already granted notifications.
+        createNotificationChannel();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    REQUEST_CODE_NOTIFICATIONS);
+        }
     }
 
     @Override
