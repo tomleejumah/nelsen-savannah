@@ -210,7 +210,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (fabCreateMain != null) fabCreateMain.setVisibility(View.GONE);
             collapseSpeedDial();
             if (plusIcon != null) {
-                plusIcon.setVisibility(Roles.canCreate(userData.getUserRole()) ? View.VISIBLE : View.GONE);
+                plusIcon.setVisibility(View.GONE);
+                plusIcon.setOnClickListener(null);
             }
 
             // Mentors are shown in-course only (tutor on a track), not as a home rail.
@@ -279,7 +280,8 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         }
 
         if (plusIcon != null) {
-            plusIcon.setOnClickListener(v -> showCreateSheet());
+            plusIcon.setVisibility(View.GONE);
+            plusIcon.setOnClickListener(null);
         }
         View calendarLayout = view.findViewById(R.id.layoutCalendar);
         if (calendarLayout != null) {
@@ -729,6 +731,15 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         sheetView.findViewById(R.id.optCreateEvent).setOnClickListener(v -> {
             sheet.dismiss();
             startActivity(new Intent(getActivity(), CreateEventActivity.class));
+        });
+        View optGoLive = sheetView.findViewById(R.id.optGoLive);
+        optGoLive.setVisibility(Roles.canCreate() ? View.VISIBLE : View.GONE);
+        optGoLive.setOnClickListener(v -> {
+            if (!Roles.canCreate()) return;
+            sheet.dismiss();
+            Intent intent = new Intent(getActivity(), CreateEventActivity.class);
+            intent.putExtra(CreateEventActivity.EXTRA_LIVE_MODE, true);
+            startActivity(intent);
         });
         sheetView.findViewById(R.id.optCreateStory).setOnClickListener(v -> {
             sheet.dismiss();

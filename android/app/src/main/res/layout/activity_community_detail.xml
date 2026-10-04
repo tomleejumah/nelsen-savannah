@@ -10,6 +10,7 @@
     android:fitsSystemWindows="false">
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/groupScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
@@ -56,7 +57,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-36dp"
+                android:layout_marginTop="12dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingHorizontal="16dp">
@@ -179,13 +180,6 @@
                 android:textColor="@color/ns_maroon"
                 android:visibility="gone" />
 
-            <!-- Hidden toolbar kept for menu inflate (delete group). -->
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/topAppBar"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:visibility="gone" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -278,6 +272,19 @@
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:alpha="0"
+        android:background="@color/ns_page"
+        android:elevation="4dp"
+        android:visibility="invisible"
+        app:navigationIcon="@drawable/ic_back"
+        app:navigationIconTint="@color/ns_ink"
+        app:titleTextColor="@color/ns_ink" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCreatePost"

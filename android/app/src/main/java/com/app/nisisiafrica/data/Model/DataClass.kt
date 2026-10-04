@@ -281,6 +281,7 @@ data class Event(
     val price: String = "",
     /** True when the signed-in user already reserved a seat. */
     val reservedByMe: Boolean = false,
+    val liveStatus: String = "",
 )
 
 data class Announcement(

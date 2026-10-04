@@ -90,168 +90,173 @@
         </LinearLayout>
     </eightbitlab.com.blurview.BlurView>
 
-    <androidx.cardview.widget.CardView
+    <LinearLayout
         android:id="@+id/bottomBarRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="14dp"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:cardCornerRadius="22dp"
-        app:cardElevation="8dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/navBlur"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="8dp">
 
-            <LinearLayout
+            <eightbitlab.com.blurview.BlurView
+                android:id="@+id/navBlur"
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="6dp">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
-                    android:id="@+id/homeFragment"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="6dp">
 
-                    <ImageView
-                        android:id="@+id/navHomeIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_home"
-                        app:tint="@color/muted" />
-
-                    <TextView
-                        android:id="@+id/navHomeLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/nav_home"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/communitiesFragment"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:id="@+id/navGroupsIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_groups"
-                        app:tint="@color/muted" />
-
-                    <TextView
-                        android:id="@+id/navGroupsLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/nav_groups"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <FrameLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/fabCard"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center"
-                        android:layout_marginTop="-6dp"
+                    <LinearLayout
+                        android:id="@+id/homeFragment"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackgroundBorderless"
                         android:clickable="true"
                         android:focusable="true"
-                        app:cardBackgroundColor="@color/maroon_700"
-                        app:cardCornerRadius="14dp"
-                        app:cardElevation="10dp">
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <ImageView
-                            android:id="@+id/fabIcon"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_add"
-                            app:tint="@android:color/white" />
-                    </androidx.cardview.widget.CardView>
-                </FrameLayout>
+                            android:id="@+id/navHomeIcon"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_home"
+                            app:tint="@color/muted" />
 
-                <LinearLayout
-                    android:id="@+id/chatFragment"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/navHomeLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/nav_home"
+                            android:textColor="@color/muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
 
-                    <ImageView
-                        android:id="@+id/navChatIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_chat"
-                        app:tint="@color/muted" />
+                    <LinearLayout
+                        android:id="@+id/communitiesFragment"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/navChatLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/nav_chat"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp" />
+                        <ImageView
+                            android:id="@+id/navGroupsIcon"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_groups"
+                            app:tint="@color/muted" />
+
+                        <TextView
+                            android:id="@+id/navGroupsLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/nav_groups"
+                            android:textColor="@color/muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/chatFragment"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/navChatIcon"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_chat"
+                            app:tint="@color/muted" />
+
+                        <TextView
+                            android:id="@+id/navChatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/nav_chat"
+                            android:textColor="@color/muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/profileFragment"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/navProfileIcon"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_profile_face"
+                            app:tint="@color/muted" />
+
+                        <TextView
+                            android:id="@+id/navProfileLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/nav_profile"
+                            android:textColor="@color/muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
                 </LinearLayout>
+            </eightbitlab.com.blurview.BlurView>
+        </androidx.cardview.widget.CardView>
 
-                <LinearLayout
-                    android:id="@+id/profileFragment"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical">
+        <Space
+            android:layout_width="10dp"
+            android:layout_height="1dp" />
 
-                    <ImageView
-                        android:id="@+id/navProfileIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_profile_face"
-                        app:tint="@color/muted" />
+        <androidx.cardview.widget.CardView
+            android:id="@+id/fabCard"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/maroon_700"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="10dp">
 
-                    <TextView
-                        android:id="@+id/navProfileLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/nav_profile"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp" />
-                </LinearLayout>
-            </LinearLayout>
-        </eightbitlab.com.blurview.BlurView>
-    </androidx.cardview.widget.CardView>
+            <ImageView
+                android:id="@+id/fabIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_add"
+                app:tint="@android:color/white" />
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
 </RelativeLayout>
