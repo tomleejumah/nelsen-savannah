@@ -454,7 +454,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                 tabId == R.id.chatFragment && chatConversationOpen && !keepChatChrome;
         fabCard.setVisibility(hiddenForConversation ? View.GONE : View.VISIBLE);
         if (tabId == R.id.chatFragment) {
-            fabIcon.setImageResource(R.drawable.ic_chat);
+            fabIcon.setImageResource(R.drawable.ic_add);
             fabCard.setContentDescription("New chat");
         } else if (tabId == R.id.profileFragment) {
             fabIcon.setImageResource(R.drawable.ic_edit);

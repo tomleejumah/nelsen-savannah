@@ -62,15 +62,20 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="16dp">
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imgGroupLogo"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:scaleType="centerCrop"
-                    android:src="@mipmap/ic_launcher"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Circle"
-                    app:strokeColor="@color/ns_page"
-                    app:strokeWidth="3dp" />
+                <FrameLayout
+                    android:layout_width="78dp"
+                    android:layout_height="78dp"
+                    android:background="@drawable/bg_chat_dp_ring"
+                    android:padding="3dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgGroupLogo"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@mipmap/ic_launcher"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Nelsen.Circle" />
+                </FrameLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
