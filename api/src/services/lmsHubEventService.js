@@ -76,7 +76,7 @@ async function hasActiveSchoolMembership(uid, schoolId) {
   return Boolean(row);
 }
 
-async function resolveLiveAudience(actor, body) {
+export async function resolveLiveAudience(actor, body) {
   const uid = String(actor?.uid || "");
   const role = await actorRole(uid);
   const isPlatformAdmin = role === "Admin" || role === "SuperAdmin";
