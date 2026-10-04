@@ -347,7 +347,7 @@ export async function getMe(profile) {
   );
 }
 
-export async function listMyUploadedMaterials(uid) {
+export async function listUploadedMaterials(viewerUid, targetUid = viewerUid) {
   const rows = await (await import("../db/lmsDb.js")).dbAll(
     `SELECT m.media_id, m.filename, m.mime_type, m.size_bytes, m.status,
             m.track_id, m.scope, m.scope_id, m.created_at,
@@ -359,20 +359,37 @@ export async function listMyUploadedMaterials(uid) {
      WHERE m.uid = ?
        AND m.status = 'ready'
      ORDER BY m.created_at DESC`,
-    [uid],
+    [targetUid],
   );
-  return rows.map((row) => ({
-    mediaId: row.media_id,
-    filename: row.filename || "",
-    mimeType: row.mime_type || "",
-    sizeBytes: Number(row.size_bytes || 0),
-    trackId: row.track_id || "",
-    trackTitle: row.track_title || "",
-    lessonId: row.lesson_id || row.scope_id || "",
-    lessonTitle: row.lesson_title || "",
-    scope: row.scope || "",
-    createdAt: Number(row.created_at || 0),
-  }));
+
+  const visible = [];
+  for (const row of rows) {
+    try {
+      const { resolvePlaybackUrl } = await import("./lmsMediaService.js");
+      const playback = await resolvePlaybackUrl(row.media_id, viewerUid);
+      visible.push({
+        mediaId: row.media_id,
+        filename: row.filename || "",
+        mimeType: row.mime_type || "",
+        sizeBytes: Number(row.size_bytes || 0),
+        trackId: row.track_id || "",
+        trackTitle: row.track_title || "",
+        lessonId: row.lesson_id || row.scope_id || "",
+        lessonTitle: row.lesson_title || "",
+        scope: row.scope || "",
+        createdAt: Number(row.created_at || 0),
+        playbackUrl: playback.url || playback.playbackUrl || "",
+        playbackExpiresAt: Number(playback.expiresAt || playback.playbackExpiresAt || 0),
+      });
+    } catch {
+      // Do not reveal protected material metadata to viewers without access.
+    }
+  }
+  return visible;
+}
+
+export async function listMyUploadedMaterials(uid) {
+  return listUploadedMaterials(uid, uid);
 }
 
 export async function getStoreHealth() {
