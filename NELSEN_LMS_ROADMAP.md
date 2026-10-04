@@ -269,8 +269,8 @@ Users
 
 ### Hosts — Mentor / SchoolAdmin / Admin
 
-- [ ] Add **Go Live** UI.
-- [ ] Create/link a YouTube Live session.
+- [x] Add host-only **Link YouTube Live** UI on Android using the existing event form; direct YouTube broadcast creation/control remains.
+- [x] Link an existing Nelsen YouTube Live session; automatic creation through the YouTube API remains.
 - [ ] Associate the live session with the Nelsen user/course/event.
 - [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status).
 - [x] Track live status in the API contract as scheduled/live/ended; automatic YouTube-driven transitions still remain.
