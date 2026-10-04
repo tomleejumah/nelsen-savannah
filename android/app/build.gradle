@@ -255,8 +255,13 @@ dependencies {
 configurations.configureEach {
     exclude group: "com.github.mhiew", module: "pdfium-android"
     exclude group: "com.github.mhiew", module: "android-pdf-viewer"
+    // RootEncoder's SRT stack brings the parallel jdk15to18 provider while
+    // Didit already uses the jdk18on Bouncy Castle line. Keep one provider
+    // to avoid duplicate org.bouncycastle classes in the APK.
+    exclude group: "org.bouncycastle", module: "bcprov-jdk15to18"
     resolutionStrategy {
         force(
+                "org.bouncycastle:bcprov-jdk18on:1.84",
                 "androidx.camera:camera-core:1.5.3",
                 "androidx.camera:camera-camera2:1.5.3",
                 "androidx.camera:camera-lifecycle:1.5.3",
