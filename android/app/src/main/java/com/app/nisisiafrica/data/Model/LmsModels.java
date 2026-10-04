@@ -731,6 +731,7 @@ public final class LmsModels {
         public String audienceScope;
         public String schoolId;
         public String trackId;
+        public String youtubePrivacy = "unlisted";
 
         public CreateHubEventBody(
                 String title,
