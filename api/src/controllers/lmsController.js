@@ -348,7 +348,7 @@ export async function getModule(req, res) {
     return lmsOk(res, result.data, result.source);
   } catch (err) {
     console.error("[GET /lms/modules/:id]", err);
-    return lmsErr(res, "Failed to load module", 500, getPrimaryEngine());
+    return lmsErr(res, err.message || "Failed to load module", err.status || 500, getPrimaryEngine());
   }
 }
 
@@ -361,7 +361,7 @@ export async function getLesson(req, res) {
     return lmsOk(res, result.data, result.source);
   } catch (err) {
     console.error("[GET /lms/lessons/:id]", err);
-    return lmsErr(res, "Failed to load lesson", 500, getPrimaryEngine());
+    return lmsErr(res, err.message || "Failed to load lesson", err.status || 500, getPrimaryEngine());
   }
 }
 
