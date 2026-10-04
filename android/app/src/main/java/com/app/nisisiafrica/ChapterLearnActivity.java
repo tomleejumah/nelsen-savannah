@@ -646,7 +646,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
         MediaController controller = new MediaController(this);
         controller.setAnchorView(videoView);
         videoView.setMediaController(controller);
-        videoView.setVideoURI(Uri.parse(url));
+        // Attach callbacks before opening the URI so fast MediaPlayer failures
+        // from a signed CDN/R2 URL cannot race past our recovery handler.
         videoView.setOnPreparedListener((MediaPlayer mp) -> {
             activeMediaPlayer = mp;
             applyVideoVolume();
@@ -662,6 +663,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             if (!refreshActiveMedia()) showMediaLoadError();
             return true;
         });
+        videoView.setVideoURI(Uri.parse(url));
         videoView.start();
     }
 

@@ -12,6 +12,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { mimeForAsset } from "./inlineHeaders.js";
 
 function requireEnv(names) {
   const missing = names.filter((n) => !process.env[n]?.trim());
@@ -94,12 +95,16 @@ export function createS3Driver() {
     },
 
     async presignGet({ objectKey, ttlSeconds, filename, contentType }) {
-      const looksPdf =
-        String(contentType || "").toLowerCase().includes("pdf") ||
-        String(filename || objectKey || "").toLowerCase().endsWith(".pdf");
-      const responseType = looksPdf
-        ? "application/pdf"
-        : contentType || undefined;
+      const inferredType = mimeForAsset({
+        mimeType: contentType,
+        filename,
+        objectKey,
+      });
+      const looksPdf = inferredType === "application/pdf";
+      const responseType =
+        inferredType && inferredType !== "application/octet-stream"
+          ? inferredType
+          : undefined;
       const url = await getSignedUrl(
         client,
         new GetObjectCommand({
