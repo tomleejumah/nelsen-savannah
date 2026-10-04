@@ -1,5 +1,6 @@
 package com.app.nisisiafrica;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -12,8 +13,13 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -52,7 +58,9 @@ public class PostDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_post_detail);
+        applySystemBarInsets();
 
         communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
         postId = getIntent().getStringExtra(EXTRA_POST_ID);
@@ -131,8 +139,21 @@ public class PostDetailActivity extends AppCompatActivity {
         replyBar.setVisibility(View.GONE);
     }
 
+    private void applySystemBarInsets() {
+        View main = findViewById(R.id.main);
+        ViewCompat.setOnApplyWindowInsetsListener(main, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, ime.bottom));
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(main);
+    }
+
     private void applyUpvoteStyle() {
-        int color = hasUpvoted ? 0xFF4F46E5 : 0xFF6B7280;
+        int color = hasUpvoted
+                ? Color.rgb(229, 57, 53)
+                : ContextCompat.getColor(this, R.color.muted);
         btnUpvote.setTextColor(color);
         btnUpvote.setIconTint(android.content.res.ColorStateList.valueOf(color));
     }
