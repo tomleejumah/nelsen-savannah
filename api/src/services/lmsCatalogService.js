@@ -445,6 +445,8 @@ export async function getModuleById(uid, moduleId) {
       if (!row) {
         return { source: getPrimaryEngine(), data: null, notFound: true };
       }
+      const { assertLearningAccess } = await import("./lmsMembershipService.js");
+      await assertLearningAccess(uid, row.track_id);
       const lessons = await dbAll(
         "SELECT * FROM lessons WHERE module_id = ? ORDER BY sort_order ASC",
         [moduleId],
@@ -482,7 +484,17 @@ export async function getModuleById(uid, moduleId) {
         },
       };
     } catch (err) {
+      if (err?.status && err.status < 500) throw err;
       console.error("[lms-module] primary failed:", err.message);
+    }
+  }
+
+  // Never use the legacy RTDB fallback to bypass the school/enrollment gate.
+  if (uid) {
+    const primaryModule = await dbGet("SELECT track_id FROM modules WHERE module_id = ?", [moduleId]);
+    if (primaryModule?.track_id) {
+      const { assertLearningAccess } = await import("./lmsMembershipService.js");
+      await assertLearningAccess(uid, primaryModule.track_id);
     }
   }
 
@@ -514,6 +526,8 @@ export async function getLessonById(uid, lessonId) {
       if (!row) {
         return { source: getPrimaryEngine(), data: null, notFound: true };
       }
+      const { assertLearningAccess } = await import("./lmsMembershipService.js");
+      await assertLearningAccess(uid, row.track_id);
       const lesson = mapLesson(row);
       let playbackUrl = null;
       let playbackExpiresAt = null;
