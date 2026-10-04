@@ -1144,7 +1144,7 @@ export async function getPublicHubEvent(req, res) {
   try {
     const svc = await import("../services/lmsHubEventService.js");
     const event = await svc.getHubEvent(req.params.eventId);
-    if (!event || !event.isPublic) {
+    if (!event || !(await svc.canViewHubEvent(event, req.user?.uid || null))) {
       return lmsErr(res, "Event not found", 404, getPrimaryEngine() || "sqlite");
     }
     return lmsOk(res, { event }, getPrimaryEngine() || "sqlite");
