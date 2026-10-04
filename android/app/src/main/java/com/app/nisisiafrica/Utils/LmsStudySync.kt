@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 
 object LmsStudySync {
     private const val PERIODIC = "lms-study-sync"
-    private const val IMMEDIATE = "lms-study-sync-now"
+    const val IMMEDIATE = "lms-study-sync-now"
 
     fun schedule(context: Context) {
         val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()

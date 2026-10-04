@@ -14,6 +14,7 @@ import android.view.ViewOutlineProvider;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,6 +69,9 @@ public class AllCoursesActivity extends AppCompatActivity {
     private EditText etSearch;
     private ImageButton btnClearSearch;
     private TextView tvResultCount;
+    private TextView tvEmptyTitle;
+    private TextView tvEmptyHint;
+    private ProgressBar catalogProgress;
     private View emptyState;
     private com.google.android.material.button.MaterialButton btnApplySchool;
     private TextView tvApplyPending;
@@ -78,6 +82,11 @@ public class AllCoursesActivity extends AppCompatActivity {
     private Boolean schoolMemberActive = null;
     private boolean schoolJoinPending = false;
     private LmsCacheBridge offlineCache;
+    private com.google.android.material.button.MaterialButton btnRetryCourses;
+    private PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> pagingBridge;
+    private boolean catalogLoading = true;
+    private boolean catalogRequestComplete = false;
+    private boolean catalogFailed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +115,12 @@ public class AllCoursesActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         btnClearSearch = findViewById(R.id.btnClearSearch);
         tvResultCount = findViewById(R.id.tvResultCount);
+        tvEmptyTitle = findViewById(R.id.tvEmptyTitle);
+        tvEmptyHint = findViewById(R.id.tvEmptyHint);
+        catalogProgress = findViewById(R.id.catalogProgress);
         emptyState = findViewById(R.id.emptyState);
+        btnRetryCourses = findViewById(R.id.btnRetryCourses);
+        btnRetryCourses.setOnClickListener(v -> retryCatalog());
         btnApplySchool = findViewById(R.id.btnApplySchool);
         tvApplyPending = findViewById(R.id.tvApplyPending);
 
@@ -156,7 +170,7 @@ public class AllCoursesActivity extends AppCompatActivity {
             loadTracksForSchool(schoolIdFilter);
         } else {
             // Invisible paging bridge — LMS/Firebase returns one page; we filter in-memory.
-            PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> bridge =
+            pagingBridge =
                     new PagingDataAdapter<CourseItem, RecyclerView.ViewHolder>(DIFF) {
                         @NonNull
                         @Override
@@ -167,10 +181,23 @@ public class AllCoursesActivity extends AppCompatActivity {
                         @Override
                         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {}
                     };
-            bridge.addLoadStateListener(state -> {
-                if (state.getRefresh() instanceof LoadState.NotLoading) {
+            pagingBridge.addLoadStateListener(state -> {
+                LoadState refresh = state.getRefresh();
+                if (refresh instanceof LoadState.Loading) {
+                    catalogLoading = true;
+                    catalogFailed = false;
+                    applyFilter();
+                } else if (refresh instanceof LoadState.Error) {
+                    catalogLoading = false;
+                    catalogRequestComplete = true;
+                    catalogFailed = true;
+                    applyFilter();
+                } else if (refresh instanceof LoadState.NotLoading) {
+                    catalogLoading = false;
+                    catalogRequestComplete = true;
+                    catalogFailed = false;
                     allCourses.clear();
-                    for (CourseItem c : bridge.snapshot()) {
+                    for (CourseItem c : pagingBridge.snapshot()) {
                         if (c != null) allCourses.add(c);
                     }
                     applyFilter();
@@ -179,7 +206,7 @@ public class AllCoursesActivity extends AppCompatActivity {
             });
 
             SharedViewModel vm = new ViewModelProvider(this).get(SharedViewModel.class);
-            vm.getCourses().observe(this, data -> bridge.submitData(getLifecycle(), data));
+            vm.getCourses().observe(this, data -> pagingBridge.submitData(getLifecycle(), data));
         }
 
         etSearch.addTextChangedListener(new TextWatcher() {
@@ -212,7 +239,10 @@ public class AllCoursesActivity extends AppCompatActivity {
     }
 
     private void loadTracksForSchool(String schoolId) {
-        tvResultCount.setText(R.string.courses_loading);
+        catalogLoading = true;
+        catalogRequestComplete = false;
+        catalogFailed = false;
+        applyFilter();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             tvResultCount.setText(R.string.courses_sign_in_required);
@@ -238,10 +268,13 @@ public class AllCoursesActivity extends AppCompatActivity {
                             @Override
                             public void onResponse(@NonNull Call<LmsModels.TracksEnvelope> call,
                                                    @NonNull Response<LmsModels.TracksEnvelope> response) {
-                                allCourses.clear();
+                                catalogLoading = false;
+                                catalogRequestComplete = true;
                                 LmsModels.TracksEnvelope body = response.body();
                                 if (response.isSuccessful() && body != null && body.ok
                                         && body.data != null && body.data.tracks != null) {
+                                    catalogFailed = false;
+                                    allCourses.clear();
                                     if (offlineCache != null) {
                                         offlineCache.saveTracks(user.getUid(), body.data.tracks, schoolId);
                                     }
@@ -249,6 +282,8 @@ public class AllCoursesActivity extends AppCompatActivity {
                                         CourseItem item = courseItem(card);
                                         if (item != null) allCourses.add(item);
                                     }
+                                } else {
+                                    catalogFailed = true;
                                 }
                                 applyFilter();
                             }
@@ -256,12 +291,18 @@ public class AllCoursesActivity extends AppCompatActivity {
                             @Override
                             public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call,
                                                   @NonNull Throwable t) {
-                                if (allCourses.isEmpty()) {
-                                    tvResultCount.setText(R.string.courses_load_failed);
-                                    emptyState.setVisibility(View.VISIBLE);
-                                }
+                                catalogLoading = false;
+                                catalogRequestComplete = true;
+                                catalogFailed = true;
+                                applyFilter();
                             }
-                        }));
+                        }))
+                .addOnFailureListener(e -> {
+                    catalogLoading = false;
+                    catalogRequestComplete = true;
+                    catalogFailed = true;
+                    applyFilter();
+                });
     }
 
     private void loadMyEnrollments() {
@@ -490,16 +531,54 @@ public class AllCoursesActivity extends AppCompatActivity {
         }
         listAdapter.submit(filtered);
         int n = filtered.size();
-        if (allCourses.isEmpty()) {
+
+        boolean firstLoad = catalogLoading && allCourses.isEmpty();
+        catalogProgress.setVisibility(firstLoad ? View.VISIBLE : View.GONE);
+        btnRetryCourses.setVisibility(View.GONE);
+
+        if (firstLoad) {
             tvResultCount.setText(R.string.courses_loading);
             emptyState.setVisibility(View.GONE);
-        } else if (n == 0) {
-            tvResultCount.setText("0 matches");
-            emptyState.setVisibility(View.VISIBLE);
-        } else {
-            tvResultCount.setText(n == 1 ? "1 track" : n + " tracks");
-            emptyState.setVisibility(View.GONE);
+            return;
         }
+        if (catalogFailed && allCourses.isEmpty()) {
+            tvResultCount.setText(R.string.courses_load_failed);
+            tvEmptyTitle.setText("Could not load courses");
+            tvEmptyHint.setText("Check your connection and try again.");
+            btnRetryCourses.setVisibility(View.VISIBLE);
+            emptyState.setVisibility(View.VISIBLE);
+            return;
+        }
+        if (catalogRequestComplete && allCourses.isEmpty()) {
+            tvResultCount.setText("0 tracks");
+            tvEmptyTitle.setText("No courses yet");
+            tvEmptyHint.setText("There are no published courses here yet.");
+            emptyState.setVisibility(View.VISIBLE);
+            return;
+        }
+        if (n == 0) {
+            tvResultCount.setText("0 matches");
+            tvEmptyTitle.setText("No matches");
+            tvEmptyHint.setText("Try another title or tutor name.");
+            emptyState.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        String count = n == 1 ? "1 track" : n + " tracks";
+        tvResultCount.setText(catalogLoading ? count + " · Refreshing…" : count);
+        emptyState.setVisibility(View.GONE);
+    }
+
+    private void retryCatalog() {
+        if (!schoolIdFilter.isEmpty()) {
+            loadTracksForSchool(schoolIdFilter);
+            return;
+        }
+        catalogLoading = true;
+        catalogFailed = false;
+        catalogRequestComplete = false;
+        applyFilter();
+        if (pagingBridge != null) pagingBridge.retry();
     }
 
     private static boolean matches(CourseItem c, String q) {

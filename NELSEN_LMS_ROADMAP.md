@@ -148,10 +148,10 @@ Android learning screens should remain responsive on slow or unavailable network
 
 ### Loading UX
 
-- [ ] Show a spinner/progress state while loading course catalogs, tracks, course details, lessons, and study progress.
-- [ ] Do not show an empty-state message until the corresponding API request has completed.
-- [ ] Preserve already-cached content while refreshing in the background where possible.
-- [ ] Show retry/error state when neither network nor cached content is available.
+- [x] Show a spinner/progress state while loading course catalogs, tracks, course details, lessons, and study progress.
+- [x] Do not show an empty-state message until the corresponding API request has completed.
+- [x] Preserve already-cached content while refreshing in the background where possible.
+- [x] Show retry/error state when neither network nor cached content is available.
 
 ### Offline cache
 
@@ -168,7 +168,7 @@ Android learning screens should remain responsive on slow or unavailable network
 - [x] Push pending local progress to the LMS API when connectivity returns.
 - [x] Pull relevant server-side progress/content changes and reconcile the local cache.
 - [x] Make sync retry-safe/idempotent so repeated worker runs do not duplicate progress.
-- [ ] Expose syncing/synced/offline state where useful to the learner.
+- [x] Expose syncing/synced/offline state where useful to the learner.
 - [x] Show a persistent, compact Telegram-style **Offline / Waiting for network** indicator while connectivity is unavailable; remove it automatically when connectivity/sync recovers.
 - [x] Schedule periodic background sync and trigger immediate sync after important local study changes when network is available.
 - [x] **Final Phase 3 task:** add an authenticated batch progress-sync API with idempotency keys; update Android WorkManager to batch queued progress, safely retry the same request, and reconcile the authoritative server response without allowing progress to move backwards.
@@ -191,20 +191,20 @@ Improve video lessons on both Web and Android.
 
 Controls:
 
-- [ ] Play / Pause
-- [ ] Mute / Unmute
-- [ ] Volume
-- [ ] Seek/progress bar
-- [ ] Current time / duration
-- [ ] Fullscreen
-- [ ] Playback speed:
+- [x] Play / Pause
+- [x] Mute / Unmute
+- [x] Volume
+- [x] Seek/progress bar
+- [x] Current time / duration
+- [x] Fullscreen
+- [x] Playback speed:
   - 0.5x
   - 0.75x
   - 1x
   - 1.25x
   - 1.5x
   - 2x
-- [ ] Optional 10-second rewind/forward controls.
+- [x] Optional 10-second rewind/forward controls.
 
 Android can use the native video player controls while Web exposes equivalent controls.
 
@@ -348,6 +348,18 @@ The Nelsen backend should not become a video streaming server.
 - [x] Release the launcher splash when a mandatory update is detected so the update sheet is visible without continuing into the app.
 - [x] Show the update sheet immediately when a newer version is detected while WorkManager downloads the APK in the background.
 - [x] Keep normal app navigation blocked for a mandatory update until the update path is handled.
+
+---
+
+## Final Deferred Android — Profile Update
+
+Do this later after the current LMS roadmap work.
+
+- [ ] Add Android **Edit profile** UI.
+- [ ] Allow the learner to update supported profile fields and profile photo where applicable.
+- [ ] Validate fields and show saving/saved/error states.
+- [ ] Persist changes through the existing profile API/data source and refresh the Android user/profile cache after a successful update.
+- [ ] Keep role/identity/security-sensitive fields read-only unless the backend explicitly allows them.
 
 ---
 
