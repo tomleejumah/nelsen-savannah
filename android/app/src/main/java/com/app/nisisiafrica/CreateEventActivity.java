@@ -347,7 +347,15 @@ public class CreateEventActivity extends AppCompatActivity {
             return;
         }
 
-        long eventMillis = dateCal.getTimeInMillis();
+        long eventMillis;
+        if (liveMode) {
+            dateCal.setTimeInMillis(System.currentTimeMillis());
+            eventMillis = dateCal.getTimeInMillis();
+            startTime = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(dateCal.getTime());
+            endTime = "";
+        } else {
+            eventMillis = dateCal.getTimeInMillis();
+        }
 
         boolean online = liveMode || btnModeOnline.isChecked();
         String location = etLocation.getText() != null ? etLocation.getText().toString().trim() : "";
