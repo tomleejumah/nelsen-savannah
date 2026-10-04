@@ -1166,7 +1166,7 @@ export async function patchSchoolMemberStatus(
   idToken: string,
   schoolId: string,
   uid: string,
-  status: "active" | "suspended",
+  status: "active" | "suspended" | "rejected",
 ) {
   return lmsFetch<{ member: SchoolMemberDto }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/members/${encodeURIComponent(uid)}/status`,
