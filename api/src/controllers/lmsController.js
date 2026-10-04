@@ -92,6 +92,28 @@ export async function getLmsHealth(_req, res) {
   }
 }
 
+export async function postStoryView(req, res) {
+  try {
+    const { recordStoryView } = await import("../services/lmsStoryViewService.js");
+    const data = await recordStoryView(profileFromReq(req), req.params.storyId);
+    return lmsOk(res, data, "firebase");
+  } catch (err) {
+    console.error("[POST /lms/stories/:storyId/view]", err);
+    return lmsErr(res, err.message || "Failed to record story view", err.status || 500, "firebase");
+  }
+}
+
+export async function getStoryViewers(req, res) {
+  try {
+    const { listStoryViewers } = await import("../services/lmsStoryViewService.js");
+    const data = await listStoryViewers(profileFromReq(req), req.params.storyId);
+    return lmsOk(res, data, "firebase");
+  } catch (err) {
+    console.error("[GET /lms/stories/:storyId/viewers]", err);
+    return lmsErr(res, err.message || "Failed to load story viewers", err.status || 500, "firebase");
+  }
+}
+
 /** Authenticated — any role. Latest Android APK metadata for sideload. */
 export async function getAndroidAppRelease(_req, res) {
   try {
