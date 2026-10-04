@@ -36,6 +36,7 @@ export const Route = createFileRoute("/events")({
 function EventsPage() {
   const [filter, setFilter] = useState<"All" | "In person" | "Online">("All");
   const [events, setEvents] = useState<AppEvent[]>([]);
+  const [liveReplays, setLiveReplays] = useState<AppEvent[]>([]);
   const [reservedLocal, setReservedLocal] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("ns-reserved-events") || "[]") as string[];
@@ -48,8 +49,16 @@ function EventsPage() {
   const refreshEvents = useCallback(async () => {
     const user = getFirebaseAuth().currentUser;
     const token = user ? await user.getIdToken() : null;
-    const list = await loadHubEvents(token);
-    setEvents(list);
+    const [upcoming, past] = await Promise.all([
+      loadHubEvents(token, "upcoming"),
+      loadHubEvents(token, "past"),
+    ]);
+    setEvents(upcoming);
+    setLiveReplays(
+      past
+        .filter((event) => isLiveEvent(event) && event.liveStatus === "ended" && !!event.meetingLink)
+        .sort((a, b) => b.date - a.date),
+    );
   }, []);
 
   useEffect(() => {
@@ -227,6 +236,49 @@ function EventsPage() {
           );
         })}
       </section>
+
+      {liveReplays.length > 0 && (
+        <section className="mx-auto mt-16 max-w-7xl px-5 sm:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow text-ember">Live history</p>
+              <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Watch recent replays</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Ended YouTube Live sessions remain available to their original audience.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {liveReplays.map((event) => (
+              <article
+                key={event.eventId}
+                className="rounded-2xl border border-border/70 bg-card p-5"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand-soft">
+                    <Radio className="h-3.5 w-3.5" />
+                    REPLAY
+                  </span>
+                  <span className="text-xs text-muted-foreground">{eventDateLabel(event)}</span>
+                </div>
+                <h3 className="mt-3 text-lg font-bold">{event.title}</h3>
+                {event.program && (
+                  <p className="mt-1 text-xs text-muted-foreground">{event.program}</p>
+                )}
+                <a
+                  href={event.meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-ember"
+                >
+                  Watch replay on YouTube <ExternalLink className="h-4 w-4" />
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {activeEvent && (
         <ReserveSeatDialog
