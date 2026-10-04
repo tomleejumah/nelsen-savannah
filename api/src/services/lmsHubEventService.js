@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
+import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -39,6 +40,149 @@ function parseJson(raw, fallback = null) {
   }
 }
 
+const LIVE_AUDIENCE_SCOPES = new Set(["course", "school", "platform"]);
+
+async function actorRole(uid) {
+  const row = await dbGet("SELECT role FROM roles WHERE uid = ?", [uid]);
+  return String(row?.role || "");
+}
+
+async function actorSchool(uid) {
+  const row = await dbGet(
+    "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  return String(row?.active_school_id || row?.school_id || "").trim();
+}
+
+async function hasActiveSchoolMembership(uid, schoolId) {
+  if (!uid || !schoolId) return false;
+  const row = await dbGet(
+    `SELECT 1 AS ok FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active'
+     LIMIT 1`,
+    [uid, schoolId],
+  );
+  return Boolean(row);
+}
+
+async function resolveLiveAudience(actor, body) {
+  const uid = String(actor?.uid || "");
+  const role = await actorRole(uid);
+  const isPlatformAdmin = role === "Admin" || role === "SuperAdmin";
+
+  let scope = String(
+    body.audienceScope ?? body.audience_scope ?? body.scope ?? "",
+  ).trim().toLowerCase();
+  let schoolId = String(body.schoolId ?? body.school_id ?? "").trim();
+  let trackId = String(body.trackId ?? body.track_id ?? "").trim();
+
+  const ownSchool = await actorSchool(uid);
+
+  if (!scope) {
+    if (trackId) scope = "course";
+    else if (schoolId || ownSchool) {
+      scope = "school";
+      if (!schoolId) schoolId = ownSchool;
+    } else if (isPlatformAdmin) {
+      scope = "platform";
+    } else {
+      const err = new Error("Live audience must be a course or school");
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  if (!LIVE_AUDIENCE_SCOPES.has(scope)) {
+    const err = new Error("Live audience must be course, school, or platform");
+    err.status = 400;
+    throw err;
+  }
+
+  if (scope === "platform") {
+    if (!isPlatformAdmin) {
+      const err = new Error("Only Admin or SuperAdmin can notify the whole platform");
+      err.status = 403;
+      throw err;
+    }
+    return { audienceScope: scope, schoolId: "", trackId: "" };
+  }
+
+  if (scope === "course") {
+    if (!trackId) {
+      const err = new Error("trackId is required for a course live");
+      err.status = 400;
+      throw err;
+    }
+    const track = await dbGet(
+      "SELECT track_id, school_id FROM tracks WHERE track_id = ?",
+      [trackId],
+    );
+    if (!track) {
+      const err = new Error("Unknown course");
+      err.status = 400;
+      throw err;
+    }
+    schoolId = schoolId || String(track.school_id || "").trim();
+  }
+
+  if (scope === "school" && !schoolId) {
+    schoolId = ownSchool;
+  }
+  if (scope === "school" && !schoolId) {
+    const err = new Error("schoolId is required for a school live");
+    err.status = 400;
+    throw err;
+  }
+
+  if (!isPlatformAdmin && schoolId) {
+    const allowed = ownSchool === schoolId || await hasActiveSchoolMembership(uid, schoolId);
+    if (!allowed) {
+      const err = new Error("You are not an active member of that school");
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  return { audienceScope: scope, schoolId, trackId };
+}
+
+async function notifyLiveIfNeeded(eventId) {
+  const event = await getHubEvent(eventId);
+  if (!event || event.eventType !== "live" || event.status !== LIVE_STATUS.live || event.liveNotifiedAt) {
+    return event;
+  }
+
+  const notifiedAt = Date.now();
+  const claim = await dbRun(
+    `UPDATE hub_events
+     SET live_notified_at = ?, updated_at = ?
+     WHERE event_id = ? AND live_notified_at IS NULL`,
+    [notifiedAt, notifiedAt, eventId],
+  );
+  const changed = Number(claim?.changes ?? claim?.rowCount ?? 0);
+  if (changed <= 0) return getHubEvent(eventId);
+
+  const claimedEvent = {
+    ...event,
+    liveNotifiedAt: notifiedAt,
+    updatedAt: notifiedAt,
+  };
+
+  try {
+    const result = await notifyLiveStarted(claimedEvent);
+    console.log("[live-notify]", eventId, result);
+  } catch (err) {
+    console.error("[live-notify] failed", eventId, err);
+    await dbRun(
+      "UPDATE hub_events SET live_notified_at = NULL WHERE event_id = ? AND live_notified_at = ?",
+      [eventId, notifiedAt],
+    );
+  }
+
+  return getHubEvent(eventId);
+}
+
 function rowToEvent(row, seatsTaken = 0) {
   return {
     eventId: row.event_id,
@@ -64,6 +208,10 @@ function rowToEvent(row, seatsTaken = 0) {
     price: row.price || "",
     facilitators: parseJson(row.facilitators_json, []),
     isPublic: Boolean(row.is_public),
+    audienceScope: row.audience_scope || null,
+    schoolId: row.school_id || "",
+    trackId: row.track_id || "",
+    liveNotifiedAt: row.live_notified_at ? Number(row.live_notified_at) : null,
     createdBy: row.created_by || "",
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
@@ -199,6 +347,9 @@ export async function createHubEvent(actor, body = {}) {
   const status = isLive
     ? parseLiveStatus(body.liveStatus ?? body.status)
     : Number(body.status) || 0;
+  const liveAudience = isLive
+    ? await resolveLiveAudience(actor, body)
+    : { audienceScope: null, schoolId: "", trackId: "" };
   const eventId = id();
   const now = Date.now();
   const uid = actor?.uid || "";
@@ -210,8 +361,9 @@ export async function createHubEvent(actor, body = {}) {
       mentor_id, mentee_id, mentor_name, mentee_name, status,
       description, mode, location, meeting_link, participants_json,
       program, seats, price, is_public, facilitators_json,
+      audience_scope, school_id, track_id, live_notified_at,
       created_by, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       eventId,
       title,
@@ -234,12 +386,19 @@ export async function createHubEvent(actor, body = {}) {
       String(body.price || "").trim(),
       body.isPublic === false || body.is_public === 0 ? 0 : 1,
       body.facilitators ? JSON.stringify(body.facilitators) : null,
+      liveAudience.audienceScope,
+      liveAudience.schoolId,
+      liveAudience.trackId,
+      null,
       uid,
       now,
       now,
     ],
   );
 
+  if (isLive && status === LIVE_STATUS.live) {
+    return notifyLiveIfNeeded(eventId);
+  }
   return getHubEvent(eventId);
 }
 
@@ -271,6 +430,9 @@ export async function updateHubLiveStatus(eventId, body = {}) {
     `UPDATE hub_events SET status = ?, meeting_link = ?, updated_at = ? WHERE event_id = ?`,
     [status, meetingLink, Date.now(), eventId],
   );
+  if (status === LIVE_STATUS.live) {
+    return notifyLiveIfNeeded(eventId);
+  }
   return getHubEvent(eventId);
 }
 
@@ -381,8 +543,9 @@ export async function seedHubEvents({ force = false } = {}) {
         mentor_id, mentee_id, mentor_name, mentee_name, status,
         description, mode, location, meeting_link, participants_json,
         program, seats, price, is_public, facilitators_json,
+        audience_scope, school_id, track_id, live_notified_at,
         created_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, 'event', '', '', ?, '', 0, ?, ?, ?, ?, NULL, ?, ?, ?, 1, ?, 'seed', ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, 'event', '', '', ?, '', 0, ?, ?, ?, ?, NULL, ?, ?, ?, 1, ?, NULL, '', '', NULL, 'seed', ?, ?)`,
       [
         e.event_id,
         e.title,
