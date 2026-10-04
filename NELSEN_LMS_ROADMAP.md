@@ -277,7 +277,8 @@ Users
 - [x] Track live status as scheduled/live/ended and sync those transitions server-side from YouTube Data API when `YOUTUBE_API_KEY` is configured.
 - [x] Use one Nelsen Google OAuth project/client with encrypted channel refresh tokens stored per platform or per school. School lives prefer their own connected channel and fall back to the Nelsen platform channel.
 - [x] Add SchoolAdmin and SuperAdmin channel connection UI. SchoolAdmin can connect only their school; SuperAdmin can connect the platform/default channel and any school channel.
-- [ ] Complete production Google OAuth configuration/verification and add the production redirect URI before enabling automatic Go Live in production.
+- [ ] Complete production Google OAuth configuration/verification and add the production redirect URI before enabling automatic Go Live in production. Do not leave the OAuth app in Testing for school rollout because non-basic test authorizations expire after seven days.
+- [ ] Request a YouTube Data API quota increase before high-volume multi-school rollout. Creating a fresh live currently uses three 50-unit write calls (broadcast insert + stream insert + bind), before low-cost status reads.
 
 ### Mentees / viewers
 
