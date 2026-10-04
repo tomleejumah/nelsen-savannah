@@ -9,6 +9,7 @@ import { initLmsDb, getPrimaryEngine } from "./db/lmsDb.js";
 import { seedLmsCatalog } from "./services/lmsSeed.js";
 import { startMediaReaper } from "./services/lmsMediaReaper.js";
 import { startYouTubeLiveSync } from "./services/lmsYouTubeLiveSync.js";
+import { startStoryViewReceiptReaper } from "./services/lmsStoryViewService.js";
 import { configuredDriverName } from "./services/storage/index.js";
 import notificationRoutes from "./routes/notifications.js";
 import chatRoutes from "./routes/chat.js";
@@ -129,6 +130,7 @@ async function start() {
   );
   startMediaReaper();
   startYouTubeLiveSync();
+  startStoryViewReceiptReaper();
   app.listen(PORT, () => {
     console.log(`Nelsen Savannah service running on port ${PORT}`);
   });
