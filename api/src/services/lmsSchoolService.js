@@ -973,8 +973,8 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
     throw err;
   }
   const next = String(body.status || "").trim().toLowerCase();
-  if (next !== "suspended" && next !== "active") {
-    const err = new Error("status must be active or suspended");
+  if (next !== "suspended" && next !== "active" && next !== "rejected") {
+    const err = new Error("status must be active, suspended or rejected");
     err.status = 400;
     throw err;
   }
@@ -1046,7 +1046,7 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
     if (!isSuperAdmin(targetRole)) {
       await setUserRole(uid, ROLES.Mentee);
     }
-  } else {
+  } else if (next === "active") {
     const restore = normalizeRole(mem.role || targetRole);
     if (restore === ROLES.Mentor) {
       await setUserRole(uid, ROLES.Mentor);
@@ -1064,7 +1064,7 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
       approved: true,
     });
   }
-  if (next === "suspended" && notifyEmail) {
+  if ((next === "suspended" || next === "rejected") && notifyEmail) {
     await notifySchoolDecisionEmail({
       to: notifyEmail,
       displayName: notifyName,
