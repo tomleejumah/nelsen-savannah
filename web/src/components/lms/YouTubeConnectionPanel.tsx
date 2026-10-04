@@ -41,18 +41,30 @@ export function YouTubeConnectionPanel({
   }, [load]);
 
   async function connect() {
+    // Reserve the tab synchronously from the click so browsers do not block it
+    // after the async Firebase/API calls complete.
+    const authTab = window.open("about:blank", "_blank");
+    if (authTab) authTab.opener = null;
+
     setBusy(true);
     setMsg(null);
     try {
       const token = await user.getIdToken();
       const result = await createYouTubeConnectUrl(token, schoolId);
       if (!result.ok || !result.data?.authUrl) {
+        authTab?.close();
         setMsg(result.error || "Could not start YouTube authorization.");
         return;
       }
-      window.open(result.data.authUrl, "_blank", "noopener,noreferrer");
-      setMsg("Authorize the YouTube channel in the new tab, then refresh the status here.");
+      if (authTab) {
+        authTab.location.href = result.data.authUrl;
+        setMsg("Authorize the YouTube channel in the new tab, then refresh the status here.");
+      } else {
+        // Popup blocking is still possible under strict browser settings.
+        window.location.assign(result.data.authUrl);
+      }
     } catch (err) {
+      authTab?.close();
       setMsg(err instanceof Error ? err.message : "Could not connect YouTube.");
     } finally {
       setBusy(false);
