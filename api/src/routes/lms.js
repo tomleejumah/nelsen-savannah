@@ -32,6 +32,7 @@ const router = express.Router();
 router.get("/me", authenticateUser, lmsController.getLmsMe);
 router.patch("/me/profile", authenticateUser, lmsController.patchLmsMeProfile);
 router.get("/me/materials", authenticateUser, lmsController.getMyUploadedMaterials);
+router.get("/users/:uid/materials", authenticateUser, lmsController.getUserUploadedMaterials);
 router.patch(
   "/me/active-school",
   authenticateUser,
