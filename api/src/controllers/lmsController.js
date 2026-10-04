@@ -1,4 +1,4 @@
-import { getMe, getStoreHealth, updateMyProfile } from "../services/lmsMeService.js";
+import { getMe, getStoreHealth, updateMyProfile, listMyUploadedMaterials } from "../services/lmsMeService.js";
 import {
   getLessonById,
   getModuleById,
@@ -53,6 +53,16 @@ export async function patchLmsMeProfile(req, res) {
       err.status || 500,
       getPrimaryEngine() || "sqlite",
     );
+  }
+}
+
+export async function getMyUploadedMaterials(req, res) {
+  try {
+    const materials = await listMyUploadedMaterials(req.user.uid);
+    return lmsOk(res, { materials }, getPrimaryEngine());
+  } catch (err) {
+    console.error("[GET /lms/me/materials]", err);
+    return lmsErr(res, "Failed to load uploaded materials", 500, getPrimaryEngine() || "sqlite");
   }
 }
 
