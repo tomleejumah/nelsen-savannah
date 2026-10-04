@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_back"
+        app:title="Nelsen Live"
+        app:titleTextColor="?attr/colorOnSurface" />
+
+    <TextView
+        android:id="@+id/tvLiveStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_date_chip"
+        android:fontFamily="@font/font_plex_mono"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="5dp"
+        android:text="LIVE NOW"
+        android:textColor="@color/maroon_700"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:background="@android:color/black">
+
+        <WebView
+            android:id="@+id/liveWebView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/liveUnavailable"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="This live session cannot be embedded here."
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenYoutube"
+        style="@style/Nelsen.Button.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Open in YouTube"
+        android:textAllCaps="false" />
+
+</LinearLayout>

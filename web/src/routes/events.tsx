@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, MapPin, Ticket, UserRound, Users } from "lucide-react";
+import { Clock, ExternalLink, MapPin, Radio, Ticket, UserRound, Users } from "lucide-react";
 
 import { ReserveSeatDialog } from "@/components/site/ReserveSeatDialog";
 import { FACILITATORS } from "@/data/site";
@@ -10,6 +10,9 @@ import {
   eventFormat,
   eventTimeRange,
   eventVenue,
+  isLiveEvent,
+  liveStatusLabel,
+  youtubeEmbedUrl,
 } from "@/data/events";
 import { loadHubEvents } from "@/lib/hubEvents";
 
@@ -100,12 +103,17 @@ function EventsPage() {
           const pct = seats ? Math.round((taken / seats) * 100) : 0;
           const isReserved = reservedLocal.includes(event.eventId);
           const format = eventFormat(event);
+          const liveEvent = isLiveEvent(event);
+          const liveLabel = liveEvent ? liveStatusLabel(event) : null;
+          const embedUrl = liveEvent ? youtubeEmbedUrl(event.meetingLink) : "";
 
           return (
             <article
               key={event.eventId}
               id={event.eventId}
-              className="scroll-mt-28 grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center"
+              className={`scroll-mt-28 grid gap-6 rounded-3xl border border-border/70 bg-card p-6 sm:p-8 ${
+                liveEvent ? "lg:grid-cols-1" : "lg:grid-cols-[1fr_auto] lg:items-center"
+              }`}
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -114,9 +122,20 @@ function EventsPage() {
                       {event.program}
                     </span>
                   )}
-                  <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand-soft">
-                    {format}
-                  </span>
+                  {liveEvent ? (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                      event.liveStatus === "live"
+                        ? "bg-red-500/15 text-red-600"
+                        : "bg-brand/10 text-brand-soft"
+                    }`}>
+                      <Radio className="h-3.5 w-3.5" />
+                      {liveLabel}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand-soft">
+                      {format}
+                    </span>
+                  )}
                   <span className="text-xs text-muted-foreground">{eventDateLabel(event)}</span>
                 </div>
                 <h2 className="mt-3 text-xl font-bold sm:text-2xl">{event.title}</h2>
@@ -144,9 +163,34 @@ function EventsPage() {
                     </li>
                   )}
                 </ul>
+
+                {liveEvent && embedUrl ? (
+                  <div className="mt-5 overflow-hidden rounded-2xl border border-border/70 bg-black">
+                    <div className="aspect-video">
+                      <iframe
+                        src={embedUrl}
+                        title={`${event.title} — YouTube Live`}
+                        className="h-full w-full"
+                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                        allowFullScreen
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 bg-secondary/40 px-4 py-3 text-xs">
+                      <span className="font-semibold">{liveLabel}</span>
+                      <a
+                        href={event.meetingLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 font-semibold text-ember"
+                      >
+                        Open in YouTube <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
-              {seats > 0 && (
+              {!liveEvent && seats > 0 && (
                 <div className="w-full lg:w-52">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
