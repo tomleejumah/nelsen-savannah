@@ -128,6 +128,17 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/catalogProgress"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerContent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCourses"
         android:layout_width="0dp"
@@ -156,6 +167,7 @@
         app:layout_constraintTop_toBottomOf="@id/headerContent">
 
         <TextView
+            android:id="@+id/tvEmptyTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/font_display"
@@ -174,5 +186,15 @@
             android:text="Try another title or tutor name"
             android:textColor="@color/muted"
             android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRetryCourses"
+            style="@style/Nelsen.Button.Primary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Retry"
+            android:textAllCaps="false"
+            android:visibility="gone" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

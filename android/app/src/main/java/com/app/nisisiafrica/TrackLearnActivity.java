@@ -283,6 +283,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         }
         user.getIdToken(true).addOnCompleteListener(task -> {
             if (!task.isSuccessful() || task.getResult() == null) {
+                if (progress != null) progress.setVisibility(View.GONE);
                 Toast.makeText(this, "Could not auth LMS", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -356,11 +357,14 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     private void resumeProgress() {
         if (TextUtils.isEmpty(trackId)) return;
-        withBearer(bearer -> ApiClient.getLmsService().myProgress(bearer, trackId)
+        withBearer(bearer -> {
+            progress.setVisibility(View.VISIBLE);
+            ApiClient.getLmsService().myProgress(bearer, trackId)
                 .enqueue(new Callback<>() {
                     @Override
                     public void onResponse(Call<LmsModels.ProgressMapEnvelope> call,
                                            Response<LmsModels.ProgressMapEnvelope> response) {
+                        progress.setVisibility(View.GONE);
                         LmsModels.ProgressMapEnvelope body = response.body();
                         if (!response.isSuccessful() || body == null || !body.ok || body.data == null) {
                             return;
@@ -389,8 +393,11 @@ public class TrackLearnActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onFailure(Call<LmsModels.ProgressMapEnvelope> call, Throwable t) {}
-                }));
+                    public void onFailure(Call<LmsModels.ProgressMapEnvelope> call, Throwable t) {
+                        progress.setVisibility(View.GONE);
+                    }
+                });
+        });
     }
 
     private void bindTrack(LmsModels.TrackDetailData data) {
@@ -1352,10 +1359,13 @@ public class TrackLearnActivity extends AppCompatActivity {
             tvPlayerPlaceholder.setText("Playing linked media");
         } else {
             tvPlayerPlaceholder.setVisibility(View.VISIBLE);
-            tvPlayerPlaceholder.setText("Course player ready — lessons sync when LMS is live.");
+            tvPlayerPlaceholder.setText("Could not load this course. Tap to retry.");
+            tvPlayerPlaceholder.setOnClickListener(v -> loadTrack());
             modulesContainer.removeAllViews();
-            showFallbackLessonsHint();
-            // TODO: lesson-level progress not tracked offline yet — UI stubs only.
+            TextView hint = new TextView(this);
+            hint.setText("No cached course content is available on this device.");
+            hint.setTextColor(getColor(R.color.muted));
+            modulesContainer.addView(hint);
         }
     }
 
