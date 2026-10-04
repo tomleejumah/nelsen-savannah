@@ -323,11 +323,11 @@ Watch Live
 
 Current stories maintain an aggregate view count and local seen state. To show the owner exactly who viewed a status/story:
 
-- [ ] Record one viewer receipt per story as `viewers/{uid}: timestamp` instead of only incrementing a count.
-- [ ] Prevent duplicate viewer receipts while keeping the aggregate view count.
-- [ ] Add an owner-only **Viewed by** sheet/list with avatar, name, and viewed time.
-- [ ] Add Firebase rules so a viewer can only write their own receipt and only the story owner can read the viewer list.
-- [ ] Decide retention behavior when a story expires/closes/deletes so viewer identities are not retained longer than intended.
+- [x] Record one authenticated viewer receipt per story in the private LMS `story_view_receipts` table instead of exposing viewer identities under the client-readable RTDB story node.
+- [x] Prevent duplicate viewer receipts with a `(story_id, uid)` primary key while keeping the RTDB aggregate `views` count.
+- [x] Add an owner-only **Viewed by** bottom sheet with avatar, name, and viewed time.
+- [x] Enforce receipt privacy through authenticated API endpoints: viewers can only record their own authenticated view and only the story owner can list receipts.
+- [x] Expire viewer identities with the story's `expiresAt`; the server reaper removes expired receipts hourly, including receipts for stories closed/deleted before that original expiry.
 
 ---
 
