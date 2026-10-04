@@ -49,14 +49,17 @@
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/operateDescTv"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="40dp"
         android:fontFamily="@font/semibold"
         android:includeFontPadding="false"
+        android:maxLines="2"
         android:text="Downloading update..."
         android:textColor="@color/colorSolidText"
         android:textSize="28sp"
         app:layout_constraintBottom_toTopOf="@+id/progressbar"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/operateProgressTv"
         app:layout_constraintTop_toBottomOf="@+id/operateProgressTv" />
 
