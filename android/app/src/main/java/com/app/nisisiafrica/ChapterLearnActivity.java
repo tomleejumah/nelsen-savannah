@@ -1,6 +1,5 @@
 package com.app.nisisiafrica;
 
-import com.app.nisisiafrica.Utils.NetworkStatusBanner;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -67,7 +66,6 @@ import retrofit2.Response;
  * and progress is reported via PATCH /lms/progress/:lessonId.
  */
 public class ChapterLearnActivity extends AppCompatActivity {
-    private NetworkStatusBanner networkStatusBanner;
 
     public static final String EXTRA_TRACK_ID = "extra_track_id";
     public static final String EXTRA_MODULE_ID = "extra_module_id";
@@ -133,8 +131,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_chapter_learn);
-        networkStatusBanner = new NetworkStatusBanner(this);
-        networkStatusBanner.start();
         headerContent = findViewById(R.id.headerContent);
         lessonsSheet = findViewById(R.id.lessonsSheet);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -1050,7 +1046,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
         stopWatchLoop();
         hidePlayers();
         pdfExec.shutdownNow();
-        if (networkStatusBanner != null) networkStatusBanner.stop();
         super.onDestroy();
     }
 
