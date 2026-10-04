@@ -481,8 +481,13 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         mediaAdapter = new MediaGridAdapter(this, this::showMediaPreview);
         rvMediaGrid.setAdapter(mediaAdapter);
 
-        // Load initial media
-        loadUserMedia(false);
+        // Mentor materials are sourced from the LMS media registry. Legacy
+        // User_Media remains as a fallback for older profile uploads.
+        if (isFromMentor) {
+            loadMentorMaterials();
+        } else {
+            loadUserMedia(false);
+        }
 
         // Setup pagination - load more when scrolling
         rvMediaGrid.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -495,13 +500,89 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                     int totalItemCount = gridLayoutManager.getItemCount();
                     int firstVisibleItem = gridLayoutManager.findFirstVisibleItemPosition();
 
-                    if ((visibleItemCount + firstVisibleItem) >= totalItemCount - 6) {
-                        // Load more when 6 items from bottom
+                    if (!isFromMentor &&
+                            (visibleItemCount + firstVisibleItem) >= totalItemCount - 6) {
+                        // Legacy profile media is paged; LMS mentor materials arrive as one list.
                         loadUserMedia(true);
                     }
                 }
             }
         });
+    }
+
+    private void loadMentorMaterials() {
+        FirebaseUser viewer = FirebaseAuth.getInstance().getCurrentUser();
+        if (viewer == null || TextUtils.isEmpty(id)) {
+            showMediaEmptyState();
+            return;
+        }
+        isLoadingMedia = true;
+        viewer.getIdToken(false)
+                .addOnSuccessListener(token -> ApiClient.getLmsService()
+                        .userMaterials("Bearer " + token.getToken(), id)
+                        .enqueue(new retrofit2.Callback<>() {
+                            @Override
+                            public void onResponse(
+                                    retrofit2.Call<LmsModels.UploadedMaterialsEnvelope> call,
+                                    retrofit2.Response<LmsModels.UploadedMaterialsEnvelope> response) {
+                                isLoadingMedia = false;
+                                LmsModels.UploadedMaterialsEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok ||
+                                        body.data == null || body.data.materials == null ||
+                                        body.data.materials.isEmpty()) {
+                                    // Preserve pre-LMS mentor uploads while the catalog is migrated.
+                                    loadUserMedia(false);
+                                    return;
+                                }
+
+                                List<UserMedia> items = new ArrayList<>();
+                                for (LmsModels.UploadedMaterialDto material : body.data.materials) {
+                                    if (material == null || TextUtils.isEmpty(material.playbackUrl)) continue;
+                                    String description = !TextUtils.isEmpty(material.lessonTitle)
+                                            ? material.lessonTitle
+                                            : material.trackTitle;
+                                    String fileName = !TextUtils.isEmpty(material.filename)
+                                            ? material.filename : "Material";
+                                    String fileType = !TextUtils.isEmpty(material.mimeType)
+                                            ? material.mimeType : "file";
+                                    items.add(new UserMedia(
+                                            material.mediaId == null ? "" : material.mediaId,
+                                            id,
+                                            material.playbackUrl,
+                                            description == null ? "" : description,
+                                            fileType,
+                                            fileName,
+                                            material.createdAt,
+                                            ""));
+                                }
+                                if (items.isEmpty()) {
+                                    loadUserMedia(false);
+                                    return;
+                                }
+                                mediaList = items;
+                                mediaAdapter.setMediaList(items);
+                                findViewById(R.id.emptyMediaState).setVisibility(View.GONE);
+                                findViewById(R.id.rvMediaGrid).setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onFailure(
+                                    retrofit2.Call<LmsModels.UploadedMaterialsEnvelope> call,
+                                    Throwable t) {
+                                isLoadingMedia = false;
+                                Log.w(TAG, "LMS mentor materials unavailable; using legacy media", t);
+                                loadUserMedia(false);
+                            }
+                        }))
+                .addOnFailureListener(error -> {
+                    isLoadingMedia = false;
+                    loadUserMedia(false);
+                });
+    }
+
+    private void showMediaEmptyState() {
+        findViewById(R.id.emptyMediaState).setVisibility(View.VISIBLE);
+        findViewById(R.id.rvMediaGrid).setVisibility(View.GONE);
     }
 
     private void loadUserMedia(boolean loadMore) {
