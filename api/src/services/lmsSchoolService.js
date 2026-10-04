@@ -77,9 +77,14 @@ async function assertCanManageSchool(actorUid, schoolId) {
     err.status = 403;
     throw err;
   }
-  const actorSchool = await getActorSchoolId(actorUid);
-  if (!actorSchool || actorSchool !== schoolId) {
-    const err = new Error("Cannot manage another school");
+  const membership = await dbGet(
+    `SELECT id, role FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active'
+     LIMIT 1`,
+    [actorUid, schoolId],
+  );
+  if (!membership || normalizeRole(membership.role) !== ROLES.SchoolAdmin) {
+    const err = new Error("Active SchoolAdmin membership required for this school");
     err.status = 403;
     throw err;
   }
