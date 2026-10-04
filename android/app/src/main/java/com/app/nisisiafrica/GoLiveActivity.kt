@@ -13,10 +13,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.app.nisisiafrica.data.Model.LmsModels
+import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.android.material.button.MaterialButton
+import com.google.firebase.auth.FirebaseAuth
 import com.pedro.common.ConnectChecker
 import com.pedro.encoder.input.sources.video.Camera2Source
 import com.pedro.library.generic.GenericStream
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callback {
 
@@ -34,9 +40,13 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var stream: GenericStream
 
     private var ingestUrl = ""
+    private var eventId = ""
+    private var youtubeUrl = ""
     private var surfaceReady = false
     private var prepared = false
     private var finishingLive = false
+    private var wentLive = false
+    private var endedSent = false
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -60,6 +70,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         setContentView(R.layout.activity_go_live)
 
         ingestUrl = intent.getStringExtra(EXTRA_INGEST_URL).orEmpty()
+        eventId = intent.getStringExtra(EXTRA_EVENT_ID).orEmpty()
+        youtubeUrl = intent.getStringExtra(EXTRA_YOUTUBE_URL).orEmpty()
         if (!ingestUrl.startsWith("rtmps://", ignoreCase = true) &&
             !ingestUrl.startsWith("rtmp://", ignoreCase = true)
         ) {
@@ -159,7 +171,35 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             if (stream.isOnPreview) stream.stopPreview()
         } catch (_: Exception) {
         }
+        if (wentLive) {
+            markNelsenLiveStatus("ended")
+            endedSent = true
+        }
         finish()
+    }
+
+    private fun markNelsenLiveStatus(liveStatus: String) {
+        if (eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        user.getIdToken(false).addOnSuccessListener { token ->
+            val body = LmsModels.LiveStatusBody(
+                liveStatus,
+                if (youtubeUrl.isBlank()) null else youtubeUrl,
+            )
+            ApiClient.getLmsService()
+                .updateHubLiveStatus("Bearer ${token.token}", eventId, body)
+                .enqueue(object : Callback<LmsModels.HubEventEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.HubEventEnvelope>,
+                        response: Response<LmsModels.HubEventEnvelope>,
+                    ) = Unit
+
+                    override fun onFailure(
+                        call: Call<LmsModels.HubEventEnvelope>,
+                        t: Throwable,
+                    ) = Unit
+                })
+        }
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
@@ -189,6 +229,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionSuccess() {
+        wentLive = true
+        markNelsenLiveStatus("live")
         runOnUiThread {
             status.text = "LIVE · Streaming to YouTube"
             endButton.isEnabled = true
@@ -225,6 +267,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             if (stream.isStreaming) stream.stopStream()
             stream.release()
         } catch (_: Exception) {
+        }
+        if (wentLive && !endedSent && !isChangingConfigurations) {
+            endedSent = true
+            markNelsenLiveStatus("ended")
         }
         super.onDestroy()
     }
