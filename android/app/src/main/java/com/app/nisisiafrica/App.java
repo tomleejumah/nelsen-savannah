@@ -5,6 +5,8 @@ import android.app.Application;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.app.nisisiafrica.data.local.Dao.UserDao;
+import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.google.firebase.auth.FirebaseAuth;
 import com.app.nisisiafrica.DataBase.AppDatabase;
 import com.app.nisisiafrica.Utils.LocaleHelper;
 import com.app.nisisiafrica.Utils.LmsStudySync;
@@ -27,6 +29,11 @@ public class App extends Application {
         LocaleHelper.applyPersisted(this);
         appDatabase = AppDatabase.getInstance(this);
         LmsStudySync.INSTANCE.schedule(this);
+        FirebaseAuth.getInstance().addAuthStateListener(auth -> {
+            if (auth.getCurrentUser() != null) {
+                FirebaseRemoteDataSource.INSTANCE.initSpecialChatRooms();
+            }
+        });
         DiditSdk.INSTANCE.initialize(this);
         ProcessLifecycleOwner.get().getLifecycle()
                 .addObserver(new AppLifecycleObserver(this));

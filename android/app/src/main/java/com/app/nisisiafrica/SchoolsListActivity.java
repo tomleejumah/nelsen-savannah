@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
@@ -59,6 +60,8 @@ public class SchoolsListActivity extends AppCompatActivity {
     private TextView tvSchoolCount;
     private EditText etSearch;
     private ImageButton btnClearSearch;
+    private SwipeRefreshLayout swipeRefresh;
+    private boolean loadingSchools = false;
     private String query = "";
 
     @Override
@@ -86,11 +89,13 @@ public class SchoolsListActivity extends AppCompatActivity {
         tvSchoolCount = findViewById(R.id.tvSchoolCount);
         etSearch = findViewById(R.id.etSearch);
         btnClearSearch = findViewById(R.id.btnClearSearch);
+        swipeRefresh = findViewById(R.id.swipeRefreshSchools);
 
         RecyclerView rv = findViewById(R.id.rvSchools);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new SchoolsAdapter();
         rv.setAdapter(adapter);
+        swipeRefresh.setOnRefreshListener(this::load);
 
         setupSearch();
         load();
@@ -147,14 +152,20 @@ public class SchoolsListActivity extends AppCompatActivity {
     }
 
     private void load() {
+        if (loadingSchools) return;
+        loadingSchools = true;
+        if (swipeRefresh != null) swipeRefresh.setRefreshing(true);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
+            finishSchoolRefresh();
             Toast.makeText(this, "Sign in to browse schools", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-        tvEmpty.setVisibility(View.VISIBLE);
-        tvEmpty.setText("Loading schools…");
+        if (allRows.isEmpty()) {
+            tvEmpty.setVisibility(View.VISIBLE);
+            tvEmpty.setText("Loading schools…");
+        }
         user.getIdToken(false)
                 .addOnSuccessListener(tokenResult -> {
                     String token = tokenResult.getToken();
@@ -171,7 +182,13 @@ public class SchoolsListActivity extends AppCompatActivity {
                         showLoadError("Could not authenticate. Check your connection and try again."));
     }
 
+    private void finishSchoolRefresh() {
+        loadingSchools = false;
+        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+    }
+
     private void showLoadError(String message) {
+        finishSchoolRefresh();
         if (tvEmpty != null) {
             tvEmpty.setVisibility(View.VISIBLE);
             tvEmpty.setText(message);
@@ -260,6 +277,7 @@ public class SchoolsListActivity extends AppCompatActivity {
                 } else {
                     tvHint.setText("Your schools first — Explore others below.");
                 }
+                finishSchoolRefresh();
                 applyFilter();
             }
 
@@ -267,6 +285,7 @@ public class SchoolsListActivity extends AppCompatActivity {
             public void onFailure(@NonNull Call<LmsModels.SchoolsEnvelope> call, @NonNull Throwable t) {
                 allRows.clear();
                 allRows.addAll(mineRows);
+                finishSchoolRefresh();
                 applyFilter();
                 if (mineRows.isEmpty()) {
                     showLoadError("Could not load schools. Check your connection and try again.");
