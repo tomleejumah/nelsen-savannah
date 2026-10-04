@@ -176,9 +176,9 @@ public class CreateEventActivity extends AppCompatActivity {
             dateCal.setTimeInMillis(System.currentTimeMillis());
             dateSet = true;
             startTime = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(dateCal.getTime());
-            tvDate.setText(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(dateCal.getTime()));
-            tvStart.setText(startTime);
-            tvEnd.setText("Auto");
+            tvDate.setVisibility(View.GONE);
+            View liveTimeRow = (View) tvStart.getParent();
+            if (liveTimeRow != null) liveTimeRow.setVisibility(View.GONE);
 
             setupLiveAudienceControls();
             loadLiveAudienceContext();
@@ -523,20 +523,6 @@ public class CreateEventActivity extends AppCompatActivity {
                     "Camera and microphone permission are required to go live",
                     Toast.LENGTH_LONG
             ).show();
-        }
-    }
-
-    private static boolean isYoutubeUrl(String raw) {
-        if (raw == null || raw.trim().isEmpty()) return false;
-        try {
-            android.net.Uri uri = android.net.Uri.parse(raw.trim());
-            String host = uri.getHost();
-            if (host == null) return false;
-            host = host.toLowerCase(Locale.US);
-            if (host.startsWith("www.")) host = host.substring(4);
-            return "youtube.com".equals(host) || host.endsWith(".youtube.com") || "youtu.be".equals(host);
-        } catch (Exception ignored) {
-            return false;
         }
     }
 
