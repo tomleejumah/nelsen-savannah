@@ -37,6 +37,17 @@ router.patch(
 );
 router.get("/health", lmsController.getLmsHealth);
 
+router.post(
+  "/stories/:storyId/view",
+  authenticateUser,
+  lmsController.postStoryView,
+);
+router.get(
+  "/stories/:storyId/viewers",
+  authenticateUser,
+  lmsController.getStoryViewers,
+);
+
 // Android sideload APK — public so logged-out installs can update before login.
 router.get("/app/android", lmsController.getAndroidAppRelease);
 router.post(
