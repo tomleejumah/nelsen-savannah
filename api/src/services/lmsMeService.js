@@ -347,6 +347,34 @@ export async function getMe(profile) {
   );
 }
 
+export async function listMyUploadedMaterials(uid) {
+  const rows = await (await import("../db/lmsDb.js")).dbAll(
+    `SELECT m.media_id, m.filename, m.mime_type, m.size_bytes, m.status,
+            m.track_id, m.scope, m.scope_id, m.created_at,
+            l.lesson_id, l.title AS lesson_title,
+            t.title AS track_title
+     FROM media_assets m
+     LEFT JOIN lessons l ON l.media_id = m.media_id
+     LEFT JOIN tracks t ON t.track_id = COALESCE(m.track_id, l.track_id)
+     WHERE m.uid = ?
+       AND m.status = 'ready'
+     ORDER BY m.created_at DESC`,
+    [uid],
+  );
+  return rows.map((row) => ({
+    mediaId: row.media_id,
+    filename: row.filename || "",
+    mimeType: row.mime_type || "",
+    sizeBytes: Number(row.size_bytes || 0),
+    trackId: row.track_id || "",
+    trackTitle: row.track_title || "",
+    lessonId: row.lesson_id || row.scope_id || "",
+    lessonTitle: row.lesson_title || "",
+    scope: row.scope || "",
+    createdAt: Number(row.created_at || 0),
+  }));
+}
+
 export async function getStoreHealth() {
   const [primary, rtdb] = await Promise.all([
     checkPrimaryHealth(),
