@@ -46,6 +46,7 @@ object LmsEventsDataSource {
         seatsTaken = seatsTaken,
         price = price.orEmpty(),
         reservedByMe = reservedByMe,
+        liveStatus = liveStatus.orEmpty(),
     )
 
     suspend fun fetchPublicEvents(filter: String = "upcoming", bearer: String? = null): List<Event> =

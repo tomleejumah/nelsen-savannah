@@ -1177,6 +1177,22 @@ export async function postHubEvent(req, res) {
   }
 }
 
+export async function patchHubLiveStatus(req, res) {
+  try {
+    const svc = await import("../services/lmsHubEventService.js");
+    const event = await svc.updateHubLiveStatus(req.params.eventId, req.body || {});
+    return lmsOk(res, { event }, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[PATCH /lms/events/:eventId/live-status]", err.message);
+    return lmsErr(
+      res,
+      err.message || "Live status update failed",
+      err.status || 500,
+      getPrimaryEngine() || "sqlite",
+    );
+  }
+}
+
 export async function deleteHubEvent(req, res) {
   try {
     const svc = await import("../services/lmsHubEventService.js");

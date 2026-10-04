@@ -434,6 +434,12 @@ router.delete(
   requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.deleteHubEvent,
 );
+router.patch(
+  "/events/:eventId/live-status",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.patchHubLiveStatus,
+);
 router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
 router.post(
   "/events/:eventId/reserve",

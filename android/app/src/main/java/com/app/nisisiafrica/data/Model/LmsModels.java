@@ -654,6 +654,7 @@ public final class LmsModels {
         public String mentorName;
         public String menteeName;
         public int status;
+        public String liveStatus;
         public String description;
         public String mode;
         public String location;
@@ -697,6 +698,9 @@ public final class LmsModels {
         public String program;
         public int seats;
         public String price;
+        public String eventType = "event";
+        public int status = 0;
+        public String liveStatus;
 
         public CreateHubEventBody(
                 String title,
@@ -721,6 +725,20 @@ public final class LmsModels {
             this.program = program;
             this.seats = seats;
             this.price = price;
+        }
+    }
+
+    public static class LiveStatusBody {
+        public String liveStatus;
+        public String meetingLink;
+
+        public LiveStatusBody(String liveStatus) {
+            this.liveStatus = liveStatus;
+        }
+
+        public LiveStatusBody(String liveStatus, String meetingLink) {
+            this.liveStatus = liveStatus;
+            this.meetingLink = meetingLink;
         }
     }
 
