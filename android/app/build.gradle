@@ -156,7 +156,7 @@ dependencies {
     implementation libs.work.runtime
 
     // Native YouTube Live publisher — camera/mic encode directly to YouTube RTMPS.
-    implementation("com.github.pedroSG94.RootEncoder:library:2.8.1") {
+    implementation("com.github.pedroSG94.RootEncoder:library:2.6.1") {
         // The app already gets bcprov-jdk18on through its existing stack.
         // RootEncoder's alternate bcprov artifact contains the same classes.
         exclude group: "org.bouncycastle", module: "bcprov-jdk15to18"
