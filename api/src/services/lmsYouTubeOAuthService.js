@@ -405,8 +405,8 @@ async function createStream(accessToken, title) {
       snippet: { title: String(title || "Nelsen Live").slice(0, 100) },
       cdn: {
         ingestionType: "rtmp",
-        resolution: "variable",
-        frameRate: "variable",
+        resolution: "720p",
+        frameRate: "30fps",
       },
       contentDetails: { isReusable: false },
     }),
