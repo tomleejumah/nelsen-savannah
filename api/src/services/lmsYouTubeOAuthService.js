@@ -111,7 +111,7 @@ async function connectionScopeForAdmin(actor, requestedSchoolId = "") {
   const ownSchool = await actorSchool(uid);
   const target = schoolId || ownSchool;
   if (!target) throw httpError("No active school selected", 400);
-  if (target !== ownSchool && !(await hasActiveMembership(uid, target))) {
+  if (target !== ownSchool) {
     throw httpError("Cannot manage another school's YouTube channel", 403);
   }
   return { scopeType: "school", scopeId: target };
