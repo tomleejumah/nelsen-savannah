@@ -251,7 +251,8 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
                 0,                                            // seats
                 0,                                            // seatsTaken
                 "",                                           // price
-                false                                         // reservedByMe
+                false,                                        // reservedByMe
+                ""                                            // liveStatus (not a live event)
         );
 //todo switch to view model/repository
         FirebaseRemoteDataSource.INSTANCE.createEvent(event, event.getMentorId(), event.getMenteeId(), success -> {
