@@ -271,14 +271,15 @@ Users
 
 - [x] Add host-only **Link YouTube Live** UI on Android using the existing event form; direct YouTube broadcast creation/control remains.
 - [x] Link an existing Nelsen YouTube Live session; automatic creation through the YouTube API remains.
-- [ ] Associate the live session with the Nelsen user/course/event.
-- [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status).
+- [x] Associate the live session with the Nelsen creator and an explicit course, school, or platform audience.
+- [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status, audience scope, school/track association).
 - [x] Track live status in the API contract as scheduled/live/ended; automatic YouTube-driven transitions still remain.
+- [ ] When school creation/settings are expanded in Super Admin, allow each school to configure its own YouTube channel/account; keep the current Nelsen channel as the platform/default channel until then.
 
 ### Mentees / viewers
 
 - [x] Mentees can discover, join, and watch linked live sessions but cannot create/start broadcasts.
-- [ ] Apply course/school/event visibility rules before exposing a live session.
+- [x] Apply scoped visibility before exposing a live session: course → enrolled learners/linked staff, school → active school members, platform → signed-in Nelsen users.
 
 ### Notifications
 
@@ -296,9 +297,10 @@ Users receive "X is live now"
 Watch Live
 ```
 
-- [ ] Send FCM live-start notification.
-- [ ] Notification opens the correct live session.
-- [ ] Avoid duplicate live notifications.
+- [x] Send FCM live-start notification when Nelsen transitions the session to `live`.
+- [x] Notification opens the correct linked live session on Android, including foreground and background notification-tap paths.
+- [x] Avoid duplicate live notifications with a one-time `live_notified_at` claim before fanout.
+- [ ] Detect the YouTube broadcast state automatically and drive scheduled → live → ended transitions without a manual/API status update.
 
 ### Viewer
 
@@ -310,9 +312,10 @@ Watch Live
 
 ### History
 
-- [ ] Store live session metadata/history.
-- [ ] Show ended sessions where appropriate.
-- [ ] Link to replay when a YouTube replay is available.
+- [x] Store live session metadata/history in `hub_events`; ending a live does not delete its audience association or YouTube URL.
+- [x] Show ended sessions in Android **Past** schedules and the Web **Live history** replay surface.
+- [x] Link ended sessions back to the same YouTube video for replay when the replay remains available.
+- [ ] Detect replay/offline availability from YouTube rather than assuming every ended YouTube URL is still playable.
 
 ---
 
