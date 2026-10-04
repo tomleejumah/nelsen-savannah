@@ -174,8 +174,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         setupBlurBars();
         setupBottomNav();
         syncChromeToVisibleFragment();
-        // After initial tab so chat open isn't overwritten by home select.
+        // After initial tab so notification navigation isn't overwritten by home select.
         handleOpenChatIntent(getIntent());
+        handleLiveNotificationIntent(getIntent());
 
         //fcm init
         initFCM();
@@ -580,6 +581,24 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         super.onNewIntent(intent);
         setIntent(intent);
         handleOpenChatIntent(intent);
+        handleLiveNotificationIntent(intent);
+    }
+
+    private void handleLiveNotificationIntent(Intent intent) {
+        if (intent == null || !"live".equals(intent.getStringExtra("type"))) return;
+        String youtubeUrl = intent.getStringExtra("youtubeUrl");
+        if (TextUtils.isEmpty(youtubeUrl)) return;
+
+        Intent viewer = new Intent(this, LiveViewerActivity.class)
+                .putExtra(LiveViewerActivity.EXTRA_TITLE, intent.getStringExtra("eventTitle"))
+                .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, youtubeUrl)
+                .putExtra(
+                        LiveViewerActivity.EXTRA_LIVE_STATUS,
+                        TextUtils.isEmpty(intent.getStringExtra("liveStatus"))
+                                ? "live"
+                                : intent.getStringExtra("liveStatus"));
+        intent.removeExtra("type");
+        startActivity(viewer);
     }
 
     private void handleOpenChatIntent(Intent intent) {
