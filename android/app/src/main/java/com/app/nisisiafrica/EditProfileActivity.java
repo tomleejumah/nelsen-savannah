@@ -170,7 +170,6 @@ public class EditProfileActivity extends AppCompatActivity {
         android.net.Uri uri = data.getData();
         CircleImageView image = findViewById(R.id.editprofileImage);
         image.setAlpha(0.55f);
-        FirebaseRemoteDataSource.INSTANCE.toString(); // keep datasource initialization deterministic
         com.app.nisisiafrica.data.remote.StorageUploader.upload(uri, "profile_media", (ok, url) -> {
             image.setAlpha(1f);
             if (!ok || url == null || url.isEmpty()) {
