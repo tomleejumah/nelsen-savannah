@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,19 +25,23 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.app.nisisiafrica.Utils.StoryViewsStore;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.Model.Story;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ServerValue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class StoryViewerActivity extends AppCompatActivity {
 
@@ -231,26 +236,165 @@ public class StoryViewerActivity extends AppCompatActivity {
         return url;
     }
 
-    /** Counts one view per story per viewing session and shows the tally to the owner. */
+    /** Records one authenticated receipt per viewer; only the owner can read receipts. */
     private void registerView(Story story) {
         if (story == null || TextUtils.isEmpty(story.storyId)) return;
         StoryViewsStore.markSeen(this, story.storyId);
-        String me = FirebaseAuth.getInstance().getUid();
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String me = user != null ? user.getUid() : null;
         boolean isOwner = me != null && me.equals(story.ownerId);
 
-        if (!isOwner && countedViews.add(story.storyId)) {
-            FirebaseDatabase.getInstance().getReference("stories")
-                    .child(story.storyId).child("views")
-                    .setValue(ServerValue.increment(1));
-            story.views += 1;
+        if (!isOwner && user != null && countedViews.add(story.storyId)) {
+            user.getIdToken(false).addOnSuccessListener(tokenResult ->
+                    ApiClient.getLmsService()
+                            .recordStoryView("Bearer " + tokenResult.getToken(), story.storyId)
+                            .enqueue(new Callback<LmsModels.MapEnvelope>() {
+                                @Override
+                                public void onResponse(
+                                        @androidx.annotation.NonNull Call<LmsModels.MapEnvelope> call,
+                                        @androidx.annotation.NonNull Response<LmsModels.MapEnvelope> response) {
+                                    // The API transaction updates both the unique receipt and aggregate count.
+                                }
+
+                                @Override
+                                public void onFailure(
+                                        @androidx.annotation.NonNull Call<LmsModels.MapEnvelope> call,
+                                        @androidx.annotation.NonNull Throwable t) {
+                                    countedViews.remove(story.storyId);
+                                }
+                            }));
         }
 
         if (isOwner) {
             viewsLabel.setVisibility(View.VISIBLE);
-            viewsLabel.setText(story.views + (story.views == 1 ? " view" : " views"));
+            viewsLabel.setText(story.views + (story.views == 1 ? " view" : " views") + " · Viewed by");
+            viewsLabel.setOnClickListener(v -> showViewerReceipts(story));
         } else {
             viewsLabel.setVisibility(View.GONE);
+            viewsLabel.setOnClickListener(null);
         }
+    }
+
+    private void showViewerReceipts(Story story) {
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || story == null || TextUtils.isEmpty(story.storyId)) return;
+
+        if (currentAnimator != null) {
+            isCancelled = true;
+            currentAnimator.cancel();
+        }
+
+        com.google.android.material.bottomsheet.BottomSheetDialog sheet =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(20), dp(18), dp(20), dp(28));
+
+        TextView title = new TextView(this);
+        title.setText("Viewed by");
+        title.setTextSize(20f);
+        title.setTextColor(ContextCompat.getColor(this, R.color.ink));
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        root.addView(title);
+
+        TextView status = new TextView(this);
+        status.setText("Loading viewers…");
+        status.setTextSize(14f);
+        status.setTextColor(ContextCompat.getColor(this, R.color.muted));
+        status.setPadding(0, dp(12), 0, dp(8));
+        root.addView(status);
+
+        sheet.setContentView(root);
+        sheet.setOnDismissListener(d -> {
+            if (!isFinishing() && !ownerActionPending) startProgress(currentIndex);
+        });
+        sheet.show();
+
+        user.getIdToken(false).addOnSuccessListener(tokenResult ->
+                ApiClient.getLmsService()
+                        .storyViewers("Bearer " + tokenResult.getToken(), story.storyId)
+                        .enqueue(new Callback<LmsModels.StoryViewersEnvelope>() {
+                            @Override
+                            public void onResponse(
+                                    @androidx.annotation.NonNull Call<LmsModels.StoryViewersEnvelope> call,
+                                    @androidx.annotation.NonNull Response<LmsModels.StoryViewersEnvelope> response) {
+                                if (isFinishing()) return;
+                                LmsModels.StoryViewersEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok || body.data == null) {
+                                    status.setText("Could not load viewers");
+                                    return;
+                                }
+
+                                story.views = body.data.views;
+                                viewsLabel.setText(story.views + (story.views == 1 ? " view" : " views") + " · Viewed by");
+                                root.removeView(status);
+
+                                if (body.data.viewers == null || body.data.viewers.isEmpty()) {
+                                    TextView empty = new TextView(StoryViewerActivity.this);
+                                    empty.setText("No views yet");
+                                    empty.setTextColor(ContextCompat.getColor(StoryViewerActivity.this, R.color.muted));
+                                    empty.setPadding(0, dp(18), 0, 0);
+                                    root.addView(empty);
+                                    return;
+                                }
+
+                                for (LmsModels.StoryViewerDto viewer : body.data.viewers) {
+                                    root.addView(viewerRow(viewer));
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(
+                                    @androidx.annotation.NonNull Call<LmsModels.StoryViewersEnvelope> call,
+                                    @androidx.annotation.NonNull Throwable t) {
+                                if (!isFinishing()) status.setText("Could not load viewers");
+                            }
+                        }))
+                .addOnFailureListener(e -> status.setText("Could not authenticate viewer list"));
+    }
+
+    private View viewerRow(LmsModels.StoryViewerDto viewer) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(10), 0, dp(10));
+
+        CircleImageView avatar = new CircleImageView(this);
+        LinearLayout.LayoutParams avatarLp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        avatar.setLayoutParams(avatarLp);
+        avatar.setImageResource(R.drawable.ic_person);
+        if (viewer != null && !TextUtils.isEmpty(viewer.photoUrl)) {
+            Glide.with(this).load(viewer.photoUrl).placeholder(R.drawable.ic_person).into(avatar);
+        }
+        row.addView(avatar);
+
+        LinearLayout text = new LinearLayout(this);
+        text.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        textLp.setMarginStart(dp(12));
+        text.setLayoutParams(textLp);
+
+        TextView name = new TextView(this);
+        name.setText(viewer != null && !TextUtils.isEmpty(viewer.name) ? viewer.name : "Nelsen user");
+        name.setTextSize(15f);
+        name.setTextColor(ContextCompat.getColor(this, R.color.ink));
+        name.setTypeface(name.getTypeface(), android.graphics.Typeface.BOLD);
+        text.addView(name);
+
+        TextView time = new TextView(this);
+        long viewedAt = viewer != null ? viewer.viewedAt : 0L;
+        time.setText(viewedAt > 0
+                ? DateUtils.getRelativeTimeSpanString(
+                        viewedAt,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS)
+                : "");
+        time.setTextSize(12f);
+        time.setTextColor(ContextCompat.getColor(this, R.color.muted));
+        text.addView(time);
+
+        row.addView(text);
+        return row;
     }
 
     private boolean isCancelled = false;

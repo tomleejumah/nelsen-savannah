@@ -1591,8 +1591,14 @@ export type HubEventDto = {
   liveNotifiedAt?: number | null;
 };
 
-export async function fetchPublicHubEvents() {
-  return lmsFetch<{ events: HubEventDto[] }>("/lms/events/public");
+export async function fetchPublicHubEvents(
+  idToken?: string | null,
+  filter: "upcoming" | "past" | "all" = "upcoming",
+) {
+  return lmsFetch<{ events: HubEventDto[] }>(
+    `/lms/events/public?filter=${encodeURIComponent(filter)}`,
+    idToken,
+  );
 }
 
 export async function patchHubLiveStatus(

@@ -668,6 +668,13 @@ async function ensureMigrations() {
       linked_at INTEGER NOT NULL,
       PRIMARY KEY (track_id, uid)
     )`,
+    `CREATE TABLE IF NOT EXISTS story_view_receipts (
+      story_id TEXT NOT NULL,
+      uid TEXT NOT NULL,
+      viewed_at BIGINT NOT NULL,
+      expires_at BIGINT NOT NULL,
+      PRIMARY KEY (story_id, uid)
+    )`,
   ];
   for (const sql of additiveTables) {
     await dbRun(sql);
@@ -738,6 +745,7 @@ CREATE TABLE IF NOT EXISTS school_applications (
     "CREATE INDEX IF NOT EXISTS idx_cohort_members_uid ON cohort_members(uid)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_runs_cohort_track ON cohort_track_runs(cohort_id, track_id)",
     "CREATE INDEX IF NOT EXISTS idx_milestones_run_order ON milestones(run_id, sort_order)",
+    "CREATE INDEX IF NOT EXISTS idx_story_view_receipts_expiry ON story_view_receipts(expires_at)",
     "CREATE INDEX IF NOT EXISTS idx_quiz_attempts_uid_lesson ON quiz_attempts(uid, lesson_id)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_quiz_versions_run_lesson ON cohort_quiz_versions(run_id, lesson_id, version)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_quiz_attempts_uid_lesson ON cohort_quiz_attempts(uid, lesson_id)",

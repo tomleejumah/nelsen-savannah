@@ -21,6 +21,16 @@ public interface LmsApiService {
     @GET("lms/me")
     Call<LmsModels.MeEnvelope> me(@Header("Authorization") String bearer);
 
+    @POST("lms/stories/{storyId}/view")
+    Call<LmsModels.MapEnvelope> recordStoryView(
+            @Header("Authorization") String bearer,
+            @Path("storyId") String storyId);
+
+    @GET("lms/stories/{storyId}/viewers")
+    Call<LmsModels.StoryViewersEnvelope> storyViewers(
+            @Header("Authorization") String bearer,
+            @Path("storyId") String storyId);
+
     @GET("lms/tracks")
     Call<LmsModels.TracksEnvelope> tracks(
             @Header("Authorization") String bearer,

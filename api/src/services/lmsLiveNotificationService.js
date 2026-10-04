@@ -49,6 +49,8 @@ async function notifyOne(uid, event) {
     audienceScope: event.audienceScope || "",
     schoolId: event.schoolId || "",
     trackId: event.trackId || "",
+    youtubeUrl: event.meetingLink || "",
+    liveStatus: event.liveStatus || "live",
     timestamp: admin.database.ServerValue.TIMESTAMP,
     read: false,
   };
