@@ -219,6 +219,42 @@ export type SchoolDto = {
   updatedAt: number;
 };
 
+export type YouTubeConnectionDto = {
+  connected: boolean;
+  scopeType: "platform" | "school";
+  scopeId: string;
+  channelId?: string;
+  channelTitle?: string;
+  connectedBy?: string;
+  updatedAt?: number;
+};
+
+export async function fetchYouTubeConnection(
+  idToken: string,
+  schoolId?: string,
+) {
+  const q = schoolId ? `?schoolId=${encodeURIComponent(schoolId)}` : "";
+  return lmsFetch<YouTubeConnectionDto>(
+    `/lms/youtube/connection${q}`,
+    idToken,
+  );
+}
+
+export async function createYouTubeConnectUrl(
+  idToken: string,
+  schoolId?: string,
+) {
+  return lmsFetch<YouTubeConnectionDto & { authUrl: string }>(
+    "/lms/youtube/connect-url",
+    idToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(schoolId ? { schoolId } : {}),
+    },
+  );
+}
+
 export type SchoolMemberDto = {
   uid: string;
   email: string;

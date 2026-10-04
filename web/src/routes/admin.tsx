@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { User } from "firebase/auth";
 
 import { CatalogCmsPanel } from "@/components/lms/CatalogCmsPanel";
+import { YouTubeConnectionPanel } from "@/components/lms/YouTubeConnectionPanel";
 import { RoleShellPage } from "@/components/lms/RoleShellPage";
 import {
   appointRoleByEmail,
@@ -192,6 +193,12 @@ function AdminConsole({ user, me }: { user: User; me: MeDto }) {
         </ul>
       </section>
 
+      <YouTubeConnectionPanel
+        user={user}
+        title="Nelsen platform YouTube channel"
+        blurb="This is the default channel for platform lives and the fallback for schools that have not connected their own channel yet."
+      />
+
       <section id="cms">
         <CatalogCmsPanel user={user} allowCreateTrack />
       </section>
@@ -231,9 +238,17 @@ function AdminConsole({ user, me }: { user: User; me: MeDto }) {
                     <span className="ml-2 text-xs text-muted-foreground">ready</span>
                   )}
                 </div>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {s.schoolId}
-                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {s.schoolId}
+                  </span>
+                  <YouTubeConnectionPanel
+                    user={user}
+                    schoolId={s.schoolId}
+                    title={`${s.name} YouTube`}
+                    blurb="Optional school-owned channel. If absent, live sessions use the Nelsen platform channel."
+                  />
+                </div>
               </li>
             ))}
           </ul>

@@ -80,7 +80,8 @@ jobs:
           "$PM2" start src/app.js --name nelsen-savannah --cwd "$APP_DIR" --update-env
           "$PM2" save
           ok=0
-          for i in $(seq 1 20); do
+          # DB migrations/startup can take >20s on the self-hosted box after npm install.
+          for i in $(seq 1 90); do
             if curl -sf --max-time 2 http://127.0.0.1:5002/lms/health \
               | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true|"status"[[:space:]]*:[[:space:]]*"OK"'; then
               ok=1
@@ -90,7 +91,7 @@ jobs:
             sleep 1
           done
           if [ "$ok" != 1 ]; then
-            echo "::error::API not ready on :5002 after deploy"
+            echo "::error::API not ready on :5002 after 90s"
             "$PM2" status nelsen-savannah || true
             "$PM2" logs nelsen-savannah --lines 50 --nostream || true
             exit 1
