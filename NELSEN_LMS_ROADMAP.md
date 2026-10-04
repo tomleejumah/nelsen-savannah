@@ -273,7 +273,7 @@ Users
 - [x] Link an existing Nelsen YouTube Live session; automatic creation through the YouTube API remains.
 - [x] Associate the live session with the Nelsen creator and an explicit course, school, or platform audience.
 - [x] Store live metadata in Nelsen using the existing `hub_events` model (`eventType=live`, YouTube URL, creator, schedule, status, audience scope, school/track association).
-- [x] Track live status in the API contract as scheduled/live/ended; automatic YouTube-driven transitions still remain.
+- [x] Track live status as scheduled/live/ended and sync those transitions server-side from YouTube Data API when `YOUTUBE_API_KEY` is configured.
 - [ ] When school creation/settings are expanded in Super Admin, allow each school to configure its own YouTube channel/account; keep the current Nelsen channel as the platform/default channel until then.
 
 ### Mentees / viewers
@@ -300,7 +300,7 @@ Watch Live
 - [x] Send FCM live-start notification when Nelsen transitions the session to `live`.
 - [x] Notification opens the correct linked live session on Android, including foreground and background notification-tap paths.
 - [x] Avoid duplicate live notifications with a one-time `live_notified_at` claim before fanout.
-- [ ] Detect the YouTube broadcast state automatically and drive scheduled → live → ended transitions without a manual/API status update.
+- [x] Detect the YouTube broadcast state automatically and drive scheduled → live → ended transitions without a manual client status update when `YOUTUBE_API_KEY` is configured.
 
 ### Viewer
 
