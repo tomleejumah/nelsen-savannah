@@ -227,6 +227,8 @@ For the current rollout, Nelsen owns the channel and therefore retains the platf
 
 Nelsen will **not process, relay, transcode, or store the live video stream**.
 
+The current live transport is explicitly **YouTube-hosted streaming**. Nelsen owns the channel/integration, permissions, metadata, UI, notifications, and replay references; YouTube carries the live video bytes.
+
 YouTube handles the video infrastructure.
 
 Architecture:
