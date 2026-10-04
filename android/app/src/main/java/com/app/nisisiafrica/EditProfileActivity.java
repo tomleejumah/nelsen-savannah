@@ -112,13 +112,14 @@ public class EditProfileActivity extends AppCompatActivity {
         }
 
         CircleImageView editprofileImage = findViewById(R.id.editprofileImage);
-        editprofileImage.setOnClickListener(v -> {
-            CustomSnackbar.show(this, "Coming Soon", Snackbar.LENGTH_SHORT, 4);
-        });
-
-        findViewById(R.id.editprofileImageView).setOnClickListener(v -> {
-            CustomSnackbar.show(this, "Coming Soon", Snackbar.LENGTH_SHORT, 4);
-        });
+        View.OnClickListener pickProfilePhoto = v -> {
+            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            picker.addCategory(Intent.CATEGORY_OPENABLE);
+            picker.setType("image/*");
+            startActivityForResult(picker, 2001);
+        };
+        editprofileImage.setOnClickListener(pickProfilePhoto);
+        findViewById(R.id.editprofileImageView).setOnClickListener(pickProfilePhoto);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -157,6 +158,28 @@ public class EditProfileActivity extends AppCompatActivity {
             // The LMS API is the canonical profile writer for both roles.
             // It mirrors legacy Firebase nodes so older Android readers stay compatible.
             updateCanonicalProfile(firstName, lastName, description);
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != 2001 || resultCode != RESULT_OK || data == null || data.getData() == null) {
+            return;
+        }
+        android.net.Uri uri = data.getData();
+        CircleImageView image = findViewById(R.id.editprofileImage);
+        image.setAlpha(0.55f);
+        FirebaseRemoteDataSource.INSTANCE.toString(); // keep datasource initialization deterministic
+        com.app.nisisiafrica.data.remote.StorageUploader.upload(uri, "profile_media", (ok, url) -> {
+            image.setAlpha(1f);
+            if (!ok || url == null || url.isEmpty()) {
+                CustomSnackbar.show(this, "Photo upload failed", Snackbar.LENGTH_SHORT, 3);
+                return;
+            }
+            dpImageUrl = url;
+            Glide.with(this).load(url).into(image);
+            CustomSnackbar.show(this, "Photo ready — save profile", Snackbar.LENGTH_SHORT, 1);
         });
     }
 
