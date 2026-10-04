@@ -664,6 +664,10 @@ public final class LmsModels {
         public int seatsTaken;
         public String price;
         public boolean reservedByMe;
+        public String audienceScope;
+        public String schoolId;
+        public String trackId;
+        public Long liveNotifiedAt;
     }
 
     public static class HubEventsData {
@@ -701,6 +705,9 @@ public final class LmsModels {
         public String eventType = "event";
         public int status = 0;
         public String liveStatus;
+        public String audienceScope;
+        public String schoolId;
+        public String trackId;
 
         public CreateHubEventBody(
                 String title,
