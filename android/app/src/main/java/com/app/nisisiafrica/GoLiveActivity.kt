@@ -169,7 +169,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         try {
-            stream.glInterface.setPreviewResolution(width, height)
+            stream.getGlInterface().setPreviewResolution(width, height)
         } catch (_: Exception) {
         }
     }
