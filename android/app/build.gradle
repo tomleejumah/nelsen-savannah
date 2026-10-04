@@ -259,9 +259,15 @@ configurations.configureEach {
     // Didit already uses the jdk18on Bouncy Castle line. Keep one provider
     // to avoid duplicate org.bouncycastle classes in the APK.
     exclude group: "org.bouncycastle", module: "bcprov-jdk15to18"
+    exclude group: "org.bouncycastle", module: "bcutil-jdk15to18"
+    exclude group: "org.bouncycastle", module: "bcpkix-jdk15to18"
+    exclude group: "org.bouncycastle", module: "bctls-jdk15to18"
     resolutionStrategy {
         force(
                 "org.bouncycastle:bcprov-jdk18on:1.84",
+                "org.bouncycastle:bcutil-jdk18on:1.84",
+                "org.bouncycastle:bcpkix-jdk18on:1.84",
+                "org.bouncycastle:bctls-jdk18on:1.84",
                 "androidx.camera:camera-core:1.5.3",
                 "androidx.camera:camera-camera2:1.5.3",
                 "androidx.camera:camera-lifecycle:1.5.3",
