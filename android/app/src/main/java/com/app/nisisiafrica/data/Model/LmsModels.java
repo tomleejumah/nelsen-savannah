@@ -52,6 +52,27 @@ public final class LmsModels {
         public String error;
     }
 
+    public static class StoryViewerDto {
+        public String uid;
+        public String name;
+        public String photoUrl;
+        public long viewedAt;
+    }
+
+    public static class StoryViewersData {
+        public String storyId;
+        public int count;
+        public long views;
+        public List<StoryViewerDto> viewers;
+    }
+
+    public static class StoryViewersEnvelope {
+        public boolean ok;
+        public String source;
+        public StoryViewersData data;
+        public String error;
+    }
+
     public static class EnrollmentEnvelope {
         public boolean ok;
         public String source;
