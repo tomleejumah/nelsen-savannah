@@ -331,6 +331,7 @@ public final class LmsModels {
         public float lessonPercent;
         public String status;
         public String contentUrl;
+        public String mediaId;
         public String playbackUrl;
         public Long playbackExpiresAt;
         public boolean isPdf;
@@ -343,6 +344,21 @@ public final class LmsModels {
 
     public static class LessonDetailData {
         public LessonDto lesson;
+    }
+
+    public static class MediaPlaybackData {
+        public String url;
+        public Long expiresAt;
+        public String driver;
+        public String mimeType;
+        public Long durationSec;
+    }
+
+    public static class MediaPlaybackEnvelope {
+        public boolean ok;
+        public String source;
+        public MediaPlaybackData data;
+        public String error;
     }
 
     public static class Enrollment {
