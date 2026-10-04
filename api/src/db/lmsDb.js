@@ -675,6 +675,34 @@ async function ensureMigrations() {
       expires_at BIGINT NOT NULL,
       PRIMARY KEY (story_id, uid)
     )`,
+    `CREATE TABLE IF NOT EXISTS youtube_channel_connections (
+      scope_type TEXT NOT NULL,
+      scope_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      channel_title TEXT,
+      refresh_token_enc TEXT NOT NULL,
+      connected_by TEXT NOT NULL,
+      created_at BIGINT NOT NULL,
+      updated_at BIGINT NOT NULL,
+      PRIMARY KEY (scope_type, scope_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS youtube_oauth_states (
+      state TEXT PRIMARY KEY,
+      uid TEXT NOT NULL,
+      scope_type TEXT NOT NULL,
+      scope_id TEXT NOT NULL,
+      created_at BIGINT NOT NULL,
+      expires_at BIGINT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS youtube_live_sessions (
+      event_id TEXT PRIMARY KEY,
+      broadcast_id TEXT NOT NULL,
+      stream_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      scope_type TEXT NOT NULL,
+      scope_id TEXT NOT NULL,
+      created_at BIGINT NOT NULL
+    )`,
   ];
   for (const sql of additiveTables) {
     await dbRun(sql);
@@ -746,6 +774,7 @@ CREATE TABLE IF NOT EXISTS school_applications (
     "CREATE INDEX IF NOT EXISTS idx_cohort_runs_cohort_track ON cohort_track_runs(cohort_id, track_id)",
     "CREATE INDEX IF NOT EXISTS idx_milestones_run_order ON milestones(run_id, sort_order)",
     "CREATE INDEX IF NOT EXISTS idx_story_view_receipts_expiry ON story_view_receipts(expires_at)",
+    "CREATE INDEX IF NOT EXISTS idx_youtube_oauth_states_expiry ON youtube_oauth_states(expires_at)",
     "CREATE INDEX IF NOT EXISTS idx_quiz_attempts_uid_lesson ON quiz_attempts(uid, lesson_id)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_quiz_versions_run_lesson ON cohort_quiz_versions(run_id, lesson_id, version)",
     "CREATE INDEX IF NOT EXISTS idx_cohort_quiz_attempts_uid_lesson ON cohort_quiz_attempts(uid, lesson_id)",
