@@ -18,6 +18,7 @@ export type AppEvent = {
   /** Legacy numeric event state. Live events also expose liveStatus. */
   status: number;
   liveStatus?: "scheduled" | "live" | "ended" | null;
+  liveAvailability?: "unknown" | "available" | "unavailable" | null;
   description: string | null;
   mode: "physical" | "online";
   location: string;

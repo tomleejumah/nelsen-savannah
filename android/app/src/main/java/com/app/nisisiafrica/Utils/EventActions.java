@@ -50,7 +50,8 @@ public final class EventActions {
         Intent intent = new Intent(ctx, LiveViewerActivity.class)
                 .putExtra(LiveViewerActivity.EXTRA_TITLE, e.getTitle())
                 .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, link)
-                .putExtra(LiveViewerActivity.EXTRA_LIVE_STATUS, liveStatus(e));
+                .putExtra(LiveViewerActivity.EXTRA_LIVE_STATUS, liveStatus(e))
+                .putExtra(LiveViewerActivity.EXTRA_LIVE_AVAILABILITY, e.getLiveAvailability());
         ctx.startActivity(intent);
     }
 

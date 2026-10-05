@@ -282,6 +282,8 @@ data class Event(
     /** True when the signed-in user already reserved a seat. */
     val reservedByMe: Boolean = false,
     val liveStatus: String = "",
+    /** YouTube sync: unknown | available | unavailable. */
+    val liveAvailability: String = "unknown",
 )
 
 data class Announcement(

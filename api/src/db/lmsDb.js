@@ -407,6 +407,7 @@ async function ensureMigrations() {
     "ALTER TABLE users_mirror ADD COLUMN school_id TEXT",
     "ALTER TABLE users_mirror ADD COLUMN active_school_id TEXT",
     "ALTER TABLE users_mirror ADD COLUMN bio TEXT",
+    "ALTER TABLE hub_events ADD COLUMN live_availability TEXT DEFAULT 'unknown'",
     "ALTER TABLE submissions ADD COLUMN assignment_id TEXT",
     "ALTER TABLE tracks ADD COLUMN school_id TEXT",
     "ALTER TABLE enrollments ADD COLUMN school_id TEXT",
