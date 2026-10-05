@@ -135,6 +135,14 @@ The exact native editor dependency must be approved before implementation.
 
 ---
 
+### Android role-management UI parity
+
+- [ ] After responsive/multiple-screen-size support, bring mentor and SchoolAdmin management workflows to Android with role-aware layouts and the same permissions/business rules as Web.
+- [ ] Share API/domain logic with Web rather than cloning desktop UI; use Android-native phone/tablet navigation and progressively expose management tools by available screen space.
+- [ ] Keep Super Admin / high-risk administration Web-first unless a concrete mobile workflow justifies native support.
+
+---
+
 ### Deferred Android IDE polish
 
 The remaining native Android IDE editor/tooling work is intentionally deferred and will be revisited after the current LMS roadmap features. It must not block Phase 6 sharing/deep-link work or release stabilization.
