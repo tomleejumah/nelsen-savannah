@@ -57,6 +57,7 @@ public class StoryViewerActivity extends AppCompatActivity {
 
     private LinearLayout progressContainer;
     private android.widget.ImageView storyImage;
+    private android.widget.VideoView storyVideo;
     private CircleImageView headerLogo;
     private TextView headerName;
     private TextView caption;
@@ -77,6 +78,7 @@ public class StoryViewerActivity extends AppCompatActivity {
 
         progressContainer = findViewById(R.id.progressContainer);
         storyImage = findViewById(R.id.storyImage);
+        storyVideo = findViewById(R.id.storyVideo);
         headerLogo = findViewById(R.id.storyHeaderLogo);
         headerName = findViewById(R.id.storyHeaderName);
         caption = findViewById(R.id.storyCaption);
@@ -171,8 +173,16 @@ public class StoryViewerActivity extends AppCompatActivity {
             if (hit(top, event) || hit(bottom, event)) return false;
 
             int action = event.getAction();
-            if (action == MotionEvent.ACTION_DOWN) return true;
+            if (action == MotionEvent.ACTION_DOWN) {
+                pauseStoryPlayback();
+                return true;
+            }
+            if (action == MotionEvent.ACTION_CANCEL) {
+                resumeStoryPlayback();
+                return true;
+            }
             if (action == MotionEvent.ACTION_UP) {
+                resumeStoryPlayback();
                 float x = event.getX();
                 // Left half → previous, right half → next (WhatsApp / IG).
                 if (x < v.getWidth() / 2f) {
@@ -214,7 +224,7 @@ public class StoryViewerActivity extends AppCompatActivity {
 
         headerName.setText(story.displayLabel());
         bindPosterAvatar(story);
-        Glide.with(this).load(story.mediaUrl).placeholder(R.drawable.ic_image_placeholder).into(storyImage);
+        bindStoryMedia(story);
 
         if (!TextUtils.isEmpty(story.caption)) {
             caption.setText(story.caption);
@@ -243,6 +253,40 @@ public class StoryViewerActivity extends AppCompatActivity {
         registerView(story);
 
         startProgress(index);
+    }
+
+    private void bindStoryMedia(Story story) {
+        if ("video".equalsIgnoreCase(story.mediaType)) {
+            storyImage.setVisibility(View.GONE);
+            storyVideo.setVisibility(View.VISIBLE);
+            storyVideo.setVideoURI(Uri.parse(story.mediaUrl));
+            storyVideo.setOnPreparedListener(player -> {
+                player.setLooping(true);
+                storyVideo.start();
+            });
+        } else {
+            storyVideo.stopPlayback();
+            storyVideo.setVisibility(View.GONE);
+            storyImage.setVisibility(View.VISIBLE);
+            Glide.with(this).load(story.mediaUrl)
+                    .placeholder(R.drawable.ic_image_placeholder).into(storyImage);
+        }
+    }
+
+    /** Holding a story freezes both the progress timer and video, like modern story viewers. */
+    private void pauseStoryPlayback() {
+        if (currentAnimator != null && currentAnimator.isRunning()) currentAnimator.pause();
+        if (storyVideo != null && storyVideo.isPlaying()) storyVideo.pause();
+    }
+
+    private void resumeStoryPlayback() {
+        if (currentAnimator != null && currentAnimator.isPaused()) currentAnimator.resume();
+        Story story = stories != null && currentIndex >= 0 && currentIndex < stories.size()
+                ? stories.get(currentIndex) : null;
+        if (story != null && "video".equalsIgnoreCase(story.mediaType)
+                && storyVideo != null && !storyVideo.isPlaying()) {
+            storyVideo.start();
+        }
     }
 
     /** Header chip must be the poster's DP — never the story media itself. */
