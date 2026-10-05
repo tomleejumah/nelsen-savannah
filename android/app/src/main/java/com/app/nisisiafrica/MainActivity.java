@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -176,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         // After initial tab so notification navigation isn't overwritten by home select.
         handleOpenChatIntent(getIntent());
         handleLiveNotificationIntent(getIntent());
+        handlePendingAppLink(getIntent());
 
         //fcm init
         initFCM();
@@ -609,6 +611,53 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         selectTab(R.id.chatFragment, true);
         chatFragment.openDirectChat(chatId, otherId, otherName);
         intent.removeExtra(EXTRA_OPEN_CHAT_ID);
+    }
+
+    private void handlePendingAppLink(Intent source) {
+        if (source == null) return;
+        String raw = source.getStringExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+        if (TextUtils.isEmpty(raw) && Intent.ACTION_VIEW.equals(source.getAction()) && source.getData() != null) {
+            raw = source.getData().toString();
+        }
+        if (TextUtils.isEmpty(raw)) return;
+        Uri uri = Uri.parse(raw);
+        if (!"https".equals(uri.getScheme()) || !"nelsen-savannah.co.ke".equals(uri.getHost())) return;
+        java.util.List<String> parts = uri.getPathSegments();
+        if (parts.size() >= 3 && "posts".equals(parts.get(0))) {
+            Intent post = new Intent(this, PostDetailActivity.class);
+            post.putExtra(PostDetailActivity.EXTRA_COMMUNITY_ID, parts.get(1));
+            post.putExtra(PostDetailActivity.EXTRA_POST_ID, parts.get(2));
+            startActivity(post);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "stories".equals(parts.get(0))) {
+            Intent story = new Intent(this, StoryViewerActivity.class);
+            story.putExtra(StoryViewerActivity.EXTRA_STORY_ID, parts.get(1));
+            startActivity(story);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "courses".equals(parts.get(0))) {
+            Intent course = new Intent(this, TrackLearnActivity.class);
+            course.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, parts.get(1));
+            startActivity(course);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "schools".equals(parts.get(0))) {
+            Intent school = new Intent(this, AllCoursesActivity.class);
+            school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, parts.get(1));
+            startActivity(school);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "groups".equals(parts.get(0))) {
+            Intent group = new Intent(this, CommunityDetailActivity.class);
+            group.putExtra(CommunityDetailActivity.EXTRA_COMMUNITY_ID, parts.get(1));
+            startActivity(group);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+        }
     }
 
     private boolean isMentorOrAdmin() {
