@@ -1201,13 +1201,19 @@ public class ChatFragment extends Fragment {
         showChatDetail(false);
     }
 
+    private boolean isTwoPane() {
+        return getResources().getConfiguration().smallestScreenWidthDp >= 600;
+    }
+
     private void showChatDetail(boolean keepBottomNav) {
         if (binding == null) return;
         isChatOpen = true;
-        binding.chatListContainer.setVisibility(View.GONE);
+        // Tablets keep the master conversation list visible beside the detail pane.
+        binding.chatListContainer.setVisibility(isTwoPane() ? View.VISIBLE : View.GONE);
         binding.chatDetailContainer.setVisibility(View.VISIBLE);
         if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).setChatConversationOpen(true, keepBottomNav);
+            // Keep global navigation available in two-pane mode.
+            ((MainActivity) getActivity()).setChatConversationOpen(true, isTwoPane() || keepBottomNav);
         }
         ViewCompat.requestApplyInsets(binding.chatDetailContainer);
         binding.chatDetailContainer.post(this::syncMessageListGlassPadding);
