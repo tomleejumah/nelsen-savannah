@@ -537,15 +537,8 @@ export function CatalogCmsPanel({
                 <option value="video">Video (watch time)</option>
                 <option value="pdf">PDF (doc + questions)</option>
                 <option value="quiz">Quiz / auto-marked questions</option>
-                <option value="code">Code lab (in-browser IDE)</option>
               </select>
             </label>
-            {editIdeEnabled ? (
-              <p className="text-xs text-muted-foreground">
-                This course has IDE attached — pick <strong>Code lab</strong> for
-                Monaco + run.
-              </p>
-            ) : null}
             <textarea
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
               rows={3}
@@ -753,7 +746,7 @@ export function CatalogCmsPanel({
                 setEditIdeEnabled(next);
                 if (next) setLesType("code");
               }}
-              hint="Monaco code lab for coding lessons in this course."
+              hint="Attach the in-browser IDE to this course."
             />
             <button
               type="submit"
