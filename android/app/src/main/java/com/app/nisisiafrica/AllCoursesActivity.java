@@ -127,6 +127,17 @@ public class AllCoursesActivity extends AppCompatActivity {
 
         TextView tvTitle = findViewById(R.id.tvScreenTitle);
         TextView tvSubtitle = findViewById(R.id.tvScreenSubtitle);
+        if (tvTitle != null && !schoolIdFilter.isEmpty()) {
+            tvTitle.setOnLongClickListener(v -> {
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("text/plain");
+                String url = "https://nelsen-savannah.co.ke/schools/" + android.net.Uri.encode(schoolIdFilter);
+                String label = !schoolNameFilter.isEmpty() ? schoolNameFilter + "\n" : "";
+                share.putExtra(Intent.EXTRA_TEXT, label + url);
+                startActivity(Intent.createChooser(share, "Share school"));
+                return true;
+            });
+        }
         if (tvTitle != null) {
             if (!schoolNameFilter.isEmpty()) {
                 tvTitle.setText(schoolNameFilter);
