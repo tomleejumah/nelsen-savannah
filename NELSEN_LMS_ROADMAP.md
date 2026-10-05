@@ -397,6 +397,17 @@ This milestone tracks the current production-hardening work before the remaining
 - [ ] Verify YouTube OAuth/channel connection health after production credentials are configured.
 - [ ] Add browser hosting later: Web camera/mic → WebRTC publishing layer/gateway → YouTube RTMP/RTMPS. This is deferred and must not turn the Nelsen API into a video relay/transcoding server.
 
+### Course authoring and destructive actions
+
+- [x] Restore standalone lesson quizzes with multiple questions/options and selected correct answers for automatic marking.
+- [x] Restore lesson-level mentor-marked assignments in the course editor.
+- [x] Remove IDE/code-lab from lesson media choices; IDE remains course-owned.
+- [x] Add multi-select lesson deletion in the course editor.
+- [ ] Add safe backend course/track deletion with transactional cleanup of dependent LMS records.
+- [ ] Add single-course deletion UI backed by the safe deletion service.
+- [ ] Add multi-select course deletion with one confirmation and clear partial/failure handling.
+- [ ] Replace per-module course-editor loading with one course-authoring metadata request/query returning chapters + lesson metadata only (never PDF/video bytes).
+
 ### Deployment and database protection — required before production deployment
 
 - [ ] Create an automatic timestamped SQLite snapshot before deployment.
