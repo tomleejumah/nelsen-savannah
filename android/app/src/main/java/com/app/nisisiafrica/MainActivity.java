@@ -629,6 +629,27 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             post.putExtra(PostDetailActivity.EXTRA_POST_ID, parts.get(2));
             startActivity(post);
             source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "courses".equals(parts.get(0))) {
+            Intent course = new Intent(this, TrackLearnActivity.class);
+            course.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, parts.get(1));
+            startActivity(course);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "schools".equals(parts.get(0))) {
+            Intent school = new Intent(this, AllCoursesActivity.class);
+            school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, parts.get(1));
+            startActivity(school);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
+        if (parts.size() >= 2 && "groups".equals(parts.get(0))) {
+            Intent group = new Intent(this, CommunityDetailActivity.class);
+            group.putExtra(CommunityDetailActivity.EXTRA_COMMUNITY_ID, parts.get(1));
+            startActivity(group);
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
         }
     }
 
