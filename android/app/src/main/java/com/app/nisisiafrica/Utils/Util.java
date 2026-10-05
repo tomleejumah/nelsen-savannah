@@ -1,5 +1,8 @@
 package com.app.nisisiafrica.Utils;
 
+import com.app.nisisiafrica.LauncherActivity;
+import android.app.Activity;
+
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
@@ -131,6 +134,15 @@ public class Util {
         Intent intent = new Intent(context, destinationActivity);
 //        if (userData != null) { intent.putExtra("USER_DATA", userData); }
         intent.putExtra("IS_FROM_AUTH", isFromAuth);
+        if (context instanceof Activity) {
+            Intent source = ((Activity) context).getIntent();
+            if (source != null) {
+                String pending = source.getStringExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+                if (pending != null && !pending.isEmpty()) {
+                    intent.putExtra(LauncherActivity.EXTRA_PENDING_APP_LINK, pending);
+                }
+            }
+        }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
     }
