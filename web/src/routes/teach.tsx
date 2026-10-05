@@ -267,8 +267,13 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                     {item.menteeName || item.menteeId}
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-4 text-sm text-muted-foreground">
-                  {item.text || "(no text)"}
+                {item.assignmentPrompt ? (
+                  <p className="mt-2 text-sm font-medium text-foreground">
+                    {item.assignmentPrompt}
+                  </p>
+                ) : null}
+                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                  {item.text || "(no answer)"}
                 </p>
                 <div className="mt-3 flex flex-wrap items-end gap-3">
                   <label className="text-xs text-muted-foreground">
