@@ -403,8 +403,16 @@ public final class LmsModels {
         public int lastPage;
         public float contentPct;
         public String assignmentPrompt;
+        public List<AssignmentQuestionDto> assignments;
         public LessonQuizDto quiz;
         public MilestoneDto milestone;
+    }
+
+    public static class AssignmentQuestionDto {
+        public String id;
+        public String title;
+        public String prompt;
+        public Long dueAt;
     }
 
     public static class LessonDetailData {
@@ -553,9 +561,14 @@ public final class LmsModels {
         public String lessonId;
         public String text;
         public String platform = "android";
+        public String assignmentId;
         public SubmissionBody(String lessonId, String text) {
+            this(lessonId, text, null);
+        }
+        public SubmissionBody(String lessonId, String text, String assignmentId) {
             this.lessonId = lessonId;
             this.text = text;
+            this.assignmentId = assignmentId;
         }
     }
 
@@ -616,6 +629,9 @@ public final class LmsModels {
         public String menteeId;
         public String menteeName;
         public String text;
+        public String assignmentId;
+        public String assignmentTitle;
+        public String assignmentPrompt;
         public long submittedAt;
     }
 

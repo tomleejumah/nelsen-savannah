@@ -764,9 +764,7 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (lessonPanel == null) return;
         lessonPanel.removeAllViews();
         boolean showQuiz = lesson.hasQuiz || lesson.quiz != null;
-        boolean showAssignment = lesson.hasAssignment
-                || "text".equals(lesson.type)
-                || !TextUtils.isEmpty(lesson.assignmentPrompt);
+        boolean showAssignment = lesson.hasAssignment;
         if (!showQuiz && !showAssignment) {
             lessonPanel.setVisibility(View.GONE);
             return;
@@ -867,6 +865,43 @@ public class TrackLearnActivity extends AppCompatActivity {
     }
 
     private void bindAssignment(LmsModels.LessonDto lesson, TextView result) {
+        List<LmsModels.AssignmentQuestionDto> questions = lesson.assignments;
+        if (questions != null && !questions.isEmpty()) {
+            Map<String, EditText> inputs = new LinkedHashMap<>();
+            int number = 1;
+            for (LmsModels.AssignmentQuestionDto question : questions) {
+                String prompt = !TextUtils.isEmpty(question.prompt)
+                        ? question.prompt
+                        : (!TextUtils.isEmpty(question.title) ? question.title : "Assignment question");
+                lessonPanel.addView(sectionLabel(number + ". " + prompt));
+                EditText input = new EditText(this);
+                input.setMinLines(4);
+                input.setHint("Your answer");
+                inputs.put(question.id, input);
+                lessonPanel.addView(input);
+                number++;
+            }
+            MaterialButton submit = new MaterialButton(this);
+            submit.setText("Submit assignment");
+            submit.setOnClickListener(v -> {
+                Map<String, String> answers = new LinkedHashMap<>();
+                for (LmsModels.AssignmentQuestionDto question : questions) {
+                    EditText input = inputs.get(question.id);
+                    String answer = input != null && input.getText() != null
+                            ? input.getText().toString().trim()
+                            : "";
+                    if (answer.length() < 2) {
+                        Toast.makeText(this, "Answer every assignment question", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    answers.put(question.id, answer);
+                }
+                submitAssignmentAnswers(lesson.lessonId, questions, answers, 0, result, submit);
+            });
+            lessonPanel.addView(submit);
+            return;
+        }
+
         String prompt = !TextUtils.isEmpty(lesson.assignmentPrompt) ? lesson.assignmentPrompt : lesson.does;
         lessonPanel.addView(sectionLabel(!TextUtils.isEmpty(prompt)
                 ? prompt
@@ -886,6 +921,49 @@ public class TrackLearnActivity extends AppCompatActivity {
             submitAssignment(lesson.lessonId, text, result);
         });
         lessonPanel.addView(submit);
+    }
+
+    private void submitAssignmentAnswers(
+            String lessonId,
+            List<LmsModels.AssignmentQuestionDto> questions,
+            Map<String, String> answers,
+            int index,
+            TextView result,
+            MaterialButton submit) {
+        if (index >= questions.size()) {
+            submit.setEnabled(true);
+            showWorkResult(result, "Assignment submitted");
+            Toast.makeText(this, "Assignment submitted", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        LmsModels.AssignmentQuestionDto question = questions.get(index);
+        submit.setEnabled(false);
+        withBearer(bearer -> ApiClient.getLmsService()
+                .submitAssignment(
+                        bearer,
+                        new LmsModels.SubmissionBody(
+                                lessonId, answers.get(question.id), question.id))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
+                                           Response<LmsModels.SubmissionEnvelope> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                            submitAssignmentAnswers(
+                                    lessonId, questions, answers, index + 1, result, submit);
+                        } else {
+                            submit.setEnabled(true);
+                            Toast.makeText(TrackLearnActivity.this,
+                                    "One or more answers failed to submit", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable t) {
+                        submit.setEnabled(true);
+                        Toast.makeText(TrackLearnActivity.this,
+                                "Submit network error", Toast.LENGTH_SHORT).show();
+                    }
+                }));
     }
 
     private TextView sectionLabel(String text) {
