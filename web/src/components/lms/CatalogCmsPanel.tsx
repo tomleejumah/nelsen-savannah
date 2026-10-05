@@ -133,6 +133,7 @@ export function CatalogCmsPanel({
   const [labExpected, setLabExpected] = useState("");
   const [lesFile, setLesFile] = useState<File | null>(null);
   const [quizEnabled, setQuizEnabled] = useState(false);
+  const [assignmentEnabled, setAssignmentEnabled] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionDraft[]>([
     emptyQuestion(0),
   ]);
@@ -149,6 +150,7 @@ export function CatalogCmsPanel({
     setLesDoes("");
     setLesFile(null);
     setQuizEnabled(false);
+    setAssignmentEnabled(false);
     setQuizQuestions([emptyQuestion(0)]);
     setUploadPct(null);
     setLesType("text");
@@ -403,7 +405,7 @@ export function CatalogCmsPanel({
       type: lesType,
       does: lesDoes.trim(),
       hasQuiz: lesType === "quiz" || (quizEnabled && (lesType === "pdf" || lesType === "video")),
-      hasAssignment: lesType === "assignment",
+      hasAssignment: lesType === "assignment" || assignmentEnabled,
       lab:
         lesType === "code"
           ? {
@@ -546,7 +548,7 @@ export function CatalogCmsPanel({
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
               rows={3}
               placeholder={
-                lesType === "assignment"
+                lesType === "assignment" || assignmentEnabled
                   ? "Assignment instructions — what mentees should submit"
                   : lesType === "text"
                     ? "Lesson text / description"
@@ -571,6 +573,16 @@ export function CatalogCmsPanel({
                   Add auto-marked questions
                 </label>
               </>
+            ) : null}
+            {lesType === "quiz" ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={assignmentEnabled}
+                  onChange={(e) => setAssignmentEnabled(e.target.checked)}
+                />
+                Also add a mentor-marked assignment
+              </label>
             ) : null}
             {lesType === "quiz" || quizEnabled ? (
               <QuizQuestionsEditor
