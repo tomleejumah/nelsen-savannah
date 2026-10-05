@@ -20,7 +20,8 @@ import { shellFromMe, shellHomePath } from "@/lib/lmsRoles";
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
     next:
-      typeof s.next === "string" && s.next.startsWith("/join/")
+      typeof s.next === "string" &&
+      /^\/(join|posts|stories|courses|schools|groups)\//.test(s.next)
         ? s.next
         : undefined,
   }),
@@ -113,15 +114,11 @@ function LoginPage() {
   // After sign-in: send them to their role home (no manual URLs)
   useEffect(() => {
     if (!user || !me || busy || redirecting) return;
-    const home =
-      next && next.startsWith("/join/")
-        ? next
-        : shellHomePath(shellFromMe(me));
+    const home = next || shellHomePath(shellFromMe(me));
     setRedirecting(true);
     const t = window.setTimeout(() => {
-      if (next && next.startsWith("/join/")) {
-        const joinToken = next.slice("/join/".length);
-        void navigate({ to: "/join/$token", params: { token: joinToken } });
+      if (next) {
+        window.location.assign(next);
       } else {
         void navigate({ to: home });
       }
