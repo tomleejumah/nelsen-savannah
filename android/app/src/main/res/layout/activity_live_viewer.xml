@@ -54,13 +54,31 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOpenYoutube"
-        style="@style/Nelsen.Button.Primary"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Open in YouTube"
-        android:textAllCaps="false" />
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShareLive"
+            style="@style/Nelsen.Button.Secondary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:text="Share"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenYoutube"
+            style="@style/Nelsen.Button.Primary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Open YouTube"
+            android:textAllCaps="false" />
+    </LinearLayout>
 
 </LinearLayout>
