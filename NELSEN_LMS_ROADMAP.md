@@ -348,20 +348,20 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 ### Link targets
 
-- [ ] Share/open a specific **community post**.
+- [x] Share/open a specific **community post** using `/posts/{communityId}/{postId}`; native routing lands on `PostDetailActivity`.
 - [ ] Share/open a specific **story/status**.
 - [ ] Share/open a specific **course/track**.
 - [ ] Share/open a specific **school**.
 - [ ] Share/open a specific **group** and bring an authorized user directly into that group.
-- [ ] Preserve the target through sign-in so a logged-out user lands on the shared content after authentication.
+- [ ] Preserve the target through all sign-in/PIN/email-verification paths so a logged-out user lands on the shared content after authentication. Launcher → authenticated Main routing is implemented; auth/verification completion still needs forwarding.
 
 ### Android App Links
 
-- [ ] Define stable HTTPS routes for posts, stories/statuses, courses, schools, and groups.
-- [ ] Add Android intent filters for verified **App Links** on the Nelsen domain.
+- [x] Define stable HTTPS namespaces for posts, stories/statuses, courses, schools, and groups. Community posts use `/posts/{communityId}/{postId}` because native authorization/loading requires community context.
+- [x] Add Android `autoVerify` intent filters for canonical HTTPS App Link namespaces on the Nelsen domain.
 - [ ] Publish and verify `assetlinks.json` for the production Android signing certificate.
 - [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
-- [ ] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
+- [x] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
 - [ ] Add native **Share** actions for stories/statuses, courses, and schools using canonical HTTPS links rather than app-only custom schemes.
 - [ ] Keep a Web fallback page for users who do not have the app installed.
 - [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community/group content; a shared group link must verify membership/join policy before opening the group.
