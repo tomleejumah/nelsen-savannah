@@ -955,6 +955,9 @@ public class ChatFragment extends Fragment {
         }
         Intent share = new Intent(Intent.ACTION_SEND);
         share.setType("text/plain");
+        if ("announcements".equals(currentChatId)) {
+            body.append("\n\nhttps://nelsen-savannah.co.ke/chats/announcements");
+        }
         share.putExtra(Intent.EXTRA_TEXT, body.toString());
         startActivity(Intent.createChooser(share, "Share"));
     }
