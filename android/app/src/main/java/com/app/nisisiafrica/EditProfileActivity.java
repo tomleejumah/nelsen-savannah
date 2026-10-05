@@ -26,12 +26,16 @@ import com.app.nisisiafrica.Interfaces.FirebaseCallback;
 import com.app.nisisiafrica.ViewModel.UserViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.MentorItem;
+import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.remote.ApiClient;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +46,9 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import kotlin.Unit;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class EditProfileActivity extends AppCompatActivity {
     private static final String TAG = "EditProfileActivity";
@@ -105,13 +112,14 @@ public class EditProfileActivity extends AppCompatActivity {
         }
 
         CircleImageView editprofileImage = findViewById(R.id.editprofileImage);
-        editprofileImage.setOnClickListener(v -> {
-            CustomSnackbar.show(this, "Coming Soon", Snackbar.LENGTH_SHORT, 4);
-        });
-
-        findViewById(R.id.editprofileImageView).setOnClickListener(v -> {
-            CustomSnackbar.show(this, "Coming Soon", Snackbar.LENGTH_SHORT, 4);
-        });
+        View.OnClickListener pickProfilePhoto = v -> {
+            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            picker.addCategory(Intent.CATEGORY_OPENABLE);
+            picker.setType("image/*");
+            startActivityForResult(picker, 2001);
+        };
+        editprofileImage.setOnClickListener(pickProfilePhoto);
+        findViewById(R.id.editprofileImageView).setOnClickListener(pickProfilePhoto);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
@@ -147,16 +155,105 @@ public class EditProfileActivity extends AppCompatActivity {
                 return;
             }
 
-            //update profile
-            if (isMentor) {
-                name = firstName + " " + lastName;
-                updateMentorProfile(name, description);
-
-            } else {
-                updateMenteeProfile(firstName, lastName, description);
-//               updateMedia(gallerieItema); 
-            }
+            // The LMS API is the canonical profile writer for both roles.
+            // It mirrors legacy Firebase nodes so older Android readers stay compatible.
+            updateCanonicalProfile(firstName, lastName, description);
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != 2001 || resultCode != RESULT_OK || data == null || data.getData() == null) {
+            return;
+        }
+        android.net.Uri uri = data.getData();
+        CircleImageView image = findViewById(R.id.editprofileImage);
+        image.setAlpha(0.55f);
+        com.app.nisisiafrica.data.remote.StorageUploader.upload(uri, "profile_media", (ok, url) -> {
+            image.setAlpha(1f);
+            if (!ok || url == null || url.isEmpty()) {
+                CustomSnackbar.show(this, "Photo upload failed", Snackbar.LENGTH_SHORT, 3);
+                return;
+            }
+            dpImageUrl = url;
+            Glide.with(this).load(url).into(image);
+            CustomSnackbar.show(this, "Photo ready — save profile", Snackbar.LENGTH_SHORT, 1);
+        });
+    }
+
+    private void updateCanonicalProfile(String firstName, String lastName, String description) {
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current == null) {
+            CustomSnackbar.show(this, "Please sign in again", Snackbar.LENGTH_SHORT, 3);
+            return;
+        }
+
+        String displayName = (firstName + " " + lastName).trim();
+        LmsModels.ProfileUpdateBody body = new LmsModels.ProfileUpdateBody(
+                displayName, firstName, lastName, dpImageUrl, description);
+
+        findViewById(R.id.btnSave).setEnabled(false);
+        current.getIdToken(false)
+                .addOnSuccessListener(token -> ApiClient.getLmsService()
+                        .updateMyProfile("Bearer " + token.getToken(), body)
+                        .enqueue(new Callback<>() {
+                            @Override
+                            public void onResponse(Call<LmsModels.MeEnvelope> call,
+                                                   Response<LmsModels.MeEnvelope> response) {
+                                findViewById(R.id.btnSave).setEnabled(true);
+                                LmsModels.MeEnvelope envelope = response.body();
+                                if (!response.isSuccessful() || envelope == null || !envelope.ok) {
+                                    String message = envelope != null && envelope.error != null
+                                            ? envelope.error : "Profile update failed";
+                                    CustomSnackbar.show(EditProfileActivity.this, message,
+                                            Snackbar.LENGTH_SHORT, 3);
+                                    return;
+                                }
+
+                                // Keep Room/current screen coherent immediately; server mirrors Firebase.
+                                if (userData != null) {
+                                    userData.setFirstName(firstName);
+                                    userData.setLastName(lastName);
+                                    userData.setBio(description);
+                                    new ViewModelProvider(EditProfileActivity.this)
+                                            .get(UserViewModel.class)
+                                            .updateUserDataa(userData)
+                                            .subscribe(
+                                                    () -> finishProfileUpdate(),
+                                                    error -> {
+                                                        Log.w(TAG, "Room profile cache update failed", error);
+                                                        finishProfileUpdate();
+                                                    });
+                                } else {
+                                    finishProfileUpdate();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<LmsModels.MeEnvelope> call, Throwable t) {
+                                findViewById(R.id.btnSave).setEnabled(true);
+                                Log.e(TAG, "Canonical profile update failed", t);
+                                CustomSnackbar.show(EditProfileActivity.this,
+                                        "Failed. Check your internet and retry",
+                                        Snackbar.LENGTH_SHORT, 3);
+                            }
+                        }))
+                .addOnFailureListener(error -> {
+                    findViewById(R.id.btnSave).setEnabled(true);
+                    Log.e(TAG, "Could not get auth token", error);
+                    CustomSnackbar.show(this, "Could not authenticate profile update",
+                            Snackbar.LENGTH_SHORT, 3);
+                });
+    }
+
+    private void finishProfileUpdate() {
+        CustomSnackbar.show(this, "Profile updated", Snackbar.LENGTH_SHORT, 1);
+        Intent intent = new Intent(this, ProfileActivity.class);
+        intent.putExtra(Constants.IS_MENTOR, isMentor);
+        intent.putExtra(Constants.CURRENT_USER_ID, id);
+        startActivity(intent);
+        finish();
     }
 
     private void updateMentorProfile(String name, String description) {

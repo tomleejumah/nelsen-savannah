@@ -1,4 +1,4 @@
-import { getMe, getStoreHealth } from "../services/lmsMeService.js";
+import { getMe, getStoreHealth, updateMyProfile, listMyUploadedMaterials, listUploadedMaterials } from "../services/lmsMeService.js";
 import {
   getLessonById,
   getModuleById,
@@ -38,6 +38,41 @@ export async function getLmsMe(req, res) {
       500,
       getPrimaryEngine() || "sqlite",
     );
+  }
+}
+
+export async function patchLmsMeProfile(req, res) {
+  try {
+    const result = await updateMyProfile(profileFromReq(req), req.body || {});
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[PATCH /lms/me/profile]", err);
+    return lmsErr(
+      res,
+      err.message || "Failed to update profile",
+      err.status || 500,
+      getPrimaryEngine() || "sqlite",
+    );
+  }
+}
+
+export async function getMyUploadedMaterials(req, res) {
+  try {
+    const materials = await listMyUploadedMaterials(req.user.uid);
+    return lmsOk(res, { materials }, getPrimaryEngine());
+  } catch (err) {
+    console.error("[GET /lms/me/materials]", err);
+    return lmsErr(res, "Failed to load uploaded materials", 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function getUserUploadedMaterials(req, res) {
+  try {
+    const materials = await listUploadedMaterials(req.user.uid, req.params.uid);
+    return lmsOk(res, { materials }, getPrimaryEngine());
+  } catch (err) {
+    console.error("[GET /lms/users/:uid/materials]", err);
+    return lmsErr(res, "Failed to load uploaded materials", 500, getPrimaryEngine() || "sqlite");
   }
 }
 
@@ -289,7 +324,7 @@ export async function downloadAndroidApp(_req, res) {
 
 export async function listTracks(req, res) {
   try {
-    const result = await getTracks(req.user.uid, {
+    const result = await getTracks(req.user?.uid || null, {
       audience: req.query.audience,
       enrolled: req.query.enrolled,
       schoolId: req.query.schoolId,
@@ -303,7 +338,7 @@ export async function listTracks(req, res) {
 
 export async function getTrack(req, res) {
   try {
-    const result = await getTrackById(req.user.uid, req.params.trackId);
+    const result = await getTrackById(req.user?.uid || null, req.params.trackId);
     if (result.notFound) {
       return lmsErr(res, "Track not found", 404, result.source);
     }
@@ -323,7 +358,7 @@ export async function getModule(req, res) {
     return lmsOk(res, result.data, result.source);
   } catch (err) {
     console.error("[GET /lms/modules/:id]", err);
-    return lmsErr(res, "Failed to load module", 500, getPrimaryEngine());
+    return lmsErr(res, err.message || "Failed to load module", err.status || 500, getPrimaryEngine());
   }
 }
 
@@ -336,7 +371,7 @@ export async function getLesson(req, res) {
     return lmsOk(res, result.data, result.source);
   } catch (err) {
     console.error("[GET /lms/lessons/:id]", err);
-    return lmsErr(res, "Failed to load lesson", 500, getPrimaryEngine());
+    return lmsErr(res, err.message || "Failed to load lesson", err.status || 500, getPrimaryEngine());
   }
 }
 
@@ -1010,7 +1045,7 @@ export const listSchoolsCatalog = handle(
   "[GET /lms/schools/catalog]",
   async (req) => {
     const svc = await import("../services/lmsSchoolService.js");
-    return svc.listSchoolsCatalog(req.user.uid);
+    return svc.listSchoolsCatalog(req.user?.uid || null);
   },
 );
 

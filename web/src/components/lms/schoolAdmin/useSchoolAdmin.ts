@@ -213,6 +213,23 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     if (result.ok) await load();
   }
 
+  async function rejectJoin(uid: string) {
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await patchSchoolMemberStatus(
+      token,
+      schoolId,
+      uid,
+      "rejected",
+    );
+    setMsg(
+      result.ok
+        ? "Join request rejected."
+        : result.error || "Failed",
+    );
+    if (result.ok) await load();
+  }
+
   async function copyInvite(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -327,6 +344,7 @@ export function useSchoolAdmin(user: User, me: MeDto) {
     escalate,
     setMentorEnabled,
     approveJoin,
+    rejectJoin,
     copyInvite,
     decideApp,
     onBrand,

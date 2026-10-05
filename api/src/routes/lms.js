@@ -30,6 +30,9 @@ const upload = multer({
 const router = express.Router();
 
 router.get("/me", authenticateUser, lmsController.getLmsMe);
+router.patch("/me/profile", authenticateUser, lmsController.patchLmsMeProfile);
+router.get("/me/materials", authenticateUser, lmsController.getMyUploadedMaterials);
+router.get("/users/:uid/materials", authenticateUser, lmsController.getUserUploadedMaterials);
 router.patch(
   "/me/active-school",
   authenticateUser,
@@ -81,8 +84,8 @@ router.get("/app/android/download", lmsController.downloadAndroidApp);
 router.get("/join/:token", lmsController.getJoinInvite);
 router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
-router.get("/tracks", authenticateUser, lmsController.listTracks);
-router.get("/tracks/:trackId", authenticateUser, lmsController.getTrack);
+router.get("/tracks", optionalAuthenticate, lmsController.listTracks);
+router.get("/tracks/:trackId", optionalAuthenticate, lmsController.getTrack);
 router.get("/tracks/:trackId/ide", authenticateUser, lmsController.getTrackIdeConfig);
 router.post(
   "/tracks/:trackId/ide/run",
@@ -192,7 +195,7 @@ router.get(
 
 router.get(
   "/schools/catalog",
-  authenticateUser,
+  optionalAuthenticate,
   lmsController.listSchoolsCatalog,
 );
 router.get(

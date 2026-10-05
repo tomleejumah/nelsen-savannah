@@ -38,6 +38,49 @@ public final class LmsModels {
         public String error;
     }
 
+    public static class ProfileUpdateBody {
+        public String displayName;
+        public String firstName;
+        public String lastName;
+        public String photoUrl;
+        public String bio;
+
+        public ProfileUpdateBody(String displayName, String firstName, String lastName,
+                                 String photoUrl, String bio) {
+            this.displayName = displayName;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.photoUrl = photoUrl;
+            this.bio = bio;
+        }
+    }
+
+    public static class UploadedMaterialDto {
+        public String mediaId;
+        public String filename;
+        public String mimeType;
+        public long sizeBytes;
+        public String trackId;
+        public String trackTitle;
+        public String lessonId;
+        public String lessonTitle;
+        public String scope;
+        public long createdAt;
+        public String playbackUrl;
+        public long playbackExpiresAt;
+    }
+
+    public static class UploadedMaterialsData {
+        public List<UploadedMaterialDto> materials;
+    }
+
+    public static class UploadedMaterialsEnvelope {
+        public boolean ok;
+        public String source;
+        public UploadedMaterialsData data;
+        public String error;
+    }
+
     public static class MeEnvelope {
         public boolean ok;
         public String source;

@@ -639,6 +639,77 @@ export async function attachOnEnroll(uid, email, schoolId) {
   throw err;
 }
 
+/**
+ * Server-side authorization boundary for protected school learning.
+ * Catalog discovery stays public; modules/lessons/media require an active
+ * membership in the owning school. Learners also need a course enrollment.
+ * School staff may inspect their own school's learning content.
+ */
+export async function getLearningAccess(uid, trackId) {
+  const tid = String(trackId || "").trim();
+  if (!uid || !tid) return { allowed: false, reason: "Sign in required" };
+
+  const track = await dbGet(
+    "SELECT track_id, COALESCE(school_id, ?) AS school_id FROM tracks WHERE track_id = ?",
+    [DEFAULT_SCHOOL_ID, tid],
+  );
+  if (!track) return { allowed: false, reason: "Course not found", status: 404 };
+
+  const role = normalizeRole(await loadUserRole(uid));
+  if (isSuperAdmin(role)) {
+    return { allowed: true, schoolId: track.school_id, role, staff: true };
+  }
+
+  const membership = await dbGet(
+    `SELECT id, role, status FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active'
+     LIMIT 1`,
+    [uid, track.school_id],
+  );
+  if (!membership) {
+    return {
+      allowed: false,
+      schoolId: track.school_id,
+      role,
+      reason: "Join this school and wait for approval to access its lessons",
+      status: 403,
+    };
+  }
+
+  const memberRole = normalizeRole(membership.role || role);
+  if (memberRole === ROLES.Mentor || memberRole === ROLES.SchoolAdmin) {
+    return { allowed: true, schoolId: track.school_id, role: memberRole, staff: true };
+  }
+
+  const enrollment = await dbGet(
+    `SELECT uid FROM enrollments
+     WHERE uid = ? AND track_id = ? AND COALESCE(status, 'active') NOT IN ('cancelled', 'suspended')
+     LIMIT 1`,
+    [uid, tid],
+  );
+  if (!enrollment) {
+    return {
+      allowed: false,
+      schoolId: track.school_id,
+      role: memberRole,
+      reason: "Enroll in this course to access its lessons",
+      status: 403,
+    };
+  }
+
+  return { allowed: true, schoolId: track.school_id, role: memberRole, staff: false };
+}
+
+export async function assertLearningAccess(uid, trackId) {
+  const access = await getLearningAccess(uid, trackId);
+  if (!access.allowed) {
+    const err = new Error(access.reason || "Learning access denied");
+    err.status = access.status || 403;
+    throw err;
+  }
+  return access;
+}
+
 /** Demo ledger stubs — money belongs to the school institution. */
 export async function schoolMoneyStub(schoolId) {
   return {
