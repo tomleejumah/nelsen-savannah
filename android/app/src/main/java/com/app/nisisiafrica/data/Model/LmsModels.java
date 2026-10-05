@@ -629,6 +629,9 @@ public final class LmsModels {
         public String menteeId;
         public String menteeName;
         public String text;
+        public String assignmentId;
+        public String assignmentTitle;
+        public String assignmentPrompt;
         public long submittedAt;
     }
 
