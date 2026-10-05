@@ -53,13 +53,25 @@ function mapMember(row) {
 }
 
 export async function getActorSchoolId(uid) {
-  const row = await dbGet(
-    "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
+  const user = await dbGet(
+    "SELECT active_school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  // Prefer the school the user switched to; never invent DEFAULT silently —
-  // that snapped School Admin back to the wrong wing (e.g. QA / nelsen-digital).
-  return row?.active_school_id || row?.school_id || null;
+  if (user?.active_school_id) {
+    const active = await dbGet(
+      `SELECT school_id FROM school_memberships
+       WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1`,
+      [uid, user.active_school_id],
+    );
+    if (active?.school_id) return active.school_id;
+  }
+  const membership = await dbGet(
+    `SELECT school_id FROM school_memberships
+     WHERE uid = ? AND status = 'active'
+     ORDER BY updated_at DESC LIMIT 1`,
+    [uid],
+  );
+  return membership?.school_id || null;
 }
 
 export async function getSchoolName(schoolId) {
