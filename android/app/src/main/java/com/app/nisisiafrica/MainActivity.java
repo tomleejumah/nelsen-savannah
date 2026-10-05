@@ -454,15 +454,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (fabCard == null || fabIcon == null) return;
         boolean hiddenForConversation =
                 tabId == R.id.chatFragment && chatConversationOpen && !keepChatChrome;
-        // Mentees already have dedicated Add status + Enroll schools actions on Home.
+        // Main FAB is useful only where the tab itself needs a global action.
+        // Home mentees use Add status / Enroll Schools, group posting happens inside
+        // the opened group, and Profile has no global create action.
         boolean hiddenForMenteeHome = tabId == R.id.homeFragment && !isMentorOrAdmin();
-        fabCard.setVisibility(hiddenForConversation || hiddenForMenteeHome ? View.GONE : View.VISIBLE);
+        boolean hiddenForMenteeGroups = tabId == R.id.communitiesFragment && !isMentorOrAdmin();
+        boolean hiddenForProfile = tabId == R.id.profileFragment;
+        boolean hideFab = hiddenForConversation || hiddenForMenteeHome
+                || hiddenForMenteeGroups || hiddenForProfile;
+        fabCard.setVisibility(hideFab ? View.GONE : View.VISIBLE);
         if (tabId == R.id.chatFragment) {
             fabIcon.setImageResource(R.drawable.ic_add);
             fabCard.setContentDescription("New chat");
-        } else if (tabId == R.id.profileFragment) {
-            fabIcon.setImageResource(R.drawable.ic_edit);
-            fabCard.setContentDescription("Edit profile");
         } else if (tabId == R.id.communitiesFragment) {
             fabIcon.setImageResource(R.drawable.ic_add);
             fabCard.setContentDescription("Create post");
