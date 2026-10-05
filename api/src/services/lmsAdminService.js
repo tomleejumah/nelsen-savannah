@@ -114,6 +114,22 @@ export async function adminCreateTrack(actorUid, body = {}) {
   let schoolId = body.schoolId || actorSchool;
   if (!isSuperAdmin(role)) schoolId = actorSchool;
   const now = Date.now();
+  const normalizedTitle = String(body.title).trim().replace(/\s+/g, " ");
+  // A generated track ID already protects exact request retries. Also reject a
+  // second course with the same title in the same school, which catches
+  // accidental re-submits that arrive with a newly generated ID.
+  const duplicateTitle = await dbGet(
+    `SELECT track_id FROM tracks
+     WHERE COALESCE(school_id, '') = COALESCE(?, '')
+       AND LOWER(TRIM(title)) = LOWER(?)
+     LIMIT 1`,
+    [schoolId || "", normalizedTitle],
+  );
+  if (duplicateTitle) {
+    const err = new Error("A course with this title already exists");
+    err.status = 409;
+    throw err;
+  }
   const audienceJson = JSON.stringify(body.audience || ["Mentee"]);
   // Creator is not auto-listed as tutor — mentors link when they edit content.
   const tutorId = body.tutorId || "";
@@ -139,7 +155,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
         [
           trackId,
           body.programSlug || "",
-          body.title,
+          normalizedTitle,
           body.blurb || body.does || "",
           body.imageUrl || "",
           tutorId,
@@ -177,7 +193,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
       track: {
         trackId,
         courseId: trackId,
-        courseTitle: body.title,
+        courseTitle: normalizedTitle,
         does: body.blurb || "",
         programSlug: body.programSlug || "",
         audience: body.audience || ["Mentee"],
