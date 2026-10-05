@@ -24,6 +24,10 @@ interface ChatMessageDao {
     @Query("DELETE FROM messages WHERE messageId = :id")
     suspend fun deleteById(id: String)
 
+    /** Removes local-only sends that Firestore rejected. */
+    @Query("DELETE FROM messages WHERE chatroomId = :roomId AND status = 'failed'")
+    suspend fun deleteFailedMessages(roomId: String)
+
     /** Turns a row into a tombstone, clearing the body but keeping the row so replies still resolve. */
     @Query("UPDATE messages SET deleted = 1, message = '', type = 'text' WHERE messageId = :id")
     suspend fun markDeleted(id: String)
