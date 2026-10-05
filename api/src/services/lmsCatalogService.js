@@ -559,10 +559,19 @@ export async function getLessonById(uid, lessonId) {
         getTrackMilestones,
         getChapterLockForLesson,
       } = await import("./lmsLearningCommerceService.js");
-      const [authoredQuiz, cohortRun, chapterLock] = await Promise.all([
+      const [authoredQuiz, cohortRun, chapterLock, lessonAssignments] = await Promise.all([
         hasQuiz ? getAuthoredQuiz(uid, lessonId, row.track_id) : null,
         getTrackMilestones(uid, row.track_id),
         getChapterLockForLesson(uid, row),
+        hasAssignment
+          ? dbAll(
+              `SELECT assignment_id, title, prompt, due_at
+               FROM assignments
+               WHERE lesson_id = ? AND assignee_uid IS NULL
+               ORDER BY created_at ASC`,
+              [lessonId],
+            )
+          : [],
       ]);
       const cohortMilestone =
         cohortRun.milestones.find((item) => item.lessonId === lessonId) || null;
@@ -585,7 +594,6 @@ export async function getLessonById(uid, lessonId) {
         : cohortMilestone;
 
       const lessonType = lesson.type === "read" ? "text" : lesson.type;
-      const isText = lessonType === "text";
       const isPdf = lessonType === "pdf";
       const progressRow = await dbGet(
         "SELECT content_pct, watch_seconds FROM progress WHERE uid = ? AND lesson_id = ?",
@@ -613,14 +621,17 @@ export async function getLessonById(uid, lessonId) {
                 }
               : null,
             milestone,
+            assignments: lessonAssignments.map((assignment) => ({
+              id: assignment.assignment_id,
+              title: assignment.title || "Assignment",
+              prompt: assignment.prompt || "",
+              dueAt: assignment.due_at ? Number(assignment.due_at) : null,
+            })),
             assignmentPrompt:
-              hasAssignment || isText
-                ? lesson.does ||
-                  (isText
-                    ? "Write your response below and submit."
-                    : "Write your response below and submit for mentor review.")
+              hasAssignment && lessonAssignments.length === 0
+                ? lesson.does || "Write your response below and submit for mentor review."
                 : null,
-            hasAssignment: hasAssignment || isText,
+            hasAssignment,
             chapter: chapterLock
               ? {
                   moduleId: chapterLock.moduleId,
