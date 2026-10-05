@@ -454,13 +454,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (fabCard == null || fabIcon == null) return;
         boolean hiddenForConversation =
                 tabId == R.id.chatFragment && chatConversationOpen && !keepChatChrome;
-        fabCard.setVisibility(hiddenForConversation ? View.GONE : View.VISIBLE);
+        // Main FAB is useful only where the tab itself needs a global action.
+        // Home mentees use Add status / Enroll Schools, group posting happens inside
+        // the opened group, and Profile has no global create action.
+        boolean hiddenForMenteeHome = tabId == R.id.homeFragment && !isMentorOrAdmin();
+        boolean hiddenForMenteeGroups = tabId == R.id.communitiesFragment && !isMentorOrAdmin();
+        boolean hiddenForProfile = tabId == R.id.profileFragment;
+        boolean hideFab = hiddenForConversation || hiddenForMenteeHome
+                || hiddenForMenteeGroups || hiddenForProfile;
+        fabCard.setVisibility(hideFab ? View.GONE : View.VISIBLE);
         if (tabId == R.id.chatFragment) {
             fabIcon.setImageResource(R.drawable.ic_add);
             fabCard.setContentDescription("New chat");
-        } else if (tabId == R.id.profileFragment) {
-            fabIcon.setImageResource(R.drawable.ic_edit);
-            fabCard.setContentDescription("Edit profile");
         } else if (tabId == R.id.communitiesFragment) {
             fabIcon.setImageResource(R.drawable.ic_add);
             fabCard.setContentDescription("Create post");
@@ -623,6 +628,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Uri uri = Uri.parse(raw);
         if (!"https".equals(uri.getScheme()) || !"nelsen-savannah.co.ke".equals(uri.getHost())) return;
         java.util.List<String> parts = uri.getPathSegments();
+        if (parts.size() >= 2 && "chats".equals(parts.get(0))
+                && "announcements".equals(parts.get(1))) {
+            selectTab(R.id.chatFragment, true);
+            chatFragment.openAnnouncementChat();
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
         if (parts.size() >= 3 && "posts".equals(parts.get(0))) {
             Intent post = new Intent(this, PostDetailActivity.class);
             post.putExtra(PostDetailActivity.EXTRA_COMMUNITY_ID, parts.get(1));

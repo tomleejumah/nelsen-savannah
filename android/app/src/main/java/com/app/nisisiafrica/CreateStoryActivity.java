@@ -45,8 +45,9 @@ public class CreateStoryActivity extends AppCompatActivity {
     private TextView tvBlurb;
     private MaterialToolbar toolbar;
 
-    private Uri selectedImage;
-    private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
+    private Uri selectedMedia;
+    private String selectedMediaType = "image";
+    private ActivityResultLauncher<PickVisualMediaRequest> mediaPicker;
     private boolean corporateMode;
 
     private static final String[] DURATIONS = {"12 hours", "24 hours", "48 hours"};
@@ -86,19 +87,25 @@ public class CreateStoryActivity extends AppCompatActivity {
                 android.R.layout.simple_list_item_1, DURATIONS));
         spinnerDuration.setText(DURATIONS[1], false);
 
-        imagePicker = registerForActivityResult(
+        mediaPicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
                     if (uri != null) {
-                        selectedImage = uri;
+                        selectedMedia = uri;
+                        String mime = getContentResolver().getType(uri);
+                        selectedMediaType = mime != null && mime.startsWith("video/") ? "video" : "image";
                         pickHint.setVisibility(View.GONE);
                         imgPreview.setVisibility(View.VISIBLE);
-                        Glide.with(this).load(uri).into(imgPreview);
+                        if ("video".equals(selectedMediaType)) {
+                            imgPreview.setImageResource(R.drawable.ic_video);
+                        } else {
+                            Glide.with(this).load(uri).into(imgPreview);
+                        }
                     }
                 });
 
-        cardPickImage.setOnClickListener(v -> imagePicker.launch(
+        cardPickImage.setOnClickListener(v -> mediaPicker.launch(
                 new PickVisualMediaRequest.Builder()
-                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageAndVideo.INSTANCE)
                         .build()));
 
         btnPublish.setOnClickListener(v -> publish());
@@ -153,14 +160,14 @@ public class CreateStoryActivity extends AppCompatActivity {
             label = personalDisplayName();
         }
 
-        if (selectedImage == null) {
-            Toast.makeText(this, "Select an image", Toast.LENGTH_SHORT).show();
+        if (selectedMedia == null) {
+            Toast.makeText(this, "Select a photo or video", Toast.LENGTH_SHORT).show();
             return;
         }
 
         btnPublish.setEnabled(false);
         Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show();
-        StorageUploader.upload(selectedImage, "stories", (success, url) -> {
+        StorageUploader.upload(selectedMedia, "stories", (success, url) -> {
             if (!success || url == null) {
                 btnPublish.setEnabled(true);
                 Toast.makeText(this, "Upload failed — check connection and try again",
@@ -179,6 +186,7 @@ public class CreateStoryActivity extends AppCompatActivity {
         Story story = new Story();
         story.companyName = label;
         story.mediaUrl = imageUrl;
+        story.mediaType = selectedMediaType;
         // Poster DP for the viewer header / rail — not the story media.
         String photo = user != null && user.getPhotoUrl() != null
                 ? user.getPhotoUrl().toString()

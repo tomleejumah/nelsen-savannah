@@ -265,6 +265,10 @@ public class ChatFragment extends Fragment {
 
         updateChatHeader(chatroom, type, currentUserId);
 
+        // In multi-user/system conversations each incoming bubble must identify
+        // its sender. Direct chats already identify the other participant in the header.
+        adapter.setShowSenderNames(!"direct".equals(type) && !"ai".equals(type));
+
         if ("ai".equals(type)) {
             Toast.makeText(requireContext(), "AI chat is unavailable for now", Toast.LENGTH_SHORT).show();
             showChatList();
@@ -435,6 +439,25 @@ public class ChatFragment extends Fragment {
                 }
             });
         }).addOnFailureListener(e -> status.setText(R.string.chat_no_enrolled_tutors));
+    }
+
+    /** Open the global announcements room from a verified app link/share. */
+    public void openAnnouncementChat() {
+        String me = FirebaseAuth.getInstance().getUid();
+        if (me == null) return;
+        java.util.Map<String, String> names = new java.util.HashMap<>();
+        names.put(me, resolveMyDisplayName());
+        Chatroom room = new Chatroom(
+                "announcements",
+                java.util.Collections.singletonList(me),
+                names,
+                "Announcements",
+                null,
+                "",
+                java.util.Collections.emptyMap(),
+                "system"
+        );
+        openChat(room);
     }
 
     /** Open an existing direct chat from Profile → Message. */
@@ -951,6 +974,9 @@ public class ChatFragment extends Fragment {
         }
         Intent share = new Intent(Intent.ACTION_SEND);
         share.setType("text/plain");
+        if ("announcements".equals(currentChatId)) {
+            body.append("\n\nhttps://nelsen-savannah.co.ke/chats/announcements");
+        }
         share.putExtra(Intent.EXTRA_TEXT, body.toString());
         startActivity(Intent.createChooser(share, "Share"));
     }
