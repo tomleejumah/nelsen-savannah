@@ -67,12 +67,18 @@ function decryptSecret(value) {
 }
 
 async function actorSchool(uid) {
-  const direct = await dbGet(
-    "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
+  const user = await dbGet(
+    "SELECT active_school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  const schoolId = String(direct?.active_school_id || direct?.school_id || "").trim();
-  if (schoolId) return schoolId;
+  if (user?.active_school_id) {
+    const selected = await dbGet(
+      `SELECT school_id FROM school_memberships
+       WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1`,
+      [uid, user.active_school_id],
+    );
+    if (selected?.school_id) return String(selected.school_id);
+  }
   const membership = await dbGet(
     `SELECT school_id FROM school_memberships
      WHERE uid = ? AND status = 'active'
