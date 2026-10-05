@@ -810,9 +810,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
         if (lessonPanel == null) return;
         lessonPanel.removeAllViews();
         boolean showQuiz = lesson.hasQuiz || lesson.quiz != null;
-        boolean showAssignment = lesson.hasAssignment
-                || "text".equals(lesson.type)
-                || !TextUtils.isEmpty(lesson.assignmentPrompt);
+        boolean showAssignment = lesson.hasAssignment;
         if (!showQuiz && !showAssignment) {
             lessonPanel.setVisibility(View.GONE);
             return;
@@ -894,15 +892,46 @@ public class ChapterLearnActivity extends AppCompatActivity {
     }
 
     private void bindAssignment(LmsModels.LessonDto lesson, TextView result) {
+        List<LmsModels.AssignmentQuestionDto> questions = lesson.assignments;
+        if (questions != null && !questions.isEmpty()) {
+            Map<String, EditText> inputs = new LinkedHashMap<>();
+            int number = 1;
+            for (LmsModels.AssignmentQuestionDto question : questions) {
+                String prompt = !TextUtils.isEmpty(question.prompt)
+                        ? question.prompt
+                        : (!TextUtils.isEmpty(question.title) ? question.title : "Assignment question");
+                lessonPanel.addView(sectionLabel(number + ". " + prompt));
+                EditText input = assignmentInput();
+                inputs.put(question.id, input);
+                lessonPanel.addView(input);
+                number++;
+            }
+            MaterialButton submit = new MaterialButton(this);
+            submit.setText("Submit assignment");
+            submit.setOnClickListener(v -> {
+                Map<String, String> answers = new LinkedHashMap<>();
+                for (LmsModels.AssignmentQuestionDto question : questions) {
+                    EditText input = inputs.get(question.id);
+                    String answer = input != null && input.getText() != null
+                            ? input.getText().toString().trim()
+                            : "";
+                    if (answer.length() < 2) {
+                        Toast.makeText(this, "Answer every assignment question", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    answers.put(question.id, answer);
+                }
+                submitAssignmentAnswers(lesson.lessonId, questions, answers, 0, result, submit);
+            });
+            lessonPanel.addView(submit);
+            return;
+        }
+
         lessonPanel.addView(sectionLabel(
                 !TextUtils.isEmpty(lesson.assignmentPrompt)
                         ? lesson.assignmentPrompt
                         : "Your response"));
-        EditText input = new EditText(this);
-        input.setMinLines(4);
-        input.setGravity(android.view.Gravity.TOP);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        input.setHint("Write your answer…");
+        EditText input = assignmentInput();
         lessonPanel.addView(input);
         MaterialButton submit = new MaterialButton(this);
         submit.setText("Submit assignment");
@@ -912,12 +941,14 @@ public class ChapterLearnActivity extends AppCompatActivity {
                 Toast.makeText(this, "Write something first", Toast.LENGTH_SHORT).show();
                 return;
             }
+            submit.setEnabled(false);
             LmsModels.SubmissionBody body = new LmsModels.SubmissionBody(lesson.lessonId, text);
             withBearer(bearer -> ApiClient.getLmsService().submitAssignment(bearer, body)
                     .enqueue(new Callback<>() {
                         @Override
                         public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
                                                Response<LmsModels.SubmissionEnvelope> response) {
+                            submit.setEnabled(true);
                             if (response.isSuccessful() && response.body() != null && response.body().ok) {
                                 result.setText("Assignment submitted");
                                 Toast.makeText(ChapterLearnActivity.this,
@@ -930,12 +961,65 @@ public class ChapterLearnActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable t) {
+                            submit.setEnabled(true);
                             Toast.makeText(ChapterLearnActivity.this,
                                     "Submit network error", Toast.LENGTH_SHORT).show();
                         }
                     }));
         });
         lessonPanel.addView(submit);
+    }
+
+    private EditText assignmentInput() {
+        EditText input = new EditText(this);
+        input.setMinLines(4);
+        input.setGravity(android.view.Gravity.TOP);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        input.setHint("Write your answer…");
+        return input;
+    }
+
+    private void submitAssignmentAnswers(
+            String lessonId,
+            List<LmsModels.AssignmentQuestionDto> questions,
+            Map<String, String> answers,
+            int index,
+            TextView result,
+            MaterialButton submit) {
+        if (index >= questions.size()) {
+            submit.setEnabled(true);
+            result.setText("Assignment submitted");
+            Toast.makeText(this, "Assignment submitted", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        LmsModels.AssignmentQuestionDto question = questions.get(index);
+        String answer = answers.get(question.id);
+        submit.setEnabled(false);
+        withBearer(bearer -> ApiClient.getLmsService()
+                .submitAssignment(
+                        bearer,
+                        new LmsModels.SubmissionBody(lessonId, answer, question.id))
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
+                                           Response<LmsModels.SubmissionEnvelope> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                            submitAssignmentAnswers(
+                                    lessonId, questions, answers, index + 1, result, submit);
+                        } else {
+                            submit.setEnabled(true);
+                            Toast.makeText(ChapterLearnActivity.this,
+                                    "One or more answers failed to submit", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable t) {
+                        submit.setEnabled(true);
+                        Toast.makeText(ChapterLearnActivity.this,
+                                "Submit network error", Toast.LENGTH_SHORT).show();
+                    }
+                }));
     }
 
     private void submitQuiz(String lessonId, LmsModels.QuizBody body, TextView result) {
