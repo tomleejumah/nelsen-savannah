@@ -99,6 +99,7 @@ export function CatalogCmsPanel({
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<AdminStatsDto | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [creatingTrack, setCreatingTrack] = useState(false);
   const [trackId, setTrackId] = useState("");
   const [trackTitle, setTrackTitle] = useState("");
   const [trackIdeEnabled, setTrackIdeEnabled] = useState(false);
@@ -246,25 +247,35 @@ export function CatalogCmsPanel({
 
   async function createTrack(e: React.FormEvent) {
     e.preventDefault();
+    if (creatingTrack) return;
+    const title = trackTitle.trim();
+    if (!title) return;
+    setCreatingTrack(true);
     setMsg(null);
-    const token = await user.getIdToken();
-    const id = trackId.trim() || slugId("track", trackTitle);
-    const result = await adminCreateTrack(token, {
-      trackId: id,
-      title: trackTitle.trim(),
-      ideEnabled: trackIdeEnabled,
-      ...(schoolId ? { schoolId } : {}),
-    });
-    setMsg(result.ok ? `Track ${id} published` : result.error || "Failed");
-    if (result.ok) {
-      setEditTrackId(id);
-      setEditIdeEnabled(trackIdeEnabled);
-      setTrackId("");
-      setTrackTitle("");
-      setTrackIdeEnabled(false);
-      setCreateOpen(false);
-      void loadStats();
-      onChanged?.();
+    try {
+      const token = await user.getIdToken();
+      // The ID is fixed before the request starts, so a retry of this submit
+      // cannot silently become a second course with a different timestamp.
+      const id = trackId.trim() || slugId("track", title);
+      const result = await adminCreateTrack(token, {
+        trackId: id,
+        title,
+        ideEnabled: trackIdeEnabled,
+        ...(schoolId ? { schoolId } : {}),
+      });
+      setMsg(result.ok ? `Track ${id} published` : result.error || "Failed");
+      if (result.ok) {
+        setEditTrackId(id);
+        setEditIdeEnabled(trackIdeEnabled);
+        setTrackId("");
+        setTrackTitle("");
+        setTrackIdeEnabled(false);
+        setCreateOpen(false);
+        void loadStats();
+        onChanged?.();
+      }
+    } finally {
+      setCreatingTrack(false);
     }
   }
 
@@ -689,9 +700,11 @@ export function CatalogCmsPanel({
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-ember px-4 py-2 text-sm font-medium text-white"
+                  disabled={creatingTrack}
+                  aria-busy={creatingTrack}
+                  className="rounded-full bg-ember px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Create
+                  {creatingTrack ? "Creating…" : "Create"}
                 </button>
               </form>
             </DialogContent>
