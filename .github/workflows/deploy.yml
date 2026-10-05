@@ -120,5 +120,9 @@ jobs:
           if [ "${{ inputs.target }}" = "all" ] || [ "${{ inputs.target }}" = "web" ]; then
             check "nginx home" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/
             check "nginx learning" -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/learning
+            assetlinks=$(curl -sS --max-time 15 -H "Host: nelsen-savannah.co.ke" http://127.0.0.1/.well-known/assetlinks.json)
+            echo "$assetlinks" | grep -F '"package_name": "com.app.nisisiafrica"'
+            echo "$assetlinks" | grep -F 'FD:47:0A:EF:1F:A7:1E:62:0A:B3:4E:17:49:52:47:59:AE:DC:4F:62:C7:42:93:93:D2:CB:B9:FD:DC:DC:9E:FF'
+            echo "Android assetlinks -> verified in deployed web root"
           fi
           echo "deploy smoke ok"
