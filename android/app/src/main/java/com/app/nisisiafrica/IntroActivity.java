@@ -77,7 +77,10 @@ public class IntroActivity extends AppCompatActivity{
         startNow.setOnClickListener(v -> {
             Util.setClickAnimation(v, () -> {
                 Util.saveState("is-FirstTime", false);
-                startActivity(new Intent(IntroActivity.this, LoginSignUpActivity.class));
+                Intent login = new Intent(IntroActivity.this, LoginSignUpActivity.class);
+                String pending = getIntent().getStringExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+                if (pending != null && !pending.isEmpty()) login.putExtra(LauncherActivity.EXTRA_PENDING_APP_LINK, pending);
+                startActivity(login);
                 finish();
             });
 
