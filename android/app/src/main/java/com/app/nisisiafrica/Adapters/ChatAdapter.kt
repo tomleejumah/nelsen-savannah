@@ -186,6 +186,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val tvMessage: TextView = view.findViewById(R.id.tvMessage)
         private val tvTime: TextView = view.findViewById(R.id.tvTime)
+        private val tvFailed: TextView? = view.findViewById(R.id.tvFailed)
         private val tvSender: TextView? = view.findViewById(R.id.tvSender)
         private val llMessage: View? = view.findViewById(R.id.llMessage)
         private val ivImage: ImageView? = view.findViewById(R.id.ivImage)
@@ -279,6 +280,8 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             // TODO(read-receipts): single tick = delivered, double tick = read (not implemented yet).
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
+            tvFailed?.visibility =
+                if (isMine && message.status.equals("failed", ignoreCase = true)) View.VISIBLE else View.GONE
 
             val longClick = View.OnLongClickListener {
                 it.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
