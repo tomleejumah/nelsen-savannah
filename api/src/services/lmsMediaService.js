@@ -261,22 +261,27 @@ export async function userMayPlayMedia(uid, mediaId) {
     const role = await resolveRole(uid);
     return role === "SuperAdmin";
   }
-  const enroll = await dbGet(
-    "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
-    [uid, lesson.track_id],
-  );
-  if (enroll) return true;
-  const role = await resolveRole(uid);
-  if (role === "SuperAdmin") return true;
-  if (role !== "Mentor" && role !== "SchoolAdmin") return false;
-  return sameSchool(await actorSchoolId(uid), await trackSchoolId(lesson.track_id));
+  try {
+    const { assertLearningAccess } = await import("./lmsMembershipService.js");
+    await assertLearningAccess(uid, lesson.track_id);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function actorSchoolId(uid) {
   try {
-    const row = await dbGet("SELECT school_id FROM users_mirror WHERE uid = ?", [
-      uid,
-    ]);
+    const row = await dbGet(
+      `SELECT m.school_id
+       FROM school_memberships m
+       JOIN users_mirror u ON u.uid = m.uid
+       WHERE m.uid = ? AND m.status = 'active'
+       ORDER BY CASE WHEN m.school_id = u.active_school_id THEN 0 ELSE 1 END,
+                m.updated_at DESC
+       LIMIT 1`,
+      [uid],
+    );
     return row?.school_id || DEFAULT_SCHOOL_ID;
   } catch {
     return DEFAULT_SCHOOL_ID;

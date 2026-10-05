@@ -21,6 +21,7 @@ export type MeDto = {
   firstName: string;
   lastName: string;
   photoUrl: string;
+  bio?: string;
   userRole: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
   schoolId?: string | null;
   schoolName?: string | null;
@@ -347,6 +348,41 @@ async function lmsFetch<T>(
 
 export async function fetchLmsMe(idToken: string) {
   return lmsFetch<MeDto>("/lms/me", idToken);
+}
+
+export async function patchMyProfile(
+  idToken: string,
+  body: {
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    photoUrl?: string;
+    bio?: string;
+  },
+) {
+  return lmsFetch<MeDto>("/lms/me/profile", idToken, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function uploadProfilePhoto(idToken: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", "profile_media");
+  const res = await fetch(`${LMS_API_BASE}/media/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: form,
+  });
+  const json = (await res.json().catch(() => null)) as
+    | { success?: boolean; url?: string; error?: string }
+    | null;
+  if (!res.ok || !json?.success || !json.url) {
+    throw new Error(json?.error || `Photo upload failed (HTTP ${res.status})`);
+  }
+  return json.url;
 }
 
 export type AndroidAppReleaseDto = {
@@ -1130,7 +1166,7 @@ export async function patchSchoolMemberStatus(
   idToken: string,
   schoolId: string,
   uid: string,
-  status: "active" | "suspended",
+  status: "active" | "suspended" | "rejected",
 ) {
   return lmsFetch<{ member: SchoolMemberDto }>(
     `/lms/schools/${encodeURIComponent(schoolId)}/members/${encodeURIComponent(uid)}/status`,

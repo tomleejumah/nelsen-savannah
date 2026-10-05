@@ -116,6 +116,7 @@ function mePayload(profile, user, role, source, extras = {}) {
       firstName: user?.firstName || user?.first_name || "",
       lastName: user?.lastName || user?.last_name || "",
       photoUrl: user?.photoUrl || user?.photo_url || profile.photoUrl || "",
+      bio: user?.bio || user?.Bio || "",
       userRole: role,
       /** @deprecated use userRole — kept for older clients */
       role,
@@ -154,10 +155,10 @@ export async function upsertUserFromToken(profile) {
         await dbRun(
           `UPDATE users_mirror
            SET email = COALESCE(NULLIF(?, ''), email),
-               display_name = COALESCE(NULLIF(?, ''), display_name),
-               first_name = COALESCE(NULLIF(?, ''), first_name),
-               last_name = COALESCE(NULLIF(?, ''), last_name),
-               photo_url = COALESCE(NULLIF(?, ''), photo_url),
+               display_name = COALESCE(NULLIF(display_name, ''), NULLIF(?, ''), display_name),
+               first_name = COALESCE(NULLIF(first_name, ''), NULLIF(?, ''), first_name),
+               last_name = COALESCE(NULLIF(last_name, ''), NULLIF(?, ''), last_name),
+               photo_url = COALESCE(NULLIF(photo_url, ''), NULLIF(?, ''), photo_url),
                updated_at = ?
            WHERE uid = ?`,
           [
@@ -200,13 +201,18 @@ export async function upsertUserFromToken(profile) {
           [profile.uid, ROLES.Mentee, now],
         );
       }
+      const stored = await dbGet(
+        "SELECT email, display_name, first_name, last_name, photo_url, bio FROM users_mirror WHERE uid = ?",
+        [profile.uid],
+      );
       return {
         uid: profile.uid,
-        email,
-        displayName,
-        firstName,
-        lastName,
-        photoUrl,
+        email: stored?.email || email,
+        displayName: stored?.display_name || displayName,
+        firstName: stored?.first_name || firstName,
+        lastName: stored?.last_name || lastName,
+        photoUrl: stored?.photo_url || photoUrl,
+        bio: stored?.bio || "",
         role: roleRow?.role || ROLES.Mentee,
       };
     },
@@ -217,6 +223,7 @@ export async function upsertUserFromToken(profile) {
         firstName: row.firstName,
         lastName: row.lastName,
         photoUrl: row.photoUrl,
+        bio: row.bio || "",
       });
       if (!row.role || row.role === ROLES.Mentee) {
         const rtdbRole = await readRoleFromRtdb(row.uid);
@@ -238,7 +245,7 @@ export async function getMe(profile) {
     try {
       await upsertUserFromToken(profile);
       const user = await dbGet(
-        `SELECT u.uid, u.email, u.display_name, u.first_name, u.last_name, u.photo_url,
+        `SELECT u.uid, u.email, u.display_name, u.first_name, u.last_name, u.photo_url, u.bio,
                 u.school_id, u.active_school_id, r.role
          FROM users_mirror u
          LEFT JOIN roles r ON r.uid = u.uid
@@ -299,6 +306,7 @@ export async function getMe(profile) {
           first_name: user?.first_name,
           last_name: user?.last_name,
           photo_url: user?.photo_url,
+          bio: user?.bio,
           school_id: schoolId,
           schoolName,
           active_school_id: activeSchoolId,
@@ -334,6 +342,7 @@ export async function getMe(profile) {
       firstName: rtdbUser?.firstName || firstName,
       lastName: rtdbUser?.lastName || lastName,
       photoUrl: rtdbUser?.photoUrl,
+      bio: rtdbUser?.bio || rtdbUser?.Bio || "",
       schoolId: null,
       schoolName: "",
       active_school_id: null,
@@ -342,6 +351,51 @@ export async function getMe(profile) {
     "rtdb",
     { activeSchoolId: null, memberships: [], unaffiliated: true },
   );
+}
+
+export async function listUploadedMaterials(viewerUid, targetUid = viewerUid) {
+  const rows = await (await import("../db/lmsDb.js")).dbAll(
+    `SELECT m.media_id, m.filename, m.mime_type, m.size_bytes, m.status,
+            m.track_id, m.scope, m.scope_id, m.created_at,
+            l.lesson_id, l.title AS lesson_title,
+            t.title AS track_title
+     FROM media_assets m
+     LEFT JOIN lessons l ON l.media_id = m.media_id
+     LEFT JOIN tracks t ON t.track_id = COALESCE(m.track_id, l.track_id)
+     WHERE m.uid = ?
+       AND m.status = 'ready'
+     ORDER BY m.created_at DESC`,
+    [targetUid],
+  );
+
+  const visible = [];
+  for (const row of rows) {
+    try {
+      const { resolvePlaybackUrl } = await import("./lmsMediaService.js");
+      const playback = await resolvePlaybackUrl(row.media_id, viewerUid);
+      visible.push({
+        mediaId: row.media_id,
+        filename: row.filename || "",
+        mimeType: row.mime_type || "",
+        sizeBytes: Number(row.size_bytes || 0),
+        trackId: row.track_id || "",
+        trackTitle: row.track_title || "",
+        lessonId: row.lesson_id || row.scope_id || "",
+        lessonTitle: row.lesson_title || "",
+        scope: row.scope || "",
+        createdAt: Number(row.created_at || 0),
+        playbackUrl: playback.url || playback.playbackUrl || "",
+        playbackExpiresAt: Number(playback.expiresAt || playback.playbackExpiresAt || 0),
+      });
+    } catch {
+      // Do not reveal protected material metadata to viewers without access.
+    }
+  }
+  return visible;
+}
+
+export async function listMyUploadedMaterials(uid) {
+  return listUploadedMaterials(uid, uid);
 }
 
 export async function getStoreHealth() {
@@ -377,4 +431,88 @@ export async function setUserRole(uid, role) {
 
   await mirrorRole(uid, normalized);
   return normalized;
+}
+
+/**
+ * PATCH /lms/me/profile — canonical editable profile shared by web + Android.
+ * The primary DB owns the normalized fields; RTDB mirrors keep legacy Android
+ * readers and mentor cards in sync during the migration.
+ */
+export async function updateMyProfile(profile, input = {}) {
+  await upsertUserFromToken(profile);
+
+  const current = await dbGet(
+    `SELECT uid, email, display_name, first_name, last_name, photo_url, bio
+     FROM users_mirror WHERE uid = ?`,
+    [profile.uid],
+  );
+  if (!current) {
+    const err = new Error("Profile not found");
+    err.status = 404;
+    throw err;
+  }
+
+  const has = (key) => Object.prototype.hasOwnProperty.call(input, key);
+  const clean = (value) => (value == null ? "" : String(value).trim());
+  const nextFirst = has("firstName") ? clean(input.firstName) : current.first_name || "";
+  const nextLast = has("lastName") ? clean(input.lastName) : current.last_name || "";
+  let nextDisplay = has("displayName") ? clean(input.displayName) : current.display_name || "";
+  if (!nextDisplay && (nextFirst || nextLast)) {
+    nextDisplay = [nextFirst, nextLast].filter(Boolean).join(" ");
+  }
+  if (!nextDisplay) {
+    const err = new Error("Display name cannot be empty");
+    err.status = 400;
+    throw err;
+  }
+
+  const nextPhoto = has("photoUrl") ? clean(input.photoUrl) : current.photo_url || "";
+  const nextBio = has("bio") ? clean(input.bio) : current.bio || "";
+  const now = Date.now();
+
+  await dbRun(
+    `UPDATE users_mirror
+     SET display_name = ?, first_name = ?, last_name = ?, photo_url = ?, bio = ?, updated_at = ?
+     WHERE uid = ?`,
+    [nextDisplay, nextFirst, nextLast, nextPhoto, nextBio, now, profile.uid],
+  );
+
+  await mirrorUserMeta(profile.uid, {
+    email: current.email || profile.email || "",
+    displayName: nextDisplay,
+    firstName: nextFirst,
+    lastName: nextLast,
+    photoUrl: nextPhoto,
+    bio: nextBio,
+  });
+
+  try {
+    await admin.database().ref(`users/${profile.uid}`).update({
+      displayName: nextDisplay,
+      firstName: nextFirst,
+      lastName: nextLast,
+      photoUrl: nextPhoto,
+      Bio: nextBio,
+      updatedAt: admin.database.ServerValue.TIMESTAMP,
+    });
+
+    const roleRow = await dbGet("SELECT role FROM roles WHERE uid = ?", [profile.uid]);
+    const role = normalizeRole(roleRow?.role);
+    if (
+      role === ROLES.Mentor ||
+      role === ROLES.SchoolAdmin ||
+      role === ROLES.Admin
+    ) {
+      await admin.database().ref(`mentors/${profile.uid}`).update({
+        mentorId: profile.uid,
+        mentorName: nextDisplay,
+        mentorImageUrl: nextPhoto,
+        mentorDescription: nextBio,
+      });
+    }
+  } catch (err) {
+    console.warn("[lms-me] legacy profile mirror:", err.message);
+  }
+
+  return getMe({ ...profile, displayName: nextDisplay, photoUrl: nextPhoto });
 }

@@ -220,49 +220,26 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         joinedTittle = findViewById(R.id.joinedTittle);
 
         if (isFromMentor) {
-            setupMentorRating(id);
-            FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
-                        if (mentors != null) {
-
-                            Glide.with(ProfileActivity.this)
-                                    .load(mentors.getMentorImageUrl())
-                                    .apply(RequestOptions.circleCropTransform())
-                                    .into(imgDp);
-                            tvProfileName.setText(mentors.getMentorName());
-                            tvRole.setText("Mentor");
-
-                            FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(
-                                    Objects.requireNonNull(id),
-                                    user -> {
-                                        long lastLoginMillis = user.getLastLogin();
-                                        Date lastLoginDate = new Date(lastLoginMillis);
-                                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                                        String formattedDate = sdf.format(lastLoginDate);
-                                        joinedTittle.setText("Last Login");
-                                        tvJoined.setText(formattedDate);
-                                        tvAbout.setText(mentors.getMentorDescription());
-                                        tagMentorSchool(id, mentors.getMentorDescription());
-                                        return Unit.INSTANCE;
-                                    }, e -> {
-                                        e.printStackTrace();
-                                        return Unit.INSTANCE;
-                                    });
-
-//            tvDescription.setText(mentors.getMentorDescription());
-//            tv_username.setText(mentors.getMentorName());
-//            loadAndStyle(mentors.getMentorImageUrl());
-                        } else {
-                            // Handle null case
-                            blurViewDesc.setVisibility(View.GONE);
-                            tvDescription.setText("");
-                            tv_username.setText("");
-                        }
-                        return Unit.INSTANCE;
-                    }, e -> {
-                        Log.d(TAG, "onCreate: Failed to fetch mentor" + e.getMessage());
-                        return Unit.INSTANCE;
+            if (TextUtils.isEmpty(id)) {
+                renderMentorUnavailable();
+            } else {
+                // A Mentor role can be assigned from web/admin without ever creating
+                // the legacy /mentors/{uid} record. Render the canonical user first,
+                // then overlay mentor-specific fields when they exist.
+                setupMentorRating(id);
+                loadMentorUserBaseline(id);
+                FirebaseRemoteDataSource.INSTANCE.getMentorData(id, mentors -> {
+                    if (mentors != null) {
+                        renderMentorDetails(mentors);
+                    } else {
+                        Log.i(TAG, "Mentor metadata missing for " + id + "; using user profile");
                     }
-            );
+                    return Unit.INSTANCE;
+                }, e -> {
+                    Log.w(TAG, "Mentor metadata unavailable for " + id, e);
+                    return Unit.INSTANCE;
+                });
+            }
         } else {
             if (!isGeneric) {
                 sharedUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
@@ -371,6 +348,83 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         initMediaGrid();
     }
 
+    private void loadMentorUserBaseline(@NonNull String mentorId) {
+        FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(mentorId, data -> {
+            if (data == null) return Unit.INSTANCE;
+            userData = data;
+
+            String first = data.getFirstName() == null ? "" : data.getFirstName().trim();
+            String last = data.getLastName() == null ? "" : data.getLastName().trim();
+            String displayName = (first + " " + last).trim();
+            if (displayName.isEmpty()) displayName = "Mentor";
+
+            tvProfileName.setText(displayName);
+            tvRole.setText("Mentor");
+            tvAbout.setText(TextUtils.isEmpty(data.getBio()) ? "" : data.getBio());
+            tvDescription.setText(TextUtils.isEmpty(data.getBio()) ? "" : data.getBio());
+            blurViewDesc.setVisibility(TextUtils.isEmpty(data.getBio()) ? View.GONE : View.VISIBLE);
+
+            Glide.with(ProfileActivity.this)
+                    .load(data.getPhotoUrl())
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(imgDp);
+
+            long lastLoginMillis = data.getLastLogin();
+            if (lastLoginMillis > 0L) {
+                joinedTittle.setText("Last Login");
+                tvJoined.setText(new SimpleDateFormat(
+                        "dd/MM/yyyy HH:mm", Locale.getDefault())
+                        .format(new Date(lastLoginMillis)));
+            } else {
+                joinedTittle.setText("");
+                tvJoined.setText("");
+            }
+
+            tagMentorSchool(mentorId, data.getBio());
+            return Unit.INSTANCE;
+        }, e -> {
+            Log.w(TAG, "User profile unavailable for mentor " + mentorId, e);
+            return Unit.INSTANCE;
+        });
+    }
+
+    private void renderMentorDetails(@NonNull MentorItem mentor) {
+        String name = mentor.getMentorName();
+        String description = mentor.getMentorDescription();
+
+        if (!TextUtils.isEmpty(name)) tvProfileName.setText(name);
+        tvRole.setText("Mentor");
+        if (!TextUtils.isEmpty(description)) {
+            tvAbout.setText(description);
+            tvDescription.setText(description);
+            blurViewDesc.setVisibility(View.VISIBLE);
+        }
+
+        if (!TextUtils.isEmpty(mentor.getMentorImageUrl())) {
+            Glide.with(ProfileActivity.this)
+                    .load(mentor.getMentorImageUrl())
+                    .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(imgDp);
+        }
+
+        tagMentorSchool(id, description);
+    }
+
+    private void renderMentorUnavailable() {
+        tvProfileName.setText("Mentor");
+        tvRole.setText("Mentor");
+        tvAbout.setText("");
+        tvDescription.setText("");
+        tvJoined.setText("");
+        joinedTittle.setText("");
+        blurViewDesc.setVisibility(View.GONE);
+        Glide.with(this).load(R.drawable.ic_person).into(imgDp);
+    }
+
     /** Message (1:1 chat) or Book — replaces the old full-width Book Now FAB. */
     private void showMentorActionsSheet() {
         String[] items = new String[]{"Message", "Book"};
@@ -427,8 +481,13 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
         mediaAdapter = new MediaGridAdapter(this, this::showMediaPreview);
         rvMediaGrid.setAdapter(mediaAdapter);
 
-        // Load initial media
-        loadUserMedia(false);
+        // Mentor materials are sourced from the LMS media registry. Legacy
+        // User_Media remains as a fallback for older profile uploads.
+        if (isFromMentor) {
+            loadMentorMaterials();
+        } else {
+            loadUserMedia(false);
+        }
 
         // Setup pagination - load more when scrolling
         rvMediaGrid.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -441,13 +500,89 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
                     int totalItemCount = gridLayoutManager.getItemCount();
                     int firstVisibleItem = gridLayoutManager.findFirstVisibleItemPosition();
 
-                    if ((visibleItemCount + firstVisibleItem) >= totalItemCount - 6) {
-                        // Load more when 6 items from bottom
+                    if (!isFromMentor &&
+                            (visibleItemCount + firstVisibleItem) >= totalItemCount - 6) {
+                        // Legacy profile media is paged; LMS mentor materials arrive as one list.
                         loadUserMedia(true);
                     }
                 }
             }
         });
+    }
+
+    private void loadMentorMaterials() {
+        FirebaseUser viewer = FirebaseAuth.getInstance().getCurrentUser();
+        if (viewer == null || TextUtils.isEmpty(id)) {
+            showMediaEmptyState();
+            return;
+        }
+        isLoadingMedia = true;
+        viewer.getIdToken(false)
+                .addOnSuccessListener(token -> ApiClient.getLmsService()
+                        .userMaterials("Bearer " + token.getToken(), id)
+                        .enqueue(new retrofit2.Callback<>() {
+                            @Override
+                            public void onResponse(
+                                    retrofit2.Call<LmsModels.UploadedMaterialsEnvelope> call,
+                                    retrofit2.Response<LmsModels.UploadedMaterialsEnvelope> response) {
+                                isLoadingMedia = false;
+                                LmsModels.UploadedMaterialsEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok ||
+                                        body.data == null || body.data.materials == null ||
+                                        body.data.materials.isEmpty()) {
+                                    // Preserve pre-LMS mentor uploads while the catalog is migrated.
+                                    loadUserMedia(false);
+                                    return;
+                                }
+
+                                List<UserMedia> items = new ArrayList<>();
+                                for (LmsModels.UploadedMaterialDto material : body.data.materials) {
+                                    if (material == null || TextUtils.isEmpty(material.playbackUrl)) continue;
+                                    String description = !TextUtils.isEmpty(material.lessonTitle)
+                                            ? material.lessonTitle
+                                            : material.trackTitle;
+                                    String fileName = !TextUtils.isEmpty(material.filename)
+                                            ? material.filename : "Material";
+                                    String fileType = !TextUtils.isEmpty(material.mimeType)
+                                            ? material.mimeType : "file";
+                                    items.add(new UserMedia(
+                                            material.mediaId == null ? "" : material.mediaId,
+                                            id,
+                                            material.playbackUrl,
+                                            description == null ? "" : description,
+                                            fileType,
+                                            fileName,
+                                            material.createdAt,
+                                            ""));
+                                }
+                                if (items.isEmpty()) {
+                                    loadUserMedia(false);
+                                    return;
+                                }
+                                mediaList = items;
+                                mediaAdapter.setMediaList(items);
+                                findViewById(R.id.emptyMediaState).setVisibility(View.GONE);
+                                findViewById(R.id.rvMediaGrid).setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onFailure(
+                                    retrofit2.Call<LmsModels.UploadedMaterialsEnvelope> call,
+                                    Throwable t) {
+                                isLoadingMedia = false;
+                                Log.w(TAG, "LMS mentor materials unavailable; using legacy media", t);
+                                loadUserMedia(false);
+                            }
+                        }))
+                .addOnFailureListener(error -> {
+                    isLoadingMedia = false;
+                    loadUserMedia(false);
+                });
+    }
+
+    private void showMediaEmptyState() {
+        findViewById(R.id.emptyMediaState).setVisibility(View.VISIBLE);
+        findViewById(R.id.rvMediaGrid).setVisibility(View.GONE);
     }
 
     private void loadUserMedia(boolean loadMore) {

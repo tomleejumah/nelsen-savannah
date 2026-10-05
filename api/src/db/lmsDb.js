@@ -406,6 +406,7 @@ async function ensureMigrations() {
   const alters = [
     "ALTER TABLE users_mirror ADD COLUMN school_id TEXT",
     "ALTER TABLE users_mirror ADD COLUMN active_school_id TEXT",
+    "ALTER TABLE users_mirror ADD COLUMN bio TEXT",
     "ALTER TABLE submissions ADD COLUMN assignment_id TEXT",
     "ALTER TABLE tracks ADD COLUMN school_id TEXT",
     "ALTER TABLE enrollments ADD COLUMN school_id TEXT",

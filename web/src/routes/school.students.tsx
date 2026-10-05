@@ -188,13 +188,22 @@ function StudentsConsole({ user, me }: { user: User; me: MeDto }) {
                 <span className="text-ember">{m.userRole}</span>
                 <div className="flex flex-wrap gap-2">
                   {m.status === "applied" && m.uid ? (
-                    <button
-                      type="button"
-                      onClick={() => void a.approveJoin(m.uid)}
-                      className="cursor-pointer rounded-full border border-ember px-3 py-1 text-xs font-medium text-ember"
-                    >
-                      Approve join
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void a.approveJoin(m.uid)}
+                        className="cursor-pointer rounded-full border border-ember px-3 py-1 text-xs font-medium text-ember"
+                      >
+                        Approve join
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void a.rejectJoin(m.uid)}
+                        className="cursor-pointer rounded-full border border-destructive/50 px-3 py-1 text-xs font-medium text-destructive"
+                      >
+                        Reject
+                      </button>
+                    </>
                   ) : null}
                   {m.inviteUrl ? (
                     <button

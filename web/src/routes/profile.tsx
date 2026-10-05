@@ -21,6 +21,8 @@ import {
   fetchLmsMe,
   fetchMyEnrollments,
   fetchMyPurchases,
+  patchMyProfile,
+  uploadProfilePhoto,
   type EnrollmentDto,
   type MeDto,
   type PurchaseDto,
@@ -48,7 +50,10 @@ function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState("");
+  const [bioDraft, setBioDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [photoDraft, setPhotoDraft] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
 
   const load = useCallback(async (u: User, gen: number) => {
@@ -69,6 +74,8 @@ function ProfilePage() {
       } else {
         setMe(meEnv.data);
         setNameDraft(meEnv.data.displayName || u.displayName || "");
+        setBioDraft(meEnv.data.bio || "");
+        setPhotoDraft(meEnv.data.photoUrl || u.photoURL || null);
       }
       setEnrollments(enrollEnv.data?.enrollments || []);
       setPurchases(payEnv.data?.purchases || []);
@@ -94,6 +101,8 @@ function ProfilePage() {
         setEnrollments([]);
         setPurchases([]);
         setNameDraft("");
+        setBioDraft("");
+        setPhotoDraft(null);
       }
     });
   }, [load]);
@@ -111,14 +120,49 @@ function ProfilePage() {
     setSavedNote(null);
     try {
       await updateProfile(user, { displayName: nextName });
-      await user.getIdToken(true);
+      const token = await user.getIdToken(true);
+      const saved = await patchMyProfile(token, {
+        displayName: nextName,
+        bio: bioDraft.trim(),
+        photoUrl: photoDraft || user.photoURL || me?.photoUrl || "",
+      });
+      if (!saved.ok || !saved.data) {
+        throw new Error(saved.error || "Could not save profile");
+      }
       const gen = getAuthGeneration();
       await load(user, gen);
-      setSavedNote("Name updated");
+      setSavedNote("Profile updated");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save name");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onPhotoPicked(file: File | null) {
+    if (!user || !file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Profile photo must be 8 MB or smaller");
+      return;
+    }
+    setPhotoUploading(true);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const url = await uploadProfilePhoto(token, file);
+      const saved = await patchMyProfile(token, { photoUrl: url });
+      if (!saved.ok) throw new Error(saved.error || "Could not save profile photo");
+      await updateProfile(user, { photoURL: url });
+      setPhotoDraft(url);
+      setSavedNote("Profile photo updated");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload profile photo");
+    } finally {
+      setPhotoUploading(false);
     }
   }
 
@@ -181,17 +225,29 @@ function ProfilePage() {
 
         <section className="mt-10 rounded-3xl border border-border/70 bg-card p-6 sm:p-8">
           <div className="flex items-start gap-4">
-            {user.photoURL || me?.photoUrl ? (
-              <img
-                src={user.photoURL || me?.photoUrl}
-                alt=""
-                className="h-14 w-14 rounded-full object-cover"
+            <label className="group relative cursor-pointer" title="Change profile photo">
+              {photoDraft || user.photoURL || me?.photoUrl ? (
+                <img
+                  src={photoDraft || user.photoURL || me?.photoUrl || ""}
+                  alt=""
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+              ) : (
+                <span className="icon-chip-lg">
+                  <UserRound className="h-5 w-5" />
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={photoUploading}
+                onChange={(e) => void onPhotoPicked(e.target.files?.[0] || null)}
               />
-            ) : (
-              <span className="icon-chip-lg">
-                <UserRound className="h-5 w-5" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-background px-2 py-0.5 text-[10px] shadow">
+                {photoUploading ? "Uploading…" : "Change"}
               </span>
-            )}
+            </label>
             <div className="min-w-0 flex-1">
               <p className="font-display text-lg font-semibold">
                 {me?.displayName || user.displayName || "Learner"}
@@ -214,6 +270,17 @@ function ProfilePage() {
               />
             </label>
             <label className="block text-sm">
+              <span className="font-medium text-foreground">Bio</span>
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                className="mt-1.5 w-full resize-y rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+                placeholder="Tell learners a little about yourself"
+              />
+            </label>
+            <label className="block text-sm">
               <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                 <Mail className="h-3.5 w-3.5 text-ember" /> Email
               </span>
@@ -231,7 +298,7 @@ function ProfilePage() {
               disabled={saving}
               className="rounded-full bg-ember-gradient px-5 py-2.5 font-display text-sm font-semibold text-maroon-foreground shadow-ember-glow disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save name"}
+              {saving ? "Saving…" : "Save profile"}
             </button>
           </form>
         </section>
