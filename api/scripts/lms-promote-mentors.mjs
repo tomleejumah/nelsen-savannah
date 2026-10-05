@@ -15,7 +15,7 @@ import { stdin as input, stdout as output } from "node:process";
 import admin from "../src/config/firebase.js";
 import { ROLES, normalizeRole } from "../src/constants/lmsRoles.js";
 import { initLmsDb } from "../src/db/lmsDb.js";
-import { setUserRole } from "../src/services/lmsMeService.js";
+import { setUserRole, upsertUserFromToken } from "../src/services/lmsMeService.js";
 
 const ALLOWED = Object.values(ROLES).filter((r) => r !== "Admin");
 
@@ -74,13 +74,15 @@ for (const email of emails) {
   try {
     const user = await admin.auth().getUserByEmail(email);
     const providers = user.providerData.map((p) => p.providerId);
-    await setUserRole(user.uid, role);
-    await admin.database().ref(`lms/users/${user.uid}`).update({
+    await upsertUserFromToken({
+      uid: user.uid,
       email: user.email || email,
       displayName: user.displayName || "",
-      userRole: role,
-      updatedAt: admin.database.ServerValue.TIMESTAMP,
+      photoUrl: user.photoURL || "",
     });
+    // setUserRole also reconciles legacy /users/{uid} and role-specific
+    // /mentors/{uid}, so Android and web resolve the same upgraded identity.
+    await setUserRole(user.uid, role);
     console.log(
       `OK  ${email} → ${role} (${user.uid}) providers=${providers.join(",") || "none"}`,
     );
