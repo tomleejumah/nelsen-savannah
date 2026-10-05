@@ -378,8 +378,8 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 ## Android Release Quality — Responsive Screen Sizes
 
-- [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation. **In progress:** main shell/Home/Profile/Groups/Chat + school/course catalog pass started.
-- [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate. **In progress:** course catalog header can now scroll independently on compact-height/font-scaled screens instead of consuming the list viewport.
+- [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation. **In progress:** main shell/Home/Profile/Groups/Chat + auth + school/course catalog/dialog passes started.
+- [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate. **In progress:** course catalog header can now scroll independently on compact-height/font-scaled screens; Login no longer assumes a 300dp hero width; Add Course no longer assumes a fixed 300×550dp dialog and can scroll on compact displays.
 - [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities.
 - [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
 - [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
