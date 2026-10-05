@@ -52,6 +52,8 @@ public class SettingsFragment extends Fragment {
     private static final String URL_INSTAGRAM = "https://www.instagram.com/nisisiafrica_org?igsh=MWo0a3NlbGVlaWptNw==";
     private static final String URL_FACEBOOK = "https://www.facebook.com/nisisiafrica";
     private static final String URL_YOUTUBE = "https://youtube.com/@nisisiafrica_org?si=oV0mIGg3uSOGEMi7";
+    // Until the Play listing is live, sharing must point to our browser download page.
+    private static final String URL_APP_DOWNLOAD = "https://nelsen-savannah.co.ke/download";
      private DiditVerificationHandler handler;
     private ProgressDialog loadingDialog;
     @SuppressLint("UseSwitchCompatOrMaterialCode")
@@ -103,8 +105,13 @@ public class SettingsFragment extends Fragment {
         lockSwitch = view.findViewById(R.id.lockApp);
         setupDarkModeSwitch(view);
 
-        view.findViewById(R.id.tv_share_app).setOnClickListener(v -> shareApp());
-        view.findViewById(R.id.tv_rate_app).setOnClickListener(v -> rateApp(getContext()));
+        View shareRow = view.findViewById(R.id.cl_share_app);
+        if (shareRow != null) shareRow.setOnClickListener(v -> shareApp());
+        View rateRow = view.findViewById(R.id.cl_rate_app);
+        if (rateRow != null) {
+            // Rating only makes sense once the public store listing exists.
+            rateRow.setVisibility(View.GONE);
+        }
         view.findViewById(R.id.btn_linkedin).setOnClickListener(v -> openUrlInBrowser(URL_LINKEDIN));
         view.findViewById(R.id.btn_instagram).setOnClickListener(v -> openUrlInBrowser(URL_INSTAGRAM));
         view.findViewById(R.id.btn_youtube).setOnClickListener(v -> openUrlInBrowser(URL_YOUTUBE));
@@ -305,9 +312,8 @@ public class SettingsFragment extends Fragment {
         try {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
-            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Check out this awesome app!");
-            String shareMessage = "Hey, I found this great app and wanted to share it with you!\n\n"
-                    + "https://play.google.com/store/apps/details?id=" + getActivity().getPackageName();
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Nelsen Savannah");
+            String shareMessage = "Download Nelsen Savannah:\n\n" + URL_APP_DOWNLOAD;
             shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage);
             startActivity(Intent.createChooser(shareIntent, "Share app via"));
         } catch (Exception e) {
