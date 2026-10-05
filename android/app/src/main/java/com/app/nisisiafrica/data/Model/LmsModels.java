@@ -720,6 +720,7 @@ public final class LmsModels {
         public String menteeName;
         public int status;
         public String liveStatus;
+        public String liveAvailability;
         public String description;
         public String mode;
         public String location;
