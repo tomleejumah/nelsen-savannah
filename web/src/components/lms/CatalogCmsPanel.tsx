@@ -15,6 +15,7 @@ import {
   adminUpdateModule,
   adminUpdateTrack,
   authorLessonQuiz,
+  createAssignment,
   fetchAdminStats,
   fetchLmsModule,
   fetchLmsTrack,
@@ -127,13 +128,14 @@ export function CatalogCmsPanel({
   // Add lesson / optional first lesson on new chapter
   const [lesTitle, setLesTitle] = useState("");
   const [lesDoes, setLesDoes] = useState("");
-  const [lesType, setLesType] = useState<"text" | "video" | "pdf" | "quiz" | "assignment">("text");
+  const [lesType, setLesType] = useState<"text" | "video" | "pdf">("text");
   const [labLanguage, setLabLanguage] = useState("python");
   const [labStarter, setLabStarter] = useState("print('hello')\n");
   const [labExpected, setLabExpected] = useState("");
   const [lesFile, setLesFile] = useState<File | null>(null);
   const [quizEnabled, setQuizEnabled] = useState(false);
   const [assignmentEnabled, setAssignmentEnabled] = useState(false);
+  const [assignmentQuestions, setAssignmentQuestions] = useState<string[]>([""]);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionDraft[]>([
     emptyQuestion(0),
   ]);
@@ -151,6 +153,7 @@ export function CatalogCmsPanel({
     setLesFile(null);
     setQuizEnabled(false);
     setAssignmentEnabled(false);
+    setAssignmentQuestions([""]);
     setQuizQuestions([emptyQuestion(0)]);
     setUploadPct(null);
     setLesType("text");
@@ -404,16 +407,8 @@ export function CatalogCmsPanel({
       title: lesTitle.trim(),
       type: lesType,
       does: lesDoes.trim(),
-      hasQuiz: lesType === "quiz" || (quizEnabled && (lesType === "pdf" || lesType === "video")),
-      hasAssignment: lesType === "assignment" || assignmentEnabled,
-      lab:
-        lesType === "code"
-          ? {
-              language: labLanguage,
-              starter: labStarter,
-              expectedStdout: labExpected.trim() || null,
-            }
-          : undefined,
+      hasQuiz: quizEnabled,
+      hasAssignment: assignmentEnabled,
     });
     if (!create.ok) {
       setMsg(create.error || "Failed to create lesson");
@@ -428,7 +423,7 @@ export function CatalogCmsPanel({
           onProgress: setUploadPct,
         });
       }
-      if ((lesType === "quiz" || (quizEnabled && (lesType === "pdf" || lesType === "video"))) && schoolId) {
+      if (quizEnabled && schoolId) {
         const questions = quizQuestions
           .map((q, i) => ({
             id: q.id || `q${i + 1}`,
@@ -449,6 +444,23 @@ export function CatalogCmsPanel({
           });
           await adminUpdateLesson(token, id, { hasQuiz: true });
         }
+      }
+      if (assignmentEnabled) {
+        const prompts = assignmentQuestions.map((q) => q.trim()).filter(Boolean);
+        if (prompts.length === 0) {
+          throw new Error("Add at least one assignment question");
+        }
+        await Promise.all(
+          prompts.map((prompt, index) =>
+            createAssignment(token, {
+              title: `${lesTitle.trim()} — Question ${index + 1}`,
+              prompt,
+              trackId,
+              lessonId: id,
+            }),
+          ),
+        );
+        await adminUpdateLesson(token, id, { hasAssignment: true });
       }
       return true;
     } catch (err) {
@@ -534,61 +546,90 @@ export function CatalogCmsPanel({
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 value={lesType}
                 onChange={(e) =>
-                  setLesType(e.target.value as "text" | "video" | "pdf" | "quiz" | "assignment")
+                  setLesType(e.target.value as "text" | "video" | "pdf")
                 }
               >
-                <option value="text">Text (write & submit)</option>
-                <option value="video">Video (watch time)</option>
-                <option value="pdf">PDF (doc + questions)</option>
-                <option value="quiz">Quiz / auto-marked questions</option>
-                <option value="assignment">Assignment / mentor marked</option>
+                <option value="text">Text lesson</option>
+                <option value="video">Video</option>
+                <option value="pdf">PDF</option>
               </select>
             </label>
             <textarea
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
               rows={3}
-              placeholder={
-                lesType === "assignment" || assignmentEnabled
-                  ? "Assignment instructions — what mentees should submit"
-                  : lesType === "text"
-                    ? "Lesson text / description"
-                    : "Description"
-              }
+              placeholder={lesType === "text" ? "Lesson text / description" : "Description"}
               value={lesDoes}
               onChange={(e) => setLesDoes(e.target.value)}
             />
             {lesType === "video" || lesType === "pdf" ? (
-              <>
-                <input
-                  type="file"
-                  accept={lesType === "video" ? "video/*" : "application/pdf"}
-                  onChange={(e) => setLesFile(e.target.files?.[0] || null)}
-                />
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={quizEnabled}
-                    onChange={(e) => setQuizEnabled(e.target.checked)}
-                  />
-                  Add auto-marked questions
-                </label>
-              </>
+              <input
+                type="file"
+                accept={lesType === "video" ? "video/*" : "application/pdf"}
+                onChange={(e) => setLesFile(e.target.files?.[0] || null)}
+              />
             ) : null}
-            {lesType === "quiz" ? (
+            <div className="flex flex-wrap gap-4 rounded-xl border border-border p-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={quizEnabled}
+                  onChange={(e) => setQuizEnabled(e.target.checked)}
+                />
+                Add quiz
+              </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={assignmentEnabled}
                   onChange={(e) => setAssignmentEnabled(e.target.checked)}
                 />
-                Also add a mentor-marked assignment
+                Add assignment
               </label>
-            ) : null}
-            {lesType === "quiz" || quizEnabled ? (
+            </div>
+            {quizEnabled ? (
               <QuizQuestionsEditor
                 questions={quizQuestions}
                 onChange={setQuizQuestions}
               />
+            ) : null}
+            {assignmentEnabled ? (
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <p className="text-sm font-medium">Assignment questions</p>
+                {assignmentQuestions.map((question, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <textarea
+                      className="min-h-20 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      placeholder={`Question ${index + 1}`}
+                      value={question}
+                      onChange={(e) =>
+                        setAssignmentQuestions((current) =>
+                          current.map((item, i) => (i === index ? e.target.value : item)),
+                        )
+                      }
+                    />
+                    {assignmentQuestions.length > 1 ? (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-border px-2 py-1 text-xs"
+                        onClick={() =>
+                          setAssignmentQuestions((current) =>
+                            current.filter((_, i) => i !== index),
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium"
+                  onClick={() => setAssignmentQuestions((current) => [...current, ""])}
+                >
+                  + Add question
+                </button>
+              </div>
             ) : null}
             {uploadPct != null ? (
               <p className="text-xs text-muted-foreground">Upload {uploadPct}%</p>
