@@ -30,6 +30,7 @@ public class LiveViewerActivity extends AppCompatActivity {
     public static final String EXTRA_TITLE = "live_title";
     public static final String EXTRA_YOUTUBE_URL = "live_youtube_url";
     public static final String EXTRA_LIVE_STATUS = "live_status";
+    public static final String EXTRA_LIVE_AVAILABILITY = "live_availability";
 
     private String youtubeUrl = "";
     private WebView webView;
@@ -51,6 +52,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         String title = getIntent().getStringExtra(EXTRA_TITLE);
         youtubeUrl = value(getIntent().getStringExtra(EXTRA_YOUTUBE_URL));
         String status = value(getIntent().getStringExtra(EXTRA_LIVE_STATUS)).toLowerCase(Locale.US);
+        String availability = value(getIntent().getStringExtra(EXTRA_LIVE_AVAILABILITY)).toLowerCase(Locale.US);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
@@ -61,12 +63,17 @@ public class LiveViewerActivity extends AppCompatActivity {
 
         MaterialButton openYoutube = findViewById(R.id.btnOpenYoutube);
         openYoutube.setOnClickListener(v -> openYoutube());
+        MaterialButton share = findViewById(R.id.btnShareLive);
+        share.setOnClickListener(v -> shareLive(title));
 
         webView = findViewById(R.id.liveWebView);
         String videoId = youtubeVideoId(youtubeUrl);
-        if (TextUtils.isEmpty(videoId)) {
+        if (TextUtils.isEmpty(videoId) || "unavailable".equals(availability)) {
             webView.setVisibility(View.GONE);
-            findViewById(R.id.liveUnavailable).setVisibility(View.VISIBLE);
+            TextView unavailable = findViewById(R.id.liveUnavailable);
+            unavailable.setText("This YouTube live or replay is unavailable. It may be private, deleted, or no longer accessible.");
+            unavailable.setVisibility(View.VISIBLE);
+            openYoutube.setEnabled(!TextUtils.isEmpty(videoId));
             return;
         }
 
@@ -97,6 +104,15 @@ public class LiveViewerActivity extends AppCompatActivity {
                 + "<iframe src='" + embedUrl + "' allow='autoplay; encrypted-media; picture-in-picture; fullscreen'"
                 + " allowfullscreen></iframe></body></html>";
         webView.loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null);
+    }
+
+    private void shareLive(String title) {
+        if (TextUtils.isEmpty(youtubeUrl)) return;
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_TEXT,
+                (TextUtils.isEmpty(title) ? "Nelsen Live" : title) + "\n" + youtubeUrl);
+        startActivity(Intent.createChooser(send, "Share live session"));
     }
 
     private void openYoutube() {
