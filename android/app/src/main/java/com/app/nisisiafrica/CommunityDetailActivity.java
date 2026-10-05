@@ -384,6 +384,8 @@ public class CommunityDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        MenuItem share = menu.add("Share group");
+        share.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
         if (Roles.canManageCommunities()) {
             getMenuInflater().inflate(R.menu.menu_community_detail, menu);
         }
@@ -392,6 +394,15 @@ public class CommunityDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if ("Share group".contentEquals(item.getTitle())) {
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("text/plain");
+            String url = "https://nelsen-savannah.co.ke/groups/" + Uri.encode(communityId);
+            String label = !TextUtils.isEmpty(communityName) ? stripPrefix(communityName) + "\n" : "";
+            share.putExtra(Intent.EXTRA_TEXT, label + url);
+            startActivity(Intent.createChooser(share, "Share group"));
+            return true;
+        }
         if (item.getItemId() == R.id.action_delete_group) {
             confirmDeleteGroup();
             return true;
