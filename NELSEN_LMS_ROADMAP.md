@@ -350,9 +350,9 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 - [x] Share/open a specific **community post** using `/posts/{communityId}/{postId}`; native routing lands on `PostDetailActivity`.
 - [ ] Share/open a specific **story/status**.
-- [ ] Share/open a specific **course/track**.
-- [ ] Share/open a specific **school**.
-- [ ] Share/open a specific **group** and bring an authorized user directly into that group.
+- [x] Open a specific **course/track** from `/courses/{trackId}` in native `TrackLearnActivity`; native Share action still needs wiring.
+- [x] Open a specific **school** from `/schools/{schoolId}` in its filtered native course catalog; native Share action still needs wiring.
+- [x] Route `/groups/{groupId}` directly into native `CommunityDetailActivity`; membership/join-policy enforcement and native Share action still need verification/wiring.
 - [ ] Preserve the target through all sign-in/PIN/email-verification paths so a logged-out user lands on the shared content after authentication. Launcher → authenticated Main routing is implemented; auth/verification completion still needs forwarding.
 
 ### Android App Links
