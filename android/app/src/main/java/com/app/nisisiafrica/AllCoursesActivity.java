@@ -722,7 +722,21 @@ public class AllCoursesActivity extends AppCompatActivity {
                     });
                 }
 
-                itemView.setOnClickListener(v -> openTrack(c));
+                itemView.setOnClickListener(v -> {
+                    if (enrolled) {
+                        openTrack(c);
+                    } else if (!schoolIdFilter.isEmpty() && !Boolean.TRUE.equals(schoolMemberActive)) {
+                        Toast.makeText(AllCoursesActivity.this,
+                                schoolJoinPending
+                                        ? getString(R.string.school_apply_pending)
+                                        : "Apply to this school first",
+                                Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(AllCoursesActivity.this,
+                                "Enroll in this course to open it",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
                 tutorClickRow.setOnClickListener(v -> {
                     String tid = c.getTutorId();
                     if (!showTutor || TextUtils.isEmpty(tid)) {
