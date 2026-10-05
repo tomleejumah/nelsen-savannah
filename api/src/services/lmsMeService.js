@@ -410,6 +410,53 @@ export async function getStoreHealth() {
   };
 }
 
+/**
+ * Keep legacy Android identity and role-specific RTDB profiles in sync with the
+ * canonical LMS user. Safe to call repeatedly during promotion or sign-in.
+ */
+export async function reconcileUserIdentity(uid, role, profile = {}) {
+  if (!uid) return;
+  const normalized = normalizeRole(role);
+  let authUser = null;
+  try {
+    authUser = await admin.auth().getUser(uid);
+  } catch {
+    /* users imported without Firebase Auth metadata are still reconciled */
+  }
+  const dbUser = await dbGet(
+    "SELECT email, display_name, first_name, last_name, photo_url, bio FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  const displayName =
+    dbUser?.display_name ||
+    profile.displayName ||
+    authUser?.displayName ||
+    dbUser?.email?.split("@")[0] ||
+    authUser?.email?.split("@")[0] ||
+    "User";
+  const legacy = {
+    id: uid,
+    email: dbUser?.email || profile.email || authUser?.email || "",
+    userRole: normalized,
+    displayName,
+    firstName: dbUser?.first_name || profile.firstName || splitName(displayName).firstName,
+    lastName: dbUser?.last_name || profile.lastName || splitName(displayName).lastName,
+    photoUrl: dbUser?.photo_url || profile.photoUrl || authUser?.photoURL || "",
+    bio: dbUser?.bio || profile.bio || "",
+    updatedAt: admin.database.ServerValue.TIMESTAMP,
+  };
+  try {
+    await admin.database().ref(`users/${uid}`).update(legacy);
+  } catch (err) {
+    console.warn("[lms-me] legacy user reconciliation:", err.message);
+  }
+  await ensureMentorRtdbProfile(
+    { uid, email: legacy.email, displayName, photoUrl: legacy.photoUrl },
+    normalized,
+    dbUser,
+  );
+}
+
 export async function setUserRole(uid, role) {
   const now = Date.now();
   const normalized = normalizeRole(role);
@@ -430,6 +477,7 @@ export async function setUserRole(uid, role) {
   }
 
   await mirrorRole(uid, normalized);
+  await reconcileUserIdentity(uid, normalized);
   return normalized;
 }
 
