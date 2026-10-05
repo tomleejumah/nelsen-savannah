@@ -468,17 +468,27 @@ This milestone tracks the current production-hardening work before the remaining
 
 
 
+### LMS performance, school access and applications
+
+- [ ] Add Redis-backed API caching for expensive read-heavy LMS/catalog/course/school queries with explicit TTLs and invalidation on writes; measure slow endpoints before and after caching.
+- [ ] Complete the school application flow across API/Web/Android: Apply to school → pending/application status → approved/active membership → rejected state where applicable.
+- [x] Android school course list exposes Apply to school and pending membership state.
+- [x] Android blocks opening course learning content unless the user is actually enrolled in that course.
+- [ ] Harden the same enrollment/access gate at the API boundary and verify deep links cannot bypass it.
+- [ ] Add regression coverage for non-member, pending applicant, active school member but unenrolled course, and enrolled course access.
+
 ### Android status / story media
 
 - [x] Allow users to select and upload either photos or videos when creating a status/story.
 - [x] Render video statuses in the story viewer while preserving legacy image stories.
 - [x] Pause story progress and video playback while the viewer is held down; resume on release/cancel.
-- [ ] Follow up with video-duration-aware progress instead of the fixed image story duration where needed.
+- [x] Match video-status progress to the video's actual playback duration; image statuses keep the fixed image duration.
 
 ### Chat reliability and attribution
 
 - [x] Purge rejected local-only Room messages after a successful authoritative Firestore sync so stale failed test sends do not remain in chat.
 - [x] Show a visible failed-send flag on outgoing messages whose Firestore send fails.
+- [x] Shared announcements include a canonical app link that routes recipients back into the Announcements chat.
 - [x] Show sender names on incoming bubbles in group/system conversations so multi-user messages are attributable.
 
 ### Chat composer and media picker polish
