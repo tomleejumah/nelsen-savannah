@@ -888,10 +888,19 @@ export async function adminMenteeProgress(mentorId, actorUid) {
               u.display_name, u.photo_url, u.email
        FROM enrollments e
        JOIN users_mirror u ON u.uid = e.uid
-       WHERE e.mentor_id = ? OR e.mentor_id IS NULL
+       JOIN track_mentors tm ON tm.track_id = e.track_id AND tm.uid = ?
+       JOIN tracks t ON t.track_id = e.track_id
+       JOIN school_memberships mentor_membership
+         ON mentor_membership.uid = ?
+        AND mentor_membership.school_id = t.school_id
+        AND mentor_membership.status = 'active'
+       JOIN school_memberships learner_membership
+         ON learner_membership.uid = e.uid
+        AND learner_membership.school_id = t.school_id
+        AND learner_membership.status = 'active'
        ORDER BY e.last_active_at DESC
        LIMIT 100`,
-      [viewer],
+      [viewer, viewer],
     );
   } else {
     const schoolId = await getActorSchoolId(viewer);
@@ -900,7 +909,10 @@ export async function adminMenteeProgress(mentorId, actorUid) {
               u.display_name, u.photo_url, u.email
        FROM enrollments e
        JOIN users_mirror u ON u.uid = e.uid
-       WHERE COALESCE(u.school_id, 'nelsen-digital') = ?
+       JOIN tracks t ON t.track_id = e.track_id
+       JOIN school_memberships sm
+         ON sm.uid = e.uid AND sm.school_id = t.school_id AND sm.status = 'active'
+       WHERE t.school_id = ?
        ORDER BY e.last_active_at DESC
        LIMIT 100`,
       [schoolId],
@@ -944,6 +956,7 @@ export async function adminTrackOverview(actorUid, trackId) {
     err.status = 400;
     throw err;
   }
+  await assertCanEditTrack(actorUid, tid);
   const track = await dbGet("SELECT track_id, title FROM tracks WHERE track_id = ?", [
     tid,
   ]);
