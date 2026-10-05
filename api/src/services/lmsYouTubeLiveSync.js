@@ -1,4 +1,4 @@
-import { dbAll, isDbReady } from "../db/lmsDb.js";
+import { dbAll, dbRun, isDbReady } from "../db/lmsDb.js";
 import { updateHubLiveStatus } from "./lmsHubEventService.js";
 
 function intEnv(name, fallback) {
@@ -107,9 +107,17 @@ export async function syncYouTubeLiveStatuses() {
       const video = videos.get(candidate.videoId);
       if (!video) {
         missing += 1;
+        await dbRun(
+          "UPDATE hub_events SET live_availability = 'unavailable', updated_at = ? WHERE event_id = ?",
+          [Date.now(), candidate.eventId],
+        );
         continue;
       }
 
+      await dbRun(
+        "UPDATE hub_events SET live_availability = 'available', updated_at = ? WHERE event_id = ?",
+        [Date.now(), candidate.eventId],
+      );
       const nextStatus = deriveLiveStatus(video, candidate.currentStatus);
       if (nextStatus === candidate.currentStatus) continue;
 
