@@ -70,10 +70,12 @@ public class ProfileFragment extends Fragment {
                 float progress = Math.min(1f, Math.abs(verticalOffset) / (float) range);
                 // Twitter/X style: the large identity header leaves with the scroll
                 // while the app shell's compact top bar remains pinned.
-                header.setAlpha(1f - progress);
-                float scale = 1f - (0.08f * progress);
-                avatar.setScaleX(scale);
-                avatar.setScaleY(scale);
+                // X/Twitter-like collapse: content slides/fades naturally while the
+                // shell top bar stays pinned. Avoid the old shrinking-avatar effect.
+                header.setAlpha(Math.max(0f, 1f - (progress * 1.15f)));
+                header.setTranslationY(-Math.min(dp(18), Math.abs(verticalOffset) * 0.08f));
+                avatar.setScaleX(1f);
+                avatar.setScaleY(1f);
             });
         }
         if (header != null) {
@@ -206,6 +208,10 @@ public class ProfileFragment extends Fragment {
                         public void onFailure(retrofit2.Call<LmsModels.MeEnvelope> call, Throwable t) {}
                     });
         });
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private String initialFor(String displayName, String firstName) {
