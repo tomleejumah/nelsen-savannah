@@ -359,6 +359,65 @@ Make app content shareable with links that open the exact destination in Nelsen 
 - [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community content.
 
 ---
+
+## Stabilization Milestone — Profiles, Mentor/SchoolAdmin & Live Release
+
+This milestone tracks the current production-hardening work before the remaining deferred LMS features.
+
+### Canonical profiles and mentor materials
+
+- [x] Add canonical profile name, bio, and profile-photo updates through the LMS API.
+- [x] Keep Web and Android profile surfaces synchronized with canonical LMS profile data.
+- [x] Expose uploaded mentor materials through the LMS API with access-aware authorization.
+- [x] Preserve canonical profile fields during authentication hydration instead of overwriting them with stale identity-provider values.
+
+### Mentor / SchoolAdmin integration
+
+- [x] Resolve school context from active school memberships rather than stale mirrored school fields.
+- [x] Scope mentor learner/progress data to courses assigned to that mentor.
+- [x] Scope the Web mentor workspace to assigned courses.
+- [x] Keep SchoolAdmin student, mentor, membership, join-request, and course-management surfaces school-scoped.
+- [ ] Validate mentor course/learner/progress scoping against production data and close any remaining authorization edge cases.
+- [ ] Validate SchoolAdmin student, mentor, membership, assignment, join approval/rejection, and course controls against active school membership.
+- [ ] Keep SuperAdmin expansion as a later milestone rather than blocking the current school release.
+
+### Live hardening and end-to-end validation
+
+- [x] Require active school membership for school-scoped live hosting.
+- [x] Require mentors to be assigned to a course before hosting a course-scoped live session.
+- [x] Authorize manual live-status changes by the acting host/admin.
+- [x] Track YouTube playback availability and expose unavailable-live state to Web and Android.
+- [x] Add live sharing on Web and Android.
+- [x] Move ended live sessions into replay/history immediately.
+- [ ] Run the production end-to-end Android live test: connect channel → create live → Android camera/mic → RTMPS → YouTube → learner playback.
+- [ ] Verify FCM notification taps, deep links, and Share actions against a real live session.
+- [ ] End the real broadcast and verify scheduled/live/ended transitions plus replay/history placement.
+- [ ] Test private, deleted, unavailable, and replay-disabled YouTube broadcasts and ensure Web/Android fail gracefully.
+- [ ] Verify YouTube OAuth/channel connection health after production credentials are configured.
+- [ ] Add browser hosting later: Web camera/mic → WebRTC publishing layer/gateway → YouTube RTMP/RTMPS. This is deferred and must not turn the Nelsen API into a video relay/transcoding server.
+
+### Deployment and database protection — required before production deployment
+
+- [ ] Create an automatic timestamped SQLite snapshot before deployment.
+- [ ] Abort deployment if the database backup cannot be created or validated.
+- [ ] Add pre-deploy and post-deploy LMS database sanity checks for critical tables/counts/relationships.
+- [ ] Ensure normal deployment/startup cannot seed, purge, clear, recreate, or silently replace the production LMS database.
+- [ ] Fix the `school_memberships.invite_token` migration-order warning.
+- [ ] Verify all current lesson/media records still resolve to valid storage paths before deployment.
+- [ ] Keep the recovered SQLite database and known-good backup available as rollback material until PostgreSQL migration is complete.
+
+### PostgreSQL migration — after SQLite stabilization
+
+- [ ] Provision the production PostgreSQL database.
+- [ ] Apply/validate the LMS PostgreSQL schema and migrations.
+- [ ] Migrate the complete SQLite dataset while preserving IDs and relationships.
+- [ ] Compare critical row counts and relationship integrity between SQLite and PostgreSQL.
+- [ ] Switch production to `DATABASE_URL` only after validation and confirm health reports PostgreSQL as the LMS primary.
+- [ ] Keep SQLite as a temporary rollback source during cutover.
+- [ ] Add automated PostgreSQL backups/retention and an off-host backup strategy.
+
+
+---
 ## Implementation Order
 
 1. Convert IDE availability from lesson-based to **course-based**.
