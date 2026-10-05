@@ -107,13 +107,20 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       setQueue(q.data?.queue || []);
       setMentees(m.data?.mentees || []);
       setOutbox(a.data?.assignments || []);
-      setTracks(t.data?.tracks || []);
+      const loadedTracks = t.data?.tracks || [];
+      setTracks(
+        me.userRole === "Mentor"
+          ? loadedTracks.filter((track) =>
+              (track.mentors || []).some((mentor) => mentor.uid === me.uid),
+            )
+          : loadedTracks,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setBusy(false);
     }
-  }, [user, me.uid]);
+  }, [user, me.uid, me.userRole]);
 
   useEffect(() => {
     void load();
@@ -154,7 +161,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
       <section id="courses">
         <h2 className="font-display text-xl font-semibold">School courses</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          View every course. Edit is only for trainers assigned to that course.
+          Your assigned courses, learners, progress and coursework.
         </p>
         {tracks.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
