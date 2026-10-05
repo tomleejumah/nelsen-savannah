@@ -37,6 +37,14 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var onReply: ((ChatMessageEntity) -> Unit)? = null
 
+    /** Group/system conversations need attribution; direct chats do not. */
+    var showSenderNames: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyDataSetChanged()
+        }
+
     /** First long-press enters selection; subsequent taps toggle. */
     var onSelectionChanged: ((Int) -> Unit)? = null
 
@@ -315,7 +323,9 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     tvSender.text = "AI Assistant"
                     llMessage?.setBackgroundResource(R.drawable.message_ai_bg)
                 } else {
-                    tvSender.visibility = View.GONE
+                    val showAttribution = showSenderNames && !isMine
+                    tvSender.visibility = if (showAttribution) View.VISIBLE else View.GONE
+                    tvSender.text = message.senderName.ifBlank { "Member" }
                     llMessage?.setBackgroundResource(R.drawable.message_bg)
                 }
             }
