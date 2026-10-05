@@ -150,6 +150,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     isMine = message.senderId == currentUserId,
                     selected = selectedIds.contains(message.messageId),
                     selectionMode = inSelectionMode,
+                    showSenderNames = showSenderNames,
                     onToggle = { toggleSelection(it) },
                     onQuotedClick = onQuotedClick
                 )
@@ -203,6 +204,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             isMine: Boolean,
             selected: Boolean,
             selectionMode: Boolean,
+            showSenderNames: Boolean,
             onToggle: (ChatMessageEntity) -> Unit,
             onQuotedClick: ((String) -> Unit)?
         ) {
