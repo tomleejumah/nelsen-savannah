@@ -290,6 +290,9 @@ function rowToEvent(row, seatsTaken = 0) {
     schoolId: row.school_id || "",
     trackId: row.track_id || "",
     liveNotifiedAt: row.live_notified_at ? Number(row.live_notified_at) : null,
+    liveAvailability: row.event_type === "live"
+      ? String(row.live_availability || "unknown")
+      : null,
     createdBy: row.created_by || "",
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
