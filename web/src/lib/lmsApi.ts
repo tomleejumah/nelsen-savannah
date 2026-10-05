@@ -1646,6 +1646,7 @@ export type HubEventDto = {
   menteeName: string;
   status: number;
   liveStatus?: "scheduled" | "live" | "ended" | null;
+  liveAvailability?: "unknown" | "available" | "unavailable" | null;
   description: string | null;
   mode: "physical" | "online";
   location: string;
