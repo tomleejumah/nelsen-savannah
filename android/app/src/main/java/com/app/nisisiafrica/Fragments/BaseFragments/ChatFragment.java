@@ -265,6 +265,10 @@ public class ChatFragment extends Fragment {
 
         updateChatHeader(chatroom, type, currentUserId);
 
+        // In multi-user/system conversations each incoming bubble must identify
+        // its sender. Direct chats already identify the other participant in the header.
+        adapter.setShowSenderNames(!"direct".equals(type) && !"ai".equals(type));
+
         if ("ai".equals(type)) {
             Toast.makeText(requireContext(), "AI chat is unavailable for now", Toast.LENGTH_SHORT).show();
             showChatList();
