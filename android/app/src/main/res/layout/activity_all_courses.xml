@@ -13,10 +13,20 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@color/maroon_050"
-        app:layout_constraintBottom_toBottomOf="@id/headerContent"
+        app:layout_constraintBottom_toBottomOf="@id/headerScroll"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/headerScroll"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:maxHeight="360dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
     <LinearLayout
         android:id="@+id/headerContent"
@@ -26,9 +36,7 @@
         android:paddingHorizontal="20dp"
         android:paddingTop="12dp"
         android:paddingBottom="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+>
 
         <TextView
             android:id="@+id/tvScreenTitle"
@@ -127,6 +135,7 @@
             android:textSize="13sp"
             android:visibility="gone" />
     </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <ProgressBar
         android:id="@+id/catalogProgress"
@@ -137,7 +146,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerContent" />
+        app:layout_constraintTop_toBottomOf="@id/headerScroll" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCourses"
@@ -150,7 +159,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerContent"
+        app:layout_constraintTop_toBottomOf="@id/headerScroll"
         tools:listitem="@layout/item_course_row" />
 
     <LinearLayout
@@ -164,7 +173,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerContent">
+        app:layout_constraintTop_toBottomOf="@id/headerScroll">
 
         <TextView
             android:id="@+id/tvEmptyTitle"
