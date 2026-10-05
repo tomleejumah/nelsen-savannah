@@ -127,7 +127,7 @@ export function CatalogCmsPanel({
   // Add lesson / optional first lesson on new chapter
   const [lesTitle, setLesTitle] = useState("");
   const [lesDoes, setLesDoes] = useState("");
-  const [lesType, setLesType] = useState<"text" | "video" | "pdf" | "code">("text");
+  const [lesType, setLesType] = useState<"text" | "video" | "pdf" | "quiz" | "code">("text");
   const [labLanguage, setLabLanguage] = useState("python");
   const [labStarter, setLabStarter] = useState("print('hello')\n");
   const [labExpected, setLabExpected] = useState("");
@@ -137,6 +137,7 @@ export function CatalogCmsPanel({
     emptyQuestion(0),
   ]);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
   /** Accordion: at most one of add-form or a chapter editor is open. */
   const [addingChapter, setAddingChapter] = useState(false);
   const [includeFirstLesson, setIncludeFirstLesson] = useState(false);
@@ -400,7 +401,7 @@ export function CatalogCmsPanel({
       title: lesTitle.trim(),
       type: lesType,
       does: lesDoes.trim(),
-      hasQuiz: quizEnabled && (lesType === "pdf" || lesType === "video"),
+      hasQuiz: lesType === "quiz" || (quizEnabled && (lesType === "pdf" || lesType === "video")),
       lab:
         lesType === "code"
           ? {
@@ -423,7 +424,7 @@ export function CatalogCmsPanel({
           onProgress: setUploadPct,
         });
       }
-      if (quizEnabled && (lesType === "pdf" || lesType === "video") && schoolId) {
+      if ((lesType === "quiz" || (quizEnabled && (lesType === "pdf" || lesType === "video"))) && schoolId) {
         const questions = quizQuestions
           .map((q, i) => ({
             id: q.id || `q${i + 1}`,
@@ -480,6 +481,26 @@ export function CatalogCmsPanel({
     }
   }
 
+  async function deleteSelectedLessons() {
+    if (!selected || selectedLessonIds.length === 0) return;
+    const chosen = selected.lessons.filter((l) => selectedLessonIds.includes(l.lessonId));
+    if (!confirm(`Delete ${chosen.length} selected lesson${chosen.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setMsg(null);
+    const token = await user.getIdToken();
+    const results = await Promise.all(
+      chosen.map((lesson) => adminDeleteLesson(token, lesson.lessonId)),
+    );
+    const failed = results.filter((result) => !result.ok);
+    if (failed.length) {
+      setMsg(`Deleted ${chosen.length - failed.length}; ${failed.length} failed.`);
+    } else {
+      setMsg(`${chosen.length} lesson${chosen.length === 1 ? "" : "s"} deleted`);
+    }
+    setSelectedLessonIds([]);
+    await loadSyllabus();
+    onChanged?.();
+  }
+
   function renderLessonFields(opts?: { optional?: boolean }) {
     const show = !opts?.optional || includeFirstLesson;
     return (
@@ -509,21 +530,15 @@ export function CatalogCmsPanel({
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 value={lesType}
                 onChange={(e) =>
-                  setLesType(e.target.value as "text" | "video" | "pdf" | "code")
+                  setLesType(e.target.value as "text" | "video" | "pdf" | "quiz" | "code")
                 }
               >
                 <option value="text">Text (write & submit)</option>
                 <option value="video">Video (watch time)</option>
                 <option value="pdf">PDF (doc + questions)</option>
-                <option value="code">Code lab (in-browser IDE)</option>
+                <option value="quiz">Quiz / auto-marked questions</option>
               </select>
             </label>
-            {editIdeEnabled ? (
-              <p className="text-xs text-muted-foreground">
-                This course has IDE attached — pick <strong>Code lab</strong> for
-                Monaco + run.
-              </p>
-            ) : null}
             <textarea
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
               rows={3}
@@ -592,15 +607,15 @@ export function CatalogCmsPanel({
                     checked={quizEnabled}
                     onChange={(e) => setQuizEnabled(e.target.checked)}
                   />
-                  Add quiz questions (A/B/C…, multiple OK)
+                  Add auto-marked questions
                 </label>
-                {quizEnabled ? (
-                  <QuizQuestionsEditor
-                    questions={quizQuestions}
-                    onChange={setQuizQuestions}
-                  />
-                ) : null}
               </>
+            ) : null}
+            {lesType === "quiz" || quizEnabled ? (
+              <QuizQuestionsEditor
+                questions={quizQuestions}
+                onChange={setQuizQuestions}
+              />
             ) : null}
             {uploadPct != null ? (
               <p className="text-xs text-muted-foreground">Upload {uploadPct}%</p>
@@ -731,7 +746,7 @@ export function CatalogCmsPanel({
                 setEditIdeEnabled(next);
                 if (next) setLesType("code");
               }}
-              hint="Monaco code lab for coding lessons in this course."
+              hint="Attach the in-browser IDE to this course."
             />
             <button
               type="submit"
@@ -846,7 +861,18 @@ export function CatalogCmsPanel({
                           </form>
 
                           <div className="space-y-2">
-                            <h5 className="font-medium">Lessons in this chapter</h5>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h5 className="font-medium">Lessons in this chapter</h5>
+                              {selectedLessonIds.length > 0 ? (
+                                <button
+                                  type="button"
+                                  className="text-xs font-medium text-destructive underline"
+                                  onClick={() => void deleteSelectedLessons()}
+                                >
+                                  Delete selected ({selectedLessonIds.length})
+                                </button>
+                              ) : null}
+                            </div>
                             {selected.lessons.length === 0 ? (
                               <p className="text-xs text-muted-foreground">
                                 None yet.
@@ -858,10 +884,24 @@ export function CatalogCmsPanel({
                                     key={l.lessonId}
                                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2"
                                   >
-                                    <span>
+                                    <span className="flex min-w-0 items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        aria-label={`Select ${l.title}`}
+                                        checked={selectedLessonIds.includes(l.lessonId)}
+                                        onChange={(e) =>
+                                          setSelectedLessonIds((prev) =>
+                                            e.target.checked
+                                              ? [...new Set([...prev, l.lessonId])]
+                                              : prev.filter((id) => id !== l.lessonId),
+                                          )
+                                        }
+                                      />
+                                      <span>
                                       <span className="font-medium">{l.title}</span>
                                       <span className="ml-2 text-xs uppercase text-muted-foreground">
                                         {l.type === "read" ? "text" : l.type}
+                                      </span>
                                       </span>
                                     </span>
                                     <button
