@@ -10,6 +10,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
@@ -128,6 +129,13 @@ public class PostDetailActivity extends AppCompatActivity {
             });
         });
 
+        repository.isMember(communityId, member -> {
+            btnUpvote.setEnabled(member);
+            btnSend.setEnabled(member);
+            etComment.setEnabled(member);
+            if (!member) etComment.setHint("Join this group to interact");
+        });
+
         repository.hasUpvoted(communityId, postId, upvoted -> {
             hasUpvoted = upvoted;
             applyUpvoteStyle();
@@ -162,7 +170,16 @@ public class PostDetailActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         postReg = repository.postRef(communityId, postId).addSnapshotListener((snapshot, e) -> {
-            if (e != null || snapshot == null || !snapshot.exists()) return;
+            if (e != null) {
+                Toast.makeText(this, "This post is unavailable", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            if (snapshot == null || !snapshot.exists()) {
+                Toast.makeText(this, "This post was deleted or is no longer available", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
             CommunityPost p = snapshot.toObject(CommunityPost.class);
             if (p == null) return;
             postAuthorId = p.getAuthorId();
