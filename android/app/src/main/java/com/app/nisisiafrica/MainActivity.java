@@ -454,7 +454,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (fabCard == null || fabIcon == null) return;
         boolean hiddenForConversation =
                 tabId == R.id.chatFragment && chatConversationOpen && !keepChatChrome;
-        fabCard.setVisibility(hiddenForConversation ? View.GONE : View.VISIBLE);
+        // Mentees already have dedicated Add status + Enroll schools actions on Home.
+        boolean hiddenForMenteeHome = tabId == R.id.homeFragment && !isMentorOrAdmin();
+        fabCard.setVisibility(hiddenForConversation || hiddenForMenteeHome ? View.GONE : View.VISIBLE);
         if (tabId == R.id.chatFragment) {
             fabIcon.setImageResource(R.drawable.ic_add);
             fabCard.setContentDescription("New chat");
