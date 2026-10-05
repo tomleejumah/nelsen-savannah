@@ -491,6 +491,14 @@ This milestone tracks the current production-hardening work before the remaining
 - [x] Shared announcements include a canonical app link that routes recipients back into the Announcements chat.
 - [x] Show sender names on incoming bubbles in group/system conversations so multi-user messages are attributable.
 
+### Android community reactions and app distribution polish
+
+- [ ] Replace the generic heart-like group post reaction with a Reddit-style upvote interaction using an original Nelsen SVG (do not copy Reddit artwork); preserve current vote persistence/count behavior.
+- [x] Remove the main FAB shadow halo so it visually belongs with the bottom glass navigation.
+- [x] Place Log out directly below Privacy policy in Profile settings.
+- [x] Until the Play Store listing is live, Share app uses the Nelsen browser download URL instead of a Play Store URL.
+- [ ] Re-enable Rate us when the public Play Store listing is available and route it to the store listing.
+
 ### Chat composer and media picker polish
 
 - [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of **Samsung Messages / Telegram** while keeping Nelsen's own visual language.
