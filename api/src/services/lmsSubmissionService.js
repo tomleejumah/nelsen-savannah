@@ -186,10 +186,12 @@ export async function listSubmissionQueue(mentorUid) {
     throw err;
   }
   const rows = await dbAll(
-    `SELECT s.*, u.display_name, u.photo_url, l.title AS lesson_title
+    `SELECT s.*, u.display_name, u.photo_url, l.title AS lesson_title,
+            a.title AS assignment_title, a.prompt AS assignment_prompt
      FROM submissions s
      JOIN users_mirror u ON u.uid = s.uid
      JOIN lessons l ON l.lesson_id = s.lesson_id
+     LEFT JOIN assignments a ON a.assignment_id = s.assignment_id
      WHERE s.status = 'submitted'
      ORDER BY s.submitted_at ASC`,
   );
@@ -205,6 +207,9 @@ export async function listSubmissionQueue(mentorUid) {
         menteeName: r.display_name || "",
         menteeAvatar: r.photo_url || "",
         text: r.body || "",
+        assignmentId: r.assignment_id || null,
+        assignmentTitle: r.assignment_title || null,
+        assignmentPrompt: r.assignment_prompt || null,
         fileUrl: null,
         linkUrl: null,
         submittedAt: Number(r.submitted_at),
@@ -234,7 +239,7 @@ export async function markSubmission(mentorProfile, submissionId, body = {}) {
     body.passed !== undefined ? Boolean(body.passed) : score >= PASS_THRESHOLD;
   const status = passed ? "passed" : "failed";
   const feedback = body.feedback || "";
-  const assignmentPct = passed ? 100 : Math.round(score);
+  let assignmentPct = passed ? 100 : Math.round(score);
   const now = Date.now();
 
   await dualWrite({
@@ -259,6 +264,38 @@ export async function markSubmission(mentorProfile, submissionId, body = {}) {
       });
     },
   });
+
+  if (row.assignment_id) {
+    const lessonAssignments = await dbAll(
+      `SELECT assignment_id FROM assignments
+       WHERE lesson_id = ? AND assignee_uid IS NULL`,
+      [row.lesson_id],
+    );
+    if (lessonAssignments.length > 0) {
+      const marked = await dbAll(
+        `SELECT assignment_id, score, status, submitted_at
+         FROM submissions
+         WHERE uid = ? AND lesson_id = ? AND assignment_id IS NOT NULL
+           AND status IN ('passed', 'failed')
+         ORDER BY submitted_at DESC`,
+        [row.uid, row.lesson_id],
+      );
+      const latestScore = new Map();
+      for (const submission of marked) {
+        if (!latestScore.has(submission.assignment_id)) {
+          latestScore.set(
+            submission.assignment_id,
+            submission.status === "passed" ? 100 : Number(submission.score || 0),
+          );
+        }
+      }
+      const total = lessonAssignments.reduce(
+        (sum, assignment) => sum + (latestScore.get(assignment.assignment_id) || 0),
+        0,
+      );
+      assignmentPct = Math.round(total / lessonAssignments.length);
+    }
+  }
 
   const progressResult = await patchLessonProgress(
     { uid: row.uid, email: "", displayName: "" },
