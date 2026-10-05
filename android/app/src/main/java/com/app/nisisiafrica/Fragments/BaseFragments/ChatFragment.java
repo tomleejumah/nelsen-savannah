@@ -441,6 +441,25 @@ public class ChatFragment extends Fragment {
         }).addOnFailureListener(e -> status.setText(R.string.chat_no_enrolled_tutors));
     }
 
+    /** Open the global announcements room from a verified app link/share. */
+    public void openAnnouncementChat() {
+        String me = FirebaseAuth.getInstance().getUid();
+        if (me == null) return;
+        java.util.Map<String, String> names = new java.util.HashMap<>();
+        names.put(me, resolveMyDisplayName());
+        Chatroom room = new Chatroom(
+                "announcements",
+                java.util.Collections.singletonList(me),
+                names,
+                "Announcements",
+                null,
+                "",
+                java.util.Collections.emptyMap(),
+                "system"
+        );
+        openChat(room);
+    }
+
     /** Open an existing direct chat from Profile → Message. */
     public void openDirectChat(String chatId, String otherId, String otherName) {
         if (TextUtils.isEmpty(chatId)) return;
