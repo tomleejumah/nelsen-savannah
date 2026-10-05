@@ -345,18 +345,19 @@ Make app content shareable with links that open the exact destination in Nelsen 
 - [ ] Share/open a specific **story/status**.
 - [ ] Share/open a specific **course/track**.
 - [ ] Share/open a specific **school**.
+- [ ] Share/open a specific **group** and bring an authorized user directly into that group.
 - [ ] Preserve the target through sign-in so a logged-out user lands on the shared content after authentication.
 
 ### Android App Links
 
-- [ ] Define stable HTTPS routes for posts, stories/statuses, courses, and schools.
+- [ ] Define stable HTTPS routes for posts, stories/statuses, courses, schools, and groups.
 - [ ] Add Android intent filters for verified **App Links** on the Nelsen domain.
 - [ ] Publish and verify `assetlinks.json` for the production Android signing certificate.
 - [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
 - [ ] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
 - [ ] Add native **Share** actions for stories/statuses, courses, and schools using canonical HTTPS links rather than app-only custom schemes.
 - [ ] Keep a Web fallback page for users who do not have the app installed.
-- [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community content.
+- [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community/group content; a shared group link must verify membership/join policy before opening the group.
 
 ---
 
