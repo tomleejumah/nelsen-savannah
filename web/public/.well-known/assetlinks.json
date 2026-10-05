@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.app.nisisiafrica",
+      "sha256_cert_fingerprints": [
+        "FD:47:0A:EF:1F:A7:1E:62:0A:B3:4E:17:49:52:47:59:AE:DC:4F:62:C7:42:93:93:D2:CB:B9:FD:DC:DC:9E:FF"
+      ]
+    }
+  }
+]

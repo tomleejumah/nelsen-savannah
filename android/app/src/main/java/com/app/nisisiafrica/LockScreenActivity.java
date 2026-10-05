@@ -246,7 +246,10 @@ public class LockScreenActivity extends AppCompatActivity {
         AppLockState.markUnlockGrace(2500L);
         // Don't count this transition as "backgrounded" for lock-after delay.
         Util.saveState("lastAppBackground", System.currentTimeMillis());
-        startActivity(new Intent(this, MainActivity.class));
+        Intent main = new Intent(this, MainActivity.class);
+        String pending = getIntent().getStringExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+        if (pending != null && !pending.isEmpty()) main.putExtra(LauncherActivity.EXTRA_PENDING_APP_LINK, pending);
+        startActivity(main);
         finish();
     }
 

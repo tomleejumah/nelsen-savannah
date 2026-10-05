@@ -47,6 +47,7 @@ public class StoryViewerActivity extends AppCompatActivity {
 
     public static final String EXTRA_STORIES = "extra_stories";
     public static final String EXTRA_START_INDEX = "extra_start_index";
+    public static final String EXTRA_STORY_ID = "extra_story_id";
     private static final long STORY_DURATION_MS = 5000L;
 
     private ArrayList<Story> stories;
@@ -73,11 +74,6 @@ public class StoryViewerActivity extends AppCompatActivity {
         stories = getIntent().getParcelableArrayListExtra(EXTRA_STORIES);
         currentIndex = getIntent().getIntExtra(EXTRA_START_INDEX, 0);
 
-        if (stories == null || stories.isEmpty()) {
-            finish();
-            return;
-        }
-
         progressContainer = findViewById(R.id.progressContainer);
         storyImage = findViewById(R.id.storyImage);
         headerLogo = findViewById(R.id.storyHeaderLogo);
@@ -103,10 +99,49 @@ public class StoryViewerActivity extends AppCompatActivity {
 
         findViewById(R.id.storyClose).setOnClickListener(v -> finish());
 
+        if (stories == null || stories.isEmpty()) {
+            String storyId = getIntent().getStringExtra(EXTRA_STORY_ID);
+            if (TextUtils.isEmpty(storyId)) {
+                finish();
+                return;
+            }
+            FirebaseDatabase.getInstance().getReference("stories").child(storyId).get()
+                    .addOnSuccessListener(snapshot -> {
+                        Story story = snapshot.getValue(Story.class);
+                        if (story == null || !story.active
+                                || (story.expiresAt > 0 && story.expiresAt <= System.currentTimeMillis())) {
+                            Toast.makeText(this, "This story is no longer available", Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
+                        }
+                        stories = new ArrayList<>();
+                        stories.add(story);
+                        currentIndex = 0;
+                        buildProgressBars();
+                        setupTouch();
+                        showStory(0);
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Could not load story", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+            return;
+        }
+
         buildProgressBars();
         setupTouch();
 
         showStory(currentIndex);
+    }
+
+    private void shareStory(Story story) {
+        if (story == null || TextUtils.isEmpty(story.storyId)) return;
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("text/plain");
+        String url = "https://nelsen-savannah.co.ke/stories/" + Uri.encode(story.storyId);
+        String text = !TextUtils.isEmpty(story.caption) ? story.caption + "\n\n" + url : url;
+        share.putExtra(Intent.EXTRA_TEXT, text);
+        startActivity(Intent.createChooser(share, "Share story"));
     }
 
     private void buildProgressBars() {
@@ -167,6 +202,10 @@ public class StoryViewerActivity extends AppCompatActivity {
         }
         currentIndex = index;
         Story story = stories.get(index);
+        if (menuButton != null) {
+            menuButton.setVisibility(View.VISIBLE);
+            menuButton.setOnClickListener(v -> shareStory(story));
+        }
 
         for (int i = 0; i < progressBars.size(); i++) {
             progressBars.get(i).setProgress(i < index ? 100 : 0);

@@ -28,6 +28,15 @@ import com.app.nisisiafrica.Auth.FacebookAuthHelper;
 import com.app.nisisiafrica.Auth.GoogleSignInMode;
 import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.data.remote.ApiClient;
+import com.app.nisisiafrica.data.Model.LmsModels;
+import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import com.app.nisisiafrica.Auth.ForgotPasswordActivity;
 import com.app.nisisiafrica.Auth.GoogleAuthHelper;
 import com.app.nisisiafrica.Auth.GoogleSignInMode;
@@ -263,16 +272,10 @@ public class LoginFragment extends Fragment {
                 FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser.getUid(), userData -> {
                     if (!isAdded() || getContext() == null) return Unit.INSTANCE;
                     if (userData == null) {
-                        if (snackbarHandler != null) snackbarHandler.showSnackbar("Account data not found. Please contact support.", Snackbar.LENGTH_LONG, 3);
+                        recoverCanonicalProfile(currentUser);
                         return Unit.INSTANCE;
                     }
-                    String userId = currentUser.getUid();
-                    Util.saveState(Constants.CURRENT_USER_ID, userId);
-                    userData.setId(userId);
-                    sharedUserViewModel.saveUserData(userData);
-                    sharedUserViewModel.setUserData(userData);
-                    Util.navigateToMainScreen(getContext(), MainActivity.class, true);
-                    Log.d(TAG, "login: Success");
+                    finishLogin(currentUser.getUid(), userData);
                     return Unit.INSTANCE;
                 }, e -> {
                     if (isAdded() && snackbarHandler != null) {
@@ -285,6 +288,73 @@ public class LoginFragment extends Fragment {
                 if (snackbarHandler != null) snackbarHandler.showSnackbar(failureMessage, Snackbar.LENGTH_SHORT, 3);
             }
         });
+    }
+
+    private void finishLogin(String userId, UserData userData) {
+        if (!isAdded() || getContext() == null || userData == null) return;
+        Util.saveState(Constants.CURRENT_USER_ID, userId);
+        Util.saveState(Constants.USER_ROLE,
+                userData.getUserRole() != null ? userData.getUserRole() : "Mentee");
+        userData.setId(userId);
+        sharedUserViewModel.saveUserData(userData);
+        sharedUserViewModel.setUserData(userData);
+        Util.navigateToMainScreen(getContext(), MainActivity.class, true);
+        Log.d(TAG, "login: Success");
+    }
+
+    private void recoverCanonicalProfile(FirebaseUser firebaseUser) {
+        firebaseUser.getIdToken(false).addOnCompleteListener(tokenTask -> {
+            if (!isAdded() || getContext() == null) return;
+            if (!tokenTask.isSuccessful() || tokenTask.getResult() == null) {
+                if (snackbarHandler != null) {
+                    snackbarHandler.showSnackbar("Could not load account profile. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                }
+                return;
+            }
+            String token = tokenTask.getResult().getToken();
+            ApiClient.getLmsService().me("Bearer " + token).enqueue(new Callback<LmsModels.MeEnvelope>() {
+                @Override
+                public void onResponse(Call<LmsModels.MeEnvelope> call, Response<LmsModels.MeEnvelope> response) {
+                    if (!isAdded() || getContext() == null) return;
+                    LmsModels.MeEnvelope envelope = response.body();
+                    if (!response.isSuccessful() || envelope == null || !envelope.ok || envelope.data == null) {
+                        if (snackbarHandler != null) {
+                            snackbarHandler.showSnackbar("Could not recover account profile. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                        }
+                        return;
+                    }
+                    Map<String, Object> data = envelope.data;
+                    String uid = value(data, "uid", firebaseUser.getUid());
+                    String email = value(data, "email", firebaseUser.getEmail() != null ? firebaseUser.getEmail() : "");
+                    String displayName = value(data, "displayName",
+                            firebaseUser.getDisplayName() != null ? firebaseUser.getDisplayName() : "");
+                    String firstName = value(data, "firstName", "");
+                    String lastName = value(data, "lastName", "");
+                    String role = value(data, "userRole", value(data, "role", "Mentee"));
+                    String photoUrl = value(data, "photoUrl",
+                            firebaseUser.getPhotoUrl() != null ? firebaseUser.getPhotoUrl().toString() : "");
+                    String bio = value(data, "bio", "");
+                    UserData recovered = new UserData(uid, email, role, displayName,
+                            firstName, lastName, photoUrl, bio, System.currentTimeMillis());
+                    finishLogin(uid, recovered);
+                }
+
+                @Override
+                public void onFailure(Call<LmsModels.MeEnvelope> call, Throwable t) {
+                    Log.e(TAG, "Canonical profile recovery failed", t);
+                    if (isAdded() && snackbarHandler != null) {
+                        snackbarHandler.showSnackbar("Could not load profile. Please try again.", Snackbar.LENGTH_SHORT, 3);
+                    }
+                }
+            });
+        });
+    }
+
+    private String value(Map<String, Object> data, String key, String fallback) {
+        Object value = data.get(key);
+        if (value == null) return fallback;
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() || "null".equalsIgnoreCase(text) ? fallback : text;
     }
 
     private void handleGoogleSignIn(Intent data) {

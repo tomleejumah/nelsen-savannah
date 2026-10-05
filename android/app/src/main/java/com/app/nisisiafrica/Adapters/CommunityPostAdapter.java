@@ -135,8 +135,12 @@ public class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdap
         holder.share.setOnClickListener(v -> {
             Intent send = new Intent(Intent.ACTION_SEND);
             send.setType("text/plain");
+            String url = "https://nelsen-savannah.co.ke/posts/"
+                    + android.net.Uri.encode(communityId) + "/"
+                    + android.net.Uri.encode(p.getId());
             String text = (!TextUtils.isEmpty(p.getTitle()) ? p.getTitle() + "\n" : "")
-                    + (p.getBody() != null ? p.getBody() : "");
+                    + (!TextUtils.isEmpty(p.getBody()) ? p.getBody() + "\n\n" : "")
+                    + url;
             send.putExtra(Intent.EXTRA_TEXT, text.trim());
             v.getContext().startActivity(Intent.createChooser(send, v.getContext().getString(R.string.share)));
         });

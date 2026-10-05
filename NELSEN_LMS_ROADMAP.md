@@ -123,14 +123,21 @@ Android Course
 
 - [x] Show **Go to IDE** for IDE-enabled courses.
 - [x] Replace the current WebView IDE implementation with a native Android IDE activity.
-- [ ] Add a native code editor with syntax highlighting, line numbers, indentation, and course-language support.
+- [ ] Finish native editor language tooling: CodeEditor is integrated with monospace editing and course-language selection, but syntax highlighting/language analyzers, indentation behavior, and verified line-number UX still need completion.
 - [x] Load course IDE configuration/starter files from the LMS API.
-- [ ] Connect Run/Submit actions to the existing authorized course sandbox/execution API.
+- [x] Connect Run action to the existing authorized course sandbox/execution API. Submit remains deferred until a course-IDE submission contract is defined.
 - [x] Persist learner workspace locally so edits survive navigation/restarts.
-- [ ] Handle editor loading, execution, output, and error states natively.
+- [x] Handle execution loading, output, authentication, network, and API error states natively.
+- [ ] Add explicit IDE configuration-loading/error UI instead of silently retaining defaults when course IDE config fails.
 - [ ] Verify keyboard/input behaviour and larger-screen layouts.
 
 The exact native editor dependency must be approved before implementation.
+
+---
+
+### Deferred Android IDE polish
+
+The remaining native Android IDE editor/tooling work is intentionally deferred and will be revisited after the current LMS roadmap features. It must not block Phase 6 sharing/deep-link work or release stabilization.
 
 ---
 
@@ -341,23 +348,45 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 ### Link targets
 
-- [ ] Share/open a specific **community post**.
-- [ ] Share/open a specific **story/status**.
-- [ ] Share/open a specific **course/track**.
-- [ ] Share/open a specific **school**.
-- [ ] Share/open a specific **group** and bring an authorized user directly into that group.
-- [ ] Preserve the target through sign-in so a logged-out user lands on the shared content after authentication.
+- [x] Share/open a specific **community post** using `/posts/{communityId}/{postId}`; native routing lands on `PostDetailActivity`.
+- [x] Share/open a specific **story/status** by canonical story ID, including cold-start loading and expired/deleted handling.
+- [x] Share/open a specific **course/track** from `/courses/{trackId}` in native `TrackLearnActivity`.
+- [x] Share/open a specific **school** from `/schools/{schoolId}` in its filtered native course catalog (school title long-press Share).
+- [x] Share/open `/groups/{groupId}` directly in native `CommunityDetailActivity`; opening does not auto-join the recipient.
+- [x] Preserve the target through onboarding, Login/SignUp, PIN/LockScreen, and email-verification navigation so authentication returns to the originally shared content.
 
 ### Android App Links
 
-- [ ] Define stable HTTPS routes for posts, stories/statuses, courses, schools, and groups.
-- [ ] Add Android intent filters for verified **App Links** on the Nelsen domain.
+- [x] Define stable HTTPS namespaces for posts, stories/statuses, courses, schools, and groups. Community posts use `/posts/{communityId}/{postId}` because native authorization/loading requires community context.
+- [x] Add Android `autoVerify` intent filters for canonical HTTPS App Link namespaces on the Nelsen domain.
 - [ ] Publish and verify `assetlinks.json` for the production Android signing certificate.
 - [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
-- [ ] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
-- [ ] Add native **Share** actions for stories/statuses, courses, and schools using canonical HTTPS links rather than app-only custom schemes.
-- [ ] Keep a Web fallback page for users who do not have the app installed.
+- [x] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
+- [x] Add native **Share** actions for stories/statuses, courses, schools, and groups using canonical HTTPS links rather than app-only custom schemes.
+- [x] Keep non-looping Web fallback routes for shared posts/stories/groups and exact Web redirects for courses/schools when the app is not installed.
 - [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community/group content; a shared group link must verify membership/join policy before opening the group.
+
+---
+
+## Android Release Quality — Responsive Screen Sizes
+
+- [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation.
+- [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate.
+- [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities.
+- [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
+- [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
+
+---
+
+## Identity & Role Upgrade Reconciliation
+
+- [x] Keep Firebase UID as the permanent identity when Mentee/other users are promoted to Mentor.
+- [x] Preserve/backfill the canonical base user during role upgrades instead of moving/deleting user data.
+- [x] Reconcile legacy Android `/users/{uid}`, LMS `lms/users/{uid}`, `roles/{uid}`, and Mentor `/mentors/{uid}` data by UID.
+- [x] Make Mentor promotion idempotently create/backfill Mentor profile data.
+- [x] Android email login falls back to authenticated `GET /lms/me` when legacy user data is missing, allowing previously broken upgraded accounts to self-repair.
+- [x] Web and Android consume the same canonical LMS identity/role source.
+- [ ] Add regression tests for Mentee → Mentor → sign-out → sign-in on Web and Android, including legacy accounts missing `/users/{uid}` or `/mentors/{uid}`.
 
 ---
 
