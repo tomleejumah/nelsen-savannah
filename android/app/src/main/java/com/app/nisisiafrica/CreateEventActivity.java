@@ -473,11 +473,11 @@ public class CreateEventActivity extends AppCompatActivity {
                             btnSave.setEnabled(true);
                             String error = result.getSecond();
                             if (error != null && error.toLowerCase(Locale.US).contains("not connected")) {
-                                error = "YouTube channel is not connected yet. Ask a School Admin or SuperAdmin to connect it in Nelsen settings.";
+                                error = "Live streaming is not configured yet. Ask a School Admin or SuperAdmin to finish setup in Nelsen settings.";
                             }
                             Toast.makeText(
                                     this,
-                                    error != null ? error : "Could not start YouTube Live",
+                                    error != null ? error : "Could not start live",
                                     Toast.LENGTH_LONG
                             ).show();
                         }
