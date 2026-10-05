@@ -191,9 +191,19 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     private void showCourseActions(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
+        menu.getMenu().add("Share course");
         if (courseIdeAvailable) menu.getMenu().add("Go to IDE");
         if (enrolledOnTrack) menu.getMenu().add("Leave course");
         menu.setOnMenuItemClickListener(item -> {
+            if ("Share course".contentEquals(item.getTitle())) {
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("text/plain");
+                String url = "https://nelsen-savannah.co.ke/courses/" + Uri.encode(trackId);
+                String label = tvTitle != null ? tvTitle.getText().toString().trim() : "";
+                share.putExtra(Intent.EXTRA_TEXT, (label.isEmpty() ? "" : label + "\n") + url);
+                startActivity(Intent.createChooser(share, "Share course"));
+                return true;
+            }
             if ("Go to IDE".contentEquals(item.getTitle())) { openCourseIde(); return true; }
             if ("Leave course".contentEquals(item.getTitle())) { confirmLeaveCourse(); return true; }
             return false;
