@@ -703,7 +703,7 @@ export function CatalogCmsPanel({
             </label>
             <AttachIdeCheckbox
               checked={editIdeEnabled}
-              onChange={setEditIdeEnabled}}
+              onChange={setEditIdeEnabled}
               hint="Attach the in-browser IDE to this course."
             />
             <button
