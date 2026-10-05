@@ -123,11 +123,12 @@ Android Course
 
 - [x] Show **Go to IDE** for IDE-enabled courses.
 - [x] Replace the current WebView IDE implementation with a native Android IDE activity.
-- [ ] Add a native code editor with syntax highlighting, line numbers, indentation, and course-language support.
+- [ ] Finish native editor language tooling: CodeEditor is integrated with monospace editing and course-language selection, but syntax highlighting/language analyzers, indentation behavior, and verified line-number UX still need completion.
 - [x] Load course IDE configuration/starter files from the LMS API.
-- [ ] Connect Run/Submit actions to the existing authorized course sandbox/execution API.
+- [x] Connect Run action to the existing authorized course sandbox/execution API. Submit remains deferred until a course-IDE submission contract is defined.
 - [x] Persist learner workspace locally so edits survive navigation/restarts.
-- [ ] Handle editor loading, execution, output, and error states natively.
+- [x] Handle execution loading, output, authentication, network, and API error states natively.
+- [ ] Add explicit IDE configuration-loading/error UI instead of silently retaining defaults when course IDE config fails.
 - [ ] Verify keyboard/input behaviour and larger-screen layouts.
 
 The exact native editor dependency must be approved before implementation.
