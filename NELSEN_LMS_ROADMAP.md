@@ -371,6 +371,18 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 ---
 
+## Identity & Role Upgrade Reconciliation
+
+- [x] Keep Firebase UID as the permanent identity when Mentee/other users are promoted to Mentor.
+- [x] Preserve/backfill the canonical base user during role upgrades instead of moving/deleting user data.
+- [x] Reconcile legacy Android `/users/{uid}`, LMS `lms/users/{uid}`, `roles/{uid}`, and Mentor `/mentors/{uid}` data by UID.
+- [x] Make Mentor promotion idempotently create/backfill Mentor profile data.
+- [x] Android email login falls back to authenticated `GET /lms/me` when legacy user data is missing, allowing previously broken upgraded accounts to self-repair.
+- [x] Web and Android consume the same canonical LMS identity/role source.
+- [ ] Add regression tests for Mentee → Mentor → sign-out → sign-in on Web and Android, including legacy accounts missing `/users/{uid}` or `/mentors/{uid}`.
+
+---
+
 ## Stabilization Milestone — Profiles, Mentor/SchoolAdmin & Live Release
 
 This milestone tracks the current production-hardening work before the remaining deferred LMS features.
