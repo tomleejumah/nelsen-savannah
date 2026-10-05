@@ -760,7 +760,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private void syncUserDataFromRemote() {
+        final boolean[] remoteRequested = {false};
         sharedUserViewModel1.fetchingCurrentUserDataFromDB(currentUser).observe(this, localUserData -> {
+            if (remoteRequested[0]) return;
+            remoteRequested[0] = true;
             FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(currentUser, remoteUserData -> {
                 if (remoteUserData != null) {
                     userData = remoteUserData;
