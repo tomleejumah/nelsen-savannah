@@ -48,13 +48,18 @@ async function actorRole(uid) {
 }
 
 async function actorSchool(uid) {
-  const row = await dbGet(
-    "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
+  const user = await dbGet(
+    "SELECT active_school_id FROM users_mirror WHERE uid = ?",
     [uid],
   );
-  const direct = String(row?.active_school_id || row?.school_id || "").trim();
-  if (direct) return direct;
-
+  if (user?.active_school_id) {
+    const active = await dbGet(
+      `SELECT school_id FROM school_memberships
+       WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1`,
+      [uid, user.active_school_id],
+    );
+    if (active?.school_id) return String(active.school_id);
+  }
   const membership = await dbGet(
     `SELECT school_id FROM school_memberships
      WHERE uid = ? AND status = 'active'
@@ -149,6 +154,15 @@ export async function resolveLiveAudience(actor, body) {
     const allowed = ownSchool === schoolId || await hasActiveSchoolMembership(uid, schoolId);
     if (!allowed) {
       const err = new Error("You are not an active member of that school");
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  if (!isPlatformAdmin && role === "Mentor" && scope === "course") {
+    const assigned = await isTrackMentor(uid, trackId);
+    if (!assigned) {
+      const err = new Error("Mentor must be assigned to this course to host its live session");
       err.status = 403;
       throw err;
     }
@@ -472,7 +486,7 @@ export async function createHubEvent(actor, body = {}) {
   return getHubEvent(eventId);
 }
 
-export async function updateHubLiveStatus(eventId, body = {}) {
+export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
   const existing = await getHubEvent(eventId);
   if (!existing) {
     const err = new Error("Unknown event");
@@ -483,6 +497,21 @@ export async function updateHubLiveStatus(eventId, body = {}) {
     const err = new Error("Event is not a live session");
     err.status = 400;
     throw err;
+  }
+
+  if (actorUid) {
+    const role = await actorRole(actorUid);
+    const platformAdmin = role === "Admin" || role === "SuperAdmin";
+    const owner = String(existing.createdBy || "") === String(actorUid);
+    let schoolAdmin = false;
+    if (role === "SchoolAdmin" && existing.schoolId) {
+      schoolAdmin = await hasActiveSchoolMembership(actorUid, existing.schoolId);
+    }
+    if (!platformAdmin && !owner && !schoolAdmin) {
+      const err = new Error("Only the live host or an active school admin can change this session");
+      err.status = 403;
+      throw err;
+    }
   }
 
   const status = parseLiveStatus(body.liveStatus ?? body.status, existing.status);
