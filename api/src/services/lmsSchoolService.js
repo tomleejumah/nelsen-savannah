@@ -690,14 +690,17 @@ async function loadAssignableMentors(schoolId) {
 
 export async function schoolDashboard(actorUid, schoolId) {
   await assertCanManageSchool(actorUid, schoolId);
+  // Membership is the canonical school roster. users_mirror.school_id is only
+  // legacy/profile context and may lag behind recovered or multi-school membership.
   const members = await dbAll(
-    `SELECT u.uid, u.display_name, u.email, r.role,
-            COALESCE(m.status, 'active') AS status
-     FROM users_mirror u
-     LEFT JOIN roles r ON r.uid = u.uid
-     LEFT JOIN school_memberships m
-       ON m.school_id = u.school_id AND m.uid = u.uid
-     WHERE u.school_id = ?`,
+    `SELECT m.uid,
+            COALESCE(NULLIF(u.display_name, ''), m.display_name, '') AS display_name,
+            COALESCE(NULLIF(u.email, ''), m.email, '') AS email,
+            m.role,
+            m.status
+     FROM school_memberships m
+     LEFT JOIN users_mirror u ON u.uid = m.uid
+     WHERE m.school_id = ?`,
     [schoolId],
   );
   const assignableMentors = await loadAssignableMentors(schoolId);
