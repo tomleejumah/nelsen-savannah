@@ -468,14 +468,22 @@ This milestone tracks the current production-hardening work before the remaining
 
 
 
+### Android status / story media
+
+- [x] Allow users to select and upload either photos or videos when creating a status/story.
+- [x] Render video statuses in the story viewer while preserving legacy image stories.
+- [x] Pause story progress and video playback while the viewer is held down; resume on release/cancel.
+- [ ] Follow up with video-duration-aware progress instead of the fixed image story duration where needed.
+
 ### Chat reliability and attribution
 
 - [x] Purge rejected local-only Room messages after a successful authoritative Firestore sync so stale failed test sends do not remain in chat.
+- [x] Show a visible failed-send flag on outgoing messages whose Firestore send fails.
 - [x] Show sender names on incoming bubbles in group/system conversations so multi-user messages are attributable.
 
 ### Chat composer and media picker polish
 
-- [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of Samsung Messages / Telegram while keeping Nelsen's own visual language.
+- [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of **Samsung Messages / Telegram** while keeping Nelsen's own visual language.
 - [ ] Add a compact attachment launcher for gallery/photos, camera, video, files/documents, and other supported learning/chat data.
 - [ ] Add voice-note recording and sending, including record/cancel/preview/send states and playback in chat.
 - [ ] Keep attachment selection fast, touch-friendly, and consistent across direct chats, groups, and announcement-capable chat surfaces.
