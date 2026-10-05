@@ -127,7 +127,7 @@ export function CatalogCmsPanel({
   // Add lesson / optional first lesson on new chapter
   const [lesTitle, setLesTitle] = useState("");
   const [lesDoes, setLesDoes] = useState("");
-  const [lesType, setLesType] = useState<"text" | "video" | "pdf" | "quiz" | "code">("text");
+  const [lesType, setLesType] = useState<"text" | "video" | "pdf" | "quiz" | "assignment">("text");
   const [labLanguage, setLabLanguage] = useState("python");
   const [labStarter, setLabStarter] = useState("print('hello')\n");
   const [labExpected, setLabExpected] = useState("");
@@ -144,14 +144,14 @@ export function CatalogCmsPanel({
 
   const selected = chapters.find((c) => c.moduleId === selectedChapterId) || null;
 
-  function resetLessonForm(preferCode = editIdeEnabled) {
+  function resetLessonForm() {
     setLesTitle("");
     setLesDoes("");
     setLesFile(null);
     setQuizEnabled(false);
     setQuizQuestions([emptyQuestion(0)]);
     setUploadPct(null);
-    setLesType(preferCode ? "code" : "text");
+    setLesType("text");
     setLabLanguage("python");
     setLabStarter("print('hello')\n");
     setLabExpected("");
@@ -188,14 +188,15 @@ export function CatalogCmsPanel({
       setEditPublished(true);
       setEditIdeEnabled(Boolean(track.ideEnabled));
       const mods = envelope.data.modules || [];
-      const loaded: ChapterState[] = [];
-      for (const m of mods) {
-        const modEnv = await fetchLmsModule(token, m.moduleId);
-        loaded.push({
-          ...m,
-          lessons: modEnv.data?.lessons || [],
-        });
-      }
+      // Fetch lesson metadata concurrently. The editor never downloads PDF/video
+      // bytes; actual media is fetched only by the learner/player when opened.
+      const moduleEnvelopes = await Promise.all(
+        mods.map((m) => fetchLmsModule(token, m.moduleId)),
+      );
+      const loaded: ChapterState[] = mods.map((m, index) => ({
+        ...m,
+        lessons: moduleEnvelopes[index]?.data?.lessons || [],
+      }));
       setChapters(loaded);
       if (
         selectedChapterId &&
@@ -402,6 +403,7 @@ export function CatalogCmsPanel({
       type: lesType,
       does: lesDoes.trim(),
       hasQuiz: lesType === "quiz" || (quizEnabled && (lesType === "pdf" || lesType === "video")),
+      hasAssignment: lesType === "assignment",
       lab:
         lesType === "code"
           ? {
@@ -530,70 +532,29 @@ export function CatalogCmsPanel({
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 value={lesType}
                 onChange={(e) =>
-                  setLesType(e.target.value as "text" | "video" | "pdf" | "quiz" | "code")
+                  setLesType(e.target.value as "text" | "video" | "pdf" | "quiz" | "assignment")
                 }
               >
                 <option value="text">Text (write & submit)</option>
                 <option value="video">Video (watch time)</option>
                 <option value="pdf">PDF (doc + questions)</option>
                 <option value="quiz">Quiz / auto-marked questions</option>
+                <option value="assignment">Assignment / mentor marked</option>
               </select>
             </label>
             <textarea
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
               rows={3}
               placeholder={
-                lesType === "text"
-                  ? "Prompts — what mentees should write / submit"
-                  : "Description"
+                lesType === "assignment"
+                  ? "Assignment instructions — what mentees should submit"
+                  : lesType === "text"
+                    ? "Lesson text / description"
+                    : "Description"
               }
               value={lesDoes}
               onChange={(e) => setLesDoes(e.target.value)}
             />
-            {lesType === "code" ? (
-              <>
-                <label className="block space-y-1 text-xs">
-                  <span className="text-muted-foreground">Language</span>
-                  <select
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    value={labLanguage}
-                    onChange={(e) => {
-                      const lang = e.target.value;
-                      setLabLanguage(lang);
-                      if (!labStarter.trim() || labStarter === "print('hello')\n") {
-                        setLabStarter(
-                          lang === "javascript"
-                            ? "console.log('hello');\n"
-                            : lang === "html"
-                              ? "<h1>hello</h1>\n"
-                              : "print('hello')\n",
-                        );
-                      }
-                    }}
-                  >
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="html">HTML</option>
-                    <option value="java">Java</option>
-                    <option value="c">C</option>
-                    <option value="cpp">C++</option>
-                  </select>
-                </label>
-                <textarea
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                  rows={8}
-                  placeholder="Starter code"
-                  value={labStarter}
-                  onChange={(e) => setLabStarter(e.target.value)}
-                />
-                <input
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
-                  placeholder="Expected stdout (optional — auto-grade)"
-                  value={labExpected}
-                  onChange={(e) => setLabExpected(e.target.value)}
-                />
-              </>
-            ) : null}
             {lesType === "video" || lesType === "pdf" ? (
               <>
                 <input
@@ -742,10 +703,7 @@ export function CatalogCmsPanel({
             </label>
             <AttachIdeCheckbox
               checked={editIdeEnabled}
-              onChange={(next) => {
-                setEditIdeEnabled(next);
-                if (next) setLesType("code");
-              }}
+              onChange={setEditIdeEnabled}}
               hint="Attach the in-browser IDE to this course."
             />
             <button
