@@ -192,6 +192,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/posts/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/chats/" />
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/stories/" />
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/courses/" />
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/schools/" />
