@@ -17,6 +17,10 @@ import kotlinx.coroutines.launch
 
 class LauncherActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_PENDING_APP_LINK = "extra_pending_app_link"
+    }
+
     private var isReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,9 +93,13 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    private fun navigateAndFinish(intent: Intent) {
+    private fun navigateAndFinish(destination: Intent) {
+        val incoming = intent?.data
+        if (incoming != null && incoming.scheme == "https" && incoming.host == "nelsen-savannah.co.ke") {
+            destination.putExtra(EXTRA_PENDING_APP_LINK, incoming.toString())
+        }
         isReady = true
-        startActivity(intent)
+        startActivity(destination)
         finish()
     }
 }
