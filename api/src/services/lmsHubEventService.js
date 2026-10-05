@@ -356,8 +356,11 @@ export async function listPublicHubEvents({ filter = "upcoming", uid = null } = 
   let rows;
   if (filter === "past") {
     rows = await dbAll(
-      `SELECT * FROM hub_events WHERE is_public = 1 AND date_ms < ? ORDER BY date_ms DESC`,
-      [now],
+      `SELECT * FROM hub_events
+       WHERE is_public = 1
+         AND (date_ms < ? OR (event_type = 'live' AND status = ?))
+       ORDER BY date_ms DESC`,
+      [now, LIVE_STATUS.ended],
     );
   } else if (filter === "all") {
     rows = await dbAll(
@@ -365,8 +368,12 @@ export async function listPublicHubEvents({ filter = "upcoming", uid = null } = 
     );
   } else {
     rows = await dbAll(
-      `SELECT * FROM hub_events WHERE is_public = 1 AND date_ms >= ? ORDER BY date_ms ASC`,
-      [now],
+      `SELECT * FROM hub_events
+       WHERE is_public = 1
+         AND date_ms >= ?
+         AND NOT (event_type = 'live' AND status = ?)
+       ORDER BY date_ms ASC`,
+      [now, LIVE_STATUS.ended],
     );
   }
   const candidates = rows.map((row) => rowToEvent(row, 0));
