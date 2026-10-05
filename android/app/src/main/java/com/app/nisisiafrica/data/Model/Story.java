@@ -20,6 +20,8 @@ public class Story implements Parcelable {
     public String companyName;
     public String logoUrl;
     public String mediaUrl;
+    /** image | video. Legacy stories default to image. */
+    public String mediaType = "image";
     public String caption;
     public String ctaUrl;
     public long timestamp;
@@ -48,6 +50,8 @@ public class Story implements Parcelable {
         companyName = in.readString();
         logoUrl = in.readString();
         mediaUrl = in.readString();
+        mediaType = in.readString();
+        if (mediaType == null || mediaType.isEmpty()) mediaType = "image";
         caption = in.readString();
         ctaUrl = in.readString();
         timestamp = in.readLong();
@@ -65,6 +69,7 @@ public class Story implements Parcelable {
         dest.writeString(companyName);
         dest.writeString(logoUrl);
         dest.writeString(mediaUrl);
+        dest.writeString(mediaType != null ? mediaType : "image");
         dest.writeString(caption);
         dest.writeString(ctaUrl);
         dest.writeLong(timestamp);

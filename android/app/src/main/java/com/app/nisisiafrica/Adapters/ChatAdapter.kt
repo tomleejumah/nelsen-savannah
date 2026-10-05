@@ -37,6 +37,14 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var onReply: ((ChatMessageEntity) -> Unit)? = null
 
+    /** Group/system conversations need attribution; direct chats do not. */
+    var showSenderNames: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyDataSetChanged()
+        }
+
     /** First long-press enters selection; subsequent taps toggle. */
     var onSelectionChanged: ((Int) -> Unit)? = null
 
@@ -142,6 +150,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     isMine = message.senderId == currentUserId,
                     selected = selectedIds.contains(message.messageId),
                     selectionMode = inSelectionMode,
+                    showSenderNames = showSenderNames,
                     onToggle = { toggleSelection(it) },
                     onQuotedClick = onQuotedClick
                 )
@@ -178,6 +187,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val tvMessage: TextView = view.findViewById(R.id.tvMessage)
         private val tvTime: TextView = view.findViewById(R.id.tvTime)
+        private val tvFailed: TextView? = view.findViewById(R.id.tvFailed)
         private val tvSender: TextView? = view.findViewById(R.id.tvSender)
         private val llMessage: View? = view.findViewById(R.id.llMessage)
         private val ivImage: ImageView? = view.findViewById(R.id.ivImage)
@@ -194,6 +204,7 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             isMine: Boolean,
             selected: Boolean,
             selectionMode: Boolean,
+            showSenderNames: Boolean,
             onToggle: (ChatMessageEntity) -> Unit,
             onQuotedClick: ((String) -> Unit)?
         ) {
@@ -271,6 +282,8 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             // TODO(read-receipts): single tick = delivered, double tick = read (not implemented yet).
             tvTime.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
+            tvFailed?.visibility =
+                if (isMine && message.status.equals("failed", ignoreCase = true)) View.VISIBLE else View.GONE
 
             val longClick = View.OnLongClickListener {
                 it.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
@@ -315,7 +328,9 @@ class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     tvSender.text = "AI Assistant"
                     llMessage?.setBackgroundResource(R.drawable.message_ai_bg)
                 } else {
-                    tvSender.visibility = View.GONE
+                    val showAttribution = showSenderNames && !isMine
+                    tvSender.visibility = if (showAttribution) View.VISIBLE else View.GONE
+                    tvSender.text = message.senderName.ifBlank { "Member" }
                     llMessage?.setBackgroundResource(R.drawable.message_bg)
                 }
             }

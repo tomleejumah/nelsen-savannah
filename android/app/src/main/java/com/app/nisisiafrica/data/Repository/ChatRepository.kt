@@ -352,6 +352,10 @@ class ChatRepository(private val appDatabase: AppDatabase) {
             }
             val docs = snapshot?.documents ?: return@addSnapshotListener
 
+            // A successful Firestore snapshot is authoritative. Remove old local-only
+            // sends that were kept when security rules/network rejected the write.
+            scope.launch { dao.deleteFailedMessages(chatroomId) }
+
             val normalized = docs.mapNotNull { doc ->
                 val msg = doc.toObject(ChatMessage::class.java) ?: return@mapNotNull null
                 val messageId = msg.messageId.ifBlank { doc.id }

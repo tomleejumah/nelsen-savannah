@@ -468,9 +468,40 @@ This milestone tracks the current production-hardening work before the remaining
 
 
 
+### LMS performance, school access and applications
+
+- [ ] Add Redis-backed API caching for expensive read-heavy LMS/catalog/course/school queries with explicit TTLs and invalidation on writes; measure slow endpoints before and after caching.
+- [ ] Complete the school application flow across API/Web/Android: Apply to school → pending/application status → approved/active membership → rejected state where applicable.
+- [x] Android school course list exposes Apply to school and pending membership state.
+- [x] Android blocks opening course learning content unless the user is actually enrolled in that course.
+- [ ] Harden the same enrollment/access gate at the API boundary and verify deep links cannot bypass it.
+- [ ] Add regression coverage for non-member, pending applicant, active school member but unenrolled course, and enrolled course access.
+
+### Android status / story media
+
+- [x] Allow users to select and upload either photos or videos when creating a status/story.
+- [x] Render video statuses in the story viewer while preserving legacy image stories.
+- [x] Pause story progress and video playback while the viewer is held down; resume on release/cancel.
+- [x] Match video-status progress to the video's actual playback duration; image statuses keep the fixed image duration.
+
+### Chat reliability and attribution
+
+- [x] Purge rejected local-only Room messages after a successful authoritative Firestore sync so stale failed test sends do not remain in chat.
+- [x] Show a visible failed-send flag on outgoing messages whose Firestore send fails.
+- [x] Shared announcements include a canonical app link that routes recipients back into the Announcements chat.
+- [x] Show sender names on incoming bubbles in group/system conversations so multi-user messages are attributable.
+
+### Android community reactions and app distribution polish
+
+- [ ] Replace the generic heart-like group post reaction with a Reddit-style upvote interaction using an original Nelsen SVG (do not copy Reddit artwork); preserve current vote persistence/count behavior.
+- [x] Remove the main FAB shadow halo so it visually belongs with the bottom glass navigation.
+- [x] Place Log out directly below Privacy policy in Profile settings.
+- [x] Until the Play Store listing is live, Share app uses the Nelsen browser download URL instead of a Play Store URL.
+- [ ] Re-enable Rate us when the public Play Store listing is available and route it to the store listing.
+
 ### Chat composer and media picker polish
 
-- [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of Samsung Messages / Telegram while keeping Nelsen's own visual language.
+- [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of **Samsung Messages / Telegram** while keeping Nelsen's own visual language.
 - [ ] Add a compact attachment launcher for gallery/photos, camera, video, files/documents, and other supported learning/chat data.
 - [ ] Add voice-note recording and sending, including record/cancel/preview/send states and playback in chat.
 - [ ] Keep attachment selection fast, touch-friendly, and consistent across direct chats, groups, and announcement-capable chat surfaces.
