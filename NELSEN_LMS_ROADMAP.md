@@ -418,6 +418,16 @@ This milestone tracks the current production-hardening work before the remaining
 - [ ] Add automated PostgreSQL backups/retention and an off-host backup strategy.
 
 
+
+### Chat composer and media picker polish
+
+- [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of Samsung Messages / Telegram while keeping Nelsen's own visual language.
+- [ ] Add a compact attachment launcher for gallery/photos, camera, video, files/documents, and other supported learning/chat data.
+- [ ] Add voice-note recording and sending, including record/cancel/preview/send states and playback in chat.
+- [ ] Keep attachment selection fast, touch-friendly, and consistent across direct chats, groups, and announcement-capable chat surfaces.
+- [ ] Harden media upload progress, retry, cancellation, failed-send state, and attachment permissions before release.
+
+
 ---
 ## Implementation Order
 
