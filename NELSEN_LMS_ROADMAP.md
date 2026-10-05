@@ -393,6 +393,7 @@ This milestone tracks the current production-hardening work before the remaining
 - [ ] Verify FCM notification taps, deep links, and Share actions against a real live session.
 - [ ] End the real broadcast and verify scheduled/live/ended transitions plus replay/history placement.
 - [ ] Test private, deleted, unavailable, and replay-disabled YouTube broadcasts and ensure Web/Android fail gracefully.
+- [ ] Translate provider/API live-start failures into Nelsen-facing messages (for example, channel live access still activating) instead of exposing a generic 502 or provider-specific wording.
 - [ ] Verify YouTube OAuth/channel connection health after production credentials are configured.
 - [ ] Add browser hosting later: Web camera/mic → WebRTC publishing layer/gateway → YouTube RTMP/RTMPS. This is deferred and must not turn the Nelsen API into a video relay/transcoding server.
 
