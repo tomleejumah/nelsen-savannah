@@ -361,6 +361,16 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 ---
 
+## Android Release Quality — Responsive Screen Sizes
+
+- [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation.
+- [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate.
+- [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities.
+- [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
+- [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
+
+---
+
 ## Stabilization Milestone — Profiles, Mentor/SchoolAdmin & Live Release
 
 This milestone tracks the current production-hardening work before the remaining deferred LMS features.
