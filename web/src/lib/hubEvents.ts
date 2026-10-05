@@ -16,6 +16,7 @@ export function hubEventToAppEvent(e: HubEventDto): AppEvent {
     menteeName: e.menteeName,
     status: e.status,
     liveStatus: e.liveStatus ?? null,
+    liveAvailability: e.liveAvailability ?? "unknown",
     description: e.description,
     mode: e.mode,
     location: e.location,
