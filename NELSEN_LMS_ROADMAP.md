@@ -349,11 +349,11 @@ Make app content shareable with links that open the exact destination in Nelsen 
 ### Link targets
 
 - [x] Share/open a specific **community post** using `/posts/{communityId}/{postId}`; native routing lands on `PostDetailActivity`.
-- [ ] Share/open a specific **story/status**.
-- [x] Open a specific **course/track** from `/courses/{trackId}` in native `TrackLearnActivity`; native Share action still needs wiring.
-- [x] Open a specific **school** from `/schools/{schoolId}` in its filtered native course catalog; native Share action still needs wiring.
-- [x] Route `/groups/{groupId}` directly into native `CommunityDetailActivity`; membership/join-policy enforcement and native Share action still need verification/wiring.
-- [ ] Preserve the target through all sign-in/PIN/email-verification paths so a logged-out user lands on the shared content after authentication. Launcher → authenticated Main routing is implemented; auth/verification completion still needs forwarding.
+- [x] Share/open a specific **story/status** by canonical story ID, including cold-start loading and expired/deleted handling.
+- [x] Share/open a specific **course/track** from `/courses/{trackId}` in native `TrackLearnActivity`.
+- [x] Share/open a specific **school** from `/schools/{schoolId}` in its filtered native course catalog (school title long-press Share).
+- [x] Share/open `/groups/{groupId}` directly in native `CommunityDetailActivity`; opening does not auto-join the recipient.
+- [x] Preserve the target through onboarding, Login/SignUp, PIN/LockScreen, and email-verification navigation so authentication returns to the originally shared content.
 
 ### Android App Links
 
@@ -362,8 +362,8 @@ Make app content shareable with links that open the exact destination in Nelsen 
 - [ ] Publish and verify `assetlinks.json` for the production Android signing certificate.
 - [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
 - [x] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
-- [ ] Add native **Share** actions for stories/statuses, courses, and schools using canonical HTTPS links rather than app-only custom schemes.
-- [ ] Keep a Web fallback page for users who do not have the app installed.
+- [x] Add native **Share** actions for stories/statuses, courses, schools, and groups using canonical HTTPS links rather than app-only custom schemes.
+- [x] Keep non-looping Web fallback routes for shared posts/stories/groups and exact Web redirects for courses/schools when the app is not installed.
 - [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community/group content; a shared group link must verify membership/join policy before opening the group.
 
 ---
