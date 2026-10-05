@@ -187,6 +187,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/posts/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/stories/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/courses/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/schools/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/groups/" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".Auth.ForgotPasswordActivity"
