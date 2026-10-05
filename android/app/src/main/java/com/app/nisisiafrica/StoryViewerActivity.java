@@ -252,7 +252,9 @@ public class StoryViewerActivity extends AppCompatActivity {
         setupOwnerControls(story);
         registerView(story);
 
-        startProgress(index);
+        if (!"video".equalsIgnoreCase(story.mediaType)) {
+            startProgress(index, STORY_DURATION_MS);
+        }
     }
 
     private void bindStoryMedia(Story story) {
@@ -261,7 +263,8 @@ public class StoryViewerActivity extends AppCompatActivity {
             storyVideo.setVisibility(View.VISIBLE);
             storyVideo.setVideoURI(Uri.parse(story.mediaUrl));
             storyVideo.setOnPreparedListener(player -> {
-                player.setLooping(true);
+                player.setLooping(false);
+                startProgress(currentIndex, Math.max(1L, player.getDuration()));
                 storyVideo.start();
             });
         } else {
@@ -390,7 +393,7 @@ public class StoryViewerActivity extends AppCompatActivity {
 
         sheet.setContentView(root);
         sheet.setOnDismissListener(d -> {
-            if (!isFinishing() && !ownerActionPending) startProgress(currentIndex);
+            if (!isFinishing() && !ownerActionPending) startProgress(currentIndex, currentStoryDurationMs());
         });
         sheet.show();
 
@@ -521,7 +524,7 @@ public class StoryViewerActivity extends AppCompatActivity {
                                 android.widget.Toast.makeText(this,
                                         "Could not close story",
                                         android.widget.Toast.LENGTH_SHORT).show();
-                                if (!isFinishing()) startProgress(currentIndex);
+                                if (!isFinishing()) startProgress(currentIndex, currentStoryDurationMs());
                             });
                 } else {
                     ownerActionPending = true;
@@ -541,15 +544,15 @@ public class StoryViewerActivity extends AppCompatActivity {
                                                 android.widget.Toast.makeText(this,
                                                         "Could not delete story",
                                                         android.widget.Toast.LENGTH_SHORT).show();
-                                                if (!isFinishing()) startProgress(currentIndex);
+                                                if (!isFinishing()) startProgress(currentIndex, currentStoryDurationMs());
                                             }))
                             .setNegativeButton("Cancel", (d, w) -> {
                                 ownerActionPending = false;
-                                if (!isFinishing()) startProgress(currentIndex);
+                                if (!isFinishing()) startProgress(currentIndex, currentStoryDurationMs());
                             })
                             .setOnCancelListener(d -> {
                                 ownerActionPending = false;
-                                if (!isFinishing()) startProgress(currentIndex);
+                                if (!isFinishing()) startProgress(currentIndex, currentStoryDurationMs());
                             })
                             .show();
                 }
@@ -557,7 +560,7 @@ public class StoryViewerActivity extends AppCompatActivity {
             });
             popup.setOnDismissListener(menu -> {
                 if (!isFinishing() && !ownerActionPending) {
-                    startProgress(currentIndex);
+                    startProgress(currentIndex, currentStoryDurationMs());
                 }
             });
             popup.show();
@@ -588,14 +591,23 @@ public class StoryViewerActivity extends AppCompatActivity {
         showStory(next);
     }
 
-    private void startProgress(int index) {
+    private long currentStoryDurationMs() {
+        if (stories != null && currentIndex >= 0 && currentIndex < stories.size()
+                && "video".equalsIgnoreCase(stories.get(currentIndex).mediaType)
+                && storyVideo != null && storyVideo.getDuration() > 0) {
+            return storyVideo.getDuration();
+        }
+        return STORY_DURATION_MS;
+    }
+
+    private void startProgress(int index, long durationMs) {
         if (currentAnimator != null) {
             currentAnimator.cancel();
         }
         ProgressBar bar = progressBars.get(index);
         bar.setProgress(0);
         currentAnimator = ObjectAnimator.ofInt(bar, "progress", 0, 100);
-        currentAnimator.setDuration(STORY_DURATION_MS);
+        currentAnimator.setDuration(durationMs);
         currentAnimator.setInterpolator(null);
         currentAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
