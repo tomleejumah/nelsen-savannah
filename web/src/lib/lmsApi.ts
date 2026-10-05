@@ -144,6 +144,12 @@ export type LessonDto = {
     passingScore?: number;
   } | null;
   assignmentPrompt?: string | null;
+  assignments?: {
+    id: string;
+    title: string;
+    prompt: string;
+    dueAt?: number | null;
+  }[];
   milestone?: {
     milestoneId: string;
     lessonId: string;
