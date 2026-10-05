@@ -468,6 +468,11 @@ This milestone tracks the current production-hardening work before the remaining
 
 
 
+### Chat reliability and attribution
+
+- [x] Purge rejected local-only Room messages after a successful authoritative Firestore sync so stale failed test sends do not remain in chat.
+- [x] Show sender names on incoming bubbles in group/system conversations so multi-user messages are attributable.
+
 ### Chat composer and media picker polish
 
 - [ ] Redesign the in-chat attachment/media/data selection sheet to match the interaction quality of Samsung Messages / Telegram while keeping Nelsen's own visual language.
