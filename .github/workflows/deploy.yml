@@ -92,6 +92,11 @@ jobs:
           npm run build
           DIST="${GITHUB_WORKSPACE}/web/dist/client"
           test -d "$DIST"
+          # Vite copies public/ into dist, but assert/copy the hidden .well-known
+          # directory explicitly so App Links can never silently disappear.
+          mkdir -p "$DIST/.well-known"
+          cp "${GITHUB_WORKSPACE}/web/public/.well-known/assetlinks.json" "$DIST/.well-known/assetlinks.json"
+          test -f "$DIST/.well-known/assetlinks.json"
           mkdir -p "$WEB_DIR" "$WEB_DIR_MIRROR"
           rsync -av --delete --exclude '.git' "$DIST/" "$WEB_DIR/"
           rsync -av --delete --exclude '.git' "$DIST/" "$WEB_DIR_MIRROR/"
