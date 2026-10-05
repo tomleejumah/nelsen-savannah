@@ -625,6 +625,13 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Uri uri = Uri.parse(raw);
         if (!"https".equals(uri.getScheme()) || !"nelsen-savannah.co.ke".equals(uri.getHost())) return;
         java.util.List<String> parts = uri.getPathSegments();
+        if (parts.size() >= 2 && "chats".equals(parts.get(0))
+                && "announcements".equals(parts.get(1))) {
+            selectTab(R.id.chatFragment, true);
+            chatFragment.openAnnouncementChat();
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
         if (parts.size() >= 3 && "posts".equals(parts.get(0))) {
             Intent post = new Intent(this, PostDetailActivity.class);
             post.putExtra(PostDetailActivity.EXTRA_COMMUNITY_ID, parts.get(1));
