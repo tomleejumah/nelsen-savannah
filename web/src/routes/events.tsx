@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { onAuthStateChanged } from "firebase/auth";
-import { Clock, ExternalLink, MapPin, Radio, Ticket, UserRound, Users } from "lucide-react";
+import { Clock, ExternalLink, MapPin, Radio, Share2, Ticket, UserRound, Users } from "lucide-react";
 
 import { ReserveSeatDialog } from "@/components/site/ReserveSeatDialog";
 import { FACILITATORS } from "@/data/site";
@@ -181,7 +181,7 @@ function EventsPage() {
                   )}
                 </ul>
 
-                {liveEvent && embedUrl ? (
+                {liveEvent && embedUrl && event.liveAvailability !== "unavailable" ? (
                   <div className="mt-5 overflow-hidden rounded-2xl border border-border/70 bg-black">
                     <div className="aspect-video">
                       <iframe
@@ -204,6 +204,29 @@ function EventsPage() {
                       </a>
                     </div>
                   </div>
+                ) : liveEvent && event.liveAvailability === "unavailable" ? (
+                  <div className="mt-5 rounded-2xl border border-border/70 bg-secondary/40 p-5">
+                    <p className="font-semibold">Live video unavailable</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      This YouTube live or replay may be private, deleted, or no longer accessible.
+                    </p>
+                  </div>
+                ) : null}
+                {liveEvent && event.meetingLink ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = event.meetingLink;
+                      if (navigator.share) {
+                        void navigator.share({ title: event.title, url });
+                      } else {
+                        void navigator.clipboard.writeText(url);
+                      }
+                    }}
+                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-ember"
+                  >
+                    <Share2 className="h-3.5 w-3.5" /> Share live
+                  </button>
                 ) : null}
               </div>
 
@@ -266,14 +289,20 @@ function EventsPage() {
                 {event.program && (
                   <p className="mt-1 text-xs text-muted-foreground">{event.program}</p>
                 )}
-                <a
-                  href={event.meetingLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-ember"
-                >
-                  Watch replay on YouTube <ExternalLink className="h-4 w-4" />
-                </a>
+                {event.liveAvailability === "unavailable" ? (
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Replay unavailable — it may be private or deleted on YouTube.
+                  </p>
+                ) : (
+                  <a
+                    href={event.meetingLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-ember"
+                  >
+                    Watch replay on YouTube <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
               </article>
             ))}
           </div>
