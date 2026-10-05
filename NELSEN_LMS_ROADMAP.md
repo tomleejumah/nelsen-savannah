@@ -135,6 +135,12 @@ The exact native editor dependency must be approved before implementation.
 
 ---
 
+### Deferred Android IDE polish
+
+The remaining native Android IDE editor/tooling work is intentionally deferred and will be revisited after the current LMS roadmap features. It must not block Phase 6 sharing/deep-link work or release stabilization.
+
+---
+
 ## Phase 3 — Android Loading, Offline Cache & Study Sync
 
 Android learning screens should remain responsive on slow or unavailable networks and clearly communicate loading state.
