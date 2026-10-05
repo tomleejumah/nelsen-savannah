@@ -87,6 +87,9 @@ public class MentorBoardActivity extends AppCompatActivity {
                             row.setPadding(0, dp(12), 0, dp(4));
                             row.setOnClickListener(v -> promptMark(item));
                             root.addView(row);
+                            if (!TextUtils.isEmpty(item.assignmentPrompt)) {
+                                root.addView(label(item.assignmentPrompt, 13, true));
+                            }
                             if (!TextUtils.isEmpty(item.text)) {
                                 root.addView(label(item.text, 13, false));
                             }

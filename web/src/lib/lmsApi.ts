@@ -144,6 +144,12 @@ export type LessonDto = {
     passingScore?: number;
   } | null;
   assignmentPrompt?: string | null;
+  assignments?: {
+    id: string;
+    title: string;
+    prompt: string;
+    dueAt?: number | null;
+  }[];
   milestone?: {
     milestoneId: string;
     lessonId: string;
@@ -185,6 +191,9 @@ export type QueueItemDto = {
   menteeName: string;
   menteeAvatar: string;
   text: string;
+  assignmentId?: string | null;
+  assignmentTitle?: string | null;
+  assignmentPrompt?: string | null;
   submittedAt: number;
 };
 

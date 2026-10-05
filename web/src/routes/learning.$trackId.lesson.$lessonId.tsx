@@ -305,6 +305,7 @@ function LessonPage() {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [assignmentText, setAssignmentText] = useState("");
+  const [assignmentAnswers, setAssignmentAnswers] = useState<Record<string, string>>({});
   const [submittedOk, setSubmittedOk] = useState(false);
 
   const load = useCallback(
@@ -494,9 +495,17 @@ function LessonPage() {
   }
 
   async function onSubmitAssignment() {
-    if (!user) return;
-    const text = assignmentText.trim();
-    if (text.length < 8) {
+    if (!user || !lesson) return;
+    const assignments = lesson.assignments || [];
+    if (assignments.length > 0) {
+      const incomplete = assignments.some(
+        (assignment) => (assignmentAnswers[assignment.id] || "").trim().length < 2,
+      );
+      if (incomplete) {
+        setError("Answer every assignment question before submitting.");
+        return;
+      }
+    } else if (assignmentText.trim().length < 8) {
       setError("Write a bit more before submitting (at least a short paragraph).");
       return;
     }
@@ -504,10 +513,30 @@ function LessonPage() {
     setError(null);
     try {
       const token = await user.getIdToken();
-      const result = await submitAssignment(token, { lessonId, text });
-      if (!result.ok || !result.data) {
-        setError(result.error || "Submission failed");
-        return;
+      if (assignments.length > 0) {
+        const results = await Promise.all(
+          assignments.map((assignment) =>
+            submitAssignment(token, {
+              lessonId,
+              assignmentId: assignment.id,
+              text: assignmentAnswers[assignment.id].trim(),
+            }),
+          ),
+        );
+        const failed = results.find((result) => !result.ok || !result.data);
+        if (failed) {
+          setError(failed.error || "One or more answers failed to submit");
+          return;
+        }
+      } else {
+        const result = await submitAssignment(token, {
+          lessonId,
+          text: assignmentText.trim(),
+        });
+        if (!result.ok || !result.data) {
+          setError(result.error || "Submission failed");
+          return;
+        }
       }
       setSubmittedOk(true);
       toast.success("Assignment submitted for review");
@@ -521,11 +550,7 @@ function LessonPage() {
   const done = (lesson?.lessonPercent ?? 0) >= 80;
   const lessonType = lesson?.type === "read" ? "text" : lesson?.type || "text";
   const showQuiz = Boolean(lesson?.hasQuiz || lesson?.quiz);
-  const showAssignment = Boolean(
-    lesson?.hasAssignment ||
-    (lessonType === "text" && lesson?.assignmentPrompt) ||
-    (lessonType === "text" && !lesson?.hasQuiz),
-  );
+  const showAssignment = Boolean(lesson?.hasAssignment);
 
   return (
     <div className="pb-24 pt-32 sm:pt-40">
@@ -761,15 +786,10 @@ function LessonPage() {
 
                   {showAssignment && (
                     <div className="mt-6 space-y-4 rounded-2xl border border-border/70 bg-card p-6">
-                      <h2 className="font-display text-lg font-semibold">
-                        {lessonType === "text" ? "Your response" : "Assignment"}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {lesson.assignmentPrompt ||
-                          (lessonType === "text"
-                            ? "Write your answers in the box below and submit."
-                            : "Write your response and submit for mentor review.")}
-                      </p>
+                      <h2 className="font-display text-lg font-semibold">Assignment</h2>
+                      {lesson.assignmentPrompt ? (
+                        <p className="text-sm text-muted-foreground">{lesson.assignmentPrompt}</p>
+                      ) : null}
                       {submittedOk ? (
                         <p className="inline-flex items-center gap-2 text-sm font-medium text-brand-soft">
                           <CheckCircle2 className="h-4 w-4" /> Submitted — check{" "}
@@ -780,13 +800,37 @@ function LessonPage() {
                         </p>
                       ) : (
                         <>
-                          <textarea
-                            value={assignmentText}
-                            onChange={(e) => setAssignmentText(e.target.value)}
-                            rows={5}
-                            placeholder="Your answer…"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-maroon/30"
-                          />
+                          {(lesson.assignments || []).length > 0 ? (
+                            <div className="space-y-5">
+                              {(lesson.assignments || []).map((assignment, index) => (
+                                <div key={assignment.id} className="space-y-2">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {index + 1}. {assignment.prompt || assignment.title}
+                                  </p>
+                                  <textarea
+                                    value={assignmentAnswers[assignment.id] || ""}
+                                    onChange={(e) =>
+                                      setAssignmentAnswers((current) => ({
+                                        ...current,
+                                        [assignment.id]: e.target.value,
+                                      }))
+                                    }
+                                    rows={4}
+                                    placeholder="Your answer…"
+                                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-maroon/30"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <textarea
+                              value={assignmentText}
+                              onChange={(e) => setAssignmentText(e.target.value)}
+                              rows={5}
+                              placeholder="Your answer…"
+                              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-maroon/30"
+                            />
+                          )}
                           <button
                             type="button"
                             disabled={saving}
