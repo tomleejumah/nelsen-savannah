@@ -1,4 +1,9 @@
 # Nelsen Savannah — LMS Implementation Roadmap
+- [x] Live host controls use vector/SVG icons (mic, camera, flip, screen share, share, end) rather than emoji/text-heavy controls.
+- [x] Host live feedback polls school-channel telemetry for concurrent viewers and recent live chat while broadcasting.
+- [x] Authenticated live attendance records join identity + watch heartbeats; host/admin attendance summary reports unique attendees and watch duration.
+- [x] School live channels are school-owned: SchoolAdmin connects the school's channel; mentors reuse that connection; no platform-channel fallback for school lives.
+- [ ] Enrich ended-live summaries with processed provider analytics after its 48–72 hour reporting delay; immediate summaries use Nelsen attendance.
 
 - [x] Live notification join path hardened: authenticated Android startup reconciles the current FCM token, course-live fanout includes enrolled learners + assigned mentors, high-priority data messages use the app's direct live PendingIntent in foreground/background, and tapping a live alert opens the live viewer.
 
