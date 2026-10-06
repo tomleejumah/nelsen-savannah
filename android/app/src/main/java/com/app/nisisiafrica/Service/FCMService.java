@@ -38,9 +38,13 @@ public class FCMService extends FirebaseMessagingService {
             title = value(notification.getTitle());
             body = value(notification.getBody());
         } else {
-            title = value(data.get("senderName"));
+            // Data-only messages are used so live alerts take the same custom
+            // PendingIntent path in foreground, background and cold-start cases.
+            title = value(data.get("title"));
+            if (title.isEmpty()) title = value(data.get("senderName"));
             if (title.isEmpty()) title = "Nelsen Savannah";
-            body = value(data.get("messagePreview"));
+            body = value(data.get("body"));
+            if (body.isEmpty()) body = value(data.get("messagePreview"));
             if (body.isEmpty()) body = "You have a new notification";
         }
 
