@@ -390,6 +390,14 @@ Make app content shareable with links that open the exact destination in Nelsen 
 - [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation. **In progress:** repository-wide Android layout pass underway: main shell/Home/Profile/Groups/Chat, auth/onboarding, stories/media, school/course catalog and dialogs.
 - [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate. **In progress:** course catalog header can now scroll independently on compact-height/font-scaled screens; Login no longer assumes a 300dp hero width; Add Course no longer assumes a fixed 300×550dp dialog and can scroll on compact displays; onboarding/profile/media previews now scale within available screen bounds.
 - [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities. **In progress:** tablet bottom navigation + Chat master/detail are wired; course-learning `sw600dp` resource is added and chapter taps now load lesson material into the in-screen material pane on tablets instead of launching the phone chapter Activity.
+- [ ] Finish the tablet LMS/discovery **progressive master-detail shell** instead of stretching phone Activities:
+  - Home → Schools: school list/navigation pane + selected school preview/details pane.
+  - School → Courses: selected school becomes parent context on the left; its course catalog/detail occupies the right.
+  - Course → Learning: course/chapter/lesson navigation stays left; selected lesson/material (video/PDF/text/quiz/assignment/IDE where applicable) stays right.
+  - Back moves one hierarchy level outward while preserving the parent context instead of tearing down the entire tablet surface.
+  - Deep links into school/course/lesson should reconstruct the correct pane hierarchy.
+  - Phones retain the existing single-pane/full-screen Activity flow.
+  - Do **not** force this shell onto unrelated screens: Chat keeps conversation master/detail; Profile, Settings, stories/status viewer, forms and dialogs remain normal adaptive surfaces.
 - [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
 - [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
 
