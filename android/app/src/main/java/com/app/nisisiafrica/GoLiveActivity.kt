@@ -9,7 +9,9 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle\nimport android.os.Handler\nimport android.os.Looper
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Rational
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -47,7 +49,16 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private lateinit var preview: SurfaceView
-    private lateinit var status: TextView\n    private lateinit var viewers: TextView\n    private lateinit var chat: TextView\n    private val telemetryHandler = Handler(Looper.getMainLooper())\n    private val telemetryPoll = object : Runnable {\n        override fun run() {\n            refreshTelemetry()\n            telemetryHandler.postDelayed(this, 5_000L)\n        }\n    }
+    private lateinit var status: TextView
+    private lateinit var viewers: TextView
+    private lateinit var chat: TextView
+    private val telemetryHandler = Handler(Looper.getMainLooper())
+    private val telemetryPoll = object : Runnable {
+        override fun run() {
+            refreshTelemetry()
+            telemetryHandler.postDelayed(this, 5_000L)
+        }
+    }
     private lateinit var endButton: MaterialButton
     private lateinit var switchButton: MaterialButton
     private lateinit var micButton: MaterialButton
@@ -130,7 +141,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         }
 
         preview = findViewById(R.id.livePreview)
-        status = findViewById(R.id.tvLiveStatus)\n        viewers = findViewById(R.id.tvLiveViewers)\n        chat = findViewById(R.id.tvLiveChat)
+        status = findViewById(R.id.tvLiveStatus)
+        viewers = findViewById(R.id.tvLiveViewers)
+        chat = findViewById(R.id.tvLiveChat)
         endButton = findViewById(R.id.btnEndLive)
         switchButton = findViewById(R.id.btnSwitchCamera)
         micButton = findViewById(R.id.btnToggleMic)
@@ -396,6 +409,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     override fun onConnectionSuccess() {
         wentLive = true
         markNelsenLiveStatus("live")
+        telemetryHandler.removeCallbacks(telemetryPoll)
+        telemetryHandler.post(telemetryPoll)
         runOnUiThread {
             status.text = "LIVE · Streaming"
             endButton.isEnabled = true
@@ -441,7 +456,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         }
     }
 
-    override fun onDestroy() {\n        telemetryHandler.removeCallbacks(telemetryPoll)
+    override fun onDestroy() {
+        telemetryHandler.removeCallbacks(telemetryPoll)
         try {
             if (stream.isStreaming) stream.stopStream()
             mediaProjection?.stop()
