@@ -658,8 +658,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return;
         }
         if (parts.size() >= 2 && "schools".equals(parts.get(0))) {
-            Intent school = new Intent(this, AllCoursesActivity.class);
-            school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, parts.get(1));
+            Intent school;
+            if (getResources().getConfiguration().smallestScreenWidthDp >= 600) {
+                school = new Intent(this, SchoolsListActivity.class);
+                school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, parts.get(1));
+            } else {
+                school = new Intent(this, AllCoursesActivity.class);
+                school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, parts.get(1));
+            }
             startActivity(school);
             source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
             return;
