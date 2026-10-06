@@ -2,6 +2,8 @@ package com.app.nisisiafrica;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
@@ -111,6 +113,7 @@ public class CreatePostActivity extends AppCompatActivity {
                       String imageUrl, MaterialButton btnPost) {
         repository.createPost(communityId, title, body, authorName, imageUrl, (success, idOrError) -> {
             if (success) {
+                vibrateSuccess();
                 Toast.makeText(this, "Posted", Toast.LENGTH_SHORT).show();
                 finish();
             } else {
@@ -119,4 +122,15 @@ public class CreatePostActivity extends AppCompatActivity {
             }
         });
     }
+    private void vibrateSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
+    }
+
 }
