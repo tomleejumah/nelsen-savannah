@@ -1,10 +1,13 @@
 package com.app.nisisiafrica;
 
 import android.annotation.SuppressLint;
+import android.app.PictureInPictureParams;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Rational;
 import android.text.TextUtils;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -62,7 +65,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         statusView.setText(statusLabel(status));
 
         MaterialButton openYoutube = findViewById(R.id.btnOpenYoutube);
-        openYoutube.setOnClickListener(v -> openYoutube());
+        openYoutube.setOnClickListener(v -> openLiveExternally());
         MaterialButton share = findViewById(R.id.btnShareLive);
         share.setOnClickListener(v -> shareLive(title));
 
@@ -71,7 +74,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(videoId) || "unavailable".equals(availability)) {
             webView.setVisibility(View.GONE);
             TextView unavailable = findViewById(R.id.liveUnavailable);
-            unavailable.setText("This YouTube live or replay is unavailable. It may be private, deleted, or no longer accessible.");
+            unavailable.setText("This live or replay is unavailable. It may have ended or no longer be accessible.");
             unavailable.setVisibility(View.VISIBLE);
             openYoutube.setEnabled(!TextUtils.isEmpty(videoId));
             return;
@@ -115,12 +118,12 @@ public class LiveViewerActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(send, "Share live session"));
     }
 
-    private void openYoutube() {
+    private void openLiveExternally() {
         if (TextUtils.isEmpty(youtubeUrl)) return;
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(youtubeUrl)));
         } catch (ActivityNotFoundException ex) {
-            Toast.makeText(this, "Could not open YouTube", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Could not open live video", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -158,6 +161,21 @@ public class LiveViewerActivity extends AppCompatActivity {
 
     private static String value(String s) {
         return s == null ? "" : s.trim();
+    }
+
+    @Override
+    public void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && webView != null && webView.getVisibility() == View.VISIBLE) {
+            try {
+                enterPictureInPictureMode(
+                        new PictureInPictureParams.Builder()
+                                .setAspectRatio(new Rational(16, 9))
+                                .build()
+                );
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     @Override
