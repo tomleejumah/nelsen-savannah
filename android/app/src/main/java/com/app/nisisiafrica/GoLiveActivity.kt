@@ -442,6 +442,25 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         // The live provider uses the stream endpoint/key rather than RTMP user/password auth.
     }
 
+    override fun onStop() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !isFinishing &&
+            wentLive &&
+            stream.isStreaming &&
+            !isInPictureInPictureMode
+        ) {
+            try {
+                enterPictureInPictureMode(
+                    PictureInPictureParams.Builder()
+                        .setAspectRatio(Rational(9, 16))
+                        .build(),
+                )
+            } catch (_: Exception) {
+            }
+        }
+        super.onStop()
+    }
+
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && wentLive && stream.isStreaming) {
