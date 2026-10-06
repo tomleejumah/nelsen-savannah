@@ -6,7 +6,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
+import android.os.Bundle;\nimport android.os.Handler;\nimport android.os.Looper;
 import android.util.Rational;
 import android.text.TextUtils;
 import android.view.View;
@@ -23,14 +23,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.appbar.MaterialToolbar;\nimport com.app.nisisiafrica.data.Model.LmsModels;\nimport com.app.nisisiafrica.data.remote.ApiClient;\nimport com.google.firebase.auth.FirebaseAuth;\nimport retrofit2.Call;\nimport retrofit2.Callback;\nimport retrofit2.Response;\nimport java.util.HashMap;\nimport java.util.Map;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.Locale;
 
 public class LiveViewerActivity extends AppCompatActivity {
 
-    public static final String EXTRA_TITLE = "live_title";
+    public static final String EXTRA_TITLE = "live_title";\n    public static final String EXTRA_EVENT_ID = "live_event_id";
     public static final String EXTRA_YOUTUBE_URL = "live_youtube_url";
     public static final String EXTRA_LIVE_STATUS = "live_status";
     public static final String EXTRA_LIVE_AVAILABILITY = "live_availability";
@@ -53,7 +53,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         });
 
         String title = getIntent().getStringExtra(EXTRA_TITLE);
-        youtubeUrl = value(getIntent().getStringExtra(EXTRA_YOUTUBE_URL));
+        youtubeUrl = value(getIntent().getStringExtra(EXTRA_YOUTUBE_URL));\n        eventId = value(getIntent().getStringExtra(EXTRA_EVENT_ID));
         String status = value(getIntent().getStringExtra(EXTRA_LIVE_STATUS)).toLowerCase(Locale.US);
         String availability = value(getIntent().getStringExtra(EXTRA_LIVE_AVAILABILITY)).toLowerCase(Locale.US);
 
@@ -107,6 +107,22 @@ public class LiveViewerActivity extends AppCompatActivity {
                 + "<iframe src='" + embedUrl + "' allow='autoplay; encrypted-media; picture-in-picture; fullscreen'"
                 + " allowfullscreen></iframe></body></html>";
         webView.loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null);
+    }
+
+    private void recordAttendance(int watchedSeconds) {
+        if (TextUtils.isEmpty(eventId)) return;
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            Map<String, Integer> body = new HashMap<>();
+            body.put("watchedSeconds", watchedSeconds);
+            ApiClient.getLmsService()
+                    .recordLiveAttendance("Bearer " + token.getToken(), eventId, body)
+                    .enqueue(new Callback<LmsModels.MapEnvelope>() {
+                        @Override public void onResponse(Call<LmsModels.MapEnvelope> call, Response<LmsModels.MapEnvelope> response) {}
+                        @Override public void onFailure(Call<LmsModels.MapEnvelope> call, Throwable t) {}
+                    });
+        });
     }
 
     private void shareLive(String title) {
