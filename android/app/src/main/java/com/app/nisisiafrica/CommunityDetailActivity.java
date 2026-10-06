@@ -5,8 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -419,7 +417,6 @@ public class CommunityDetailActivity extends AppCompatActivity {
                         + "\"? This cannot be undone.")
                 .setPositiveButton(R.string.group_delete, (d, w) -> repository.deleteCommunity(communityId, success -> {
                     if (success) {
-                        vibrateDestructiveSuccess();
                         Toast.makeText(this, "Group deleted", Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
@@ -429,18 +426,6 @@ public class CommunityDetailActivity extends AppCompatActivity {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
-
-    private void vibrateDestructiveSuccess() {
-        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        if (vibrator == null || !vibrator.hasVibrator()) return;
-        long[] pattern = new long[]{0, 70};
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
-        } else {
-            vibrator.vibrate(pattern, -1);
-        }
-    }
-
     private void refreshMembership() {
         repository.isMember(communityId, member -> {
             isMember = member;
