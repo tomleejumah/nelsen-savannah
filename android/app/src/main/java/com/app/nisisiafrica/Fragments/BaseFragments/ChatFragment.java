@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -301,6 +303,7 @@ public class ChatFragment extends Fragment {
                         if (binding == null) return Unit.INSTANCE;
                         Toast.makeText(requireContext(),
                                 ok ? "Chat deleted" : "Couldn't delete chat", Toast.LENGTH_SHORT).show();
+                        if (ok) vibrateDestructiveSuccess();
                         if (ok && chatId.equals(currentChatId)) {
                             showChatList();
                             currentChatId = null;
@@ -309,6 +312,18 @@ public class ChatFragment extends Fragment {
                     });
                 })
                 .show();
+    }
+
+    private void vibrateDestructiveSuccess() {
+        if (!isAdded()) return;
+        Vibrator vibrator = (Vibrator) requireContext().getSystemService(android.content.Context.VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 70};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
     }
 
     /** Bottom-sheet: mentors pick any mentor; mentees pick tutors from enrolled courses. */
