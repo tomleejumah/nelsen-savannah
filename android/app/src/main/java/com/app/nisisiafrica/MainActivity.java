@@ -814,6 +814,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     private void logoutAndRedirect() {
         String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+        // A device token belongs to the currently signed-in account. Remove it
+        // before sign-out so account switching cannot deliver notifications to
+        // the previous user on this installation.
+        if (!TextUtils.isEmpty(userId)) {
+            FirebaseDatabase.getInstance()
+                    .getReference("Tokens")
+                    .child(userId)
+                    .removeValue()
+                    .addOnFailureListener(error ->
+                            Log.w(TAG, "Could not unregister notification token", error)
+                    );
+        }
         disposables.add(userDao.deleteUserByIdRx(userId)
                 .subscribeOn(Schedulers.io())
                 .subscribe(
