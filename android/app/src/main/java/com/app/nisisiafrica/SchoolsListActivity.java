@@ -303,6 +303,18 @@ public class SchoolsListActivity extends AppCompatActivity {
                 }
                 finishSchoolRefresh();
                 applyFilter();
+                if (tabletShell) {
+                    String requestedSchool = getIntent().getStringExtra(AllCoursesActivity.EXTRA_SCHOOL_ID);
+                    if (!TextUtils.isEmpty(requestedSchool)) {
+                        for (Row row : allRows) {
+                            if (requestedSchool.equals(row.schoolId)) {
+                                getIntent().removeExtra(AllCoursesActivity.EXTRA_SCHOOL_ID);
+                                openSchoolInPane(row);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             @Override
