@@ -3,59 +3,53 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
+    android:clipToPadding="false"
     android:fillViewport="true">
-
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:paddingHorizontal="24dp"
-    android:paddingTop="40dp"
-    android:paddingBottom="40dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:id="@+id/layout223"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:orientation="horizontal"
-        android:paddingStart="45dp"
-        android:paddingEnd="45dp">
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="40dp"
+        android:paddingBottom="40dp">
 
         <TextView
-            android:textAlignment="center"
-            android:layout_width="0dp"
+            android:id="@+id/layout223"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:gravity="center"
             android:text="@string/app_name"
             android:textColor="@android:color/black"
             android:textSize="25sp"
             android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="40dp"
+            android:layout_weight="1"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
+            android:maxHeight="280dp"
+            android:minHeight="160dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/nelsen_savannah_logo" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/poppins_regular"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:letterSpacing="-0.01"
+            android:text="Welcome to \nNelsen Savannah"
+            android:textColor="@android:color/black"
+            android:textSize="36sp"
+            android:textStyle="bold" />
+
     </LinearLayout>
-
-
-    <ImageView
-        android:layout_below="@+id/layout223"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_marginTop="80dp"
-        android:layout_marginStart="0dp"
-        android:src="@drawable/nelsen_savannah_logo" />
-
-    <TextView
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="80dp"
-        android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAlignment="center"
-        android:fontFamily="@font/poppins_regular"
-        android:includeFontPadding="false"
-        android:letterSpacing="-0.01"
-        android:text="Welcome to \nNelsen Savannah"
-        android:textColor="@android:color/black"
-        android:textSize="41sp" />
-
-</RelativeLayout>
+</androidx.core.widget.NestedScrollView>
