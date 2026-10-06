@@ -328,6 +328,10 @@ Watch Live
 - [x] Keep live state monotonic so provider sync never downgrades an active `live` session back to `scheduled` during propagation delay.
 - [x] Reconcile the signed-in Android user's FCM token on every app start so reinstall/token rotation/account switching cannot leave live recipients without a registered token.
 - [x] Support Android Picture-in-Picture for both publishing and watching a live session so leaving the app does not intentionally stop the active live experience.
+- [x] Add Android host-studio controls for microphone mute/unmute, camera pause/resume, camera flip, screen sharing, canonical Nelsen live sharing, and end-live without reconnecting the active broadcast.
+- [x] Run Android screen capture under a media-projection foreground service for modern Android background/security requirements.
+- [x] Remove the current device token from the signed-out user's FCM token slot before account switching.
+- [ ] Add browser live publishing through a Nelsen-owned WebRTC/WHIP-to-RTMP relay. Browser camera/screen capture cannot publish directly to the existing RTMPS ingest endpoint, so do not ship a fake web Go Live button until this transport is deployed.
 - [x] Keep live-session Android UX provider-neutral; users see Nelsen Live rather than upstream video-provider branding.
 - [x] Send FCM live-start notification when Nelsen transitions the session to `live`.
 - [x] Notification opens the correct linked live session on Android, including foreground and background notification-tap paths.
