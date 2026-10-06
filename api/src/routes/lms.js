@@ -50,13 +50,13 @@ router.post(
 router.get(
   "/youtube/connection",
   authenticateUser,
-  requireRoles("SchoolAdmin", "Admin", "SuperAdmin"),
+  requireRoles("SchoolAdmin"),
   lmsController.getYouTubeConnection,
 );
 router.post(
   "/youtube/live",
   authenticateUser,
-  requireRoles("Mentor", "SchoolAdmin", "Admin", "SuperAdmin"),
+  requireRoles("Mentor", "SchoolAdmin"),
   lmsController.postYouTubeLive,
 );
 router.get(
