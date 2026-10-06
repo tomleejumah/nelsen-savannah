@@ -9,7 +9,7 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
+import android.os.Bundle\nimport android.os.Handler\nimport android.os.Looper
 import android.util.Rational
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -47,7 +47,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private lateinit var preview: SurfaceView
-    private lateinit var status: TextView
+    private lateinit var status: TextView\n    private lateinit var viewers: TextView\n    private lateinit var chat: TextView\n    private val telemetryHandler = Handler(Looper.getMainLooper())\n    private val telemetryPoll = object : Runnable {\n        override fun run() {\n            refreshTelemetry()\n            telemetryHandler.postDelayed(this, 5_000L)\n        }\n    }
     private lateinit var endButton: MaterialButton
     private lateinit var switchButton: MaterialButton
     private lateinit var micButton: MaterialButton
@@ -130,7 +130,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         }
 
         preview = findViewById(R.id.livePreview)
-        status = findViewById(R.id.tvLiveStatus)
+        status = findViewById(R.id.tvLiveStatus)\n        viewers = findViewById(R.id.tvLiveViewers)\n        chat = findViewById(R.id.tvLiveChat)
         endButton = findViewById(R.id.btnEndLive)
         switchButton = findViewById(R.id.btnSwitchCamera)
         micButton = findViewById(R.id.btnToggleMic)
@@ -289,6 +289,35 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         )
     }
 
+
+    private fun refreshTelemetry() {
+        if (!wentLive || eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        user.getIdToken(false).addOnSuccessListener { token ->
+            ApiClient.getLmsService()
+                .liveTelemetry("Bearer ${token.token}", eventId)
+                .enqueue(object : Callback<LmsModels.LiveTelemetryEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.LiveTelemetryEnvelope>,
+                        response: Response<LmsModels.LiveTelemetryEnvelope>,
+                    ) {
+                        val data = response.body()?.data ?: return
+                        viewers.text = "${data.concurrentViewers} watching"
+                        val latest = data.chat?.lastOrNull()
+                        chat.text = if (latest != null && latest.message.isNotBlank()) {
+                            "${latest.author}: ${latest.message}"
+                        } else {
+                            "Live · waiting for chat"
+                        }
+                    }
+                    override fun onFailure(
+                        call: Call<LmsModels.LiveTelemetryEnvelope>,
+                        t: Throwable,
+                    ) = Unit
+                })
+        }
+    }
+
     private fun confirmEndLive() {
         if (finishingLive) return
         AlertDialog.Builder(this)
@@ -412,7 +441,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         }
     }
 
-    override fun onDestroy() {
+    override fun onDestroy() {\n        telemetryHandler.removeCallbacks(telemetryPoll)
         try {
             if (stream.isStreaming) stream.stopStream()
             mediaProjection?.stop()
