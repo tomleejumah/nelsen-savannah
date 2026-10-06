@@ -1,5 +1,7 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+- [x] Live notification join path hardened: authenticated Android startup reconciles the current FCM token, course-live fanout includes enrolled learners + assigned mentors, high-priority data messages use the app's direct live PendingIntent in foreground/background, and tapping a live alert opens the live viewer.
+
 This file is the working implementation plan for the Nelsen Savannah LMS across Web and Android.
 
 ## Core Decision: IDE Is Course-Based
