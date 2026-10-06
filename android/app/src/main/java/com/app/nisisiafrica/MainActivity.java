@@ -303,27 +303,25 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         return f.getClass().getSimpleName();
     }
     private void initFCM() {
-        SharedPreferences prefs = getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE);
-
-        if (prefs.getBoolean("initial_token_written", false)) {
-            return;
-        }
-
+        // Reconcile the current installation token on every authenticated app
+        // start. A one-time local flag becomes stale after reinstall, token
+        // rotation, account switching, or a failed RTDB write.
         FirebaseMessaging.getInstance().getToken()
                 .addOnSuccessListener(token -> {
-                    String userId = Util.getState(Constants.CURRENT_USER_ID, "");
-                    if (userId.isEmpty()) return;
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user == null || TextUtils.isEmpty(token)) return;
 
                     FirebaseDatabase.getInstance()
                             .getReference("Tokens")
-                            .child(userId)
+                            .child(user.getUid())
                             .setValue(token)
-                            .addOnSuccessListener(v ->
-                                    prefs.edit()
-                                            .putBoolean("initial_token_written", true)
-                                            .apply()
+                            .addOnFailureListener(error ->
+                                    Log.w(TAG, "Could not register notification token", error)
                             );
-                });
+                })
+                .addOnFailureListener(error ->
+                        Log.w(TAG, "Could not obtain notification token", error)
+                );
     }
 
     /** Translucent (blurred) bottom + top bars — keep blur; do not hide on scroll. */
@@ -816,6 +814,18 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     private void logoutAndRedirect() {
         String userId = Util.getState(Constants.CURRENT_USER_ID, "");
+        // A device token belongs to the currently signed-in account. Remove it
+        // before sign-out so account switching cannot deliver notifications to
+        // the previous user on this installation.
+        if (!TextUtils.isEmpty(userId)) {
+            FirebaseDatabase.getInstance()
+                    .getReference("Tokens")
+                    .child(userId)
+                    .removeValue()
+                    .addOnFailureListener(error ->
+                            Log.w(TAG, "Could not unregister notification token", error)
+                    );
+        }
         disposables.add(userDao.deleteUserByIdRx(userId)
                 .subscribeOn(Schedulers.io())
                 .subscribe(

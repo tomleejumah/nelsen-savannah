@@ -47,26 +47,81 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="20dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSwitchCamera"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="52dp"
-            android:text="Switch camera"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            app:strokeColor="#FFFFFF" />
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnToggleMic"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Mute"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    app:strokeColor="#FFFFFF" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnToggleCamera"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:text="Camera off"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    app:strokeColor="#FFFFFF" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSwitchCamera"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:text="Flip"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    app:strokeColor="#FFFFFF" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShareScreen"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:text="Share screen"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    app:strokeColor="#FFFFFF" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShareLive"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:text="Share"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    app:strokeColor="#FFFFFF" />
+            </LinearLayout>
+        </HorizontalScrollView>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEndLive"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
+            android:layout_marginTop="10dp"
             android:backgroundTint="#D32F2F"
             android:text="End live"
             android:textAllCaps="false"
