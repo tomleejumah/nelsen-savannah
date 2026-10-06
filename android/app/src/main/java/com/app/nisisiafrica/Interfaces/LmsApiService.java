@@ -193,6 +193,11 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Body LmsModels.CreateHubEventBody body);
 
+    @GET("lms/youtube/live/{eventId}/telemetry")
+    Call<LmsModels.LiveTelemetryEnvelope> liveTelemetry(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId);
+
     @POST("lms/events/{eventId}/reserve")
     Call<LmsModels.ReserveEventEnvelope> reserveEvent(
             @Header("Authorization") String bearer,
