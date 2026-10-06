@@ -1335,6 +1335,28 @@ export async function postLiveAttendance(req, res) {
   }
 }
 
+export async function getLiveAudienceState(req, res) {
+  try {
+    const svc = await import("../services/lmsLiveAttendanceService.js");
+    const result = await svc.getLiveAudienceState(req.params.eventId, req.user.uid);
+    return lmsOk(res, result, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[GET /lms/events/:eventId/live-state]", err.message);
+    return lmsErr(res, err.message || "Live state failed", err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function postLiveChatMessage(req, res) {
+  try {
+    const svc = await import("../services/lmsLiveAttendanceService.js");
+    const result = await svc.postLiveChatMessage(req.params.eventId, req.user.uid, req.body || {});
+    return lmsOk(res, result, getPrimaryEngine() || "sqlite", 201);
+  } catch (err) {
+    console.error("[POST /lms/events/:eventId/chat]", err.message);
+    return lmsErr(res, err.message || "Live chat failed", err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
 export async function getLiveAttendanceSummary(req, res) {
   try {
     const svc = await import("../services/lmsLiveAttendanceService.js");
