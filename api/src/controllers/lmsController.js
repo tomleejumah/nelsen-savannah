@@ -1309,6 +1309,21 @@ export async function patchHubLiveStatus(req, res) {
 }
 
 
+
+export async function getYouTubeLiveTelemetry(req, res) {
+  try {
+    const svc = await import("../services/lmsYouTubeOAuthService.js");
+    const data = await svc.getYouTubeLiveTelemetry(
+      { uid: req.user.uid, email: req.user.email, displayName: req.user.displayName },
+      req.params.eventId,
+    );
+    return lmsOk(res, data, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[GET /lms/youtube/live/:eventId/telemetry]", err.message);
+    return lmsErr(res, err.message || "Live telemetry failed", err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
 export async function postLiveAttendance(req, res) {
   try {
     const svc = await import("../services/lmsLiveAttendanceService.js");
