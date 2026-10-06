@@ -135,6 +135,15 @@ The exact native editor dependency must be approved before implementation.
 
 ---
 
+### Android role-specific UI / permissions
+
+- [ ] Audit the Android UI for **Mentee, Mentor, SchoolAdmin, and SuperAdmin** so each role sees only actions, navigation, FABs, menus, course controls, chat/community controls, and learning/admin surfaces that role can actually use.
+- [ ] Keep Mentee learning/discovery UI focused on joining schools, enrolling, learning, bookings, chat, groups, stories/status and live viewing; do not expose host/admin controls.
+- [ ] Give Mentor Android-native course/learner/material/live/booking workflows only where the API authorizes that mentor's assigned scope.
+- [ ] Give SchoolAdmin Android-native school-scoped membership, mentor, course and live-management surfaces; never leak controls for another school.
+- [ ] Keep SuperAdmin/high-risk administration Web-first unless a specific native workflow is approved.
+- [ ] Add role-switch/sign-out/sign-in regression QA so stale role UI cannot survive identity changes.
+
 ### Android role-management UI parity
 
 - [ ] After responsive/multiple-screen-size support, bring mentor and SchoolAdmin management workflows to Android with role-aware layouts and the same permissions/business rules as Web.
@@ -474,7 +483,8 @@ This milestone tracks the current production-hardening work before the remaining
 - [ ] Complete the school application flow across API/Web/Android: Apply to school → pending/application status → approved/active membership → rejected state where applicable.
 - [x] Android school course list exposes Apply to school and pending membership state.
 - [x] Android blocks opening course learning content unless the user is actually enrolled in that course.
-- [ ] Harden the same enrollment/access gate at the API boundary and verify deep links cannot bypass it.
+- [x] Harden module/lesson learning access at the API boundary with active-school-membership + course-enrollment checks (staff roles follow scoped staff access); legacy module fallback cannot bypass the gate.
+- [ ] Finish deep-link regression verification so direct/shared course and lesson links cannot bypass the same membership/enrollment rules.
 - [ ] Add regression coverage for non-member, pending applicant, active school member but unenrolled course, and enrolled course access.
 
 ### Android status / story media
