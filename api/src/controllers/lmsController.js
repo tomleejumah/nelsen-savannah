@@ -1308,6 +1308,44 @@ export async function patchHubLiveStatus(req, res) {
   }
 }
 
+
+
+export async function getYouTubeLiveTelemetry(req, res) {
+  try {
+    const svc = await import("../services/lmsYouTubeOAuthService.js");
+    const data = await svc.getYouTubeLiveTelemetry(
+      { uid: req.user.uid, email: req.user.email, displayName: req.user.displayName },
+      req.params.eventId,
+    );
+    return lmsOk(res, data, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[GET /lms/youtube/live/:eventId/telemetry]", err.message);
+    return lmsErr(res, err.message || "Live telemetry failed", err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function postLiveAttendance(req, res) {
+  try {
+    const svc = await import("../services/lmsLiveAttendanceService.js");
+    const result = await svc.recordLiveAttendance(req.params.eventId, req.user.uid, req.body || {});
+    return lmsOk(res, result, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[POST /lms/events/:eventId/attendance]", err.message);
+    return lmsErr(res, err.message || "Attendance update failed", err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
+export async function getLiveAttendanceSummary(req, res) {
+  try {
+    const svc = await import("../services/lmsLiveAttendanceService.js");
+    const result = await svc.getLiveAttendanceSummary(req.params.eventId, req.user.uid);
+    return lmsOk(res, result, result.source);
+  } catch (err) {
+    console.error("[GET /lms/events/:eventId/attendance]", err.message);
+    return lmsErr(res, err.message || "Attendance summary failed", err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
 export async function deleteHubEvent(req, res) {
   try {
     const svc = await import("../services/lmsHubEventService.js");

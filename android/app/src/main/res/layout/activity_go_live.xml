@@ -12,7 +12,7 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="132dp"
+        android:layout_height="180dp"
         android:background="#77000000" />
 
     <LinearLayout
@@ -41,6 +41,27 @@
             android:text="Preparing camera…"
             android:textColor="#E0E0E0"
             android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvLiveViewers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="0 watching"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLiveChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Waiting for viewers…"
+            android:textColor="#E0E0E0"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -64,55 +85,70 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnToggleMic"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:text="Mute"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:contentDescription="Mute microphone"
+                    android:text=""
+                    app:icon="@drawable/ic_live_mic"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="#FFFFFF"
                     app:strokeColor="#FFFFFF" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnToggleCamera"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    android:text="Camera off"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:contentDescription="Turn camera off"
+                    android:text=""
+                    app:icon="@drawable/ic_live_camera"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="#FFFFFF"
                     app:strokeColor="#FFFFFF" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSwitchCamera"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    android:text="Flip"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:contentDescription="Flip camera"
+                    android:text=""
+                    app:icon="@drawable/ic_live_flip"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="#FFFFFF"
                     app:strokeColor="#FFFFFF" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnShareScreen"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    android:text="Share screen"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:contentDescription="Share screen"
+                    android:text=""
+                    app:icon="@drawable/ic_live_screen_share"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="#FFFFFF"
                     app:strokeColor="#FFFFFF" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnShareLive"
                     style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="8dp"
-                    android:text="Share"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:contentDescription="Share live"
+                    android:text=""
+                    app:icon="@drawable/ic_live_share"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconTint="#FFFFFF"
                     app:strokeColor="#FFFFFF" />
             </LinearLayout>
         </HorizontalScrollView>
@@ -126,6 +162,8 @@
             android:text="End live"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
-            app:cornerRadius="26dp" />
+            app:cornerRadius="26dp"
+            app:icon="@drawable/ic_live_end"
+            app:iconTint="#FFFFFF" />
     </LinearLayout>
 </FrameLayout>

@@ -595,6 +595,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
         Intent viewer = new Intent(this, LiveViewerActivity.class)
                 .putExtra(LiveViewerActivity.EXTRA_TITLE, intent.getStringExtra("eventTitle"))
+                .putExtra(LiveViewerActivity.EXTRA_EVENT_ID, intent.getStringExtra("eventId"))
                 .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, youtubeUrl)
                 .putExtra(
                         LiveViewerActivity.EXTRA_LIVE_STATUS,
