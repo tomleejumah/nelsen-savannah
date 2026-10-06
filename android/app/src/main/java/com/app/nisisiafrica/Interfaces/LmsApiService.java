@@ -210,6 +210,12 @@ public interface LmsApiService {
             @Path("eventId") String eventId,
             @Body LmsModels.LiveStatusBody body);
 
+    @POST("lms/events/{eventId}/attendance")
+    Call<LmsModels.MapEnvelope> recordLiveAttendance(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId,
+            @Body java.util.Map<String, Integer> body);
+
     @GET("lms/app/android")
     Call<LmsModels.AppReleaseEnvelope> getAppRelease();
 
