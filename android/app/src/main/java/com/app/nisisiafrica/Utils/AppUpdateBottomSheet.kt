@@ -17,6 +17,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import androidx.work.WorkInfo
@@ -36,6 +38,14 @@ object AppUpdateBottomSheet {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val view = LayoutInflater.from(activity).inflate(R.layout.progress_layout, null)
         dialog.setContentView(view)
+        // Full app surface, but keep system status/navigation bars visible and keep
+        // update content inside their safe insets.
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(view)
         dialog.setCancelable(!mandatory)
         dialog.setCanceledOnTouchOutside(!mandatory)
 
@@ -106,12 +116,22 @@ object AppUpdateBottomSheet {
             dialog.window?.apply {
                 setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(this, true)
+                androidx.core.view.WindowInsetsControllerCompat(this, decorView).apply {
+                    show(WindowInsetsCompat.Type.systemBars())
+                    systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                }
             }
         }
         dialog.show()
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(this, true)
+            androidx.core.view.WindowInsetsControllerCompat(this, decorView).apply {
+                show(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            }
         }
     }
 
