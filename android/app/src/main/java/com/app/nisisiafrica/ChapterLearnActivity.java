@@ -1020,6 +1020,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             submit.setEnabled(true);
             result.setText("Assignment submitted");
             Toast.makeText(this, "Assignment submitted", Toast.LENGTH_SHORT).show();
+            vibrateActionSuccess();
             return;
         }
         LmsModels.AssignmentQuestionDto question = questions.get(index);
@@ -1064,6 +1065,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                                     ? "Quiz passed"
                                     : "Quiz submitted";
                             result.setText(msg);
+                            vibrateActionSuccess();
                             Toast.makeText(ChapterLearnActivity.this, msg, Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(ChapterLearnActivity.this,
@@ -1077,6 +1079,17 @@ public class ChapterLearnActivity extends AppCompatActivity {
                                 "Quiz network error", Toast.LENGTH_SHORT).show();
                     }
                 }));
+    }
+
+    private void vibrateActionSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
     }
 
     private TextView sectionLabel(String text) {
