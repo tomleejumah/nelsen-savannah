@@ -325,6 +325,10 @@ Users receive "X is live now"
 Watch Live
 ```
 
+- [x] Keep live state monotonic so provider sync never downgrades an active `live` session back to `scheduled` during propagation delay.
+- [x] Reconcile the signed-in Android user's FCM token on every app start so reinstall/token rotation/account switching cannot leave live recipients without a registered token.
+- [x] Support Android Picture-in-Picture for both publishing and watching a live session so leaving the app does not intentionally stop the active live experience.
+- [x] Keep live-session Android UX provider-neutral; users see Nelsen Live rather than upstream video-provider branding.
 - [x] Send FCM live-start notification when Nelsen transitions the session to `live`.
 - [x] Notification opens the correct linked live session on Android, including foreground and background notification-tap paths.
 - [x] Avoid duplicate live notifications with a one-time `live_notified_at` claim before fanout.
