@@ -10,6 +10,13 @@ async function ensureTable() {
     watch_seconds INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (event_id, uid)
   )`);
+  await dbRun(`CREATE TABLE IF NOT EXISTS live_chat_messages (
+    id TEXT PRIMARY KEY,
+    event_id TEXT NOT NULL,
+    uid TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+  )`);
 }
 
 export async function recordLiveAttendance(eventId, uid, body = {}) {
@@ -83,4 +90,75 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
     totalWatchSeconds: attendees.reduce((sum, item) => sum + item.watchSeconds, 0),
     source: getPrimaryEngine() || "sqlite",
   };
+}
+
+
+export async function getLiveAudienceState(eventId, uid) {
+  await ensureTable();
+  const event = await getHubEvent(eventId);
+  if (!event || event.eventType !== "live" || !(await canViewHubEvent(event, uid))) {
+    const err = new Error("Live session not found");
+    err.status = 404;
+    throw err;
+  }
+  const cutoff = Date.now() - 30_000;
+  const attendees = await dbAll(
+    `SELECT a.uid, a.first_joined_at, a.last_seen_at, a.watch_seconds,
+            COALESCE(u.display_name, u.email, a.uid) AS display_name
+     FROM live_attendance a
+     LEFT JOIN users_mirror u ON u.uid = a.uid
+     WHERE a.event_id = ? AND a.last_seen_at >= ?
+     ORDER BY a.first_joined_at ASC`,
+    [eventId, cutoff],
+  );
+  const chat = await dbAll(
+    `SELECT c.id, c.uid, c.message, c.created_at,
+            COALESCE(u.display_name, u.email, c.uid) AS display_name
+     FROM live_chat_messages c
+     LEFT JOIN users_mirror u ON u.uid = c.uid
+     WHERE c.event_id = ?
+     ORDER BY c.created_at DESC LIMIT 50`,
+    [eventId],
+  );
+  return {
+    eventId,
+    concurrentViewers: attendees.length,
+    attendees: attendees.map((row) => ({
+      uid: String(row.uid),
+      displayName: String(row.display_name || row.uid),
+      firstJoinedAt: Number(row.first_joined_at),
+      lastSeenAt: Number(row.last_seen_at),
+      watchSeconds: Number(row.watch_seconds || 0),
+    })),
+    chat: chat.reverse().map((row) => ({
+      id: String(row.id),
+      uid: String(row.uid),
+      author: String(row.display_name || row.uid),
+      message: String(row.message),
+      createdAt: Number(row.created_at),
+    })),
+  };
+}
+
+export async function postLiveChatMessage(eventId, uid, body = {}) {
+  await ensureTable();
+  const event = await getHubEvent(eventId);
+  if (!event || event.eventType !== "live" || !(await canViewHubEvent(event, uid))) {
+    const err = new Error("Live session not found");
+    err.status = 404;
+    throw err;
+  }
+  const message = String(body.message || "").trim();
+  if (!message || message.length > 500) {
+    const err = new Error("Message must be between 1 and 500 characters");
+    err.status = 400;
+    throw err;
+  }
+  const id = `lchat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const now = Date.now();
+  await dbRun(
+    "INSERT INTO live_chat_messages (id, event_id, uid, message, created_at) VALUES (?, ?, ?, ?, ?)",
+    [id, eventId, uid, message, now],
+  );
+  return { id, eventId, uid, message, createdAt: now };
 }
