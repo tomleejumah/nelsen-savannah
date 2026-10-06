@@ -398,6 +398,20 @@ Make app content shareable with links that open the exact destination in Nelsen 
   - Deep links into school/course/lesson should reconstruct the correct pane hierarchy.
   - Phones retain the existing single-pane/full-screen Activity flow.
   - Do **not** force this shell onto unrelated screens: Chat keeps conversation master/detail; Profile, Settings, stories/status viewer, forms and dialogs remain normal adaptive surfaces.
+- [ ] Complete **scheduled + instant Live** end-to-end on Android/API:
+  - Mentor/School Admin/Super Admin can choose **Go live now** or **Schedule live**; scheduled live keeps the selected date/start time instead of forcing `System.currentTimeMillis()`.
+  - Scheduled live creates the YouTube broadcast + Nelsen Hub event ahead of time, is listed on Home/All Schedules for the permitted course/school/platform audience, and remains `scheduled` until YouTube reports it live.
+  - Live cards never use seat reservation semantics: CTA is **Join live** for viewers (scheduled/live; replay after end). The creator gets **Go live** for scheduled/instant sessions and enters the existing `GoLiveActivity` host flow.
+  - Add canonical app link `https://nelsen-savannah.co.ke/live/{eventId}`; sharing a live shares the Nelsen link, not the raw YouTube URL. Deep-link resolution fetches the event, enforces audience access, then routes creator → host/Go live and everyone else → `LiveViewerActivity`.
+  - Preserve instant-live behavior as the fast path through the same event/deep-link model; never expose/persist the RTMPS ingest key in links or event records.
+  - Add reminders/notifications for scheduled live and regression coverage for creator/viewer roles, course/school/platform audience, scheduled/live/ended states, deep links and unavailable YouTube streams.
+- [ ] Extend the **adaptive pane policy across tab-owned content where it naturally improves continuity**:
+  - Home schedule/events: list/timeline stays as parent context; selected event/live opens in the detail pane on tablets. Create/edit event/live uses an adaptive detail/form pane rather than a narrow phone dialog stretched across the tablet.
+  - Groups: group/community list → selected group; inside a group, feed/post list → selected post/comments in the detail pane where width permits.
+  - Posts/status/stories opened from tab content should use the tab's available detail pane on large screens where practical; immersive media/story viewing may still take the full surface when that is the better experience.
+  - Keep bottom-nav/tab selection stable while opening/closing tablet detail panes; Back closes/drills out of detail before changing tabs.
+  - Reuse the same width/inset/font-scale/IME rules across these adaptive surfaces; phones retain existing single-pane navigation.
+
 - [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
 - [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
 
