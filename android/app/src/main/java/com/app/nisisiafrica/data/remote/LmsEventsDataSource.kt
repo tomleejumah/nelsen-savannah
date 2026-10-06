@@ -114,7 +114,7 @@ object LmsEventsDataSource {
                     null
                 }
             }
-            null to (apiError ?: "Could not create YouTube live (HTTP ${res.code()})")
+            null to (apiError ?: "Could not create live session (HTTP ${res.code()})")
         } catch (e: Exception) {
             null to (e.message ?: "Network error")
         }
