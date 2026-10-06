@@ -59,6 +59,12 @@ router.post(
   requireRoles("Mentor", "SchoolAdmin", "Admin", "SuperAdmin"),
   lmsController.postYouTubeLive,
 );
+router.get(
+  "/youtube/live/:eventId/telemetry",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin", "SuperAdmin"),
+  lmsController.getYouTubeLiveTelemetry,
+);
 
 router.post(
   "/stories/:storyId/view",
