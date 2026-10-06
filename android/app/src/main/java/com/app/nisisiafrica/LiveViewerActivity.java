@@ -172,7 +172,7 @@ public class LiveViewerActivity extends AppCompatActivity {
                                     for (LmsModels.LiveChatMessageDto item : data.chat) {
                                         if (lines.length() > 0) lines.append("\n\n");
                                         if (!TextUtils.isEmpty(item.author)) lines.append(item.authorName).append(": ");
-                                        lines.append(value(item.text));
+                                        lines.append(value(item.message));
                                     }
                                     chatView.setText(lines.toString());
                                 }
