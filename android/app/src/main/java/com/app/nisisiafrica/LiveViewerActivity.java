@@ -46,7 +46,8 @@ public class LiveViewerActivity extends AppCompatActivity {
     public static final String EXTRA_LIVE_STATUS = "live_status";
     public static final String EXTRA_LIVE_AVAILABILITY = "live_availability";
 
-    private String youtubeUrl = "";\n    private String eventId = "";
+    private String youtubeUrl = "";
+    private String eventId = "";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
