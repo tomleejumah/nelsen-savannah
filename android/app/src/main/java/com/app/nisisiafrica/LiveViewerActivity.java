@@ -49,6 +49,18 @@ public class LiveViewerActivity extends AppCompatActivity {
     private String youtubeUrl = "";
     private String eventId = "";
     private WebView webView;
+    private TextView viewerCountView;
+    private TextView chatView;
+    private MaterialButton openYoutubeButton;
+    private final Handler telemetryHandler = new Handler(Looper.getMainLooper());
+    private boolean telemetryRunning = false;
+    private final Runnable telemetryPoll = new Runnable() {
+        @Override public void run() {
+            if (!telemetryRunning) return;
+            loadTelemetry();
+            telemetryHandler.postDelayed(this, 5_000L);
+        }
+    };
     private final Handler attendanceHandler = new Handler(Looper.getMainLooper());
     private boolean attendanceRunning = false;
     private final Runnable attendanceHeartbeat = new Runnable() {
@@ -86,8 +98,14 @@ public class LiveViewerActivity extends AppCompatActivity {
         TextView statusView = findViewById(R.id.tvLiveStatus);
         statusView.setText(statusLabel(status));
 
-        MaterialButton openYoutube = findViewById(R.id.btnOpenYoutube);
-        openYoutube.setOnClickListener(v -> openLiveExternally());
+        openYoutubeButton = findViewById(R.id.btnOpenYoutube);
+        openYoutubeButton.setOnClickListener(v -> openLiveExternally());
+        viewerCountView = findViewById(R.id.tvViewerCount);
+        chatView = findViewById(R.id.tvLiveChat);
+        TextView hostView = findViewById(R.id.tvLiveHost);
+        TextView subtitleView = findViewById(R.id.tvLiveSubtitle);
+        hostView.setText(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
+        subtitleView.setText("Live session");
         MaterialButton share = findViewById(R.id.btnShareLive);
         share.setOnClickListener(v -> shareLive(title));
 
@@ -98,11 +116,12 @@ public class LiveViewerActivity extends AppCompatActivity {
             TextView unavailable = findViewById(R.id.liveUnavailable);
             unavailable.setText("This live or replay is unavailable. It may have ended or no longer be accessible.");
             unavailable.setVisibility(View.VISIBLE);
-            openYoutube.setEnabled(!TextUtils.isEmpty(videoId));
+            openYoutubeButton.setVisibility(TextUtils.isEmpty(videoId) ? View.GONE : View.VISIBLE);
             return;
         }
 
         webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setUserAgentString(webView.getSettings().getUserAgentString() + " NelsenSavannah/Android");
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         webView.setWebChromeClient(new WebChromeClient());
@@ -120,7 +139,8 @@ public class LiveViewerActivity extends AppCompatActivity {
 
         String embedUrl = "https://www.youtube.com/embed/" + videoId
                 + "?autoplay=" + ("live".equals(status) ? "1" : "0")
-                + "&playsinline=1&rel=0&modestbranding=1";
+                + "&playsinline=1&rel=0&modestbranding=1"
+                + "&origin=https%3A%2F%2Fnelsen-savannah.co.ke";
 
         String html = "<!doctype html><html><head>"
                 + "<meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>"
@@ -128,7 +148,37 @@ public class LiveViewerActivity extends AppCompatActivity {
                 + "iframe{border:0;width:100%;height:100%}</style></head><body>"
                 + "<iframe src='" + embedUrl + "' allow='autoplay; encrypted-media; picture-in-picture; fullscreen'"
                 + " allowfullscreen></iframe></body></html>";
-        webView.loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Referer", "https://nelsen-savannah.co.ke/");
+        webView.loadDataWithBaseURL("https://nelsen-savannah.co.ke", html, "text/html", "UTF-8", null);
+    }
+
+    private void loadTelemetry() {
+        if (TextUtils.isEmpty(eventId)) return;
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().liveTelemetry("Bearer " + token.getToken(), eventId)
+                        .enqueue(new Callback<LmsModels.LiveTelemetryEnvelope>() {
+                            @Override public void onResponse(Call<LmsModels.LiveTelemetryEnvelope> call, Response<LmsModels.LiveTelemetryEnvelope> response) {
+                                if (!response.isSuccessful() || response.body() == null || response.body().data == null) return;
+                                LmsModels.LiveTelemetryData data = response.body().data;
+                                if (viewerCountView != null && data.concurrentViewers != null) {
+                                    viewerCountView.setText(data.concurrentViewers + (data.concurrentViewers == 1 ? " watching" : " watching"));
+                                    viewerCountView.setVisibility(View.VISIBLE);
+                                }
+                                if (chatView != null && data.chatMessages != null && !data.chatMessages.isEmpty()) {
+                                    StringBuilder lines = new StringBuilder();
+                                    for (LmsModels.LiveChatMessage item : data.chatMessages) {
+                                        if (lines.length() > 0) lines.append("\n\n");
+                                        if (!TextUtils.isEmpty(item.authorName)) lines.append(item.authorName).append(": ");
+                                        lines.append(value(item.message));
+                                    }
+                                    chatView.setText(lines.toString());
+                                }
+                            }
+                            @Override public void onFailure(Call<LmsModels.LiveTelemetryEnvelope> call, Throwable t) {}
+                        }));
     }
 
     private void recordAttendance(int watchedSeconds) {
@@ -148,11 +198,11 @@ public class LiveViewerActivity extends AppCompatActivity {
     }
 
     private void shareLive(String title) {
-        if (TextUtils.isEmpty(youtubeUrl)) return;
+        if (TextUtils.isEmpty(eventId)) return;
         Intent send = new Intent(Intent.ACTION_SEND);
         send.setType("text/plain");
         send.putExtra(Intent.EXTRA_TEXT,
-                (TextUtils.isEmpty(title) ? "Nelsen Live" : title) + "\\n" + youtubeUrl);
+                (TextUtils.isEmpty(title) ? "Nelsen Live" : title) + "\nhttps://nelsen-savannah.co.ke/live/" + eventId);
         startActivity(Intent.createChooser(send, "Share live session"));
     }
 
@@ -204,6 +254,11 @@ public class LiveViewerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!telemetryRunning) {
+            telemetryRunning = true;
+            loadTelemetry();
+            telemetryHandler.postDelayed(telemetryPoll, 5_000L);
+        }
         if (!attendanceRunning) {
             attendanceRunning = true;
             recordAttendance(0);
@@ -213,6 +268,8 @@ public class LiveViewerActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        telemetryRunning = false;
+        telemetryHandler.removeCallbacks(telemetryPoll);
         attendanceRunning = false;
         attendanceHandler.removeCallbacks(attendanceHeartbeat);
         super.onPause();
