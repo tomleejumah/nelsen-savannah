@@ -751,6 +751,7 @@ public final class LmsModels {
         public String trackId;
         public String youtubePrivacy;
         public Long liveNotifiedAt;
+        public String createdBy;
     }
 
     public static class HubEventsData {
