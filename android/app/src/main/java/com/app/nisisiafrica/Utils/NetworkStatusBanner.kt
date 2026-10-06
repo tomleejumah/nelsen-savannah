@@ -105,6 +105,8 @@ class NetworkStatusBanner(private val activity: Activity) {
         val statusTop = ViewCompat.getRootWindowInsets(root)
             ?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: 0
         var anchorBottom = statusTop
+        var topChromeBottom = statusTop
+        var contentTop = Int.MAX_VALUE
         fun inspect(group: ViewGroup) {
             for (i in 0 until group.childCount) {
                 val child = group.getChildAt(i)
@@ -114,13 +116,23 @@ class NetworkStatusBanner(private val activity: Activity) {
                     name.contains("top", true) || name.contains("header", true) ||
                     name.contains("tab", true) || name.contains("toolbar", true)
                 )
-                if (looksLikeTopChrome && child.y < activity.resources.displayMetrics.heightPixels * 0.35f) {
-                    anchorBottom = maxOf(anchorBottom, (child.y + child.height).toInt())
+                val childTop = child.y.toInt()
+                val childBottom = (child.y + child.height).toInt()
+                if (looksLikeTopChrome && childTop < activity.resources.displayMetrics.heightPixels * 0.35f) {
+                    topChromeBottom = maxOf(topChromeBottom, childBottom)
+                } else if (childTop >= statusTop && childTop < contentTop) {
+                    contentTop = childTop
                 }
                 if (child is ViewGroup) inspect(child)
             }
         }
         inspect(root)
+        // Prefer the natural gap after the tab/top chrome. Never float the strip over
+        // the first content row; if there is no measurable gap, sit directly below chrome.
+        anchorBottom = topChromeBottom
+        if (contentTop != Int.MAX_VALUE && contentTop > topChromeBottom) {
+            anchorBottom = topChromeBottom + ((contentTop - topChromeBottom - banner.measuredHeight).coerceAtLeast(0) / 2)
+        }
         (banner.layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
             if (lp.topMargin != anchorBottom) {
                 lp.topMargin = anchorBottom

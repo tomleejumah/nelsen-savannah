@@ -55,6 +55,10 @@ object LmsEventsDataSource {
         reservedByMe = reservedByMe,
         liveStatus = liveStatus.orEmpty(),
         liveAvailability = liveAvailability.orEmpty().ifBlank { "unknown" },
+        audienceScope = audienceScope.orEmpty(),
+        schoolId = schoolId.orEmpty(),
+        trackId = trackId.orEmpty(),
+        createdBy = createdBy.orEmpty(),
     )
 
     suspend fun fetchPublicEvents(filter: String = "upcoming", bearer: String? = null): List<Event> =

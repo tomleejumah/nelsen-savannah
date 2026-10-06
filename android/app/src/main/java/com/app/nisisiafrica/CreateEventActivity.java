@@ -54,6 +54,7 @@ public class CreateEventActivity extends AppCompatActivity {
     public static final String EXTRA_COMMUNITY_ID = "extra_community_id";
     public static final String EXTRA_COMMUNITY_NAME = "extra_community_name";
     public static final String EXTRA_LIVE_MODE = "extra_live_mode";
+    public static final String EXTRA_SCHEDULE_LIVE = "extra_schedule_live";
     private static final int REQUEST_LIVE_PERMISSIONS = 4107;
 
     private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink, etSeats, etPrice;
@@ -64,6 +65,7 @@ public class CreateEventActivity extends AppCompatActivity {
     private MaterialButtonToggleGroup toggleMode;
     private View eventCommercialRow, liveAudienceSection;
     private boolean liveMode = false;
+    private boolean scheduleLive = false;
 
     private final List<LmsModels.TrackCard> liveTrackOptions = new ArrayList<>();
     private String liveAudienceScope = "school";
@@ -96,6 +98,7 @@ public class CreateEventActivity extends AppCompatActivity {
         communityId = getIntent().getStringExtra(EXTRA_COMMUNITY_ID);
         communityName = getIntent().getStringExtra(EXTRA_COMMUNITY_NAME);
         liveMode = getIntent().getBooleanExtra(EXTRA_LIVE_MODE, false);
+        scheduleLive = liveMode && getIntent().getBooleanExtra(EXTRA_SCHEDULE_LIVE, false);
         if (!Roles.canCreate()) {
             Toast.makeText(
                     this,
@@ -106,8 +109,8 @@ public class CreateEventActivity extends AppCompatActivity {
             return;
         }
         if (liveMode) {
-            toolbar.setTitle("Go Live");
-            toolbar.setSubtitle("Nelsen · YouTube Live");
+            toolbar.setTitle(scheduleLive ? "Schedule Live" : "Go Live");
+            toolbar.setSubtitle(scheduleLive ? "Choose when your Nelsen live starts" : "Nelsen · YouTube Live");
         } else if (communityId != null && !communityId.isEmpty()) {
             toolbar.setTitle(R.string.group_create_event);
             if (communityName != null && !communityName.isEmpty()) {
@@ -173,16 +176,22 @@ public class CreateEventActivity extends AppCompatActivity {
             if (tilProgram != null) tilProgram.setVisibility(View.GONE);
             if (liveAudienceSection != null) liveAudienceSection.setVisibility(View.VISIBLE);
 
-            dateCal.setTimeInMillis(System.currentTimeMillis());
-            dateSet = true;
-            startTime = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(dateCal.getTime());
-            tvDate.setVisibility(View.GONE);
-            View liveTimeRow = (View) tvStart.getParent();
-            if (liveTimeRow != null) liveTimeRow.setVisibility(View.GONE);
+            if (!scheduleLive) {
+                dateCal.setTimeInMillis(System.currentTimeMillis());
+                dateSet = true;
+                startTime = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(dateCal.getTime());
+                tvDate.setVisibility(View.GONE);
+                View liveTimeRow = (View) tvStart.getParent();
+                if (liveTimeRow != null) liveTimeRow.setVisibility(View.GONE);
+            } else {
+                tvDate.setVisibility(View.VISIBLE);
+                View liveTimeRow = (View) tvStart.getParent();
+                if (liveTimeRow != null) liveTimeRow.setVisibility(View.VISIBLE);
+            }
 
             setupLiveAudienceControls();
             loadLiveAudienceContext();
-            btnSave.setText("Go Live");
+            btnSave.setText(scheduleLive ? "Schedule Live" : "Go Live");
         }
 
         tvDate.setOnClickListener(v -> pickDate());
@@ -333,7 +342,7 @@ public class CreateEventActivity extends AppCompatActivity {
     }
 
     private void saveEvent() {
-        if (liveMode && !hasLivePermissions()) {
+        if (liveMode && !scheduleLive && !hasLivePermissions()) {
             ActivityCompat.requestPermissions(
                     this,
                     new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
@@ -349,7 +358,7 @@ public class CreateEventActivity extends AppCompatActivity {
             etTitle.setError("Enter a title");
             return;
         }
-        if (!dateSet && !liveMode) {
+        if (!dateSet && (!liveMode || scheduleLive)) {
             Toast.makeText(this, "Pick a date", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -362,7 +371,7 @@ public class CreateEventActivity extends AppCompatActivity {
         }
 
         long eventMillis;
-        if (liveMode) {
+        if (liveMode && !scheduleLive) {
             dateCal.setTimeInMillis(System.currentTimeMillis());
             eventMillis = dateCal.getTimeInMillis();
             startTime = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(dateCal.getTime());
@@ -459,7 +468,12 @@ public class CreateEventActivity extends AppCompatActivity {
                             LmsEventsDataSource.createYouTubeLiveBlocking(bearer, body);
                     runOnUiThread(() -> {
                         LmsModels.YouTubeLiveData live = result.getFirst();
-                        if (live != null && live.ingestUrl != null && !live.ingestUrl.isEmpty()) {
+                        if (live != null && live.event != null && scheduleLive) {
+                            WorkManager.getInstance(getApplicationContext())
+                                    .enqueue(new OneTimeWorkRequest.Builder(EventReminderWorker.class).build());
+                            Toast.makeText(this, "Live scheduled", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else if (live != null && live.ingestUrl != null && !live.ingestUrl.isEmpty()) {
                             Intent intent = new Intent(this, GoLiveActivity.class);
                             intent.putExtra(GoLiveActivity.EXTRA_INGEST_URL, live.ingestUrl);
                             intent.putExtra(GoLiveActivity.EXTRA_TITLE, title);

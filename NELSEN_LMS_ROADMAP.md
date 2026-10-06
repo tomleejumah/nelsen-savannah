@@ -389,7 +389,7 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 - [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation. **In progress:** repository-wide Android layout pass underway: main shell/Home/Profile/Groups/Chat, auth/onboarding, stories/media, school/course catalog and dialogs.
 - [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate. **In progress:** course catalog header can now scroll independently on compact-height/font-scaled screens; Login no longer assumes a 300dp hero width; Add Course no longer assumes a fixed 300×550dp dialog and can scroll on compact displays; onboarding/profile/media previews now scale within available screen bounds.
-- [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities. **In progress:** tablet bottom navigation + Chat master/detail are wired; course-learning `sw600dp` resource is added and chapter taps now load lesson material into the in-screen material pane on tablets instead of launching the phone chapter Activity.
+- [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities. **In progress:** tablet bottom navigation + Chat master/detail are wired; school discovery now uses a `sw600dp` master/detail shell (schools left → selected school's courses right), tablet school deep links enter that shell, and course learning is a true chapters-left/material-right split with chapter taps loading material in-screen. Phone navigation remains full-screen. Remaining responsive QA covers other screens, IME/system bars and font scaling.
 - [ ] Finish the tablet LMS/discovery **progressive master-detail shell** instead of stretching phone Activities:
   - Home → Schools: school list/navigation pane + selected school preview/details pane.
   - School → Courses: selected school becomes parent context on the left; its course catalog/detail occupies the right.
@@ -398,6 +398,21 @@ Make app content shareable with links that open the exact destination in Nelsen 
   - Deep links into school/course/lesson should reconstruct the correct pane hierarchy.
   - Phones retain the existing single-pane/full-screen Activity flow.
   - Do **not** force this shell onto unrelated screens: Chat keeps conversation master/detail; Profile, Settings, stories/status viewer, forms and dialogs remain normal adaptive surfaces.
+- [ ] Complete **scheduled + instant Live** end-to-end on Android/API:
+  - Mentor/School Admin/Super Admin can choose **Go live now** or **Schedule live**; scheduled live keeps the selected date/start time instead of forcing `System.currentTimeMillis()`.
+  - Scheduled live creates the YouTube broadcast + Nelsen Hub event ahead of time, is listed on Home/All Schedules for the permitted audience, and remains `scheduled` until YouTube reports it live.
+  - **Audience isolation is enforced by the API, not only UI:** mentors and School Admin see live sessions only for their active school; mentees see school-wide lives for their active school and course-scoped lives only for courses they are actively enrolled in; course mentors see course lives they teach. Admin/SuperAdmin platform broadcasts remain the explicit cross-school exception.
+  - Live cards never use seat reservation semantics: CTA is **Join live** for viewers (scheduled/live; replay after end). The creator gets **Go live** for scheduled/instant sessions and enters the existing `GoLiveActivity` host flow.
+  - Add canonical app link `https://nelsen-savannah.co.ke/live/{eventId}`; sharing a live shares the Nelsen link, not the raw YouTube URL. Deep-link resolution fetches the event, enforces audience access, then routes creator → host/Go live and everyone else → `LiveViewerActivity`.
+  - Preserve instant-live behavior as the fast path through the same event/deep-link model; never expose/persist the RTMPS ingest key in links or event records.
+  - Add reminders/notifications for scheduled live and regression coverage for creator/viewer roles, course/school/platform audience, scheduled/live/ended states, deep links and unavailable YouTube streams.
+- [ ] Extend the **adaptive pane policy across tab-owned content where it naturally improves continuity**:
+  - Home schedule/events: list/timeline stays as parent context; selected event/live opens in the detail pane on tablets. Create/edit event/live uses an adaptive detail/form pane rather than a narrow phone dialog stretched across the tablet.
+  - Groups: group/community list → selected group; inside a group, feed/post list → selected post/comments in the detail pane where width permits.
+  - Posts/status/stories opened from tab content should use the tab's available detail pane on large screens where practical; immersive media/story viewing may still take the full surface when that is the better experience.
+  - Keep bottom-nav/tab selection stable while opening/closing tablet detail panes; Back closes/drills out of detail before changing tabs.
+  - Reuse the same width/inset/font-scale/IME rules across these adaptive surfaces; phones retain existing single-pane navigation.
+
 - [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
 - [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
 
