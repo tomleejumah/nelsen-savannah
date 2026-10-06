@@ -276,6 +276,25 @@ public class LiveViewerActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && !isFinishing()
+                && webView != null
+                && webView.getVisibility() == View.VISIBLE
+                && !isInPictureInPictureMode()) {
+            try {
+                enterPictureInPictureMode(
+                        new PictureInPictureParams.Builder()
+                                .setAspectRatio(new Rational(16, 9))
+                                .build()
+                );
+            } catch (Exception ignored) {
+            }
+        }
+        super.onStop();
+    }
+
+    @Override
     public void onUserLeaveHint() {
         super.onUserLeaveHint();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && webView != null && webView.getVisibility() == View.VISIBLE) {
