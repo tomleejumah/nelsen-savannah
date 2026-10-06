@@ -302,6 +302,22 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
     moduleCount: moduleCounts.get(t.trackId) || t.moduleCount || 0,
   }));
 
+  // Host-facing course selection must not leak courses a mentor does not teach.
+  // SchoolAdmin can host against any course in their active school; Mentor only
+  // against courses explicitly assigned through track_mentors.
+  if (uid) {
+    const roleRow = await dbGet("SELECT role FROM roles WHERE uid = ?", [uid]);
+    const role = String(roleRow?.role || "");
+    if (role === "Mentor") {
+      const assignedRows = await dbAll(
+        "SELECT track_id FROM track_mentors WHERE uid = ?",
+        [uid],
+      );
+      const assigned = new Set(assignedRows.map((row) => String(row.track_id)));
+      tracks = tracks.filter((t) => assigned.has(String(t.trackId)));
+    }
+  }
+
   if (audience) {
     tracks = tracks.filter((t) => t.audience.includes(audience));
   }
