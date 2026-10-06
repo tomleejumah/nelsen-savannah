@@ -104,14 +104,8 @@ async function connectionScopeForAdmin(actor, requestedSchoolId = "") {
   const role = await loadUserRole(uid);
   const schoolId = String(requestedSchoolId || "").trim();
 
-  if (isSuperAdmin(role)) {
-    return schoolId
-      ? { scopeType: "school", scopeId: schoolId }
-      : { scopeType: "platform", scopeId: PLATFORM_SCOPE_ID };
-  }
-
   if (!isSchoolAdmin(role)) {
-    throw httpError("Only a SchoolAdmin or SuperAdmin can connect a YouTube channel", 403);
+    throw httpError("Only the school's SchoolAdmin can connect its live channel", 403);
   }
 
   const ownSchool = await actorSchool(uid);
@@ -359,15 +353,8 @@ async function connectionForAudience(audience) {
     if (school) return school;
   }
 
-  const fallback = await dbGet(
-    `SELECT * FROM youtube_channel_connections
-     WHERE scope_type = 'platform' AND scope_id = ?`,
-    [PLATFORM_SCOPE_ID],
-  );
-  if (fallback) return fallback;
-
   throw httpError(
-    "No YouTube channel is connected for this school or the Nelsen platform",
+    "This school has not connected its live channel yet. A SchoolAdmin must connect it first.",
     409,
     "YOUTUBE_CHANNEL_NOT_CONNECTED",
   );
@@ -444,8 +431,8 @@ async function deleteYoutubeResource(accessToken, resource, id) {
 
 export async function createYouTubeLiveSession(actor, body = {}) {
   const role = await loadUserRole(actor.uid);
-  if (![ROLES.Mentor, ROLES.SchoolAdmin, ROLES.SuperAdmin].includes(role)) {
-    throw httpError("Only mentors, school admins and super admins can go live", 403);
+  if (![ROLES.Mentor, ROLES.SchoolAdmin].includes(role)) {
+    throw httpError("Only mentors and school admins can go live", 403);
   }
 
   const audience = await resolveLiveAudience(actor, body);
@@ -519,4 +506,68 @@ export async function createYouTubeLiveSession(actor, body = {}) {
     await deleteYoutubeResource(accessToken, "liveStreams", stream?.id);
     throw err;
   }
+}
+
+
+export async function getYouTubeLiveTelemetry(actor, eventId) {
+  const session = await dbGet(
+    "SELECT * FROM youtube_live_sessions WHERE event_id = ?",
+    [String(eventId || "")],
+  );
+  if (!session) throw httpError("Live session metadata not found", 404);
+
+  const event = await dbGet(
+    "SELECT created_by, school_id FROM hub_events WHERE event_id = ?",
+    [eventId],
+  );
+  const role = await loadUserRole(actor.uid);
+  const ownSchool = await actorSchool(actor.uid);
+  const allowed = String(event?.created_by || "") === String(actor.uid)
+    || isSuperAdmin(role)
+    || (isSchoolAdmin(role) && ownSchool && ownSchool === String(event?.school_id || ""));
+  if (!allowed) throw httpError("You cannot view this live studio", 403);
+
+  const connection = await dbGet(
+    `SELECT * FROM youtube_channel_connections
+     WHERE scope_type = ? AND scope_id = ?`,
+    [session.scope_type, session.scope_id],
+  );
+  if (!connection) throw httpError("Channel connection not found", 409);
+  const accessToken = await refreshAccessToken(connection);
+
+  const videoUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+  videoUrl.searchParams.set("part", "liveStreamingDetails,statistics");
+  videoUrl.searchParams.set("id", session.broadcast_id);
+  const videoJson = await youtubeJson(videoUrl, accessToken);
+  const video = videoJson.items?.[0] || {};
+  const details = video.liveStreamingDetails || {};
+  const stats = video.statistics || {};
+  const liveChatId = String(details.activeLiveChatId || "");
+
+  let chat = [];
+  if (liveChatId) {
+    const chatUrl = new URL("https://www.googleapis.com/youtube/v3/liveChat/messages");
+    chatUrl.searchParams.set("liveChatId", liveChatId);
+    chatUrl.searchParams.set("part", "id,snippet,authorDetails");
+    chatUrl.searchParams.set("maxResults", "20");
+    const chatJson = await youtubeJson(chatUrl, accessToken);
+    chat = (chatJson.items || []).slice(-20).map((item) => ({
+      id: item.id,
+      message: String(item.snippet?.displayMessage || ""),
+      publishedAt: item.snippet?.publishedAt || null,
+      author: String(item.authorDetails?.displayName || "Viewer"),
+      avatarUrl: item.authorDetails?.profileImageUrl || null,
+      isOwner: Boolean(item.authorDetails?.isChatOwner),
+      isModerator: Boolean(item.authorDetails?.isChatModerator),
+    }));
+  }
+
+  return {
+    eventId,
+    concurrentViewers: Number(details.concurrentViewers || 0),
+    viewCount: Number(stats.viewCount || 0),
+    likeCount: Number(stats.likeCount || 0),
+    liveChatId: liveChatId || null,
+    chat,
+  };
 }

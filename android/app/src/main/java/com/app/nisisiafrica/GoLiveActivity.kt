@@ -10,6 +10,8 @@ import android.media.projection.MediaProjectionManager
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Rational
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -48,6 +50,15 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     private lateinit var preview: SurfaceView
     private lateinit var status: TextView
+    private lateinit var viewers: TextView
+    private lateinit var chat: TextView
+    private val telemetryHandler = Handler(Looper.getMainLooper())
+    private val telemetryPoll = object : Runnable {
+        override fun run() {
+            refreshTelemetry()
+            telemetryHandler.postDelayed(this, 5_000L)
+        }
+    }
     private lateinit var endButton: MaterialButton
     private lateinit var switchButton: MaterialButton
     private lateinit var micButton: MaterialButton
@@ -71,7 +82,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK || result.data == null) return@registerForActivityResult
+            if (result.resultCode != Activity.RESULT_OK || result.data == null) {
+                stopService(Intent(this, LiveProjectionService::class.java))
+                return@registerForActivityResult
+            }
             try {
                 val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
                 mediaProjection?.stop()
@@ -81,11 +95,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 stream.getGlInterface().setCameraOrientation(0)
                 sharingScreen = true
                 cameraPaused = false
-                screenButton.text = "Stop sharing"
-                cameraButton.text = "Camera off"
+                screenButton.contentDescription = "Stop sharing screen"
+                cameraButton.contentDescription = "Turn camera off"
                 switchButton.isEnabled = false
                 status.text = "LIVE · Sharing screen"
             } catch (e: Exception) {
+                mediaProjection?.stop()
+                mediaProjection = null
+                stopService(Intent(this, LiveProjectionService::class.java))
                 Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
             }
         }
@@ -125,6 +142,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
         preview = findViewById(R.id.livePreview)
         status = findViewById(R.id.tvLiveStatus)
+        viewers = findViewById(R.id.tvLiveViewers)
+        chat = findViewById(R.id.tvLiveChat)
         endButton = findViewById(R.id.btnEndLive)
         switchButton = findViewById(R.id.btnSwitchCamera)
         micButton = findViewById(R.id.btnToggleMic)
@@ -212,7 +231,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         try {
             if (micMuted) microphone.unMute() else microphone.mute()
             micMuted = !micMuted
-            micButton.text = if (micMuted) "Unmute" else "Mute"
+            micButton.contentDescription = if (micMuted) "Unmute microphone" else "Mute microphone"
         } catch (e: Exception) {
             Toast.makeText(this, "Could not change microphone", Toast.LENGTH_SHORT).show()
         }
@@ -226,8 +245,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
         cameraPaused = false
-        screenButton.text = "Share screen"
-        cameraButton.text = "Camera off"
+        screenButton.contentDescription = "Share screen"
+        cameraButton.contentDescription = "Turn camera off"
         switchButton.isEnabled = true
         if (wentLive) status.text = "LIVE · Streaming"
     }
@@ -243,7 +262,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             } else {
                 stream.changeVideoSource(NoVideoSource())
                 cameraPaused = true
-                cameraButton.text = "Camera on"
+                cameraButton.contentDescription = "Turn camera on"
                 switchButton.isEnabled = false
                 if (wentLive) status.text = "LIVE · Camera paused"
             }
@@ -281,6 +300,35 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 "Share live session",
             ),
         )
+    }
+
+
+    private fun refreshTelemetry() {
+        if (!wentLive || eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        user.getIdToken(false).addOnSuccessListener { token ->
+            ApiClient.getLmsService()
+                .liveTelemetry("Bearer ${token.token}", eventId)
+                .enqueue(object : Callback<LmsModels.LiveTelemetryEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.LiveTelemetryEnvelope>,
+                        response: Response<LmsModels.LiveTelemetryEnvelope>,
+                    ) {
+                        val data = response.body()?.data ?: return
+                        viewers.text = "${data.concurrentViewers} watching"
+                        val latest = data.chat?.lastOrNull()
+                        chat.text = if (latest != null && latest.message.isNotBlank()) {
+                            "${latest.author}: ${latest.message}"
+                        } else {
+                            "Live · waiting for chat"
+                        }
+                    }
+                    override fun onFailure(
+                        call: Call<LmsModels.LiveTelemetryEnvelope>,
+                        t: Throwable,
+                    ) = Unit
+                })
+        }
     }
 
     private fun confirmEndLive() {
@@ -361,6 +409,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     override fun onConnectionSuccess() {
         wentLive = true
         markNelsenLiveStatus("live")
+        telemetryHandler.removeCallbacks(telemetryPoll)
+        telemetryHandler.post(telemetryPoll)
         runOnUiThread {
             status.text = "LIVE · Streaming"
             endButton.isEnabled = true
@@ -407,6 +457,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onDestroy() {
+        telemetryHandler.removeCallbacks(telemetryPoll)
         try {
             if (stream.isStreaming) stream.stopStream()
             mediaProjection?.stop()

@@ -907,4 +907,30 @@ public final class LmsModels {
         public AppReleaseDto data;
         public String error;
     }
+
+    public static class LiveChatMessageDto {
+        public String id;
+        public String message;
+        public String publishedAt;
+        public String author;
+        public String avatarUrl;
+        public boolean isOwner;
+        public boolean isModerator;
+    }
+
+    public static class LiveTelemetryData {
+        public String eventId;
+        public int concurrentViewers;
+        public int viewCount;
+        public int likeCount;
+        public String liveChatId;
+        public List<LiveChatMessageDto> chat;
+    }
+
+    public static class LiveTelemetryEnvelope {
+        public boolean ok;
+        public String source;
+        public LiveTelemetryData data;
+        public String error;
+    }
 }

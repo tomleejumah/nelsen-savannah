@@ -44,20 +44,26 @@ router.get("/youtube/oauth/callback", lmsController.getYouTubeOAuthCallback);
 router.post(
   "/youtube/connect-url",
   authenticateUser,
-  requireRoles("SchoolAdmin", "Admin", "SuperAdmin"),
+  requireRoles("SchoolAdmin"),
   lmsController.postYouTubeConnectUrl,
 );
 router.get(
   "/youtube/connection",
   authenticateUser,
-  requireRoles("SchoolAdmin", "Admin", "SuperAdmin"),
+  requireRoles("SchoolAdmin"),
   lmsController.getYouTubeConnection,
 );
 router.post(
   "/youtube/live",
   authenticateUser,
-  requireRoles("Mentor", "SchoolAdmin", "Admin", "SuperAdmin"),
+  requireRoles("Mentor", "SchoolAdmin"),
   lmsController.postYouTubeLive,
+);
+router.get(
+  "/youtube/live/:eventId/telemetry",
+  authenticateUser,
+  requireRoles("Mentor", "SchoolAdmin", "Admin", "SuperAdmin"),
+  lmsController.getYouTubeLiveTelemetry,
 );
 
 router.post(
@@ -477,6 +483,17 @@ router.patch(
   authenticateUser,
   requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
   lmsController.patchHubLiveStatus,
+);
+router.post(
+  "/events/:eventId/attendance",
+  authenticateUser,
+  lmsController.postLiveAttendance,
+);
+router.get(
+  "/events/:eventId/attendance",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
+  lmsController.getLiveAttendanceSummary,
 );
 router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
 router.post(

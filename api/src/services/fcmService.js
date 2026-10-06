@@ -44,13 +44,14 @@ export async function sendFCMNotification(receiverId, notification) {
     if (notification.body) body = notification.body;
 
     // NEW FCM V1 API
+    // Keep app notifications data-only. Firebase otherwise lets Android render
+    // notification+data messages itself while the app is backgrounded, bypassing
+    // FCMService and its direct LiveViewerActivity PendingIntent.
     const message = {
       token: token,
-      notification: {
-        title: title,
-        body: body,
-      },
       data: {
+        title,
+        body,
         senderId: notification.senderId || "",
         type: notification.type || "",
         notificationId: notification.notificationId || "",
