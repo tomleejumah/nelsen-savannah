@@ -87,6 +87,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 return@registerForActivityResult
             }
             try {
+                ContextCompat.startForegroundService(
+                    this,
+                    Intent(this, LiveProjectionService::class.java),
+                )
                 val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
                 mediaProjection?.stop()
                 mediaProjection = manager.getMediaProjection(result.resultCode, result.data!!)
@@ -280,10 +284,6 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             }
             return
         }
-        ContextCompat.startForegroundService(
-            this,
-            Intent(this, LiveProjectionService::class.java),
-        )
         val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
     }
