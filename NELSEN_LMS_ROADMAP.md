@@ -469,6 +469,11 @@ This milestone tracks the current production-hardening work before the remaining
 
 ### Live hardening and end-to-end validation
 
+- [ ] Fix canonical live joining end-to-end: `/live/{eventId}` must resolve the authorized event and open the native viewer/host destination.
+- [ ] Verify school-wide live notification fanout reaches every active school member with a current FCM token; log recipient/sent/missing-token/failed counts and make failed delivery diagnosable.
+- [ ] Persist live-start alerts in the same in-app Notifications feed as other notifications and make tapping a live notification open the linked live session.
+- [ ] Add/verify the Firebase Realtime Database `.indexOn: "timestamp"` rule for `Notifications/$uid` so notification feed queries are server-indexed.
+
 - [x] Require active school membership for school-scoped live hosting.
 - [x] Require mentors to be assigned to a course before hosting a course-scoped live session.
 - [x] Authorize manual live-status changes by the acting host/admin.
