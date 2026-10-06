@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.app.nisisiafrica.Service.LiveProjectionService
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.android.material.button.MaterialButton
@@ -220,6 +221,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private fun restoreCamera() {
         mediaProjection?.stop()
         mediaProjection = null
+        stopService(Intent(this, LiveProjectionService::class.java))
         stream.changeVideoSource(Camera2Source(applicationContext))
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
@@ -259,6 +261,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             }
             return
         }
+        ContextCompat.startForegroundService(
+            this,
+            Intent(this, LiveProjectionService::class.java),
+        )
         val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
     }
@@ -405,6 +411,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             if (stream.isStreaming) stream.stopStream()
             mediaProjection?.stop()
             mediaProjection = null
+            stopService(Intent(this, LiveProjectionService::class.java))
             stream.release()
         } catch (_: Exception) {
         }
