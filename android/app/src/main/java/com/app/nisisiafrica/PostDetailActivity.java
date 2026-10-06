@@ -2,8 +2,6 @@ package com.app.nisisiafrica;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.View;
@@ -124,7 +122,6 @@ public class PostDetailActivity extends AppCompatActivity {
             repository.addComment(communityId, postId, body, authorName, parentId, (success, idOrError) -> {
                 btnSend.setEnabled(true);
                 if (success) {
-                    vibrateSuccess();
                     etComment.setText("");
                     clearReply();
                     NotificationSender.comment(postAuthorId, postId, "commented on your post", body, communityId);
@@ -217,15 +214,4 @@ public class PostDetailActivity extends AppCompatActivity {
         if (postReg != null) postReg.remove();
         if (commentsReg != null) commentsReg.remove();
     }
-    private void vibrateSuccess() {
-        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        if (vibrator == null || !vibrator.hasVibrator()) return;
-        long[] pattern = new long[]{0, 45, 45, 90};
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
-        } else {
-            vibrator.vibrate(pattern, -1);
-        }
-    }
-
 }
