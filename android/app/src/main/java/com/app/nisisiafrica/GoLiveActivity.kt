@@ -18,6 +18,7 @@ import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.pedro.common.ConnectChecker
+import com.pedro.common.socket.SocketType
 import com.pedro.encoder.input.sources.video.Camera2Source
 import com.pedro.library.generic.GenericStream
 import retrofit2.Call
@@ -89,6 +90,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Nelsen Live" }
 
         stream = GenericStream(applicationContext, this)
+        // RootEncoder's Ktor TLS socket can collide with another Ktor ABI in the
+        // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
+        // library's Java socket implementation and avoids that dependency path.
+        stream.getStreamClient().setSocketType(SocketType.JAVA)
         preview.holder.addCallback(this)
 
         endButton.setOnClickListener { confirmEndLive() }
