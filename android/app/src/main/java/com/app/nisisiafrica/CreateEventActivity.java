@@ -111,7 +111,7 @@ public class CreateEventActivity extends AppCompatActivity {
         }
         if (liveMode) {
             toolbar.setTitle(scheduleLive ? "Schedule Live" : "Go Live");
-            toolbar.setSubtitle(scheduleLive ? "Choose when your Nelsen live starts" : "Nelsen · YouTube Live");
+            toolbar.setSubtitle(scheduleLive ? "Choose when your Nelsen live starts" : "Nelsen Live");
         } else if (communityId != null && !communityId.isEmpty()) {
             toolbar.setTitle(R.string.group_create_event);
             if (communityName != null && !communityName.isEmpty()) {
@@ -174,7 +174,7 @@ public class CreateEventActivity extends AppCompatActivity {
             toggleMode.check(R.id.btnModeOnline);
             toggleMode.setVisibility(View.GONE);
             tilLocation.setVisibility(View.GONE);
-            // Nelsen creates the broadcast/stream through YouTube API; hosts never paste a link.
+            // Nelsen creates the broadcast/stream automatically; hosts never paste a link.
             tilMeetingLink.setVisibility(View.GONE);
             if (eventCommercialRow != null) eventCommercialRow.setVisibility(View.GONE);
             if (tilProgram != null) tilProgram.setVisibility(View.GONE);
