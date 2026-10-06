@@ -18,7 +18,7 @@ import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.pedro.common.ConnectChecker
-import com.pedro.common.socket.SocketType
+import com.pedro.common.socket.base.SocketType
 import com.pedro.encoder.input.sources.video.Camera2Source
 import com.pedro.library.generic.GenericStream
 import retrofit2.Call
