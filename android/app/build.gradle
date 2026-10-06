@@ -241,9 +241,6 @@ dependencies {
 
     implementation("io.github.oothp:android-pdf-viewer:3.2.0-beta06")
 
-    // Camera + microphone publisher for YouTube RTMPS live ingest.
-    // 2.6.0 matches Nelsen's Kotlin 2.1.20 toolchain; 2.7+ is built with newer Kotlin metadata.
-    implementation 'com.github.pedroSG94.RootEncoder:library:2.6.0'
 
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
