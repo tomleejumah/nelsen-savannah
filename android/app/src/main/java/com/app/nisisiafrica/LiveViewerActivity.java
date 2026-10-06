@@ -163,16 +163,16 @@ public class LiveViewerActivity extends AppCompatActivity {
                             @Override public void onResponse(Call<LmsModels.LiveTelemetryEnvelope> call, Response<LmsModels.LiveTelemetryEnvelope> response) {
                                 if (!response.isSuccessful() || response.body() == null || response.body().data == null) return;
                                 LmsModels.LiveTelemetryData data = response.body().data;
-                                if (viewerCountView != null && data.concurrentViewers != null) {
-                                    viewerCountView.setText(data.concurrentViewers + (data.concurrentViewers == 1 ? " watching" : " watching"));
+                                if (viewerCountView != null) {
+                                    viewerCountView.setText(data.concurrentViewers + " watching");
                                     viewerCountView.setVisibility(View.VISIBLE);
                                 }
-                                if (chatView != null && data.chatMessages != null && !data.chatMessages.isEmpty()) {
+                                if (chatView != null && data.chat != null && !data.chat.isEmpty()) {
                                     StringBuilder lines = new StringBuilder();
-                                    for (LmsModels.LiveChatMessage item : data.chatMessages) {
+                                    for (LmsModels.LiveChatMessageDto item : data.chat) {
                                         if (lines.length() > 0) lines.append("\n\n");
-                                        if (!TextUtils.isEmpty(item.authorName)) lines.append(item.authorName).append(": ");
-                                        lines.append(value(item.message));
+                                        if (!TextUtils.isEmpty(item.author)) lines.append(item.authorName).append(": ");
+                                        lines.append(value(item.text));
                                     }
                                     chatView.setText(lines.toString());
                                 }
