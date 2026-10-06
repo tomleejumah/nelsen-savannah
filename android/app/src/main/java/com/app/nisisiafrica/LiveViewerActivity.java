@@ -49,6 +49,15 @@ public class LiveViewerActivity extends AppCompatActivity {
     private String youtubeUrl = "";
     private String eventId = "";
     private WebView webView;
+    private final Handler attendanceHandler = new Handler(Looper.getMainLooper());
+    private boolean attendanceRunning = false;
+    private final Runnable attendanceHeartbeat = new Runnable() {
+        @Override public void run() {
+            if (!attendanceRunning) return;
+            recordAttendance(15);
+            attendanceHandler.postDelayed(this, 15_000L);
+        }
+    };
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -193,6 +202,23 @@ public class LiveViewerActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (!attendanceRunning) {
+            attendanceRunning = true;
+            recordAttendance(0);
+            attendanceHandler.postDelayed(attendanceHeartbeat, 15_000L);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        attendanceRunning = false;
+        attendanceHandler.removeCallbacks(attendanceHeartbeat);
+        super.onPause();
+    }
+
+    @Override
     public void onUserLeaveHint() {
         super.onUserLeaveHint();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && webView != null && webView.getVisibility() == View.VISIBLE) {
@@ -209,6 +235,8 @@ public class LiveViewerActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        attendanceRunning = false;
+        attendanceHandler.removeCallbacks(attendanceHeartbeat);
         if (webView != null) {
             webView.stopLoading();
             webView.loadUrl("about:blank");
