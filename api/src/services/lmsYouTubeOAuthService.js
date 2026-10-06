@@ -104,14 +104,8 @@ async function connectionScopeForAdmin(actor, requestedSchoolId = "") {
   const role = await loadUserRole(uid);
   const schoolId = String(requestedSchoolId || "").trim();
 
-  if (isSuperAdmin(role)) {
-    return schoolId
-      ? { scopeType: "school", scopeId: schoolId }
-      : { scopeType: "platform", scopeId: PLATFORM_SCOPE_ID };
-  }
-
   if (!isSchoolAdmin(role)) {
-    throw httpError("Only a SchoolAdmin or SuperAdmin can connect a YouTube channel", 403);
+    throw httpError("Only the school's SchoolAdmin can connect its live channel", 403);
   }
 
   const ownSchool = await actorSchool(uid);
@@ -359,15 +353,8 @@ async function connectionForAudience(audience) {
     if (school) return school;
   }
 
-  const fallback = await dbGet(
-    `SELECT * FROM youtube_channel_connections
-     WHERE scope_type = 'platform' AND scope_id = ?`,
-    [PLATFORM_SCOPE_ID],
-  );
-  if (fallback) return fallback;
-
   throw httpError(
-    "No YouTube channel is connected for this school or the Nelsen platform",
+    "This school has not connected its live channel yet. A SchoolAdmin must connect it first.",
     409,
     "YOUTUBE_CHANNEL_NOT_CONNECTED",
   );
@@ -444,8 +431,8 @@ async function deleteYoutubeResource(accessToken, resource, id) {
 
 export async function createYouTubeLiveSession(actor, body = {}) {
   const role = await loadUserRole(actor.uid);
-  if (![ROLES.Mentor, ROLES.SchoolAdmin, ROLES.SuperAdmin].includes(role)) {
-    throw httpError("Only mentors, school admins and super admins can go live", 403);
+  if (![ROLES.Mentor, ROLES.SchoolAdmin].includes(role)) {
+    throw httpError("Only mentors and school admins can go live", 403);
   }
 
   const audience = await resolveLiveAudience(actor, body);
