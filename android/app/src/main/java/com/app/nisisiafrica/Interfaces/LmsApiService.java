@@ -183,6 +183,11 @@ public interface LmsApiService {
     Call<LmsModels.HubEventsEnvelope> publicHubEvents(
             @Query("filter") String filter);
 
+    @GET("lms/events/public/{eventId}")
+    Call<LmsModels.HubEventEnvelope> publicHubEvent(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId);
+
     @POST("lms/events")
     Call<LmsModels.HubEventEnvelope> createHubEvent(
             @Header("Authorization") String bearer,
