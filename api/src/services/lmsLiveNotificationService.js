@@ -79,6 +79,15 @@ async function notifyOne(uid, event) {
 
 export async function notifyLiveStarted(event) {
   const recipients = await loadRecipients(event);
+  console.log("[live-notify] fanout", {
+    eventId: event.eventId,
+    scope: event.audienceScope,
+    schoolId: event.schoolId || "",
+    trackId: event.trackId || "",
+    creator: event.createdBy || "",
+    recipients: recipients.length,
+    recipientUids: recipients,
+  });
   let sent = 0;
   let missingToken = 0;
   let failed = 0;
@@ -86,11 +95,16 @@ export async function notifyLiveStarted(event) {
   for (let i = 0; i < recipients.length; i += 25) {
     const batch = recipients.slice(i, i + 25);
     const results = await Promise.allSettled(batch.map((uid) => notifyOne(uid, event)));
-    for (const result of results) {
+    for (let index = 0; index < results.length; index += 1) {
+      const result = results[index];
+      const uid = batch[index];
       if (result.status === "rejected") {
+        console.error("[live-notify] recipient failed", { eventId: event.eventId, uid, error: result.reason?.message || String(result.reason) });
         failed += 1;
         continue;
       }
+      console.log("[live-notify] recipient result", { eventId: event.eventId, uid, fcm: result.value });
+
       if (result.value?.success) sent += 1;
       else if (result.value?.reason === "no_token") missingToken += 1;
       else failed += 1;
