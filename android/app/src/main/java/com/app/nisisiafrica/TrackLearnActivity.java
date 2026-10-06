@@ -557,13 +557,14 @@ public class TrackLearnActivity extends AppCompatActivity {
             lessonPanel.addView(loading);
         }
         withBearer(bearer -> ApiClient.getLmsService()
-                .getModuleLessons(bearer, trackId, module.moduleId)
+                .module(bearer, module.moduleId)
                 .enqueue(new Callback<>() {
                     @Override
-                    public void onResponse(Call<LmsModels.LessonListEnvelope> call,
-                                           Response<LmsModels.LessonListEnvelope> response) {
+                    public void onResponse(Call<LmsModels.ModuleDetailEnvelope> call,
+                                           Response<LmsModels.ModuleDetailEnvelope> response) {
                         List<LmsModels.LessonDto> lessons = response.isSuccessful()
-                                && response.body() != null && response.body().data != null
+                                && response.body() != null && response.body().ok
+                                && response.body().data != null
                                 ? response.body().data.lessons : null;
                         if (lessons == null || lessons.isEmpty()) {
                             if (lessonPanel != null) {
@@ -586,7 +587,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onFailure(Call<LmsModels.LessonListEnvelope> call, Throwable t) {
+                    public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {
                         if (lessonPanel != null) {
                             lessonPanel.removeAllViews();
                             lessonPanel.addView(sectionLabel("Could not load chapter lessons."));
