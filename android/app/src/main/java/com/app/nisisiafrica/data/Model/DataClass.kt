@@ -284,6 +284,11 @@ data class Event(
     val liveStatus: String = "",
     /** YouTube sync: unknown | available | unavailable. */
     val liveAvailability: String = "unknown",
+    /** Live audience metadata returned by the Hub API. */
+    val audienceScope: String = "",
+    val schoolId: String = "",
+    val trackId: String = "",
+    val createdBy: String = "",
 )
 
 data class Announcement(

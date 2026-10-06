@@ -203,22 +203,32 @@ export async function canViewHubEvent(event, uid = null) {
   const role = await actorRole(viewerUid);
   if (role === "Admin" || role === "SuperAdmin") return true;
 
+  // Platform-wide live sessions are an explicit Admin/SuperAdmin broadcast.
   if (event.audienceScope === "platform") return true;
+
+  const viewerSchool = await actorSchool(viewerUid);
 
   if (event.audienceScope === "school") {
     if (!event.schoolId) return false;
-    return (await actorSchool(viewerUid)) === event.schoolId
+    // Mentors, mentees and SchoolAdmin are school-bound: no cross-school lives.
+    return viewerSchool === event.schoolId
       || await hasActiveSchoolMembership(viewerUid, event.schoolId);
   }
 
   if (event.audienceScope === "course") {
-    if (!event.trackId) return false;
-    if (await hasActiveTrackEnrollment(viewerUid, event.trackId)) return true;
-    if (await isTrackMentor(viewerUid, event.trackId)) return true;
-    if (role === "SchoolAdmin" && event.schoolId) {
-      return (await actorSchool(viewerUid)) === event.schoolId
-        || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+    if (!event.trackId || !event.schoolId) return false;
+    const inSchool = viewerSchool === event.schoolId
+      || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+    if (!inSchool) return false;
+
+    // Mentees only see course lives for courses they are actively enrolled in.
+    if (role === "Mentee" || !role) {
+      return hasActiveTrackEnrollment(viewerUid, event.trackId);
     }
+    // Mentors only see course lives they teach; SchoolAdmin can see all course
+    // lives inside their own school.
+    if (role === "Mentor") return isTrackMentor(viewerUid, event.trackId);
+    if (role === "SchoolAdmin") return true;
     return false;
   }
 
