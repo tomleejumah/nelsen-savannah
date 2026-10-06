@@ -71,7 +71,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK || result.data == null) return@registerForActivityResult
+            if (result.resultCode != Activity.RESULT_OK || result.data == null) {
+                stopService(Intent(this, LiveProjectionService::class.java))
+                return@registerForActivityResult
+            }
             try {
                 val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
                 mediaProjection?.stop()
@@ -81,11 +84,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 stream.getGlInterface().setCameraOrientation(0)
                 sharingScreen = true
                 cameraPaused = false
-                screenButton.text = "Stop sharing"
-                cameraButton.text = "Camera off"
+                screenButton.contentDescription = "Stop sharing screen"
+                cameraButton.contentDescription = "Turn camera off"
                 switchButton.isEnabled = false
                 status.text = "LIVE · Sharing screen"
             } catch (e: Exception) {
+                mediaProjection?.stop()
+                mediaProjection = null
+                stopService(Intent(this, LiveProjectionService::class.java))
                 Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
             }
         }
@@ -212,7 +218,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         try {
             if (micMuted) microphone.unMute() else microphone.mute()
             micMuted = !micMuted
-            micButton.text = if (micMuted) "Unmute" else "Mute"
+            micButton.contentDescription = if (micMuted) "Unmute microphone" else "Mute microphone"
         } catch (e: Exception) {
             Toast.makeText(this, "Could not change microphone", Toast.LENGTH_SHORT).show()
         }
@@ -226,8 +232,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
         cameraPaused = false
-        screenButton.text = "Share screen"
-        cameraButton.text = "Camera off"
+        screenButton.contentDescription = "Share screen"
+        cameraButton.contentDescription = "Turn camera off"
         switchButton.isEnabled = true
         if (wentLive) status.text = "LIVE · Streaming"
     }
@@ -243,7 +249,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             } else {
                 stream.changeVideoSource(NoVideoSource())
                 cameraPaused = true
-                cameraButton.text = "Camera on"
+                cameraButton.contentDescription = "Turn camera on"
                 switchButton.isEnabled = false
                 if (wentLive) status.text = "LIVE · Camera paused"
             }
