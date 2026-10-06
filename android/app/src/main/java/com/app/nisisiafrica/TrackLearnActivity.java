@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
@@ -943,7 +945,9 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (index >= questions.size()) {
             submit.setEnabled(true);
             showWorkResult(result, "Assignment submitted");
+            vibrateActionSuccess();
             Toast.makeText(this, "Assignment submitted", Toast.LENGTH_SHORT).show();
+            vibrateActionSuccess();
             return;
         }
         LmsModels.AssignmentQuestionDto question = questions.get(index);
@@ -976,6 +980,17 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
+    private void vibrateActionSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
+    }
+
     private TextView sectionLabel(String text) {
         TextView label = new TextView(this);
         label.setText(text);
@@ -1000,6 +1015,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                             float pct = response.body().data != null
                                     ? response.body().data.quizPct : 0f;
                             showWorkResult(result, "Quiz scored " + Math.round(pct) + "%");
+                            vibrateActionSuccess();
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -1026,6 +1042,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                             float pct = response.body().data != null
                                     ? response.body().data.quizPct : 0f;
                             showWorkResult(result, "Quiz scored " + Math.round(pct) + "%");
+                            vibrateActionSuccess();
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -1058,6 +1075,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.QuizEnvelope> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
                             showWorkResult(result, "Quiz saved (" + score + "%)");
+                            vibrateActionSuccess();
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -1082,6 +1100,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.SubmissionEnvelope> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
                             showWorkResult(result, "Assignment submitted");
+            vibrateActionSuccess();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
                                     "Submit failed", Toast.LENGTH_SHORT).show();
