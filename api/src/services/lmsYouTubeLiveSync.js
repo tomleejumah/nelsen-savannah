@@ -119,7 +119,13 @@ export async function syncYouTubeLiveStatuses() {
         [Date.now(), candidate.eventId],
       );
       const nextStatus = deriveLiveStatus(video, candidate.currentStatus);
-      if (nextStatus === candidate.currentStatus) continue;
+      // Live state is monotonic. The provider API can briefly lag behind the
+      // publisher connection and report an already-live broadcast as upcoming.
+      // Never downgrade live -> scheduled; only scheduled -> live -> ended.
+      if (
+        nextStatus === candidate.currentStatus ||
+        (candidate.currentStatus === "live" && nextStatus === "scheduled")
+      ) continue;
 
       await updateHubLiveStatus(candidate.eventId, { liveStatus: nextStatus });
       changed += 1;
