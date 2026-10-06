@@ -25,6 +25,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.app.nisisiafrica.data.Model.LmsModels;
+import com.app.nisisiafrica.data.Model.CourseItem;
+import com.bumptech.glide.Glide;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -49,6 +51,7 @@ import retrofit2.Response;
 public class SchoolsListActivity extends AppCompatActivity {
 
     public static final String EXTRA_EXPLORE = "explore";
+    public static final String EXTRA_TABLET_SHELL = "tabletShell";
 
     private final List<Row> allRows = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();
@@ -62,6 +65,16 @@ public class SchoolsListActivity extends AppCompatActivity {
     private ImageButton btnClearSearch;
     private SwipeRefreshLayout swipeRefresh;
     private boolean loadingSchools = false;
+    private boolean tabletShell = false;
+    private View tabletDetail;
+    private TextView tabletDetailTitle;
+    private TextView tabletDetailHint;
+    private RecyclerView tabletCourses;
+    private TabletCourseAdapter tabletCourseAdapter;
+    private String tabletSchoolId = "";
+    private String tabletSchoolName = "";
+    private final List<CourseItem> tabletCourseRows = new ArrayList<>();
+    private final Set<String> tabletEnrolledTrackIds = new HashSet<>();
     private String query = "";
 
     @Override
@@ -90,6 +103,17 @@ public class SchoolsListActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         btnClearSearch = findViewById(R.id.btnClearSearch);
         swipeRefresh = findViewById(R.id.swipeRefreshSchools);
+        tabletShell = getResources().getConfiguration().smallestScreenWidthDp >= 600;
+        tabletDetail = findViewById(R.id.tabletSchoolDetail);
+        tabletDetailTitle = findViewById(R.id.tvTabletSchoolTitle);
+        tabletDetailHint = findViewById(R.id.tvTabletSchoolHint);
+        tabletCourses = findViewById(R.id.rvTabletCourses);
+        if (tabletShell && tabletCourses != null) {
+            tabletCourses.setLayoutManager(new LinearLayoutManager(this));
+            tabletCourseAdapter = new TabletCourseAdapter();
+            tabletCourses.setAdapter(tabletCourseAdapter);
+            loadTabletEnrollments();
+        }
 
         RecyclerView rv = findViewById(R.id.rvSchools);
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -321,10 +345,158 @@ public class SchoolsListActivity extends AppCompatActivity {
     }
 
     private void openSchool(Row row) {
+        if (tabletShell && tabletDetail != null) {
+            openSchoolInPane(row);
+            return;
+        }
         Intent i = new Intent(this, AllCoursesActivity.class);
         i.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, row.schoolId);
         i.putExtra(AllCoursesActivity.EXTRA_SCHOOL_NAME, row.name);
         startActivity(i);
+    }
+
+    private void openSchoolInPane(Row row) {
+        tabletSchoolId = row.schoolId;
+        tabletSchoolName = row.name;
+        tabletDetail.setVisibility(View.VISIBLE);
+        tabletDetailTitle.setText(row.name);
+        tabletDetailHint.setText("Loading courses…");
+        tabletCourseRows.clear();
+        tabletCourseAdapter.notifyDataSetChanged();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().tracks("Bearer " + token.getToken(), row.schoolId)
+                        .enqueue(new Callback<>() {
+                            @Override public void onResponse(@NonNull Call<LmsModels.TracksEnvelope> call,
+                                                            @NonNull Response<LmsModels.TracksEnvelope> response) {
+                                tabletCourseRows.clear();
+                                LmsModels.TracksEnvelope body = response.body();
+                                if (response.isSuccessful() && body != null && body.ok
+                                        && body.data != null && body.data.tracks != null) {
+                                    for (LmsModels.TrackCard card : body.data.tracks) {
+                                        CourseItem item = tabletCourseItem(card);
+                                        if (item != null) tabletCourseRows.add(item);
+                                    }
+                                }
+                                tabletDetailHint.setText(tabletCourseRows.isEmpty()
+                                        ? "No published courses yet"
+                                        : tabletCourseRows.size() + (tabletCourseRows.size() == 1 ? " course" : " courses"));
+                                tabletCourseAdapter.notifyDataSetChanged();
+                            }
+                            @Override public void onFailure(@NonNull Call<LmsModels.TracksEnvelope> call,
+                                                           @NonNull Throwable t) {
+                                tabletDetailHint.setText("Could not load courses. Tap the school to retry.");
+                            }
+                        }));
+    }
+
+    private void loadTabletEnrollments() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().myEnrollments("Bearer " + token.getToken())
+                        .enqueue(new Callback<>() {
+                            @Override public void onResponse(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                                            @NonNull Response<LmsModels.EnrollmentListEnvelope> response) {
+                                tabletEnrolledTrackIds.clear();
+                                LmsModels.EnrollmentListEnvelope body = response.body();
+                                if (response.isSuccessful() && body != null && body.ok
+                                        && body.data != null && body.data.enrollments != null) {
+                                    for (LmsModels.Enrollment e : body.data.enrollments) {
+                                        if (e != null && !TextUtils.isEmpty(e.trackId)) tabletEnrolledTrackIds.add(e.trackId);
+                                    }
+                                }
+                                if (tabletCourseAdapter != null) tabletCourseAdapter.notifyDataSetChanged();
+                            }
+                            @Override public void onFailure(@NonNull Call<LmsModels.EnrollmentListEnvelope> call,
+                                                           @NonNull Throwable t) {}
+                        }));
+    }
+
+    private CourseItem tabletCourseItem(LmsModels.TrackCard card) {
+        if (card == null) return null;
+        String id = card.courseId != null ? card.courseId : card.trackId;
+        if (TextUtils.isEmpty(id)) return null;
+        if (card.enrolled) tabletEnrolledTrackIds.add(id);
+        return new CourseItem(id,
+                card.tutorId != null ? card.tutorId : "",
+                card.courseImageUrl != null ? card.courseImageUrl : "",
+                card.tutorAvatarUrl != null ? card.tutorAvatarUrl : "",
+                card.tutorName != null ? card.tutorName : "",
+                card.courseTitle != null ? card.courseTitle : "",
+                card.durationString(), card.lessonsString(),
+                card.courseLink != null ? card.courseLink : "",
+                card.isLiked, card.programSlug != null ? card.programSlug : "");
+    }
+
+    private void openTabletCourse(CourseItem course) {
+        if (!tabletEnrolledTrackIds.contains(course.getCourseId())) {
+            Toast.makeText(this, "Enroll in this course to open it", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent learn = new Intent(this, TrackLearnActivity.class);
+        learn.putExtra(TrackLearnActivity.EXTRA_TRACK_ID, course.getCourseId());
+        learn.putExtra(TrackLearnActivity.EXTRA_TITLE, course.getCourseTitle());
+        learn.putExtra(TrackLearnActivity.EXTRA_DESC, course.getTutorName());
+        learn.putExtra(TrackLearnActivity.EXTRA_FALLBACK_URL, course.getCourseLink());
+        startActivity(learn);
+    }
+
+    private class TabletCourseAdapter extends RecyclerView.Adapter<TabletCourseAdapter.VH> {
+        @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new VH(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_course_row, parent, false));
+        }
+        @Override public void onBindViewHolder(@NonNull VH h, int position) { h.bind(tabletCourseRows.get(position)); }
+        @Override public int getItemCount() { return tabletCourseRows.size(); }
+
+        class VH extends RecyclerView.ViewHolder {
+            final TextView title, meta, lessons, duration, initials;
+            final android.widget.ImageView tile;
+            final com.google.android.material.button.MaterialButton action;
+            VH(View v) {
+                super(v);
+                title = v.findViewById(R.id.tvCourseTitle);
+                meta = v.findViewById(R.id.tvCourseMeta);
+                lessons = v.findViewById(R.id.tvLessonsChip);
+                duration = v.findViewById(R.id.tvDurationChip);
+                initials = v.findViewById(R.id.tvCourseInitials);
+                tile = v.findViewById(R.id.ivCourseTile);
+                action = v.findViewById(R.id.btnEnrollCourse);
+            }
+            void bind(CourseItem course) {
+                title.setText(course.getCourseTitle());
+                meta.setText(course.getTutorName());
+                String ls = course.getLessons() == null ? "" : course.getLessons().trim();
+                lessons.setVisibility(ls.isEmpty() ? View.GONE : View.VISIBLE);
+                lessons.setText(ls.isEmpty() ? "" : ls + " lessons");
+                String dur = course.getDuration() == null ? "" : course.getDuration().trim();
+                duration.setVisibility(dur.isEmpty() ? View.GONE : View.VISIBLE);
+                duration.setText(dur.isEmpty() ? "" : dur + " h");
+                initials.setText(course.getCourseTitle() == null || course.getCourseTitle().isEmpty()
+                        ? "?" : course.getCourseTitle().substring(0, 1).toUpperCase(Locale.getDefault()));
+                if (!TextUtils.isEmpty(course.getCourseImageUrl())) {
+                    tile.setVisibility(View.VISIBLE);
+                    initials.setVisibility(View.GONE);
+                    Glide.with(itemView).load(course.getCourseImageUrl()).centerCrop().into(tile);
+                } else {
+                    tile.setVisibility(View.INVISIBLE);
+                    initials.setVisibility(View.VISIBLE);
+                }
+                boolean enrolled = tabletEnrolledTrackIds.contains(course.getCourseId());
+                action.setText(enrolled ? "Continue" : "Enroll");
+                action.setOnClickListener(v -> {
+                    if (enrolled) openTabletCourse(course);
+                    else {
+                        Intent school = new Intent(SchoolsListActivity.this, AllCoursesActivity.class);
+                        school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, tabletSchoolId);
+                        school.putExtra(AllCoursesActivity.EXTRA_SCHOOL_NAME, tabletSchoolName);
+                        startActivity(school);
+                    }
+                });
+                itemView.setOnClickListener(v -> openTabletCourse(course));
+            }
+        }
     }
 
     private static final class Row {
