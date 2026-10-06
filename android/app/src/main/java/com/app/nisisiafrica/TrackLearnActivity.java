@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
@@ -121,12 +123,14 @@ public class TrackLearnActivity extends AppCompatActivity {
     private LmsModels.TrackPrice trackPrice;
     private LmsCacheBridge offlineCache;
     private boolean cachedTrackDisplayed;
+    private boolean tabletTwoPane;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_track_learn);
+        tabletTwoPane = getResources().getConfiguration().smallestScreenWidthDp >= 600;
         View heroBand = findViewById(R.id.heroBand);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -520,6 +524,10 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     private void openChapter(LmsModels.ModuleDto module, int chapterIndex, String lessonId) {
         if (module == null || TextUtils.isEmpty(module.moduleId)) return;
+        if (tabletTwoPane) {
+            openChapterInPane(module, lessonId);
+            return;
+        }
         Intent intent = new Intent(this, ChapterLearnActivity.class);
         intent.putExtra(ChapterLearnActivity.EXTRA_TRACK_ID, trackId);
         intent.putExtra(ChapterLearnActivity.EXTRA_MODULE_ID, module.moduleId);
@@ -538,6 +546,54 @@ public class TrackLearnActivity extends AppCompatActivity {
             intent.putExtra(ChapterLearnActivity.EXTRA_LESSON_ID, resumeLesson.lessonId);
         }
         startActivity(intent);
+    }
+
+    private void openChapterInPane(LmsModels.ModuleDto module, String requestedLessonId) {
+        if (lessonPanel != null) {
+            lessonPanel.setVisibility(View.VISIBLE);
+            lessonPanel.removeAllViews();
+            TextView loading = sectionLabel(module.title != null ? module.title : "Chapter");
+            loading.append("\nLoading lessons…");
+            lessonPanel.addView(loading);
+        }
+        withBearer(bearer -> ApiClient.getLmsService()
+                .module(bearer, module.moduleId)
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(Call<LmsModels.ModuleDetailEnvelope> call,
+                                           Response<LmsModels.ModuleDetailEnvelope> response) {
+                        List<LmsModels.LessonDto> lessons = response.isSuccessful()
+                                && response.body() != null && response.body().ok
+                                && response.body().data != null
+                                ? response.body().data.lessons : null;
+                        if (lessons == null || lessons.isEmpty()) {
+                            if (lessonPanel != null) {
+                                lessonPanel.removeAllViews();
+                                lessonPanel.addView(sectionLabel("No lessons in this chapter yet."));
+                            }
+                            return;
+                        }
+                        LmsModels.LessonDto selected = null;
+                        if (!TextUtils.isEmpty(requestedLessonId)) {
+                            for (LmsModels.LessonDto lesson : lessons) {
+                                if (requestedLessonId.equals(lesson.lessonId)) {
+                                    selected = lesson;
+                                    break;
+                                }
+                            }
+                        }
+                        if (selected == null) selected = lessons.get(0);
+                        presentLesson(selected);
+                    }
+
+                    @Override
+                    public void onFailure(Call<LmsModels.ModuleDetailEnvelope> call, Throwable t) {
+                        if (lessonPanel != null) {
+                            lessonPanel.removeAllViews();
+                            lessonPanel.addView(sectionLabel("Could not load chapter lessons."));
+                        }
+                    }
+                }));
     }
 
     /** Prefetch lesson list so Continue can jump into the right chapter. */
@@ -943,7 +999,9 @@ public class TrackLearnActivity extends AppCompatActivity {
         if (index >= questions.size()) {
             submit.setEnabled(true);
             showWorkResult(result, "Assignment submitted");
+            vibrateActionSuccess();
             Toast.makeText(this, "Assignment submitted", Toast.LENGTH_SHORT).show();
+            vibrateActionSuccess();
             return;
         }
         LmsModels.AssignmentQuestionDto question = questions.get(index);
@@ -976,6 +1034,17 @@ public class TrackLearnActivity extends AppCompatActivity {
                 }));
     }
 
+    private void vibrateActionSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
+    }
+
     private TextView sectionLabel(String text) {
         TextView label = new TextView(this);
         label.setText(text);
@@ -1000,6 +1069,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                             float pct = response.body().data != null
                                     ? response.body().data.quizPct : 0f;
                             showWorkResult(result, "Quiz scored " + Math.round(pct) + "%");
+                            vibrateActionSuccess();
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -1026,6 +1096,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                             float pct = response.body().data != null
                                     ? response.body().data.quizPct : 0f;
                             showWorkResult(result, "Quiz scored " + Math.round(pct) + "%");
+                            vibrateActionSuccess();
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -1058,6 +1129,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.QuizEnvelope> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
                             showWorkResult(result, "Quiz saved (" + score + "%)");
+                            vibrateActionSuccess();
                             loadTrack();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
@@ -1082,6 +1154,7 @@ public class TrackLearnActivity extends AppCompatActivity {
                                            Response<LmsModels.SubmissionEnvelope> response) {
                         if (response.isSuccessful() && response.body() != null && response.body().ok) {
                             showWorkResult(result, "Assignment submitted");
+            vibrateActionSuccess();
                         } else {
                             Toast.makeText(TrackLearnActivity.this,
                                     "Submit failed", Toast.LENGTH_SHORT).show();

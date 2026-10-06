@@ -2,6 +2,8 @@ package com.app.nisisiafrica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
@@ -259,6 +261,7 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
         FirebaseRemoteDataSource.INSTANCE.createEvent(event, event.getMentorId(), event.getMenteeId(), success -> {
             if (success) {
                 Log.d(TAG, "Event created successfully");
+                vibrateBookingSuccess();
                 scheduleBookingReminder(dateStr, timeStr);
                 FirebaseRemoteDataSource.INSTANCE.createOrGetDirectChatRoom(event.getMentorId(),
                         event.getMentorName(), event.getMenteeName(), complete -> {
@@ -309,6 +312,17 @@ public class BookMentor extends AppCompatActivity implements BookMentorStepAdapt
 //                Log.e(TAG, "Failed to create event");
 //            }
 //      return Unit.INSTANCE;  });
+    }
+
+    private void vibrateBookingSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
     }
 
     private void scheduleBookingReminder(String dateStr, String timeStr) {

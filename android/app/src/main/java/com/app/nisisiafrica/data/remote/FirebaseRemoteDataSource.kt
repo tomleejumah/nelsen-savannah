@@ -628,8 +628,7 @@ object FirebaseRemoteDataSource {
                             currentUserId to currentUserName,
                             otherUserId to otherUserName
                         ),
-                        "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                        "lastMessage" to "No Messages Yet",
+                        "lastMessage" to "",
                         "createdAt" to FieldValue.serverTimestamp(),
                         "type" to "direct"
                     )
@@ -691,7 +690,10 @@ object FirebaseRemoteDataSource {
 
                     // Filter out announcements
                     val chatrooms = snapshot.toObjects(Chatroom::class.java)
-//                        .filter { it.chatroomId != "announcements" }
+                        .filter { room ->
+                            room.lastMessage.trim().isNotEmpty()
+                                    && !room.lastMessage.equals("No Messages Yet", ignoreCase = true)
+                        }
 
                     Log.d("ChatRooms", "Loaded ${chatrooms.size} chatrooms")
 

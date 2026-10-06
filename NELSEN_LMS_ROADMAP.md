@@ -135,6 +135,15 @@ The exact native editor dependency must be approved before implementation.
 
 ---
 
+### Android role-specific UI / permissions
+
+- [ ] Audit the Android UI for **Mentee, Mentor, SchoolAdmin, and SuperAdmin** so each role sees only actions, navigation, FABs, menus, course controls, chat/community controls, and learning/admin surfaces that role can actually use.
+- [ ] Keep Mentee learning/discovery UI focused on joining schools, enrolling, learning, bookings, chat, groups, stories/status and live viewing; do not expose host/admin controls.
+- [ ] Give Mentor Android-native course/learner/material/live/booking workflows only where the API authorizes that mentor's assigned scope.
+- [ ] Give SchoolAdmin Android-native school-scoped membership, mentor, course and live-management surfaces; never leak controls for another school.
+- [ ] Keep SuperAdmin/high-risk administration Web-first unless a specific native workflow is approved.
+- [ ] Add role-switch/sign-out/sign-in regression QA so stale role UI cannot survive identity changes.
+
 ### Android role-management UI parity
 
 - [ ] After responsive/multiple-screen-size support, bring mentor and SchoolAdmin management workflows to Android with role-aware layouts and the same permissions/business rules as Web.
@@ -378,9 +387,17 @@ Make app content shareable with links that open the exact destination in Nelsen 
 
 ## Android Release Quality — Responsive Screen Sizes
 
-- [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation.
-- [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate.
-- [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities.
+- [ ] Audit all Android screens across compact phones, standard phones, large phones, tablets, and landscape orientation. **In progress:** repository-wide Android layout pass underway: main shell/Home/Profile/Groups/Chat, auth/onboarding, stories/media, school/course catalog and dialogs.
+- [ ] Replace fixed dimensions/positioning that clip, overlap, or leave excessive whitespace with responsive ConstraintLayout/Compose sizing and resource qualifiers where appropriate. **In progress:** course catalog header can now scroll independently on compact-height/font-scaled screens; Login no longer assumes a 300dp hero width; Add Course no longer assumes a fixed 300×550dp dialog and can scroll on compact displays; onboarding/profile/media previews now scale within available screen bounds.
+- [ ] Add adaptive spacing, typography, image/media sizing, dialogs/sheets, lists, navigation, and form layouts for different screen widths/heights and display densities. **In progress:** tablet bottom navigation + Chat master/detail are wired; course-learning `sw600dp` resource is added and chapter taps now load lesson material into the in-screen material pane on tablets instead of launching the phone chapter Activity.
+- [ ] Finish the tablet LMS/discovery **progressive master-detail shell** instead of stretching phone Activities:
+  - Home → Schools: school list/navigation pane + selected school preview/details pane.
+  - School → Courses: selected school becomes parent context on the left; its course catalog/detail occupies the right.
+  - Course → Learning: course/chapter/lesson navigation stays left; selected lesson/material (video/PDF/text/quiz/assignment/IDE where applicable) stays right.
+  - Back moves one hierarchy level outward while preserving the parent context instead of tearing down the entire tablet surface.
+  - Deep links into school/course/lesson should reconstruct the correct pane hierarchy.
+  - Phones retain the existing single-pane/full-screen Activity flow.
+  - Do **not** force this shell onto unrelated screens: Chat keeps conversation master/detail; Profile, Settings, stories/status viewer, forms and dialogs remain normal adaptive surfaces.
 - [ ] Verify keyboard/IME, system bars, display cutouts, gesture navigation, and accessibility font scaling do not hide actionable content.
 - [ ] Add representative multi-device screenshot/layout tests and release QA for supported screen-size buckets.
 
@@ -474,7 +491,8 @@ This milestone tracks the current production-hardening work before the remaining
 - [ ] Complete the school application flow across API/Web/Android: Apply to school → pending/application status → approved/active membership → rejected state where applicable.
 - [x] Android school course list exposes Apply to school and pending membership state.
 - [x] Android blocks opening course learning content unless the user is actually enrolled in that course.
-- [ ] Harden the same enrollment/access gate at the API boundary and verify deep links cannot bypass it.
+- [x] Harden module/lesson learning access at the API boundary with active-school-membership + course-enrollment checks (staff roles follow scoped staff access); legacy module fallback cannot bypass the gate.
+- [ ] Finish deep-link regression verification so direct/shared course and lesson links cannot bypass the same membership/enrollment rules.
 - [ ] Add regression coverage for non-member, pending applicant, active school member but unenrolled course, and enrolled course access.
 
 ### Android status / story media
