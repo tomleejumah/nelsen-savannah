@@ -226,6 +226,17 @@ public interface LmsApiService {
             @Path("eventId") String eventId,
             @Body java.util.Map<String, Integer> body);
 
+    @GET("lms/events/{eventId}/live-state")
+    Call<LmsModels.LiveStateEnvelope> liveState(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId);
+
+    @POST("lms/events/{eventId}/chat")
+    Call<LmsModels.MapEnvelope> postLiveChat(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId,
+            @Body java.util.Map<String, String> body);
+
     @GET("lms/app/android")
     Call<LmsModels.AppReleaseEnvelope> getAppRelease();
 
