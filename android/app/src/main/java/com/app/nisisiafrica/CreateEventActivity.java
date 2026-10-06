@@ -58,11 +58,12 @@ public class CreateEventActivity extends AppCompatActivity {
     private static final int REQUEST_LIVE_PERMISSIONS = 4107;
 
     private TextInputEditText etTitle, etDescription, etLocation, etMeetingLink, etSeats, etPrice;
-    private MaterialAutoCompleteTextView etProgram, etLiveAudience, etLiveCourse;
+    private MaterialAutoCompleteTextView etProgram, etLiveCourse;
     private TextView tvDate, tvStart, tvEnd, tvLiveAudienceHint;
     private MaterialButton btnSave, btnModeOnline;
     private TextInputLayout tilLocation, tilMeetingLink, tilProgram, tilLiveCourse;
-    private MaterialButtonToggleGroup toggleMode;
+    private MaterialButtonToggleGroup toggleMode, liveAudienceToggle;
+    private MaterialButton btnLiveSchool, btnLiveCourse, btnLivePlatform;
     private View eventCommercialRow, liveAudienceSection;
     private boolean liveMode = false;
     private boolean scheduleLive = false;
@@ -123,8 +124,11 @@ public class CreateEventActivity extends AppCompatActivity {
         etLocation = findViewById(R.id.etEventLocation);
         etMeetingLink = findViewById(R.id.etMeetingLink);
         etProgram = findViewById(R.id.etProgram);
-        etLiveAudience = findViewById(R.id.etLiveAudience);
         etLiveCourse = findViewById(R.id.etLiveCourse);
+        liveAudienceToggle = findViewById(R.id.liveAudienceToggle);
+        btnLiveSchool = findViewById(R.id.btnLiveSchool);
+        btnLiveCourse = findViewById(R.id.btnLiveCourse);
+        btnLivePlatform = findViewById(R.id.btnLivePlatform);
         etSeats = findViewById(R.id.etSeats);
         etPrice = findViewById(R.id.etPrice);
         tvDate = findViewById(R.id.tvDate);
@@ -201,18 +205,13 @@ public class CreateEventActivity extends AppCompatActivity {
     }
 
     private void setupLiveAudienceControls() {
-        List<String> scopes = new ArrayList<>();
-        scopes.add("Course");
-        scopes.add("School");
-        if (Roles.isSuperAdmin()) scopes.add("Platform");
-
-        etLiveAudience.setAdapter(new ArrayAdapter<>(
-                this, android.R.layout.simple_dropdown_item_1line, scopes));
-        etLiveAudience.setText("School", false);
-        etLiveAudience.setOnItemClickListener((parent, view, position, id) -> {
-            String selected = String.valueOf(parent.getItemAtPosition(position));
-            if ("Course".equals(selected)) liveAudienceScope = "course";
-            else if ("Platform".equals(selected)) liveAudienceScope = "platform";
+        btnLivePlatform.setVisibility(Roles.isSuperAdmin() ? View.VISIBLE : View.GONE);
+        liveAudienceToggle.check(R.id.btnLiveSchool);
+        liveAudienceScope = "school";
+        liveAudienceToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.btnLiveCourse) liveAudienceScope = "course";
+            else if (checkedId == R.id.btnLivePlatform) liveAudienceScope = "platform";
             else liveAudienceScope = "school";
             liveTrackId = "";
             liveTrackTitle = "";
@@ -229,15 +228,15 @@ public class CreateEventActivity extends AppCompatActivity {
         if (course) {
             tvLiveAudienceHint.setText(
                     liveTrackOptions.isEmpty()
-                            ? "Choose a course. Enrolled learners will be notified when you go live."
-                            : "Only learners enrolled in the selected course will see this live session.");
+                            ? "No courses are available for this account in the active school."
+                            : "Choose a course. Only its enrolled learners can join this live.");
         } else if ("platform".equals(liveAudienceScope)) {
             tvLiveAudienceHint.setText("All signed-in Nelsen users will see this live session.");
         } else if (liveSchoolId.isEmpty()) {
-            tvLiveAudienceHint.setText("Uses your active school. Select an active school before linking this live.");
+            tvLiveAudienceHint.setText("No active school is linked to this account.");
         } else {
             String label = liveSchoolName.isEmpty() ? liveSchoolId : liveSchoolName;
-            tvLiveAudienceHint.setText("Only active members of " + label + " will see this live session.");
+            tvLiveAudienceHint.setText(label + " is your active school. Only its active members will see this live.");
         }
     }
 
