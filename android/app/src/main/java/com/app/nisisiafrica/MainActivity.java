@@ -627,6 +627,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         Uri uri = Uri.parse(raw);
         if (!"https".equals(uri.getScheme()) || !"nelsen-savannah.co.ke".equals(uri.getHost())) return;
         java.util.List<String> parts = uri.getPathSegments();
+        if (parts.size() >= 2 && "live".equals(parts.get(0))) {
+            openLiveAppLink(parts.get(1));
+            source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
+            return;
+        }
         if (parts.size() >= 2 && "chats".equals(parts.get(0))
                 && "announcements".equals(parts.get(1))) {
             selectTab(R.id.chatFragment, true);
@@ -675,6 +680,47 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             startActivity(group);
             source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
         }
+    }
+
+    private void openLiveAppLink(String eventId) {
+        if (TextUtils.isEmpty(eventId)) return;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                com.app.nisisiafrica.data.remote.ApiClient.getLmsService()
+                        .publicHubEvent("Bearer " + token.getToken(), eventId)
+                        .enqueue(new retrofit2.Callback<com.app.nisisiafrica.data.Model.LmsModels.HubEventEnvelope>() {
+                            @Override
+                            public void onResponse(
+                                    retrofit2.Call<com.app.nisisiafrica.data.Model.LmsModels.HubEventEnvelope> call,
+                                    retrofit2.Response<com.app.nisisiafrica.data.Model.LmsModels.HubEventEnvelope> response) {
+                                com.app.nisisiafrica.data.Model.LmsModels.HubEventDto event =
+                                        response.body() != null && response.body().data != null
+                                                ? response.body().data.event : null;
+                                if (!response.isSuccessful() || event == null) {
+                                    android.widget.Toast.makeText(MainActivity.this,
+                                            "This live session is unavailable or you do not have access.",
+                                            android.widget.Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+                                Intent viewer = new Intent(MainActivity.this, LiveViewerActivity.class)
+                                        .putExtra(LiveViewerActivity.EXTRA_TITLE, event.title)
+                                        .putExtra(LiveViewerActivity.EXTRA_EVENT_ID, event.eventId)
+                                        .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, event.meetingLink)
+                                        .putExtra(LiveViewerActivity.EXTRA_LIVE_STATUS, event.liveStatus)
+                                        .putExtra(LiveViewerActivity.EXTRA_LIVE_AVAILABILITY, event.liveAvailability);
+                                startActivity(viewer);
+                            }
+
+                            @Override
+                            public void onFailure(
+                                    retrofit2.Call<com.app.nisisiafrica.data.Model.LmsModels.HubEventEnvelope> call,
+                                    Throwable t) {
+                                android.widget.Toast.makeText(MainActivity.this,
+                                        "Could not open live session.",
+                                        android.widget.Toast.LENGTH_LONG).show();
+                            }
+                        }));
     }
 
     private boolean isMentorOrAdmin() {
