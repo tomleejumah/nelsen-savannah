@@ -206,7 +206,8 @@
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/stories/" />
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/courses/" />
                 <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/schools/" />
-                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/groups/" />\n                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/live/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/groups/" />
+                <data android:scheme="https" android:host="nelsen-savannah.co.ke" android:pathPrefix="/live/" />
             </intent-filter>
         </activity>
         <activity
