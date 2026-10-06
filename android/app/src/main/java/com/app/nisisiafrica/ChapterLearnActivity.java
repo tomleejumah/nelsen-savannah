@@ -6,6 +6,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -125,6 +127,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private float videoVolume = 1f;
     private final float[] videoSpeeds = new float[]{0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f};
     private int videoSpeedIndex = 2;
+    private boolean chapterCompletionHapticPlayed;
+    private boolean courseCompletionHapticPlayed;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -777,6 +781,31 @@ public class ChapterLearnActivity extends AppCompatActivity {
         patchProgress(lessonId, new LmsModels.ProgressBody(true, null, null));
     }
 
+    private void handleCompletionHaptics(LmsModels.Progress progress) {
+        if (progress == null) return;
+        if (progress.modulePercent >= 100f && !chapterCompletionHapticPlayed) {
+            chapterCompletionHapticPlayed = true;
+            vibrateCompletion(false);
+        }
+        if (progress.trackPercent >= 100f && !courseCompletionHapticPlayed) {
+            courseCompletionHapticPlayed = true;
+            vibrateCompletion(true);
+        }
+    }
+
+    private void vibrateCompletion(boolean course) {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = course
+                ? new long[]{0, 55, 55, 85, 55, 140}
+                : new long[]{0, 60, 55, 100};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
+    }
+
     private void patchProgress(String lessonId, LmsModels.ProgressBody body) {
         if (TextUtils.isEmpty(lessonId) || body == null) return;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -795,6 +824,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                                 && envelope.data.progress != null && current != null && offlineCache != null) {
                             offlineCache.mergeProgress(current.getUid(), envelope.data.progress);
                             offlineCache.markProgressSynced(current.getUid(), lessonId);
+                            handleCompletionHaptics(envelope.data.progress);
                         } else {
                             LmsStudySync.INSTANCE.request(getApplicationContext());
                         }
