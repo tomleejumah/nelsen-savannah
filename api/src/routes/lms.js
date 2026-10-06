@@ -44,7 +44,7 @@ router.get("/youtube/oauth/callback", lmsController.getYouTubeOAuthCallback);
 router.post(
   "/youtube/connect-url",
   authenticateUser,
-  requireRoles("SchoolAdmin", "Admin", "SuperAdmin"),
+  requireRoles("SchoolAdmin"),
   lmsController.postYouTubeConnectUrl,
 );
 router.get(
