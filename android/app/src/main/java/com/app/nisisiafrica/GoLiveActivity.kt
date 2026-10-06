@@ -2,6 +2,11 @@ package com.app.nisisiafrica
 
 import android.Manifest
 import android.app.PictureInPictureParams
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -22,7 +27,10 @@ import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.pedro.common.ConnectChecker
 import com.pedro.common.socket.base.SocketType
+import com.pedro.encoder.input.sources.audio.MicrophoneSource
 import com.pedro.encoder.input.sources.video.Camera2Source
+import com.pedro.encoder.input.sources.video.NoVideoSource
+import com.pedro.encoder.input.sources.video.ScreenSource
 import com.pedro.library.generic.GenericStream
 import retrofit2.Call
 import retrofit2.Callback
@@ -41,7 +49,15 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var status: TextView
     private lateinit var endButton: MaterialButton
     private lateinit var switchButton: MaterialButton
+    private lateinit var micButton: MaterialButton
+    private lateinit var cameraButton: MaterialButton
+    private lateinit var screenButton: MaterialButton
+    private lateinit var shareButton: MaterialButton
     private lateinit var stream: GenericStream
+    private var mediaProjection: MediaProjection? = null
+    private var micMuted = false
+    private var cameraPaused = false
+    private var sharingScreen = false
 
     private var ingestUrl = ""
     private var eventId = ""
@@ -51,6 +67,27 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var finishingLive = false
     private var wentLive = false
     private var endedSent = false
+
+    private val screenCaptureLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode != Activity.RESULT_OK || result.data == null) return@registerForActivityResult
+            try {
+                val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                mediaProjection?.stop()
+                mediaProjection = manager.getMediaProjection(result.resultCode, result.data!!)
+                val projection = mediaProjection ?: return@registerForActivityResult
+                stream.changeVideoSource(ScreenSource(applicationContext, projection))
+                stream.getGlInterface().setCameraOrientation(0)
+                sharingScreen = true
+                cameraPaused = false
+                screenButton.text = "Stop sharing"
+                cameraButton.text = "Camera off"
+                switchButton.isEnabled = false
+                status.text = "LIVE · Sharing screen"
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
+            }
+        }
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -89,6 +126,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         status = findViewById(R.id.tvLiveStatus)
         endButton = findViewById(R.id.btnEndLive)
         switchButton = findViewById(R.id.btnSwitchCamera)
+        micButton = findViewById(R.id.btnToggleMic)
+        cameraButton = findViewById(R.id.btnToggleCamera)
+        screenButton = findViewById(R.id.btnShareScreen)
+        shareButton = findViewById(R.id.btnShareLive)
         findViewById<TextView>(R.id.tvLiveTitle).text =
             intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Nelsen Live" }
 
@@ -107,6 +148,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 Toast.makeText(this, "Could not switch camera", Toast.LENGTH_SHORT).show()
             }
         }
+        micButton.setOnClickListener { toggleMicrophone() }
+        cameraButton.setOnClickListener { toggleCamera() }
+        screenButton.setOnClickListener { toggleScreenShare() }
+        shareButton.setOnClickListener { shareLive() }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = confirmEndLive()
@@ -159,6 +204,77 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             status.text = "Could not start live stream"
             Toast.makeText(this, e.message ?: "Could not start live", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun toggleMicrophone() {
+        val microphone = stream.audioSource as? MicrophoneSource ?: return
+        try {
+            if (micMuted) microphone.unMute() else microphone.mute()
+            micMuted = !micMuted
+            micButton.text = if (micMuted) "Unmute" else "Mute"
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not change microphone", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun restoreCamera() {
+        mediaProjection?.stop()
+        mediaProjection = null
+        stream.changeVideoSource(Camera2Source(applicationContext))
+        stream.getGlInterface().setCameraOrientation(90)
+        sharingScreen = false
+        cameraPaused = false
+        screenButton.text = "Share screen"
+        cameraButton.text = "Camera off"
+        switchButton.isEnabled = true
+        if (wentLive) status.text = "LIVE · Streaming"
+    }
+
+    private fun toggleCamera() {
+        try {
+            if (sharingScreen) {
+                restoreCamera()
+                return
+            }
+            if (cameraPaused) {
+                restoreCamera()
+            } else {
+                stream.changeVideoSource(NoVideoSource())
+                cameraPaused = true
+                cameraButton.text = "Camera on"
+                switchButton.isEnabled = false
+                if (wentLive) status.text = "LIVE · Camera paused"
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not change camera", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun toggleScreenShare() {
+        if (sharingScreen) {
+            try {
+                restoreCamera()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Could not restore camera", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
+    }
+
+    private fun shareLive() {
+        if (eventId.isBlank()) return
+        val link = "https://nelsen-savannah.co.ke/live/$eventId"
+        startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, link)
+                },
+                "Share live session",
+            ),
+        )
     }
 
     private fun confirmEndLive() {
@@ -287,6 +403,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     override fun onDestroy() {
         try {
             if (stream.isStreaming) stream.stopStream()
+            mediaProjection?.stop()
+            mediaProjection = null
             stream.release()
         } catch (_: Exception) {
         }
