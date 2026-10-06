@@ -142,8 +142,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         Intent send = new Intent(Intent.ACTION_SEND);
         send.setType("text/plain");
         send.putExtra(Intent.EXTRA_TEXT,
-                (TextUtils.isEmpty(title) ? "Nelsen Live" : title) + "
-" + youtubeUrl);
+                (TextUtils.isEmpty(title) ? "Nelsen Live" : title) + "\\n" + youtubeUrl);
         startActivity(Intent.createChooser(send, "Share live session"));
     }
 
