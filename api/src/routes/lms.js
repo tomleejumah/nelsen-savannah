@@ -478,6 +478,17 @@ router.patch(
   requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
   lmsController.patchHubLiveStatus,
 );
+router.post(
+  "/events/:eventId/attendance",
+  authenticateUser,
+  lmsController.postLiveAttendance,
+);
+router.get(
+  "/events/:eventId/attendance",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SuperAdmin", "SchoolAdmin"),
+  lmsController.getLiveAttendanceSummary,
+);
 router.get("/events/reservation-counts", lmsController.getEventReservationCounts);
 router.post(
   "/events/:eventId/reserve",
