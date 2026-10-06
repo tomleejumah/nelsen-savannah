@@ -7,14 +7,25 @@ async function loadRecipients(event) {
   let rows = [];
 
   if (scope === "course") {
+    // A course live belongs to the whole teaching room, not only enrollment
+    // rows. Include active learners plus mentors assigned to the course.
     rows = await dbAll(
       `SELECT DISTINCT uid
-       FROM enrollments
-       WHERE track_id = ?
-         AND uid IS NOT NULL
-         AND uid != ''
-         AND lower(COALESCE(status, 'in_progress')) NOT IN ('cancelled', 'dropped', 'suspended')`,
-      [event.trackId],
+       FROM (
+         SELECT uid
+         FROM enrollments
+         WHERE track_id = ?
+           AND uid IS NOT NULL
+           AND uid != ''
+           AND lower(COALESCE(status, 'in_progress')) NOT IN ('cancelled', 'dropped', 'suspended')
+         UNION
+         SELECT uid
+         FROM track_mentors
+         WHERE track_id = ?
+           AND uid IS NOT NULL
+           AND uid != ''
+       ) AS course_live_recipients`,
+      [event.trackId, event.trackId],
     );
   } else if (scope === "school") {
     rows = await dbAll(
