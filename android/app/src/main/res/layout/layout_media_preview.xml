@@ -14,7 +14,10 @@
         <!-- Preview Area -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="400dp"
+            android:layout_height="wrap_content"
+            android:minHeight="220dp"
+            android:maxHeight="400dp"
+            android:layout_gravity="center"
             android:background="#000000">
 
             <!-- Image Preview -->

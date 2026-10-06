@@ -1,6 +1,8 @@
 package com.app.nisisiafrica.Utils;
 
 import android.app.Activity;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -170,6 +172,7 @@ public final class EventSeatReservation {
                 runOnUi(context, () -> {
                     if (result.getFirst()) {
                         Toast.makeText(context, "Seat reserved", Toast.LENGTH_SHORT).show();
+                        vibrateSuccess(context);
                         scheduleReminder(context, event);
                         EventActions.addToCalendar(context, event);
                         if (onReserved != null) onReserved.onReserved(event);
@@ -180,6 +183,17 @@ public final class EventSeatReservation {
                 });
             });
         });
+    }
+
+    private static void vibrateSuccess(Context context) {
+        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
     }
 
     private static void runOnUi(Context context, Runnable r) {

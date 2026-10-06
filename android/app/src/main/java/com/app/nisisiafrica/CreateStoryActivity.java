@@ -2,6 +2,8 @@ package com.app.nisisiafrica;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -206,6 +208,7 @@ public class CreateStoryActivity extends AppCompatActivity {
             story.storyId = ref.getKey();
             ref.setValue(story)
                     .addOnSuccessListener(unused -> {
+                        vibratePublishSuccess();
                         Toast.makeText(this, "Story published", Toast.LENGTH_SHORT).show();
                         finish();
                     })
@@ -239,4 +242,15 @@ public class CreateStoryActivity extends AppCompatActivity {
         }
         return url;
     }
+    private void vibratePublishSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
+    }
+
 }

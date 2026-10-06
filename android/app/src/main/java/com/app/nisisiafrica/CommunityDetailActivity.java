@@ -426,7 +426,6 @@ public class CommunityDetailActivity extends AppCompatActivity {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
-
     private void refreshMembership() {
         repository.isMember(communityId, member -> {
             isMember = member;

@@ -3,6 +3,8 @@ package com.app.nisisiafrica;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -410,6 +412,17 @@ public class AllCoursesActivity extends AppCompatActivity {
         }
     }
 
+    private void vibrateSuccess() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        long[] pattern = new long[]{0, 45, 45, 90};
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
+        } else {
+            vibrator.vibrate(pattern, -1);
+        }
+    }
+
     private void applyToSchool() {
         if (schoolIdFilter.isEmpty()) return;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -431,6 +444,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                                    @NonNull Response<LmsModels.MapEnvelope> response) {
                                 btnApplySchool.setEnabled(true);
                                 if (response.isSuccessful()) {
+                                    vibrateSuccess();
                                     Toast.makeText(AllCoursesActivity.this,
                                             R.string.school_apply_sent, Toast.LENGTH_SHORT).show();
                                     schoolJoinPending = true;
@@ -480,6 +494,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                     @NonNull Call<LmsModels.EnrollmentEnvelope> call,
                                     @NonNull Response<LmsModels.EnrollmentEnvelope> response) {
                                 if (response.isSuccessful()) {
+                                    vibrateSuccess();
                                     enrolledTrackIds.add(c.getCourseId());
                                     listAdapter.notifyDataSetChanged();
                                     Toast.makeText(AllCoursesActivity.this,
