@@ -12,7 +12,7 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="132dp"
+        android:layout_height="180dp"
         android:background="#77000000" />
 
     <LinearLayout
@@ -39,6 +39,27 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="Preparing camera…"
+            android:textColor="#E0E0E0"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvLiveViewers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="0 watching"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLiveChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Waiting for viewers…"
             android:textColor="#E0E0E0"
             android:textSize="13sp" />
     </LinearLayout>
