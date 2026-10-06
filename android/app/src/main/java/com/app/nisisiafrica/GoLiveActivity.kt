@@ -1,8 +1,11 @@
 package com.app.nisisiafrica
 
 import android.Manifest
+import android.app.PictureInPictureParams
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.WindowManager
@@ -76,7 +79,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         if (!ingestUrl.startsWith("rtmps://", ignoreCase = true) &&
             !ingestUrl.startsWith("rtmp://", ignoreCase = true)
         ) {
-            Toast.makeText(this, "YouTube did not return a valid live endpoint", Toast.LENGTH_LONG)
+            Toast.makeText(this, "The live service did not return a valid endpoint", Toast.LENGTH_LONG)
                 .show()
             finish()
             return
@@ -149,7 +152,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 stream.startPreview(preview)
             }
             if (!stream.isStreaming) {
-                status.text = "Connecting to YouTube…"
+                status.text = "Connecting to live…"
                 stream.startStream(ingestUrl)
             }
         } catch (e: Exception) {
@@ -162,7 +165,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         if (finishingLive) return
         AlertDialog.Builder(this)
             .setTitle("End live?")
-            .setMessage("This stops your camera stream. YouTube will close the broadcast automatically.")
+            .setMessage("This stops your camera stream and ends the live session.")
             .setNegativeButton("Keep live", null)
             .setPositiveButton("End live") { _, _ -> stopAndFinish() }
             .show()
@@ -230,14 +233,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionStarted(url: String) {
-        runOnUiThread { status.text = "Connecting to YouTube…" }
+        runOnUiThread { status.text = "Connecting to live…" }
     }
 
     override fun onConnectionSuccess() {
         wentLive = true
         markNelsenLiveStatus("live")
         runOnUiThread {
-            status.text = "LIVE · Streaming to YouTube"
+            status.text = "LIVE · Streaming"
             endButton.isEnabled = true
         }
     }
@@ -255,16 +258,30 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onDisconnect() {
         runOnUiThread {
-            if (!finishingLive) status.text = "Disconnected from YouTube"
+            if (!finishingLive) status.text = "Disconnected from live"
         }
     }
 
     override fun onAuthError() {
-        runOnUiThread { status.text = "YouTube stream authorization failed" }
+        runOnUiThread { status.text = "Live stream authorization failed" }
     }
 
     override fun onAuthSuccess() {
-        // YouTube RTMPS uses the stream endpoint/key rather than RTMP user/password auth.
+        // The live provider uses the stream endpoint/key rather than RTMP user/password auth.
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && wentLive && stream.isStreaming) {
+            try {
+                enterPictureInPictureMode(
+                    PictureInPictureParams.Builder()
+                        .setAspectRatio(Rational(9, 16))
+                        .build(),
+                )
+            } catch (_: Exception) {
+            }
+        }
     }
 
     override fun onDestroy() {
