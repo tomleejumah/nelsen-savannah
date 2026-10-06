@@ -123,7 +123,7 @@
             android:layout_height="52dp"
             android:layout_marginTop="10dp"
             android:backgroundTint="#D32F2F"
-            android:text="End live"
+            android:text="End live"\n            app:icon="@drawable/ic_live_end"\n            app:iconTint="#FFFFFF"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
             app:cornerRadius="26dp" />
