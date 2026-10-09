@@ -9,7 +9,7 @@ Changes are tracked separately from end-to-end verification. **Do not mark a tas
 - [ ] Chat: enforce live-only sending, 500-character limit and per-user cooldown/duplicate checks; Android prevents repeat tapping and displays send failures. **Implemented; host-to-viewer/device tests pending.**
 - [ ] Host attendance UI: compact active/unique count and scrollable viewer history implemented; device verification and authorization regression tests pending.
 - [ ] Host chat UX: scrollable message list and composer implemented with five-second polling; real-time push delivery and two-account tests pending.
-- [ ] MediaProjection: duplicate consent requests guarded; foreground-service ordering, Android 14+ behavior, protected-media warning, camera/screen recovery, audio and PiP require device verification.
+- [ ] MediaProjection: duplicate consent requests guarded and projection token acquisition deferred until foreground service is ready; Android 14+ behavior, protected-media warning, camera/screen recovery, audio and PiP require device verification.
 - [ ] Notifications: live notification deep link now uses event ID even when provider URL is absent; verify Android 13+ permission, channels, token rotation, foreground/background/killed delivery, in-app history and RTDB timestamp indexing.
 - [ ] Status synchronization: API now rejects attempts to resurrect an ended session via stale status updates; verify provider polling interval, transition-to-notification latency and once-only scheduled → live → ended dispatch.
 - [ ] CI: Android + API green **on the new PR head** after changes.
