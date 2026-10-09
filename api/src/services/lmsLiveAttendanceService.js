@@ -140,13 +140,9 @@ export async function getLiveAudienceState(eventId, uid) {
   return {
     eventId,
     concurrentViewers: attendees.length,
-    attendees: attendees.map((row) => ({
-      uid: String(row.uid),
-      displayName: String(row.display_name || row.uid),
-      firstJoinedAt: Number(row.first_joined_at),
-      lastSeenAt: Number(row.last_seen_at),
-      watchSeconds: Number(row.watch_seconds || 0),
-    })),
+    // Public live-state is readable by attendees; identifiable attendance is host-only.
+    // Hosts retrieve names and watch durations from the authorized attendance endpoint.
+    attendees: [],
     chat: chat.reverse().map((row) => ({
       id: String(row.id),
       uid: String(row.uid),
