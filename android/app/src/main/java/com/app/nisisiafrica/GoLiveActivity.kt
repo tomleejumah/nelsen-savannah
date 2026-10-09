@@ -17,6 +17,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.WindowManager
 import android.widget.TextView
+import android.widget.ScrollView
 import com.google.android.material.textfield.TextInputEditText
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -53,6 +54,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var status: TextView
     private lateinit var viewers: TextView
     private lateinit var chat: TextView
+    private lateinit var chatScroll: ScrollView
+    private var lastChatSnapshot = ""
     private lateinit var hostChatInput: TextInputEditText
     private lateinit var hostChatSend: MaterialButton
     private var hostChatSending = false
@@ -152,6 +155,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         status = findViewById(R.id.tvLiveStatus)
         viewers = findViewById(R.id.tvLiveViewers)
         chat = findViewById(R.id.tvLiveChat)
+        chatScroll = findViewById(R.id.hostChatScroll)
         hostChatInput = findViewById(R.id.inputHostLiveChat)
         hostChatSend = findViewById(R.id.btnHostSendLiveChat)
         hostChatSend.setOnClickListener { sendHostChat() }
@@ -323,11 +327,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     ) {
                         val data = response.body()?.data ?: return
                         viewers.text = "${data.concurrentViewers} watching"
-                        val recent = data.chat?.takeLast(4).orEmpty()
-                        chat.text = if (recent.isNotEmpty()) {
-                            recent.joinToString("\\n") { "${it.author}: ${it.message}" }
-                        } else {
-                            "Live · waiting for chat"
+                        val messages = data.chat.orEmpty()
+                        val snapshot = if (messages.isEmpty()) "Live · waiting for chat" else
+                            messages.joinToString("\n") { "${it.author}: ${it.message}" }
+                        if (snapshot != lastChatSnapshot) {
+                            val wasAtBottom = !chatScroll.canScrollVertically(1)
+                            lastChatSnapshot = snapshot
+                            chat.text = snapshot
+                            if (wasAtBottom) chatScroll.post { chatScroll.fullScroll(android.view.View.FOCUS_DOWN) }
                         }
                     }
                     override fun onFailure(
