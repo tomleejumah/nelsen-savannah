@@ -10,8 +10,8 @@ Changes are tracked separately from end-to-end verification. **Do not mark a tas
 - [ ] Host attendance UI: compact active/unique count and scrollable viewer history implemented; device verification and authorization regression tests pending.
 - [ ] Host chat UX: scrollable message list and composer implemented with five-second polling; real-time push delivery and two-account tests pending.
 - [ ] MediaProjection: duplicate consent requests guarded; foreground-service ordering, Android 14+ behavior, protected-media warning, camera/screen recovery, audio and PiP require device verification.
-- [ ] Notifications: verify Android 13+ permission, channels, token rotation, foreground/background/killed delivery, in-app history and RTDB timestamp indexing.
-- [ ] Status synchronization: confirm provider polling interval, transition-to-notification latency and once-only scheduled → live → ended dispatch.
+- [ ] Notifications: live notification deep link now uses event ID even when provider URL is absent; verify Android 13+ permission, channels, token rotation, foreground/background/killed delivery, in-app history and RTDB timestamp indexing.
+- [ ] Status synchronization: API now rejects attempts to resurrect an ended session via stale status updates; verify provider polling interval, transition-to-notification latency and once-only scheduled → live → ended dispatch.
 - [ ] CI: Android + API green **on the new PR head** after changes.
 - [ ] Real Android device, two accounts: verify live join/leave, viewer counts, chat both ways, notification receipt/click, PiP, screen sharing and recovery.
 
