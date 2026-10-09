@@ -80,6 +80,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var micMuted = false
     private var cameraPaused = false
     private var sharingScreen = false
+    private var projectionConsentPending = false
 
     private var ingestUrl = ""
     private var eventId = ""
@@ -92,7 +93,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            projectionConsentPending = false
             if (result.resultCode != Activity.RESULT_OK || result.data == null) {
+                screenButton.isEnabled = true
                 stopService(Intent(this, LiveProjectionService::class.java))
                 return@registerForActivityResult
             }
@@ -113,7 +116,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 cameraButton.contentDescription = "Turn camera off"
                 switchButton.isEnabled = false
                 status.text = "LIVE · Sharing screen"
+                screenButton.isEnabled = true
             } catch (e: Exception) {
+                screenButton.isEnabled = true
                 mediaProjection?.stop()
                 mediaProjection = null
                 stopService(Intent(this, LiveProjectionService::class.java))
@@ -300,8 +305,17 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             }
             return
         }
-        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
+        if (projectionConsentPending) return
+        projectionConsentPending = true
+        screenButton.isEnabled = false
+        try {
+            val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
+        } catch (e: Exception) {
+            projectionConsentPending = false
+            screenButton.isEnabled = true
+            Toast.makeText(this, "Could not request screen sharing", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun shareLive() {
