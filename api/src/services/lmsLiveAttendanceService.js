@@ -41,9 +41,9 @@ async function ensureTable() {
 
 export async function recordLiveAttendance(eventId, uid, body = {}) {
   await ensureTable();
-  await requireLiveEvent(eventId, uid, { active: true });
-  const now = Date.now();
   const action = String(body.action || "heartbeat").toLowerCase();
+  await requireLiveEvent(eventId, uid, { active: action !== "leave" });
+  const now = Date.now();
   if (!["heartbeat", "leave"].includes(action)) throw liveError("Unsupported attendance action", 400);
   if (action === "leave") {
     const updated = await dbRun(
@@ -61,21 +61,22 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
     [eventId, uid],
   );
   if (existing) {
-    if (Number(existing.last_seen_at) < now - ACTIVE_MS) console.info("[live-attendance] rejoin", { eventId, uid });
+    const rejoined = Number(existing.last_seen_at) < now - ACTIVE_MS;
     await dbRun(
       `UPDATE live_attendance
        SET last_seen_at = ?, watch_seconds = watch_seconds + ?
        WHERE event_id = ? AND uid = ?`,
       [now, requested, eventId, uid],
     );
+    if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });
   } else {
-    console.info("[live-attendance] join", { eventId, uid });
     await dbRun(
       `INSERT INTO live_attendance
        (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
        VALUES (?, ?, ?, ?, ?)`,
       [eventId, uid, now, now, requested],
     );
+    console.info("[live-attendance] join", { eventId, uid });
   }
   return { eventId, active: true, joinedAt: Number(existing?.first_joined_at || now), lastSeenAt: now };
 }
