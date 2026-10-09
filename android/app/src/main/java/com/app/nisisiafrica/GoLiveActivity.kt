@@ -53,6 +53,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var preview: SurfaceView
     private lateinit var status: TextView
     private lateinit var viewers: TextView
+    private lateinit var attendance: TextView
     private lateinit var chat: TextView
     private lateinit var chatScroll: ScrollView
     private var lastChatSnapshot = ""
@@ -63,6 +64,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private val telemetryPoll = object : Runnable {
         override fun run() {
             refreshTelemetry()
+            refreshAttendance()
             telemetryHandler.postDelayed(this, 5_000L)
         }
     }
@@ -154,6 +156,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         preview = findViewById(R.id.livePreview)
         status = findViewById(R.id.tvLiveStatus)
         viewers = findViewById(R.id.tvLiveViewers)
+        attendance = findViewById(R.id.tvHostAttendance)
         chat = findViewById(R.id.tvLiveChat)
         chatScroll = findViewById(R.id.hostChatScroll)
         hostChatInput = findViewById(R.id.inputHostLiveChat)
@@ -339,6 +342,33 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     }
                     override fun onFailure(
                         call: Call<LmsModels.LiveStateEnvelope>,
+                        t: Throwable,
+                    ) = Unit
+                })
+        }
+    }
+
+    private fun refreshAttendance() {
+        if (!wentLive || eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        user.getIdToken(false).addOnSuccessListener { token ->
+            ApiClient.getLmsService()
+                .liveAttendance("Bearer ${token.token}", eventId)
+                .enqueue(object : Callback<LmsModels.LiveAttendanceEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.LiveAttendanceEnvelope>,
+                        response: Response<LmsModels.LiveAttendanceEnvelope>,
+                    ) {
+                        if (!response.isSuccessful) return
+                        val data = response.body()?.data ?: return
+                        val cutoff = System.currentTimeMillis() - 30_000L
+                        val active = data.attendees.orEmpty().filter { it.lastSeenAt >= cutoff }
+                        val names = active.take(5).joinToString(", ") { it.displayName ?: "Viewer" }
+                        attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total" +
+                            if (names.isNotBlank()) "\n$names" else ""
+                    }
+                    override fun onFailure(
+                        call: Call<LmsModels.LiveAttendanceEnvelope>,
                         t: Throwable,
                     ) = Unit
                 })
