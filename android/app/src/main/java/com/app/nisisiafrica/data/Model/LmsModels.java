@@ -918,6 +918,36 @@ public final class LmsModels {
         public boolean isModerator;
     }
 
+
+    public static class LivePresenceAttendee {
+        public String uid;
+        public String displayName;
+        public long firstJoinedAt;
+        public long lastSeenAt;
+        public int watchSeconds;
+    }
+
+    public static class NativeLiveChatMessage {
+        public String id;
+        public String uid;
+        public String author;
+        public String message;
+        public long createdAt;
+    }
+
+    public static class LiveStateData {
+        public String eventId;
+        public int concurrentViewers;
+        public List<LivePresenceAttendee> attendees;
+        public List<NativeLiveChatMessage> chat;
+    }
+
+    public static class LiveStateEnvelope {
+        public boolean ok;
+        public LiveStateData data;
+        public String error;
+    }
+
     public static class LiveTelemetryData {
         public String eventId;
         public int concurrentViewers;

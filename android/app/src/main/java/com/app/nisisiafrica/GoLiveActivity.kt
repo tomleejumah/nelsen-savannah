@@ -308,11 +308,11 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         val user = FirebaseAuth.getInstance().currentUser ?: return
         user.getIdToken(false).addOnSuccessListener { token ->
             ApiClient.getLmsService()
-                .liveTelemetry("Bearer ${token.token}", eventId)
-                .enqueue(object : Callback<LmsModels.LiveTelemetryEnvelope> {
+                .liveState("Bearer ${token.token}", eventId)
+                .enqueue(object : Callback<LmsModels.LiveStateEnvelope> {
                     override fun onResponse(
-                        call: Call<LmsModels.LiveTelemetryEnvelope>,
-                        response: Response<LmsModels.LiveTelemetryEnvelope>,
+                        call: Call<LmsModels.LiveStateEnvelope>,
+                        response: Response<LmsModels.LiveStateEnvelope>,
                     ) {
                         val data = response.body()?.data ?: return
                         viewers.text = "${data.concurrentViewers} watching"
@@ -324,7 +324,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         }
                     }
                     override fun onFailure(
-                        call: Call<LmsModels.LiveTelemetryEnvelope>,
+                        call: Call<LmsModels.LiveStateEnvelope>,
                         t: Throwable,
                     ) = Unit
                 })

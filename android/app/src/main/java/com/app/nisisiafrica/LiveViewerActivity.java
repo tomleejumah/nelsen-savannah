@@ -17,6 +17,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import com.google.android.material.textfield.TextInputEditText;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -102,6 +103,9 @@ public class LiveViewerActivity extends AppCompatActivity {
         openYoutubeButton.setOnClickListener(v -> openLiveExternally());
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
+        TextInputEditText chatInput = findViewById(R.id.inputLiveChat);
+        MaterialButton sendChat = findViewById(R.id.btnSendLiveChat);
+        sendChat.setOnClickListener(v -> sendLiveChat(chatInput));
         TextView hostView = findViewById(R.id.tvLiveHost);
         TextView subtitleView = findViewById(R.id.tvLiveSubtitle);
         hostView.setText(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
@@ -158,27 +162,50 @@ public class LiveViewerActivity extends AppCompatActivity {
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
         user.getIdToken(false).addOnSuccessListener(token ->
-                ApiClient.getLmsService().liveTelemetry("Bearer " + token.getToken(), eventId)
-                        .enqueue(new Callback<LmsModels.LiveTelemetryEnvelope>() {
-                            @Override public void onResponse(Call<LmsModels.LiveTelemetryEnvelope> call, Response<LmsModels.LiveTelemetryEnvelope> response) {
-                                if (!response.isSuccessful() || response.body() == null || response.body().data == null) return;
-                                LmsModels.LiveTelemetryData data = response.body().data;
+                ApiClient.getLmsService().liveState("Bearer " + token.getToken(), eventId)
+                        .enqueue(new Callback<LmsModels.LiveStateEnvelope>() {
+                            @Override public void onResponse(Call<LmsModels.LiveStateEnvelope> call, Response<LmsModels.LiveStateEnvelope> response) {
+                                LmsModels.LiveStateData data = response.body() != null ? response.body().data : null;
+                                if (!response.isSuccessful() || data == null) return;
                                 if (viewerCountView != null) {
                                     viewerCountView.setText(data.concurrentViewers + " watching");
                                     viewerCountView.setVisibility(View.VISIBLE);
                                 }
-                                if (chatView != null && data.chat != null && !data.chat.isEmpty()) {
+                                if (chatView != null) {
                                     StringBuilder lines = new StringBuilder();
-                                    for (LmsModels.LiveChatMessageDto item : data.chat) {
-                                        if (lines.length() > 0) lines.append("\n\n");
-                                        if (!TextUtils.isEmpty(item.author)) lines.append(item.author).append(": ");
-                                        lines.append(value(item.message));
+                                    if (data.chat != null) {
+                                        for (LmsModels.NativeLiveChatMessage item : data.chat) {
+                                            if (lines.length() > 0) lines.append("\n\n");
+                                            if (!TextUtils.isEmpty(item.author)) lines.append(item.author).append(": ");
+                                            lines.append(value(item.message));
+                                        }
                                     }
-                                    chatView.setText(lines.toString());
+                                    chatView.setText(lines.length() == 0 ? "Be the first to say something." : lines.toString());
                                 }
                             }
-                            @Override public void onFailure(Call<LmsModels.LiveTelemetryEnvelope> call, Throwable t) {}
+                            @Override public void onFailure(Call<LmsModels.LiveStateEnvelope> call, Throwable t) {}
                         }));
+    }
+
+    private void sendLiveChat(TextInputEditText input) {
+        String message = input == null || input.getText() == null ? "" : input.getText().toString().trim();
+        if (message.isEmpty() || eventId.isEmpty()) return;
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            Map<String, String> body = new HashMap<>();
+            body.put("message", message);
+            ApiClient.getLmsService().postLiveChat("Bearer " + token.getToken(), eventId, body)
+                    .enqueue(new Callback<LmsModels.MapEnvelope>() {
+                        @Override public void onResponse(Call<LmsModels.MapEnvelope> call, Response<LmsModels.MapEnvelope> response) {
+                            if (response.isSuccessful()) {
+                                input.setText("");
+                                loadTelemetry();
+                            }
+                        }
+                        @Override public void onFailure(Call<LmsModels.MapEnvelope> call, Throwable t) {}
+                    });
+        });
     }
 
     private void recordAttendance(int watchedSeconds) {
