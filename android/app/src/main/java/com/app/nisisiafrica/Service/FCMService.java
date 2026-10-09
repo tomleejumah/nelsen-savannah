@@ -76,7 +76,7 @@ public class FCMService extends FirebaseMessagingService {
         String type = value(data.get("type"));
         Intent destination;
 
-        if ("live".equals(type) && !value(data.get("youtubeUrl")).isEmpty()) {
+        if ("live".equals(type) && !value(data.get("eventId")).isEmpty()) {
             destination = new Intent(this, LiveViewerActivity.class)
                     .putExtra(LiveViewerActivity.EXTRA_TITLE, value(data.get("eventTitle")))
                     .putExtra(LiveViewerActivity.EXTRA_EVENT_ID, value(data.get("eventId")))
