@@ -57,12 +57,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Attendees · waiting for viewers"
+            android:text="Attendees · tap to view"
             android:textColor="#FFFFFF"
             android:textSize="12sp"
-            android:maxLines="4"
             android:background="#88000000"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true" />
 
         <ScrollView
             android:id="@+id/hostChatScroll"
