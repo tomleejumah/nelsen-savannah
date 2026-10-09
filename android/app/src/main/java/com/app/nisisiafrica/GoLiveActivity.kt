@@ -54,6 +54,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var status: TextView
     private lateinit var viewers: TextView
     private lateinit var attendance: TextView
+    private var attendanceRows: List<LmsModels.LivePresenceAttendee> = emptyList()
     private lateinit var chat: TextView
     private lateinit var chatScroll: ScrollView
     private var lastChatSnapshot = ""
@@ -157,6 +158,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         status = findViewById(R.id.tvLiveStatus)
         viewers = findViewById(R.id.tvLiveViewers)
         attendance = findViewById(R.id.tvHostAttendance)
+        attendance.setOnClickListener { showAttendanceDialog() }
         chat = findViewById(R.id.tvLiveChat)
         chatScroll = findViewById(R.id.hostChatScroll)
         hostChatInput = findViewById(R.id.inputHostLiveChat)
@@ -362,9 +364,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         if (!response.isSuccessful) return
                         val data = response.body()?.data ?: return
                         val cutoff = System.currentTimeMillis() - 30_000L
-                        val active = data.attendees.orEmpty().filter { it.lastSeenAt >= cutoff }
-                        val names = active.take(5).joinToString(", ") { it.displayName ?: "Viewer" }
-                        attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total" +
+                        attendanceRows = data.attendees.orEmpty()
+                        val active = attendanceRows.filter { it.lastSeenAt >= cutoff }
+                        val names = active.take(3).joinToString(", ") { it.displayName ?: "Viewer" }
+                        attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total · tap to view" +
                             if (names.isNotBlank()) "\n$names" else ""
                     }
                     override fun onFailure(
@@ -373,6 +376,33 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     ) = Unit
                 })
         }
+    }
+
+    private fun showAttendanceDialog() {
+        val now = System.currentTimeMillis()
+        val rows = attendanceRows.sortedWith(
+            compareByDescending<LmsModels.LivePresenceAttendee> { it.lastSeenAt >= now - 30_000L }
+                .thenByDescending { it.lastSeenAt },
+        )
+        val content = if (rows.isEmpty()) "No attendees yet" else rows.joinToString("\n\n") {
+            val name = it.displayName?.takeIf { name -> name.isNotBlank() } ?: "Viewer"
+            val minutes = it.watchSeconds / 60
+            val seconds = it.watchSeconds % 60
+            val presence = if (it.lastSeenAt >= now - 30_000L) "Watching now" else "Left"
+            "$name · $presence · ${minutes}m ${seconds}s"
+        }
+        val scroll = ScrollView(this)
+        val details = TextView(this).apply {
+            text = content
+            setPadding(48, 24, 48, 24)
+            textSize = 14f
+        }
+        scroll.addView(details)
+        AlertDialog.Builder(this)
+            .setTitle("Live attendees (${rows.size})")
+            .setView(scroll)
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun sendHostChat() {
