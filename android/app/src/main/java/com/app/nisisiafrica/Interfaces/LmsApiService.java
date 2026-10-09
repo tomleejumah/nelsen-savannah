@@ -224,7 +224,7 @@ public interface LmsApiService {
     Call<LmsModels.MapEnvelope> recordLiveAttendance(
             @Header("Authorization") String bearer,
             @Path("eventId") String eventId,
-            @Body java.util.Map<String, Integer> body);
+            @Body java.util.Map<String, Object> body);
 
     @GET("lms/events/{eventId}/live-state")
     Call<LmsModels.LiveStateEnvelope> liveState(
