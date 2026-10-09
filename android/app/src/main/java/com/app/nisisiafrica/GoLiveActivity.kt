@@ -100,23 +100,38 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 return@registerForActivityResult
             }
             try {
-                ContextCompat.startForegroundService(
-                    this,
-                    Intent(this, LiveProjectionService::class.java),
-                )
-                val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                mediaProjection?.stop()
-                mediaProjection = manager.getMediaProjection(result.resultCode, result.data!!)
-                val projection = mediaProjection ?: return@registerForActivityResult
-                stream.changeVideoSource(ScreenSource(applicationContext, projection))
-                stream.getGlInterface().setCameraOrientation(0)
-                sharingScreen = true
-                cameraPaused = false
-                screenButton.contentDescription = "Stop sharing screen"
-                cameraButton.contentDescription = "Turn camera off"
-                switchButton.isEnabled = false
-                status.text = "LIVE · Sharing screen"
-                screenButton.isEnabled = true
+                // Foreground service must acknowledge startForeground before
+                // Android 14+ permits obtaining the MediaProjection token.
+                val consent = result.data!!
+                val resultCode = result.resultCode
+                LiveProjectionService.startWithCallback(this) {
+                    if (isFinishing || isDestroyed) {
+                        stopService(Intent(this, LiveProjectionService::class.java))
+                        return@startWithCallback
+                    }
+                    try {
+                        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                        mediaProjection?.stop()
+                        mediaProjection = manager.getMediaProjection(resultCode, consent)
+                        val projection = mediaProjection ?: return@startWithCallback
+                        stream.changeVideoSource(ScreenSource(applicationContext, projection))
+                        stream.getGlInterface().setCameraOrientation(0)
+                        sharingScreen = true
+                        cameraPaused = false
+                        screenButton.contentDescription = "Stop sharing screen"
+                        cameraButton.contentDescription = "Turn camera off"
+                        switchButton.isEnabled = false
+                        status.text = "LIVE · Sharing screen"
+                    } catch (e: Exception) {
+                        mediaProjection?.stop()
+                        mediaProjection = null
+                        stopService(Intent(this, LiveProjectionService::class.java))
+                        Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
+                    } finally {
+                        screenButton.isEnabled = true
+                    }
+                }
+                return@registerForActivityResult
             } catch (e: Exception) {
                 screenButton.isEnabled = true
                 mediaProjection?.stop()
