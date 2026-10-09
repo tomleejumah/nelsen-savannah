@@ -17,6 +17,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.WindowManager
 import android.widget.TextView
+import com.google.android.material.textfield.TextInputEditText
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,6 +53,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var status: TextView
     private lateinit var viewers: TextView
     private lateinit var chat: TextView
+    private lateinit var hostChatInput: TextInputEditText
+    private lateinit var hostChatSend: MaterialButton
+    private var hostChatSending = false
     private val telemetryHandler = Handler(Looper.getMainLooper())
     private val telemetryPoll = object : Runnable {
         override fun run() {
@@ -148,6 +152,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         status = findViewById(R.id.tvLiveStatus)
         viewers = findViewById(R.id.tvLiveViewers)
         chat = findViewById(R.id.tvLiveChat)
+        hostChatInput = findViewById(R.id.inputHostLiveChat)
+        hostChatSend = findViewById(R.id.btnHostSendLiveChat)
+        hostChatSend.setOnClickListener { sendHostChat() }
         endButton = findViewById(R.id.btnEndLive)
         switchButton = findViewById(R.id.btnSwitchCamera)
         micButton = findViewById(R.id.btnToggleMic)
@@ -316,9 +323,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     ) {
                         val data = response.body()?.data ?: return
                         viewers.text = "${data.concurrentViewers} watching"
-                        val latest = data.chat?.lastOrNull()
-                        chat.text = if (latest != null && latest.message.isNotBlank()) {
-                            "${latest.author}: ${latest.message}"
+                        val recent = data.chat?.takeLast(4).orEmpty()
+                        chat.text = if (recent.isNotEmpty()) {
+                            recent.joinToString("\\n") { "${it.author}: ${it.message}" }
                         } else {
                             "Live · waiting for chat"
                         }
@@ -328,6 +335,39 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         t: Throwable,
                     ) = Unit
                 })
+        }
+    }
+
+    private fun sendHostChat() {
+        if (!wentLive || finishingLive || eventId.isBlank() || hostChatSending) return
+        val message = hostChatInput.text?.toString()?.trim().orEmpty()
+        if (message.isBlank() || message.length > 500) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        hostChatSending = true
+        hostChatSend.isEnabled = false
+        user.getIdToken(false).addOnSuccessListener { token ->
+            ApiClient.getLmsService()
+                .postLiveChat("Bearer ${token.token}", eventId, mapOf("message" to message))
+                .enqueue(object : Callback<LmsModels.MapEnvelope> {
+                    override fun onResponse(call: Call<LmsModels.MapEnvelope>, response: Response<LmsModels.MapEnvelope>) {
+                        hostChatSending = false
+                        hostChatSend.isEnabled = true
+                        if (response.isSuccessful) {
+                            if (hostChatInput.text?.toString()?.trim() == message) hostChatInput.setText("")
+                            refreshTelemetry()
+                        } else {
+                            Toast.makeText(this@GoLiveActivity, "Message not sent (${response.code()})", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    override fun onFailure(call: Call<LmsModels.MapEnvelope>, t: Throwable) {
+                        hostChatSending = false
+                        hostChatSend.isEnabled = true
+                        Toast.makeText(this@GoLiveActivity, "Could not send message", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }.addOnFailureListener {
+            hostChatSending = false
+            hostChatSend.isEnabled = true
         }
     }
 
