@@ -67,8 +67,7 @@ public class LiveViewerActivity extends AppCompatActivity {
     private long lastWatchTickMs = 0L;
     private boolean chatSending = false;
     private MaterialButton sendChatButton;
-    private TextInputEditText chatInputView;
-    private final Runnable attendanceHeartbeat = new Runnable() {
+     private final Runnable attendanceHeartbeat = new Runnable() {
         @Override public void run() {
             if (!attendanceRunning) return;
             long now = android.os.SystemClock.elapsedRealtime();
@@ -112,7 +111,6 @@ public class LiveViewerActivity extends AppCompatActivity {
         chatView = findViewById(R.id.tvLiveChat);
         TextInputEditText chatInput = findViewById(R.id.inputLiveChat);
         sendChatButton = findViewById(R.id.btnSendLiveChat);
-        chatInputView = chatInput;
         sendChatButton.setOnClickListener(v -> sendLiveChat(chatInput));
         TextView hostView = findViewById(R.id.tvLiveHost);
         TextView subtitleView = findViewById(R.id.tvLiveSubtitle);
@@ -209,7 +207,6 @@ public class LiveViewerActivity extends AppCompatActivity {
             finishChatSend();
             return;
         }
-        user.getIdToken(false).addOnFailureListener(error -> finishChatSend());
         user.getIdToken(false).addOnSuccessListener(token -> {
             Map<String, String> body = new HashMap<>();
             body.put("message", message);
@@ -229,7 +226,7 @@ public class LiveViewerActivity extends AppCompatActivity {
                             Toast.makeText(LiveViewerActivity.this, "Could not send message", Toast.LENGTH_SHORT).show();
                         }
                     });
-        });
+        }).addOnFailureListener(error -> finishChatSend());
     }
 
     private void finishChatSend() {
@@ -328,12 +325,8 @@ public class LiveViewerActivity extends AppCompatActivity {
     protected void onPause() {
         telemetryRunning = false;
         telemetryHandler.removeCallbacks(telemetryPoll);
-        if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode())) {
-            attendanceRunning = false;
-            attendanceHandler.removeCallbacks(attendanceHeartbeat);
-            lastWatchTickMs = 0L;
-            if (isFinishing()) recordAttendance(0, "leave");
-        }
+        // PiP transition may pause before the platform reports PiP mode.
+        // Keep attendance running until onStop confirms the viewer is no longer visible.
         super.onPause();
     }
 
@@ -357,7 +350,7 @@ public class LiveViewerActivity extends AppCompatActivity {
             attendanceRunning = false;
             attendanceHandler.removeCallbacks(attendanceHeartbeat);
             lastWatchTickMs = 0L;
-            recordAttendance(0, "leave");
+            if (isFinishing()) recordAttendance(0, "leave");
         }
         super.onStop();
     }
