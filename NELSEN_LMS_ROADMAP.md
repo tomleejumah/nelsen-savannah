@@ -5,11 +5,11 @@
 Changes are tracked separately from end-to-end verification. **Do not mark a task complete until CI and required on-device scenarios have passed.**
 
 - [ ] Attendance lifecycle: server accepts heartbeat and explicit leave; logs join/rejoin/leave transitions; Android continues heartbeat in PiP and avoids counting an initial unwatched 15 seconds. **Implemented on branch; Android/device verification pending.**
-- [ ] Attendance permissions: constrain school administrators to their own school's events; verify course, school and platform audiences with host and outsider accounts. **Server guard added; authorization tests pending.**
+- [ ] Attendance permissions: host-only identifiable attendee history; public live-state now returns counts without identities. Verify SchoolAdmin school boundaries and audience access with tests. **Server guard added; authorization tests pending.**
 - [ ] Chat: enforce live-only sending, 500-character limit and per-user cooldown/duplicate checks; Android prevents repeat tapping and displays send failures. **Implemented; host-to-viewer/device tests pending.**
-- [ ] Host attendance UI: display identifiable viewers and history with proper access control, comparable to story view receipts.
-- [ ] Host chat UX: scrollable message list and composer for host replies; test both directions.
-- [ ] MediaProjection: verify foreground-service lifecycle, required user consent, device warning for protected media, camera/screen recovery, audio and PiP.
+- [ ] Host attendance UI: compact active/unique count and scrollable viewer history implemented; device verification and authorization regression tests pending.
+- [ ] Host chat UX: scrollable message list and composer implemented with five-second polling; real-time push delivery and two-account tests pending.
+- [ ] MediaProjection: duplicate consent requests guarded; foreground-service ordering, Android 14+ behavior, protected-media warning, camera/screen recovery, audio and PiP require device verification.
 - [ ] Notifications: verify Android 13+ permission, channels, token rotation, foreground/background/killed delivery, in-app history and RTDB timestamp indexing.
 - [ ] Status synchronization: confirm provider polling interval, transition-to-notification latency and once-only scheduled → live → ended dispatch.
 - [ ] CI: Android + API green **on the new PR head** after changes.
