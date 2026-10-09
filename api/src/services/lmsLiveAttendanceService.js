@@ -60,24 +60,19 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
     "SELECT first_joined_at, last_seen_at, watch_seconds FROM live_attendance WHERE event_id = ? AND uid = ?",
     [eventId, uid],
   );
-  if (existing) {
-    const rejoined = Number(existing.last_seen_at) < now - ACTIVE_MS;
-    await dbRun(
-      `UPDATE live_attendance
-       SET last_seen_at = ?, watch_seconds = watch_seconds + ?
-       WHERE event_id = ? AND uid = ?`,
-      [now, requested, eventId, uid],
-    );
-    if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });
-  } else {
-    await dbRun(
-      `INSERT INTO live_attendance
-       (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
-       VALUES (?, ?, ?, ?, ?)`,
-      [eventId, uid, now, now, requested],
-    );
-    console.info("[live-attendance] join", { eventId, uid });
-  }
+  const previousSeen = Number(existing?.last_seen_at || 0);
+  const rejoined = previousSeen > 0 && previousSeen < now - ACTIVE_MS;
+  await dbRun(
+    `INSERT INTO live_attendance
+     (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(event_id, uid) DO UPDATE SET
+       last_seen_at = excluded.last_seen_at,
+       watch_seconds = live_attendance.watch_seconds + excluded.watch_seconds`,
+    [eventId, uid, now, now, requested],
+  );
+  if (!existing) console.info("[live-attendance] join", { eventId, uid });
+  else if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });
   return { eventId, active: true, joinedAt: Number(existing?.first_joined_at || now), lastSeenAt: now };
 }
 
