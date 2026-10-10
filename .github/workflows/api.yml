@@ -36,6 +36,8 @@ jobs:
         run: git ls-files '*.js' '*.mjs' | xargs -r -n1 node --check
       - name: Redis cache protocol tests
         run: node --test scripts/test-redis-cache.mjs
+      - name: SQLite deployment safety tests
+        run: node --test scripts/test-db-safety.mjs
 
   deploy:
     needs: check
