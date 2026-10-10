@@ -364,12 +364,28 @@ async function listTracksFromRtdb(uid, filters = {}) {
   return tracks;
 }
 
+// Cache only anonymous public catalog responses. Authenticated responses contain
+// enrollment, likes and role-specific visibility and must never be shared.
+const publicTrackCache = new Map();
+export function invalidatePublicTrackCache() {
+  publicTrackCache.clear();
+}
+
 export async function getTracks(uid, query = {}) {
+  const cacheable = !uid && !query.enrolled;
+  const key = JSON.stringify([query.schoolId || "", query.audience || ""]);
+  const cached = cacheable ? publicTrackCache.get(key) : null;
+  if (cached && cached.expiresAt > Date.now()) return cached.result;
   const health = await checkPrimaryHealth();
   if (health.ok) {
     try {
       const tracks = await listTracksFromPrimary(uid, query);
-      return { source: getPrimaryEngine(), data: { tracks } };
+      const result = { source: getPrimaryEngine(), data: { tracks } };
+      if (cacheable) {
+        if (publicTrackCache.size >= 64) publicTrackCache.clear();
+        publicTrackCache.set(key, { result, expiresAt: Date.now() + 30_000 });
+      }
+      return result;
     } catch (err) {
       console.error("[lms-tracks] primary failed:", err.message);
     }
