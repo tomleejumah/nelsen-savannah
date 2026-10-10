@@ -586,6 +586,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         setIntent(intent);
         handleOpenChatIntent(intent);
         handleLiveNotificationIntent(intent);
+        handlePendingAppLink(intent);
     }
 
     private void handleLiveNotificationIntent(Intent intent) {
@@ -623,10 +624,23 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         if (TextUtils.isEmpty(raw) && Intent.ACTION_VIEW.equals(source.getAction()) && source.getData() != null) {
             raw = source.getData().toString();
         }
+        if (TextUtils.isEmpty(raw)) {
+            raw = getSharedPreferences("nelsen_app_links", MODE_PRIVATE)
+                    .getString("pending_url", null);
+        }
         if (TextUtils.isEmpty(raw)) return;
         Uri uri = Uri.parse(raw);
-        if (!"https".equals(uri.getScheme()) || !"nelsen-savannah.co.ke".equals(uri.getHost())) return;
+        if (!"https".equals(uri.getScheme()) || !"nelsen-savannah.co.ke".equals(uri.getHost())) {
+            getSharedPreferences("nelsen_app_links", MODE_PRIVATE)
+                    .edit().remove("pending_url").apply();
+            return;
+        }
+        // Do not consume a saved link until the authenticated screen can open it.
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         java.util.List<String> parts = uri.getPathSegments();
+        if (parts.size() < 2) return;
+        getSharedPreferences("nelsen_app_links", MODE_PRIVATE)
+                .edit().remove("pending_url").apply();
         if (parts.size() >= 2 && "live".equals(parts.get(0))) {
             openLiveAppLink(parts.get(1));
             source.removeExtra(LauncherActivity.EXTRA_PENDING_APP_LINK);
