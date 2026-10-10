@@ -540,6 +540,8 @@ This milestone tracks the current production-hardening work before the remaining
 ### LMS performance, school access and applications
 
 - [ ] Add Redis-backed API caching for expensive read-heavy LMS/catalog/course/school queries with explicit TTLs and invalidation on writes; measure slow endpoints before and after caching.
+- [ ] Cache the public school directory and published course catalogs per school in Redis (separate keys, short TTLs, periodic refresh, invalidate on school/course writes). Never cache enrollment/progress/roles in shared keys.
+- [ ] Diagnose and verify phone-width Schools → Courses navigation on a real device: distinguish empty published catalog from API error, validate selected schoolId and refresh/retry behavior.
 - [ ] Complete the school application flow across API/Web/Android: Apply to school → pending/application status → approved/active membership → rejected state where applicable.
 - [x] Android school course list exposes Apply to school and pending membership state.
 - [x] Android blocks opening course learning content unless the user is actually enrolled in that course.
