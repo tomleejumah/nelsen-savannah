@@ -25,10 +25,24 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+// sql.js writes the whole SQLite file on every commit. Never overwrite the
+// only healthy copy in place: an interrupted write could truncate the database.
 function persistSqlite() {
   if (!sqlite || !sqlitePath) return;
-  const data = sqlite.export();
-  fs.writeFileSync(sqlitePath, Buffer.from(data));
+  const data = Buffer.from(sqlite.export());
+  const tempPath = `${sqlitePath}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let fd;
+  try {
+    fd = fs.openSync(tempPath, "wx", 0o600);
+    fs.writeFileSync(fd, data);
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    fd = undefined;
+    fs.renameSync(tempPath, sqlitePath);
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
 }
 
 const SQLITE_SCHEMA = `
