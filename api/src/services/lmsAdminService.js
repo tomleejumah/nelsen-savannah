@@ -188,6 +188,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -217,7 +218,6 @@ async function actorDisplayName(uid) {
   if (row?.display_name && row.display_name !== uid) return row.display_name;
   if (row?.email) return String(row.email).split("@")[0];
   return "Mentor";
-  await invalidatePublicTrackCache();
 }
 
 export async function adminUpdateTrack(actorUid, trackId, body = {}) {
@@ -283,6 +283,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   const mentors = await listTrackMentors(trackId);
   const primary = mentors.length ? mentors[mentors.length - 1] : null;
   const { formatTutorLabel } = await import("./lmsCatalogService.js");
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -336,7 +337,6 @@ function normalizeLessonType(type) {
     return t;
   }
   return "text";
-  await invalidatePublicTrackCache();
 }
 
 export async function adminCreateModule(actorUid, body = {}) {
@@ -385,6 +385,7 @@ export async function adminCreateModule(actorUid, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -398,7 +399,6 @@ export async function adminCreateModule(actorUid, body = {}) {
       },
     },
   };
-  await invalidatePublicTrackCache();
 }
 
 export async function adminUpdateModule(actorUid, moduleId, body = {}) {
@@ -473,6 +473,7 @@ export async function adminUpdateModule(actorUid, moduleId, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -486,7 +487,6 @@ export async function adminUpdateModule(actorUid, moduleId, body = {}) {
       },
     },
   };
-  await invalidatePublicTrackCache();
 }
 
 export async function adminDeleteModule(actorUid, moduleId) {
@@ -552,11 +552,11 @@ export async function adminDeleteModule(actorUid, moduleId) {
       await admin.database().ref(`lms/modules/${mid}`).remove();
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: { deleted: true, moduleId: mid, lessonsDeleted: lessons.length },
   };
-  await invalidatePublicTrackCache();
 }
 
 export async function adminCreateLesson(actorUid, body = {}) {
@@ -618,11 +618,11 @@ export async function adminCreateLesson(actorUid, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: { lesson: { lessonId, moduleId, trackId, title, type, does } },
   };
-  await invalidatePublicTrackCache();
 }
 
 export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
@@ -721,6 +721,7 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -736,7 +737,6 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
       },
     },
   };
-  await invalidatePublicTrackCache();
 }
 
 export async function adminDeleteLesson(actorUid, lessonId) {
@@ -786,8 +786,8 @@ export async function adminDeleteLesson(actorUid, lessonId) {
       await admin.database().ref(`lms/lessons/${lid}`).remove();
     },
   });
-  return { source: getPrimaryEngine(), data: { deleted: true, lessonId: lid } };
   await invalidatePublicTrackCache();
+  return { source: getPrimaryEngine(), data: { deleted: true, lessonId: lid } };
 }
 
 export async function adminSetRole(actorUid, targetUid, userRole) {
