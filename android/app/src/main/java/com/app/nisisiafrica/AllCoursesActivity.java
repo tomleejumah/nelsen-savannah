@@ -863,7 +863,7 @@ public class AllCoursesActivity extends AppCompatActivity {
         FirebaseUser historyUser = FirebaseAuth.getInstance().getCurrentUser();
         if (historyUser != null) {
             historyUser.getIdToken(false).addOnSuccessListener(token ->
-                    ApiClient.getLmsService().mySubmissions("Bearer " + token.getToken(), null, null)
+                    ApiClient.getLmsService().mySubmissions("Bearer " + token.getToken(), assignment.trackId)
                             .enqueue(new Callback<>() {
                                 @Override
                                 public void onResponse(Call<LmsModels.SubmissionListEnvelope> call,
