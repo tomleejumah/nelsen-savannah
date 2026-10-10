@@ -79,11 +79,11 @@ public class ProfileFragment extends Fragment {
             });
         }
         if (header != null) {
+            final int initialTopPadding = header.getPaddingTop();
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
                 int status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-                // Clear glass top bar (inner ~56dp) + gap so the DP sits below it.
-                int extra = Math.round(72 * getResources().getDisplayMetrics().density);
-                v.setPadding(v.getPaddingLeft(), status + extra, v.getPaddingRight(), v.getPaddingBottom());
+                // No pinned inner toolbar: respect the status bar once, without a blank 72dp overlay.
+                v.setPadding(v.getPaddingLeft(), status + initialTopPadding, v.getPaddingRight(), v.getPaddingBottom());
                 return insets;
             });
             ViewCompat.requestApplyInsets(header);
