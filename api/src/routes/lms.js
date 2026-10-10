@@ -92,6 +92,7 @@ router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
 router.get("/tracks", optionalAuthenticate, lmsController.listTracks);
 router.get("/tracks/:trackId", optionalAuthenticate, lmsController.getTrack);
+router.get("/tracks/:trackId/lessons", authenticateUser, lmsController.getTrackOutline);
 router.get("/tracks/:trackId/ide", authenticateUser, lmsController.getTrackIdeConfig);
 router.post(
   "/tracks/:trackId/ide/run",
