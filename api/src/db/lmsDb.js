@@ -869,6 +869,16 @@ async function initSqlite() {
   if (fs.existsSync(sqlitePath)) {
     sqlite = new SQL.Database(fs.readFileSync(sqlitePath));
   } else {
+    // If a prior dataset was backed up, absence of its live file is an
+    // incident, NOT permission to silently reinitialize the entire LMS.
+    const backupDir = path.join(dataDir, "backups");
+    const hasPriorBackup = fs.existsSync(backupDir) &&
+      fs.readdirSync(backupDir).some((name) => /^lms-.*\\.sqlite$/.test(name));
+    if (hasPriorBackup || process.env.LMS_REQUIRE_EXISTING_DB === "1") {
+      throw new Error(
+        "LMS SQLite file is missing; refusing to create a new database while existing data is expected",
+      );
+    }
     sqlite = new SQL.Database();
   }
   sqlite.run("PRAGMA foreign_keys = ON;");
