@@ -74,13 +74,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/headerContent" />
 
-    <!-- PDF/video fills the rest of the screen — true reading surface. -->
+    <!-- Keep video at 16:9; let the lesson sheet use remaining screen space. -->
     <FrameLayout
         android:id="@+id/playerFrame"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@color/surface_2"
-        app:layout_constraintBottom_toTopOf="@id/lessonsSheet"
+        app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerContent">
@@ -137,13 +137,6 @@
                 android:textColor="@android:color/white"
                 android:textStyle="bold" />
 
-            <SeekBar
-                android:id="@+id/volumeSeek"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:max="100"
-                android:progress="100" />
 
             <TextView
                 android:id="@+id/btnSpeedVideo"
@@ -177,17 +170,17 @@
     <LinearLayout
         android:id="@+id/lessonsSheet"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:background="@color/surface"
         android:elevation="4dp"
-        android:maxHeight="280dp"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
         android:paddingTop="10dp"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/playerFrame">
 
         <TextView
             android:layout_width="wrap_content"
@@ -200,10 +193,10 @@
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:layout_marginTop="6dp"
-            android:fillViewport="true"
-            android:maxHeight="220dp">
+            android:fillViewport="false">
 
             <LinearLayout
                 android:layout_width="match_parent"
