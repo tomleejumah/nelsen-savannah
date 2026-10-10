@@ -14,8 +14,12 @@ import tls from "node:tls";
 
 const MAX_REPLY_BYTES = 8 * 1024 * 1024;
 let lastWarning = 0;
+let disabledUntil = 0;
+
 
 function warn(err) {
+  // Avoid paying a network timeout on every request during Redis outages.
+  disabledUntil = Date.now() + 15_000;
   if (Date.now() - lastWarning < 60_000) return;
   lastWarning = Date.now();
   console.warn("[lms-cache] Redis unavailable, using database:", err.message);
@@ -124,8 +128,12 @@ export function redisConfigured() {
   return Boolean(process.env.REDIS_URL);
 }
 
+function canAttempt() {
+  return redisConfigured() && Date.now() >= disabledUntil;
+}
+
 export async function redisGetJson(key) {
-  if (!redisConfigured()) return null;
+  if (!canAttempt()) return null;
   try {
     const value = await execRedis("GET", key);
     return value == null ? null : JSON.parse(value);
@@ -136,7 +144,7 @@ export async function redisGetJson(key) {
 }
 
 export async function redisSetJson(key, value, seconds) {
-  if (!redisConfigured()) return false;
+  if (!canAttempt()) return false;
   try {
     await execRedis("SET", key, JSON.stringify(value), "EX", String(Math.max(1, Math.floor(seconds))));
     return true;
@@ -147,7 +155,7 @@ export async function redisSetJson(key, value, seconds) {
 }
 
 export async function redisDelete(key) {
-  if (!redisConfigured()) return false;
+  if (!canAttempt()) return false;
   try {
     await execRedis("DEL", key);
     return true;
@@ -159,7 +167,7 @@ export async function redisDelete(key) {
 
 /** A versioned namespace avoids SCAN/KEYS during course catalog invalidation. */
 export async function redisBumpVersion(key) {
-  if (!redisConfigured()) return null;
+  if (!canAttempt()) return null;
   try {
     return await execRedis("INCR", key);
   } catch (error) {
@@ -169,7 +177,7 @@ export async function redisBumpVersion(key) {
 }
 
 export async function redisGetVersion(key) {
-  if (!redisConfigured()) return null;
+  if (!canAttempt()) return null;
   try {
     return Number((await execRedis("GET", key)) || 0);
   } catch (error) {
