@@ -17,6 +17,8 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.WindowManager
 import android.widget.TextView
+import android.widget.ScrollView
+import com.google.android.material.textfield.TextInputEditText
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,11 +53,19 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var preview: SurfaceView
     private lateinit var status: TextView
     private lateinit var viewers: TextView
+    private lateinit var attendance: TextView
+    private var attendanceRows: List<LmsModels.LivePresenceAttendee> = emptyList()
     private lateinit var chat: TextView
+    private lateinit var chatScroll: ScrollView
+    private var lastChatSnapshot = ""
+    private lateinit var hostChatInput: TextInputEditText
+    private lateinit var hostChatSend: MaterialButton
+    private var hostChatSending = false
     private val telemetryHandler = Handler(Looper.getMainLooper())
     private val telemetryPoll = object : Runnable {
         override fun run() {
             refreshTelemetry()
+            refreshAttendance()
             telemetryHandler.postDelayed(this, 5_000L)
         }
     }
@@ -70,6 +80,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var micMuted = false
     private var cameraPaused = false
     private var sharingScreen = false
+    private var projectionConsentPending = false
 
     private var ingestUrl = ""
     private var eventId = ""
@@ -82,28 +93,47 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            projectionConsentPending = false
             if (result.resultCode != Activity.RESULT_OK || result.data == null) {
+                screenButton.isEnabled = true
                 stopService(Intent(this, LiveProjectionService::class.java))
                 return@registerForActivityResult
             }
             try {
-                ContextCompat.startForegroundService(
-                    this,
-                    Intent(this, LiveProjectionService::class.java),
-                )
-                val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                mediaProjection?.stop()
-                mediaProjection = manager.getMediaProjection(result.resultCode, result.data!!)
-                val projection = mediaProjection ?: return@registerForActivityResult
-                stream.changeVideoSource(ScreenSource(applicationContext, projection))
-                stream.getGlInterface().setCameraOrientation(0)
-                sharingScreen = true
-                cameraPaused = false
-                screenButton.contentDescription = "Stop sharing screen"
-                cameraButton.contentDescription = "Turn camera off"
-                switchButton.isEnabled = false
-                status.text = "LIVE · Sharing screen"
+                // Foreground service must acknowledge startForeground before
+                // Android 14+ permits obtaining the MediaProjection token.
+                val consent = result.data!!
+                val resultCode = result.resultCode
+                LiveProjectionService.startWithCallback(this) {
+                    if (isFinishing || isDestroyed) {
+                        stopService(Intent(this, LiveProjectionService::class.java))
+                        return@startWithCallback
+                    }
+                    try {
+                        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                        mediaProjection?.stop()
+                        mediaProjection = manager.getMediaProjection(resultCode, consent)
+                        val projection = mediaProjection ?: return@startWithCallback
+                        stream.changeVideoSource(ScreenSource(applicationContext, projection))
+                        stream.getGlInterface().setCameraOrientation(0)
+                        sharingScreen = true
+                        cameraPaused = false
+                        screenButton.contentDescription = "Stop sharing screen"
+                        cameraButton.contentDescription = "Turn camera off"
+                        switchButton.isEnabled = false
+                        status.text = "LIVE · Sharing screen"
+                    } catch (e: Exception) {
+                        mediaProjection?.stop()
+                        mediaProjection = null
+                        stopService(Intent(this, LiveProjectionService::class.java))
+                        Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
+                    } finally {
+                        screenButton.isEnabled = true
+                    }
+                }
+                return@registerForActivityResult
             } catch (e: Exception) {
+                screenButton.isEnabled = true
                 mediaProjection?.stop()
                 mediaProjection = null
                 stopService(Intent(this, LiveProjectionService::class.java))
@@ -147,7 +177,13 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         preview = findViewById(R.id.livePreview)
         status = findViewById(R.id.tvLiveStatus)
         viewers = findViewById(R.id.tvLiveViewers)
+        attendance = findViewById(R.id.tvHostAttendance)
+        attendance.setOnClickListener { showAttendanceDialog() }
         chat = findViewById(R.id.tvLiveChat)
+        chatScroll = findViewById(R.id.hostChatScroll)
+        hostChatInput = findViewById(R.id.inputHostLiveChat)
+        hostChatSend = findViewById(R.id.btnHostSendLiveChat)
+        hostChatSend.setOnClickListener { sendHostChat() }
         endButton = findViewById(R.id.btnEndLive)
         switchButton = findViewById(R.id.btnSwitchCamera)
         micButton = findViewById(R.id.btnToggleMic)
@@ -284,8 +320,17 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             }
             return
         }
-        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
+        if (projectionConsentPending) return
+        projectionConsentPending = true
+        screenButton.isEnabled = false
+        try {
+            val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            screenCaptureLauncher.launch(manager.createScreenCaptureIntent())
+        } catch (e: Exception) {
+            projectionConsentPending = false
+            screenButton.isEnabled = true
+            Toast.makeText(this, "Could not request screen sharing", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun shareLive() {
@@ -316,11 +361,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     ) {
                         val data = response.body()?.data ?: return
                         viewers.text = "${data.concurrentViewers} watching"
-                        val latest = data.chat?.lastOrNull()
-                        chat.text = if (latest != null && latest.message.isNotBlank()) {
-                            "${latest.author}: ${latest.message}"
-                        } else {
-                            "Live · waiting for chat"
+                        val messages = data.chat.orEmpty()
+                        val snapshot = if (messages.isEmpty()) "Live · waiting for chat" else
+                            messages.joinToString("\n") { "${it.author}: ${it.message}" }
+                        if (snapshot != lastChatSnapshot) {
+                            val wasAtBottom = !chatScroll.canScrollVertically(1)
+                            lastChatSnapshot = snapshot
+                            chat.text = snapshot
+                            if (wasAtBottom) chatScroll.post { chatScroll.fullScroll(android.view.View.FOCUS_DOWN) }
                         }
                     }
                     override fun onFailure(
@@ -328,6 +376,94 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         t: Throwable,
                     ) = Unit
                 })
+        }
+    }
+
+    private fun refreshAttendance() {
+        if (!wentLive || eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        user.getIdToken(false).addOnSuccessListener { token ->
+            ApiClient.getLmsService()
+                .liveAttendance("Bearer ${token.token}", eventId)
+                .enqueue(object : Callback<LmsModels.LiveAttendanceEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.LiveAttendanceEnvelope>,
+                        response: Response<LmsModels.LiveAttendanceEnvelope>,
+                    ) {
+                        if (!response.isSuccessful) return
+                        val data = response.body()?.data ?: return
+                        val cutoff = System.currentTimeMillis() - 30_000L
+                        attendanceRows = data.attendees.orEmpty()
+                        val active = attendanceRows.filter { it.lastSeenAt >= cutoff }
+                        val names = active.take(3).joinToString(", ") { it.displayName ?: "Viewer" }
+                        attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total · tap to view" +
+                            if (names.isNotBlank()) "\n$names" else ""
+                    }
+                    override fun onFailure(
+                        call: Call<LmsModels.LiveAttendanceEnvelope>,
+                        t: Throwable,
+                    ) = Unit
+                })
+        }
+    }
+
+    private fun showAttendanceDialog() {
+        val now = System.currentTimeMillis()
+        val rows = attendanceRows.sortedWith(
+            compareByDescending<LmsModels.LivePresenceAttendee> { it.lastSeenAt >= now - 30_000L }
+                .thenByDescending { it.lastSeenAt },
+        )
+        val content = if (rows.isEmpty()) "No attendees yet" else rows.joinToString("\n\n") {
+            val name = it.displayName?.takeIf { name -> name.isNotBlank() } ?: "Viewer"
+            val minutes = it.watchSeconds / 60
+            val seconds = it.watchSeconds % 60
+            val presence = if (it.lastSeenAt >= now - 30_000L) "Watching now" else "Left"
+            "$name · $presence · ${minutes}m ${seconds}s"
+        }
+        val scroll = ScrollView(this)
+        val details = TextView(this).apply {
+            text = content
+            setPadding(48, 24, 48, 24)
+            textSize = 14f
+        }
+        scroll.addView(details)
+        AlertDialog.Builder(this)
+            .setTitle("Live attendees (${rows.size})")
+            .setView(scroll)
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    private fun sendHostChat() {
+        if (!wentLive || finishingLive || eventId.isBlank() || hostChatSending) return
+        val message = hostChatInput.text?.toString()?.trim().orEmpty()
+        if (message.isBlank() || message.length > 500) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        hostChatSending = true
+        hostChatSend.isEnabled = false
+        user.getIdToken(false).addOnSuccessListener { token ->
+            ApiClient.getLmsService()
+                .postLiveChat("Bearer ${token.token}", eventId, mapOf("message" to message))
+                .enqueue(object : Callback<LmsModels.MapEnvelope> {
+                    override fun onResponse(call: Call<LmsModels.MapEnvelope>, response: Response<LmsModels.MapEnvelope>) {
+                        hostChatSending = false
+                        hostChatSend.isEnabled = true
+                        if (response.isSuccessful) {
+                            if (hostChatInput.text?.toString()?.trim() == message) hostChatInput.setText("")
+                            refreshTelemetry()
+                        } else {
+                            Toast.makeText(this@GoLiveActivity, "Message not sent (${response.code()})", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    override fun onFailure(call: Call<LmsModels.MapEnvelope>, t: Throwable) {
+                        hostChatSending = false
+                        hostChatSend.isEnabled = true
+                        Toast.makeText(this@GoLiveActivity, "Could not send message", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }.addOnFailureListener {
+            hostChatSending = false
+            hostChatSend.isEnabled = true
         }
     }
 

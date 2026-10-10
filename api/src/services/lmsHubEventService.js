@@ -535,6 +535,13 @@ export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
   }
 
   const status = parseLiveStatus(body.liveStatus ?? body.status, existing.status);
+  // Once ended, a live session must not be resurrected by a delayed provider poll
+  // or an out-of-order host callback. Start a new event for a new broadcast.
+  if (existing.status === LIVE_STATUS.ended && status !== LIVE_STATUS.ended) {
+    const err = new Error("An ended live session cannot be restarted");
+    err.status = 409;
+    throw err;
+  }
   let meetingLink = existing.meetingLink;
   if (body.meetingLink !== undefined || body.meeting_link !== undefined) {
     meetingLink = String(body.meetingLink ?? body.meeting_link ?? "").trim();

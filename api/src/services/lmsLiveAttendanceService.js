@@ -1,6 +1,26 @@
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { canViewHubEvent, getHubEvent } from "./lmsHubEventService.js";
 
+const ACTIVE_MS = 30_000;
+const CHAT_COOLDOWN_MS = 1_500;
+
+function liveError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+async function requireLiveEvent(eventId, uid, { active = false } = {}) {
+  const event = await getHubEvent(eventId);
+  if (!event || event.eventType !== "live" || !(await canViewHubEvent(event, uid))) {
+    throw liveError("Live session not found", 404);
+  }
+  if (active && event.liveStatus !== "live") {
+    throw liveError("This live session is not accepting messages or attendance", 409);
+  }
+  return event;
+}
+
 async function ensureTable() {
   await dbRun(`CREATE TABLE IF NOT EXISTS live_attendance (
     event_id TEXT NOT NULL,
@@ -21,50 +41,52 @@ async function ensureTable() {
 
 export async function recordLiveAttendance(eventId, uid, body = {}) {
   await ensureTable();
-  const event = await getHubEvent(eventId);
-  if (!event || event.eventType !== "live" || !(await canViewHubEvent(event, uid))) {
-    const err = new Error("Live session not found");
-    err.status = 404;
-    throw err;
-  }
+  const action = String(body.action || "heartbeat").toLowerCase();
+  await requireLiveEvent(eventId, uid, { active: action !== "leave" });
   const now = Date.now();
+  if (!["heartbeat", "leave"].includes(action)) throw liveError("Unsupported attendance action", 400);
+  if (action === "leave") {
+    const updated = await dbRun(
+      "UPDATE live_attendance SET last_seen_at = ? WHERE event_id = ? AND uid = ? AND last_seen_at >= ?",
+      [now - ACTIVE_MS - 1, eventId, uid, now - ACTIVE_MS],
+    );
+    if (Number(updated?.changes ?? updated?.rowCount ?? 0) > 0) {
+      console.info("[live-attendance] leave", { eventId, uid });
+    }
+    return { eventId, active: false, lastSeenAt: now };
+  }
   const requested = Math.max(0, Math.min(30, Number(body.watchedSeconds) || 0));
   const existing = await dbGet(
     "SELECT first_joined_at, last_seen_at, watch_seconds FROM live_attendance WHERE event_id = ? AND uid = ?",
     [eventId, uid],
   );
-  if (existing) {
-    await dbRun(
-      `UPDATE live_attendance
-       SET last_seen_at = ?, watch_seconds = watch_seconds + ?
-       WHERE event_id = ? AND uid = ?`,
-      [now, requested, eventId, uid],
-    );
-  } else {
-    await dbRun(
-      `INSERT INTO live_attendance
-       (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
-       VALUES (?, ?, ?, ?, ?)`,
-      [eventId, uid, now, now, requested],
-    );
-  }
-  return { eventId, joinedAt: Number(existing?.first_joined_at || now), lastSeenAt: now };
+  const previousSeen = Number(existing?.last_seen_at || 0);
+  const rejoined = previousSeen > 0 && previousSeen < now - ACTIVE_MS;
+  await dbRun(
+    `INSERT INTO live_attendance
+     (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(event_id, uid) DO UPDATE SET
+       last_seen_at = excluded.last_seen_at,
+       watch_seconds = live_attendance.watch_seconds + excluded.watch_seconds`,
+    [eventId, uid, now, now, requested],
+  );
+  if (!existing) console.info("[live-attendance] join", { eventId, uid });
+  else if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });
+  return { eventId, active: true, joinedAt: Number(existing?.first_joined_at || now), lastSeenAt: now };
 }
 
 export async function getLiveAttendanceSummary(eventId, requesterUid) {
   await ensureTable();
   const event = await getHubEvent(eventId);
-  if (!event || event.eventType !== "live") {
-    const err = new Error("Live session not found");
-    err.status = 404;
-    throw err;
-  }
+  if (!event || event.eventType !== "live") throw liveError("Live session not found", 404);
   if (String(event.createdBy || "") !== String(requesterUid || "")) {
     const role = await dbGet("SELECT role FROM roles WHERE uid = ?", [requesterUid]);
-    if (!["Admin", "SuperAdmin", "SchoolAdmin"].includes(String(role?.role || ""))) {
-      const err = new Error("Only the host or an administrator can view attendance");
-      err.status = 403;
-      throw err;
+    const platformAdmin = ["Admin", "SuperAdmin"].includes(String(role?.role || ""));
+    const schoolAdmin = String(role?.role || "") === "SchoolAdmin"
+      && !!event.schoolId && await canViewHubEvent(event, requesterUid);
+    if (!platformAdmin && !schoolAdmin) {
+      throw liveError("Only the host or an authorized administrator can view attendance", 403);
     }
   }
   const rows = await dbAll(
@@ -95,13 +117,8 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
 
 export async function getLiveAudienceState(eventId, uid) {
   await ensureTable();
-  const event = await getHubEvent(eventId);
-  if (!event || event.eventType !== "live" || !(await canViewHubEvent(event, uid))) {
-    const err = new Error("Live session not found");
-    err.status = 404;
-    throw err;
-  }
-  const cutoff = Date.now() - 30_000;
+  await requireLiveEvent(eventId, uid);
+  const cutoff = Date.now() - ACTIVE_MS;
   const attendees = await dbAll(
     `SELECT a.uid, a.first_joined_at, a.last_seen_at, a.watch_seconds,
             COALESCE(u.display_name, u.email, a.uid) AS display_name
@@ -123,13 +140,9 @@ export async function getLiveAudienceState(eventId, uid) {
   return {
     eventId,
     concurrentViewers: attendees.length,
-    attendees: attendees.map((row) => ({
-      uid: String(row.uid),
-      displayName: String(row.display_name || row.uid),
-      firstJoinedAt: Number(row.first_joined_at),
-      lastSeenAt: Number(row.last_seen_at),
-      watchSeconds: Number(row.watch_seconds || 0),
-    })),
+    // Public live-state is readable by attendees; identifiable attendance is host-only.
+    // Hosts retrieve names and watch durations from the authorized attendance endpoint.
+    attendees: [],
     chat: chat.reverse().map((row) => ({
       id: String(row.id),
       uid: String(row.uid),
@@ -142,20 +155,25 @@ export async function getLiveAudienceState(eventId, uid) {
 
 export async function postLiveChatMessage(eventId, uid, body = {}) {
   await ensureTable();
-  const event = await getHubEvent(eventId);
-  if (!event || event.eventType !== "live" || !(await canViewHubEvent(event, uid))) {
-    const err = new Error("Live session not found");
-    err.status = 404;
-    throw err;
-  }
+  await requireLiveEvent(eventId, uid, { active: true });
   const message = String(body.message || "").trim();
   if (!message || message.length > 500) {
     const err = new Error("Message must be between 1 and 500 characters");
     err.status = 400;
     throw err;
   }
-  const id = `lchat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const recent = await dbGet(
+    "SELECT message, created_at FROM live_chat_messages WHERE event_id = ? AND uid = ? ORDER BY created_at DESC LIMIT 1",
+    [eventId, uid],
+  );
   const now = Date.now();
+  if (recent && now - Number(recent.created_at) < CHAT_COOLDOWN_MS) {
+    throw liveError("Slow down before sending another message", 429);
+  }
+  if (recent && recent.message === message && now - Number(recent.created_at) < 10_000) {
+    throw liveError("Duplicate message", 409);
+  }
+  const id = `lchat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   await dbRun(
     "INSERT INTO live_chat_messages (id, event_id, uid, message, created_at) VALUES (?, ?, ?, ?, ?)",
     [id, eventId, uid, message, now],

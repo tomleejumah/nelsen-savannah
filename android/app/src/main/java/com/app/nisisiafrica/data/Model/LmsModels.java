@@ -935,6 +935,19 @@ public final class LmsModels {
         public long createdAt;
     }
 
+    public static class LiveAttendanceData {
+        public String eventId;
+        public int uniqueAttendees;
+        public long totalWatchSeconds;
+        public List<LivePresenceAttendee> attendees;
+    }
+
+    public static class LiveAttendanceEnvelope {
+        public boolean ok;
+        public LiveAttendanceData data;
+        public String error;
+    }
+
     public static class LiveStateData {
         public String eventId;
         public int concurrentViewers;

@@ -64,10 +64,16 @@ public class LiveViewerActivity extends AppCompatActivity {
     };
     private final Handler attendanceHandler = new Handler(Looper.getMainLooper());
     private boolean attendanceRunning = false;
-    private final Runnable attendanceHeartbeat = new Runnable() {
+    private long lastWatchTickMs = 0L;
+    private boolean chatSending = false;
+    private MaterialButton sendChatButton;
+     private final Runnable attendanceHeartbeat = new Runnable() {
         @Override public void run() {
             if (!attendanceRunning) return;
-            recordAttendance(15);
+            long now = android.os.SystemClock.elapsedRealtime();
+            int elapsed = lastWatchTickMs <= 0L ? 0 : (int) Math.min(15, Math.max(0, (now - lastWatchTickMs) / 1000L));
+            lastWatchTickMs = now;
+            recordAttendance(elapsed, "heartbeat");
             attendanceHandler.postDelayed(this, 15_000L);
         }
     };
@@ -104,8 +110,8 @@ public class LiveViewerActivity extends AppCompatActivity {
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
         TextInputEditText chatInput = findViewById(R.id.inputLiveChat);
-        MaterialButton sendChat = findViewById(R.id.btnSendLiveChat);
-        sendChat.setOnClickListener(v -> sendLiveChat(chatInput));
+        sendChatButton = findViewById(R.id.btnSendLiveChat);
+        sendChatButton.setOnClickListener(v -> sendLiveChat(chatInput));
         TextView hostView = findViewById(R.id.tvLiveHost);
         TextView subtitleView = findViewById(R.id.tvLiveSubtitle);
         hostView.setText(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
@@ -189,32 +195,53 @@ public class LiveViewerActivity extends AppCompatActivity {
 
     private void sendLiveChat(TextInputEditText input) {
         String message = input == null || input.getText() == null ? "" : input.getText().toString().trim();
-        if (message.isEmpty() || eventId.isEmpty()) return;
+        if (chatSending || message.isEmpty() || eventId.isEmpty()) return;
+        if (message.length() > 500) {
+            input.setError("Maximum 500 characters");
+            return;
+        }
+        chatSending = true;
+        sendChatButton.setEnabled(false);
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            finishChatSend();
+            return;
+        }
         user.getIdToken(false).addOnSuccessListener(token -> {
             Map<String, String> body = new HashMap<>();
             body.put("message", message);
             ApiClient.getLmsService().postLiveChat("Bearer " + token.getToken(), eventId, body)
                     .enqueue(new Callback<LmsModels.MapEnvelope>() {
                         @Override public void onResponse(Call<LmsModels.MapEnvelope> call, Response<LmsModels.MapEnvelope> response) {
+                            finishChatSend();
                             if (response.isSuccessful()) {
-                                input.setText("");
+                                if (input.getText() != null && message.contentEquals(input.getText().toString().trim())) input.setText("");
                                 loadTelemetry();
+                            } else {
+                                Toast.makeText(LiveViewerActivity.this, "Message not sent (" + response.code() + ")", Toast.LENGTH_SHORT).show();
                             }
                         }
-                        @Override public void onFailure(Call<LmsModels.MapEnvelope> call, Throwable t) {}
+                        @Override public void onFailure(Call<LmsModels.MapEnvelope> call, Throwable t) {
+                            finishChatSend();
+                            Toast.makeText(LiveViewerActivity.this, "Could not send message", Toast.LENGTH_SHORT).show();
+                        }
                     });
-        });
+        }).addOnFailureListener(error -> finishChatSend());
     }
 
-    private void recordAttendance(int watchedSeconds) {
+    private void finishChatSend() {
+        chatSending = false;
+        if (sendChatButton != null) sendChatButton.setEnabled(true);
+    }
+
+    private void recordAttendance(int watchedSeconds, String action) {
         if (TextUtils.isEmpty(eventId)) return;
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
         user.getIdToken(false).addOnSuccessListener(token -> {
-            Map<String, Integer> body = new HashMap<>();
+            Map<String, Object> body = new HashMap<>();
             body.put("watchedSeconds", watchedSeconds);
+            body.put("action", action);
             ApiClient.getLmsService()
                     .recordLiveAttendance("Bearer " + token.getToken(), eventId, body)
                     .enqueue(new Callback<LmsModels.MapEnvelope>() {
@@ -288,7 +315,8 @@ public class LiveViewerActivity extends AppCompatActivity {
         }
         if (!attendanceRunning) {
             attendanceRunning = true;
-            recordAttendance(0);
+            lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
+            recordAttendance(0, "heartbeat");
             attendanceHandler.postDelayed(attendanceHeartbeat, 15_000L);
         }
     }
@@ -297,8 +325,8 @@ public class LiveViewerActivity extends AppCompatActivity {
     protected void onPause() {
         telemetryRunning = false;
         telemetryHandler.removeCallbacks(telemetryPoll);
-        attendanceRunning = false;
-        attendanceHandler.removeCallbacks(attendanceHeartbeat);
+        // PiP transition may pause before the platform reports PiP mode.
+        // Keep attendance running until onStop confirms the viewer is no longer visible.
         super.onPause();
     }
 
@@ -317,6 +345,12 @@ public class LiveViewerActivity extends AppCompatActivity {
                 );
             } catch (Exception ignored) {
             }
+        }
+        if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode())) {
+            attendanceRunning = false;
+            attendanceHandler.removeCallbacks(attendanceHeartbeat);
+            lastWatchTickMs = 0L;
+            if (isFinishing()) recordAttendance(0, "leave");
         }
         super.onStop();
     }
@@ -337,9 +371,25 @@ public class LiveViewerActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onPictureInPictureModeChanged(boolean inPictureInPictureMode, android.content.res.Configuration newConfig) {
+        super.onPictureInPictureModeChanged(inPictureInPictureMode, newConfig);
+        if (inPictureInPictureMode && !attendanceRunning) {
+            attendanceRunning = true;
+            lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
+            recordAttendance(0, "heartbeat");
+            attendanceHandler.postDelayed(attendanceHeartbeat, 15_000L);
+        } else if (!inPictureInPictureMode && !hasWindowFocus() && attendanceRunning) {
+            attendanceRunning = false;
+            attendanceHandler.removeCallbacks(attendanceHeartbeat);
+            lastWatchTickMs = 0L;
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         attendanceRunning = false;
         attendanceHandler.removeCallbacks(attendanceHeartbeat);
+        if (isFinishing()) recordAttendance(0, "leave");
         if (webView != null) {
             webView.stopLoading();
             webView.loadUrl("about:blank");

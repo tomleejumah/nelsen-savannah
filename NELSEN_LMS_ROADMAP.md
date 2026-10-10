@@ -1,4 +1,20 @@
 # Nelsen Savannah — LMS Implementation Roadmap
+
+## Live follow-up stability — October 9, 2026
+
+Changes are tracked separately from end-to-end verification. **Do not mark a task complete until CI and required on-device scenarios have passed.**
+
+- [ ] Attendance lifecycle: server accepts heartbeat and explicit leave; logs join/rejoin/leave transitions; Android continues heartbeat in PiP and avoids counting an initial unwatched 15 seconds. **Implemented on branch; Android/device verification pending.**
+- [ ] Attendance permissions: host-only identifiable attendee history; public live-state now returns counts without identities. Verify SchoolAdmin school boundaries and audience access with tests. **Server guard added; authorization tests pending.**
+- [ ] Chat: enforce live-only sending, 500-character limit and per-user cooldown/duplicate checks; Android prevents repeat tapping and displays send failures. **Implemented; host-to-viewer/device tests pending.**
+- [ ] Host attendance UI: compact active/unique count and scrollable viewer history implemented; device verification and authorization regression tests pending.
+- [ ] Host chat UX: scrollable message list and composer implemented with five-second polling; real-time push delivery and two-account tests pending.
+- [ ] MediaProjection: duplicate consent requests guarded and projection token acquisition deferred until foreground service is ready; Android 14+ behavior, protected-media warning, camera/screen recovery, audio and PiP require device verification.
+- [ ] Notifications: live notification deep link now uses event ID even when provider URL is absent; verify Android 13+ permission, channels, token rotation, foreground/background/killed delivery, in-app history and RTDB timestamp indexing.
+- [ ] Status synchronization: API now rejects attempts to resurrect an ended session via stale status updates; verify provider polling interval, transition-to-notification latency and once-only scheduled → live → ended dispatch.
+- [ ] CI: Android + API green **on the new PR head** after changes.
+- [ ] Real Android device, two accounts: verify live join/leave, viewer counts, chat both ways, notification receipt/click, PiP, screen sharing and recovery.
+
 - [x] Live host controls use vector/SVG icons (mic, camera, flip, screen share, share, end) rather than emoji/text-heavy controls.
 - [x] Host live feedback polls school-channel telemetry for concurrent viewers and recent live chat while broadcasting.
 - [x] Authenticated live attendance records join identity + watch heartbeats; host/admin attendance summary reports unique attendees and watch duration.

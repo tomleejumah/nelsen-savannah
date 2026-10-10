@@ -3,6 +3,10 @@ package com.app.nisisiafrica.Service
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
+import androidx.core.content.ContextCompat
+import android.os.Handler
+import android.os.Looper
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -18,6 +22,14 @@ class LiveProjectionService : Service() {
     companion object {
         private const val CHANNEL_ID = "nelsen_live_projection"
         private const val NOTIFICATION_ID = 4102
+        private var readyCallback: (() -> Unit)? = null
+
+        fun startWithCallback(context: Context, onReady: () -> Unit) {
+            readyCallback = onReady
+            ContextCompat.startForegroundService(
+                context, Intent(context, LiveProjectionService::class.java),
+            )
+        }
     }
 
     override fun onCreate() {
@@ -43,6 +55,9 @@ class LiveProjectionService : Service() {
             .setSilent(true)
             .build()
         startForeground(NOTIFICATION_ID, notification)
+        val callback = readyCallback
+        readyCallback = null
+        if (callback != null) Handler(Looper.getMainLooper()).post { callback() }
         return START_NOT_STICKY
     }
 
