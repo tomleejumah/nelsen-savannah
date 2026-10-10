@@ -348,6 +348,15 @@ async function listTracksFromRtdb(uid, filters = {}) {
       },
     ),
   );
+  // The RTDB fallback must honor the selected school too. Otherwise a
+  // healthy catalog and a failover catalog show different course lists.
+  if (filters.schoolId) {
+    const schoolId = String(filters.schoolId).trim();
+    tracks = tracks.filter((t) => t.schoolId === schoolId);
+  } else {
+    tracks = tracks.filter((t) =>
+      !t.schoolId || t.schoolId === "nelsen-digital");
+  }
   tracks.sort((a, b) => (a.courseTitle || "").localeCompare(b.courseTitle || ""));
   if (filters.audience) {
     tracks = tracks.filter((t) => t.audience.includes(filters.audience));
