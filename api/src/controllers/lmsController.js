@@ -935,6 +935,14 @@ export const adminGetTrackOutline = handle(
   },
 );
 
+export const adminDeleteUnusedTracks = handle(
+  "[POST /lms/admin/tracks/bulk-delete-unused]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminDeleteUnusedTracks(req.user.uid, req.body || {});
+  },
+);
+
 export const adminCreateTrack = handle("[POST /lms/admin/tracks]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
   const result = await svc.adminCreateTrack(req.user.uid, req.body || {});
