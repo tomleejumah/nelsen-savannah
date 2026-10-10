@@ -69,6 +69,19 @@ function EventsPage() {
     return unsubscribe;
   }, [refreshEvents]);
 
+  // Live deep links arrive before these async event cards are loaded.
+  // Scroll after rendering the matching event or replay, not on initial HTML.
+  useEffect(() => {
+    const encoded = window.location.hash.slice(1);
+    if (!encoded || (!events.length && !liveReplays.length)) return;
+    let id: string;
+    try { id = decodeURIComponent(encoded); } catch { return; }
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [events, liveReplays]);
+
   const featured = events[0];
   const filtered = events.filter((e) => filter === "All" || eventFormat(e) === filter);
 
@@ -276,6 +289,7 @@ function EventsPage() {
             {liveReplays.map((event) => (
               <article
                 key={event.eventId}
+                id={event.eventId}
                 className="rounded-2xl border border-border/70 bg-card p-5"
               >
                 <div className="flex flex-wrap items-center gap-2">
