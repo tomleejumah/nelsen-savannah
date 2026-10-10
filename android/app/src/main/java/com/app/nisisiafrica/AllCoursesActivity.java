@@ -161,8 +161,12 @@ public class AllCoursesActivity extends AppCompatActivity {
             tvSubtitle.setOnClickListener(v ->
                     startActivity(new Intent(this, MentorBoardActivity.class)));
         } else if (tvSubtitle != null) {
-            tvSubtitle.setText("Tap for assigned coursework inbox");
-            tvSubtitle.setOnClickListener(v -> showAssignmentsInbox());
+            tvSubtitle.setText("Explore courses, complete lessons and track your coursework.");
+        }
+        View assignmentsButton = findViewById(R.id.btnAssignmentInbox);
+        if (assignmentsButton != null && Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
+            assignmentsButton.setVisibility(View.VISIBLE);
+            assignmentsButton.setOnClickListener(v -> showAssignmentsInbox());
         }
 
         if (btnApplySchool != null) {
