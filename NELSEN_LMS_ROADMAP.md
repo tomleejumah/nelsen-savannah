@@ -1,5 +1,25 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Single integration PR #78 — learner UI, catalog latency and production hardening (October 11, 2026)
+
+The implementation is consolidated on `feat/learner-platform-roadmap` in **one draft PR**. Do not open a new PR per small fix or auto-merge. A checked box below means the **code is implemented**, not that real-device or VPS validation was performed.
+
+- [x] Android learner coursework inbox: visible entry point, assignment prompts, late submissions, text responses, submission history, status, score and mentor feedback.
+- [x] Android video/reader UX: 16:9 inline video with mute/fullscreen, taller PDF reader viewport, lesson sheet remains scrollable.
+- [x] Android link continuation: persist verified canonical HTTPS links through onboarding, login, verification and PIN; route cold and warm intents.
+- [x] Web fallback for canonical live links with matching event/replay anchor and provider-neutral live copy.
+- [x] Course syllabus batch endpoint `GET /lms/tracks/:trackId/lessons` with learning-access guard; web course page uses one request instead of N module requests, with fallback for older servers.
+- [x] Redis catalog base caching: shared public school directory and per-school published track metadata; short TTL, versioned invalidation after CMS, mentor, school and pricing writes, safe DB fallback, no shared learner-specific progress/likes/roles.
+- [x] SQL.js persistence: replace direct overwrite with atomic fsync + rename.
+- [x] Pre-deploy SQLite snapshots and post-deploy row-count/integrity guard wired into API, manual and self-hosted deploy flows.
+- [x] API Redis mock-protocol test and SQLite backup/loss tests in CI; operator configuration and recovery documented.
+- [ ] **CI exit criterion:** final PR HEAD passes API, Web and Android CI after the last commit (previous runs cancelled by further commits do not count).
+- [ ] **Physical Android QA:** phone/tablet, orientation, IME, video mute/fullscreen, PDFs, assignment submit/feedback, expired lesson, offline/reconnection and all deep links.
+- [ ] **Live two-account regression:** school/course/platform scopes, join/leave attendance, live chat, screen-share, camera toggle, PiP, notifications (including no-token cases), ended/replay transitions.
+- [ ] **Production operations:** configure/test Redis on VPS, ensure backups are copied off-host, test safe restore, check Firebase `.indexOn` timestamps and 13+ notification permission/token registration.
+- [ ] **Release acceptance:** verify App Links on a real device and web fallbacks, check API enrollment/school gate, and obtain manual merge approval.
+
+
 ## Live follow-up stability — October 9, 2026
 
 Changes are tracked separately from end-to-end verification. **Do not mark a task complete until CI and required on-device scenarios have passed.**
