@@ -245,19 +245,28 @@ async function pricingByTrack() {
   );
 }
 
-async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filterSchool } = {}) {
-  const user = await dbGet(
-    "SELECT school_id, active_school_id FROM users_mirror WHERE uid = ?",
-    [uid],
-  );
-  const schoolId =
-    (filterSchool && String(filterSchool).trim()) ||
-    user?.active_school_id ||
-    user?.school_id ||
-    null;
+// Every school shares a course/catalog *base* snapshot, never a learner's
+// enrollment, likes, progress or role filters. This is the critical hot path
+// for authenticated Android users (anonymous response caching alone is not
+// enough). All mentors are loaded with ONE query rather than N requests.
+const baseCatalogCache = new Map();
+async function baseCatalogForSchool(schoolId) {
+  const variant = String(schoolId || "marketplace");
+  const remoteVersion = await redisGetVersion(CATALOG_VERSION_KEY);
+  const version = remoteVersion === null ? `local-${localRevision}` : remoteVersion;
+  const cached = baseCatalogCache.get(variant);
+  if (cached && cached.expiresAt > Date.now() && cached.version === version) {
+    return cached.tracks;
+  }
+  const cacheKey = "nelsen:lms:school-catalog:v1:" +
+    createHash("sha256").update(variant + ":" + version).digest("hex").slice(0, 24);
+  const redisTracks = await redisGetJson(cacheKey);
+  if (Array.isArray(redisTracks)) {
+    baseCatalogCache.set(variant, { tracks: redisTracks, version,
+      expiresAt: Date.now() + (redisConfigured() ? 5_000 : 30_000) });
+    return redisTracks;
+  }
 
-  // Explicit school → that catalog. No school → marketplace (public tracks only;
-  // private QA schools like school-qa-* stay hidden unless you belong to them).
   const rows = schoolId
     ? await dbAll(
         `SELECT * FROM tracks WHERE published = 1
@@ -270,65 +279,81 @@ async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filter
          AND (school_id IS NULL OR school_id = '' OR school_id = 'nelsen-digital')
          ORDER BY sort_order ASC, track_id ASC`,
       );
-  const [likes, enrollMap, lessonCounts, moduleCounts, minuteTotals, pricing] =
+
+  const [lessonCounts, moduleCounts, minuteTotals, pricing, mentorRows] =
     await Promise.all([
-      likesFor(uid),
-      enrollmentsFor(uid),
       lessonCountByTrack(),
       moduleCountByTrack(),
       minutesByTrack(),
       pricingByTrack(),
+      dbAll(`SELECT track_id, uid, display_name, avatar_url, linked_at
+             FROM track_mentors ORDER BY track_id, linked_at ASC`).catch(() => []),
     ]);
+  const mentorsByTrack = new Map();
+  for (const row of mentorRows) {
+    const mentors = mentorsByTrack.get(row.track_id) || [];
+    mentors.push({
+      uid: row.uid,
+      displayName: row.display_name || "Mentor",
+      avatarUrl: row.avatar_url || "",
+      linkedAt: Number(row.linked_at) || 0,
+    });
+    mentorsByTrack.set(row.track_id, mentors);
+  }
+  const tracks = rows.map((row) => mapTrackCard(row, {
+    lessonCount: lessonCounts.get(row.track_id) || 0,
+    moduleCount: moduleCounts.get(row.track_id) || 0,
+    estimatedMinutes: minuteTotals.get(row.track_id) || 0,
+    price: pricing.get(row.track_id),
+    mentors: mentorsByTrack.get(row.track_id) || [],
+  }));
+  if (baseCatalogCache.size >= 32) baseCatalogCache.clear();
+  baseCatalogCache.set(variant, { tracks, version,
+    expiresAt: Date.now() + (redisConfigured() ? 5_000 : 30_000) });
+  await redisSetJson(cacheKey, tracks, 30);
+  return tracks;
+}
 
-  let tracks = await Promise.all(
-    rows.map(async (row) => {
-      const trackId = row.track_id;
-      const isEnrolled = enrollMap.has(trackId);
-      const mentors = await mentorsForTrack(trackId);
-      return mapTrackCard(row, {
-        enrolled: isEnrolled,
-        trackPercent: enrollMap.get(trackId) || 0,
-        isLiked: likes.has(trackId),
-        lessonCount: lessonCounts.get(trackId) || 0,
-        moduleCount: moduleCounts.get(trackId) || 0,
-        estimatedMinutes: minuteTotals.get(trackId) || 0,
-        price: pricing.get(trackId),
-        mentors,
-      });
-    }),
-  );
-
-  // attach moduleCount properly
-  tracks = tracks.map((t) => ({
-    ...t,
-    moduleCount: moduleCounts.get(t.trackId) || t.moduleCount || 0,
+async function listTracksFromPrimary(uid, { audience, enrolled, schoolId: filterSchool } = {}) {
+  const user = uid
+    ? await dbGet("SELECT school_id, active_school_id FROM users_mirror WHERE uid = ?", [uid])
+    : null;
+  const schoolId =
+    (filterSchool && String(filterSchool).trim()) ||
+    user?.active_school_id ||
+    user?.school_id ||
+    null;
+  const [baseTracks, likes, enrollMap] = await Promise.all([
+    baseCatalogForSchool(schoolId),
+    likesFor(uid),
+    enrollmentsFor(uid),
+  ]);
+  let tracks = baseTracks.map((track) => ({
+    ...track,
+    enrolled: enrollMap.has(track.trackId),
+    trackPercent: Number(enrollMap.get(track.trackId)) || 0,
+    isLiked: likes.has(track.trackId),
   }));
 
-  // Host-facing course selection must not leak courses a mentor does not teach.
-  // SchoolAdmin can host against any course in their active school; Mentor only
-  // against courses explicitly assigned through track_mentors.
+  // Mentors see only their assigned courses in host-facing selectors.
+  // Other users retain the school-filtered published catalog.
   if (uid) {
     const roleRow = await dbGet("SELECT role FROM roles WHERE uid = ?", [uid]);
-    const role = String(roleRow?.role || "");
-    if (role === "Mentor") {
+    if (String(roleRow?.role || "") === "Mentor") {
       const assignedRows = await dbAll(
         "SELECT track_id FROM track_mentors WHERE uid = ?",
         [uid],
       );
       const assigned = new Set(assignedRows.map((row) => String(row.track_id)));
-      tracks = tracks.filter((t) => assigned.has(String(t.trackId)));
+      tracks = tracks.filter((track) => assigned.has(String(track.trackId)));
     }
   }
-
-  if (audience) {
-    tracks = tracks.filter((t) => t.audience.includes(audience));
-  }
+  if (audience) tracks = tracks.filter((track) => track.audience.includes(audience));
   if (enrolled === "true" || enrolled === true) {
-    tracks = tracks.filter((t) => t.enrolled);
+    tracks = tracks.filter((track) => track.enrolled);
   } else if (enrolled === "false" || enrolled === false) {
-    tracks = tracks.filter((t) => !t.enrolled);
+    tracks = tracks.filter((track) => !track.enrolled);
   }
-
   return tracks;
 }
 
@@ -376,6 +401,7 @@ let localRevision = 0;
 export async function invalidatePublicTrackCache() {
   localRevision += 1;
   publicTrackCache.clear();
+  baseCatalogCache.clear();
   await redisBumpVersion(CATALOG_VERSION_KEY);
 }
 
