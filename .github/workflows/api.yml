@@ -34,6 +34,8 @@ jobs:
         run: npm ci
       - name: Syntax check
         run: git ls-files '*.js' '*.mjs' | xargs -r -n1 node --check
+      - name: Redis cache protocol tests
+        run: node --test scripts/test-redis-cache.mjs
 
   deploy:
     needs: check
@@ -96,6 +98,7 @@ jobs:
             "$PM2" logs nelsen-savannah --lines 50 --nostream || true
             exit 1
           fi
+          node scripts/check-lms-db.mjs "$APP_DIR"
 
       - name: Health smoke (local + nginx)
         run: |
