@@ -10,17 +10,21 @@
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
-    <androidx.cardview.widget.CardView
+    <eightbitlab.com.blurview.BlurView
+        android:id="@+id/navBlur"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:cardCornerRadius="22dp"
-        app:cardElevation="8dp">
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/navBlur"
+        android:background="@drawable/bg_nav_glass_clip"
+        android:clipToOutline="true">
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="0dp"
+            app:cardPreventCornerOverlap="false"
+            app:cardUseCompatPadding="false">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
@@ -44,8 +48,8 @@
                     <TextView android:id="@+id/navProfileLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/nav_profile" android:textColor="@color/muted" android:textSize="11sp"/>
                 </LinearLayout>
             </LinearLayout>
-        </eightbitlab.com.blurview.BlurView>
-    </androidx.cardview.widget.CardView>
+        </androidx.cardview.widget.CardView>
+    </eightbitlab.com.blurview.BlurView>
 
     <Space android:layout_width="12dp" android:layout_height="1dp"/>
     <androidx.cardview.widget.CardView
