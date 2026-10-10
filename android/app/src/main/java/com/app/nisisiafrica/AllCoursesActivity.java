@@ -81,6 +81,7 @@ public class AllCoursesActivity extends AppCompatActivity {
     /** null = unknown/loading, true = active member, false = not, "pending" handled separately */
     private Boolean schoolMemberActive = null;
     private boolean schoolJoinPending = false;
+    private boolean schoolJoinRejected = false;
     private LmsCacheBridge offlineCache;
     private com.google.android.material.button.MaterialButton btnRetryCourses;
     private PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> pagingBridge;
@@ -367,6 +368,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                            @NonNull Response<LmsModels.MeEnvelope> response) {
                         schoolMemberActive = false;
                         schoolJoinPending = false;
+                        schoolJoinRejected = false;
                         LmsModels.MeEnvelope body = response.body();
                         if (response.isSuccessful() && body != null && body.ok && body.data != null) {
                             Object mem = body.data.get("memberships");
@@ -385,6 +387,9 @@ public class AllCoursesActivity extends AppCompatActivity {
                                     }
                                     if ("applied".equals(status) || "invited".equals(status)) {
                                         schoolJoinPending = true;
+                                        schoolJoinRejected = false;
+                                    } else if ("rejected".equals(status)) {
+                                        schoolJoinRejected = true;
                                     }
                                 }
                             }
@@ -414,8 +419,15 @@ public class AllCoursesActivity extends AppCompatActivity {
             tvApplyPending.setVisibility(View.GONE);
         } else if (schoolJoinPending) {
             btnApplySchool.setVisibility(View.GONE);
+            tvApplyPending.setText(R.string.school_apply_pending);
+            tvApplyPending.setVisibility(View.VISIBLE);
+        } else if (schoolJoinRejected) {
+            btnApplySchool.setText(R.string.school_apply_again);
+            btnApplySchool.setVisibility(View.VISIBLE);
+            tvApplyPending.setText(R.string.school_apply_rejected);
             tvApplyPending.setVisibility(View.VISIBLE);
         } else {
+            btnApplySchool.setText(R.string.school_apply_now);
             btnApplySchool.setVisibility(View.VISIBLE);
             tvApplyPending.setVisibility(View.GONE);
         }
@@ -457,6 +469,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                     Toast.makeText(AllCoursesActivity.this,
                                             R.string.school_apply_sent, Toast.LENGTH_SHORT).show();
                                     schoolJoinPending = true;
+                                    schoolJoinRejected = false;
                                     schoolMemberActive = false;
                                     bindApplyUi();
                                 } else {
