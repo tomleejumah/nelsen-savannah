@@ -9,12 +9,12 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.TaskStackBuilder;
 
-import com.app.nisisiafrica.Constants;
 import com.app.nisisiafrica.LiveViewerActivity;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.R;
-import com.app.nisisiafrica.Utils.Util;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -63,13 +63,18 @@ public class FCMService extends FirebaseMessagingService {
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
 
-        String userId = Util.getState(Constants.CURRENT_USER_ID, "");
-        if (userId != null && !userId.isEmpty()) {
+        // CURRENT_USER_ID can be stale immediately after an account switch.
+        // Only associate a token with the actual signed-in Firebase identity.
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null && !token.isEmpty()) {
             FirebaseDatabase.getInstance()
                     .getReference("Tokens")
-                    .child(userId)
-                    .setValue(token);
+                    .child(user.getUid())
+                    .setValue(token)
+                    .addOnFailureListener(error ->
+                            android.util.Log.w("FCMService", "Token rotation sync failed", error));
         }
+        // No current user: MainActivity.initFCM() retries after authentication.
     }
 
     private void showNotification(String title, String body, Map<String, String> data) {
