@@ -96,11 +96,19 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
-          APK=$(find app/build/outputs/apk/release -name '*.apk' ! -name '*-unsigned.apk' | head -n1)
-          if [ -z "$APK" ]; then
-            APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
+          echo "Release APK outputs:"
+          find app/build/outputs -maxdepth 6 -type f \\( -name '*.apk' -o -name 'output-metadata.json' \\) -print || true
+          APK_DIR="app/build/outputs/apk/release"
+          if [ ! -d "$APK_DIR" ]; then
+            echo "::error::Release APK output directory missing: $APK_DIR"
+            exit 1
           fi
-          test -n "$APK" && test -f "$APK"
+          APK=$(find "$APK_DIR" -type f -name '*.apk' ! -name '*-unsigned.apk' -print -quit)
+          if [ -z "$APK" ]; then
+            echo "::error::No signed release APK found in $APK_DIR. Check release signing and build outputs."
+            exit 1
+          fi
+          test -s "$APK"
           cp "$APK" "${GITHUB_WORKSPACE}/nelsen-savannah.apk"
           # version.properties lives at android/
           VNAME=$(grep -E '^VERSION_NAME=' version.properties | cut -d= -f2- | tr -d '\r')
