@@ -52,6 +52,62 @@ async function assertCanEditTrack(actorUid, trackId) {
   }
 }
 
+/**
+ * CMS bulk outline for the editor. One request/three bounded queries, without
+ * video/PDF bytes or playback signatures. Unlike learner outline this permits
+ * assigned mentors and school admins to edit courses before enrolling.
+ */
+export async function adminTrackAuthoringOutline(actorUid, trackId) {
+  await assertCanEditTrack(actorUid, trackId);
+  const track = await dbGet("SELECT track_id FROM tracks WHERE track_id = ?", [trackId]);
+  if (!track) {
+    const err = new Error("Course not found");
+    err.status = 404;
+    throw err;
+  }
+  const [modules, lessons] = await Promise.all([
+    dbAll("SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order, module_id", [trackId]),
+    dbAll("SELECT * FROM lessons WHERE track_id = ? ORDER BY module_id, sort_order, lesson_id", [trackId]),
+  ]);
+  const byModule = new Map(modules.map((row) => [row.module_id, []]));
+  for (const row of lessons) {
+    const bucket = byModule.get(row.module_id);
+    if (!bucket) continue;
+    bucket.push({
+      lessonId: row.lesson_id,
+      moduleId: row.module_id,
+      trackId,
+      title: row.title,
+      does: row.does || "",
+      type: row.type === "read" ? "text" : row.type,
+      estimatedMinutes: Number(row.estimated_minutes) || 0,
+      hasQuiz: Boolean(row.has_quiz),
+      hasAssignment: Boolean(row.has_assignment),
+      mediaId: row.media_id || null,
+      contentUrl: row.content_url || null,
+      lessonPercent: 0,
+      status: "available",
+    });
+  }
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      trackId,
+      modules: modules.map((row) => ({
+        moduleId: row.module_id,
+        trackId,
+        title: row.title,
+        does: row.does || "",
+        estimatedMinutes: Number(row.estimated_minutes) || 0,
+        lessonCount: byModule.get(row.module_id)?.length || 0,
+        releaseAt: row.release_at == null ? null : Number(row.release_at),
+        dueAt: row.due_at == null ? null : Number(row.due_at),
+        lessons: byModule.get(row.module_id) || [],
+      })),
+    },
+  };
+}
+
 /** Mentors/school admins who edit a track get linked (multi-tutor); creators alone do not. */
 export async function linkTrackMentor(trackId, actorUid) {
   if (!trackId || !actorUid) return;
