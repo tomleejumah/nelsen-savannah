@@ -40,6 +40,8 @@ jobs:
         run: node --test scripts/test-db-safety.mjs
       - name: SQLite schema migration tests
         run: node --test scripts/test-migrations.mjs
+      - name: No silent primary database fallback tests
+        run: node --test scripts/test-db-primary-safety.mjs
 
   deploy:
     needs: check
