@@ -20,7 +20,6 @@ import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -96,7 +95,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private TextView btnSpeedVideo;
     private TextView btnForward10;
     private TextView btnFullscreenVideo;
-    private SeekBar volumeSeek;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService pdfExec = Executors.newSingleThreadExecutor();
@@ -185,7 +183,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
         btnSpeedVideo = findViewById(R.id.btnSpeedVideo);
         btnForward10 = findViewById(R.id.btnForward10);
         btnFullscreenVideo = findViewById(R.id.btnFullscreenVideo);
-        volumeSeek = findViewById(R.id.volumeSeek);
         setupVideoControls();
 
         if (!TextUtils.isEmpty(does)) {
@@ -555,20 +552,6 @@ public class ChapterLearnActivity extends AppCompatActivity {
             applyPlaybackSpeed();
         });
         btnFullscreenVideo.setOnClickListener(v -> setVideoFullscreen(!videoFullscreen));
-        volumeSeek.setMax(100);
-        volumeSeek.setProgress(100);
-        volumeSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
-                if (!fromUser) return;
-                videoVolume = value / 100f;
-                videoMuted = value == 0;
-                applyVideoVolume();
-            }
-
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
         updateVideoControlLabels();
     }
 
@@ -622,13 +605,15 @@ public class ChapterLearnActivity extends AppCompatActivity {
         if (fullscreen) {
             lp.topToBottom = ConstraintSet.UNSET;
             lp.bottomToTop = ConstraintSet.UNSET;
+            lp.dimensionRatio = null;
             lp.topToTop = ConstraintSet.PARENT_ID;
             lp.bottomToBottom = ConstraintSet.PARENT_ID;
         } else {
             lp.topToTop = ConstraintSet.UNSET;
             lp.bottomToBottom = ConstraintSet.UNSET;
             lp.topToBottom = R.id.headerContent;
-            lp.bottomToTop = R.id.lessonsSheet;
+            lp.bottomToTop = ConstraintSet.UNSET;
+            lp.dimensionRatio = "16:9";
         }
         playerFrame.setLayoutParams(lp);
 
