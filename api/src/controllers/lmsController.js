@@ -927,6 +927,14 @@ export const putLessonQuiz = handle(
   },
 );
 
+export const adminGetTrackOutline = handle(
+  "[GET /lms/admin/tracks/:trackId/outline]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminTrackAuthoringOutline(req.user.uid, req.params.trackId);
+  },
+);
+
 export const adminCreateTrack = handle("[POST /lms/admin/tracks]", async (req) => {
   const svc = await import("../services/lmsAdminService.js");
   const result = await svc.adminCreateTrack(req.user.uid, req.body || {});
