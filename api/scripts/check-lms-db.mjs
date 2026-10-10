@@ -19,7 +19,9 @@ if (envValue("DATABASE_URL")) {
   console.log("[lms-db-check] PostgreSQL configured; use PostgreSQL backups/monitoring.");
   process.exit(0);
 }
-const dataDir = path.resolve(envValue("LMS_DATA_DIR") || path.join(appDir, "data"));
+// Paths in .env are relative to the API installation, not the checkout
+// workspace from which the deployment job happened to invoke this script.
+const dataDir = path.resolve(appDir, envValue("LMS_DATA_DIR") || "data");
 const file = path.join(dataDir, "lms.sqlite");
 if (!fs.existsSync(file)) {
   console.error("[lms-db-check] SQLite file missing after startup.");
