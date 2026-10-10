@@ -166,12 +166,24 @@ export async function listSchools(actorUid) {
 }
 
 /** Any signed-in user — school picker / Explore other schools. */
+// Short-lived in-process catalog snapshot. Does not cache memberships, roles,
+ // enrollments or progress. Expiration refreshes from the authoritative DB.
+const schoolCatalogCache = { expiresAt: 0, schools: null };
+export function invalidateSchoolCatalogCache() {
+  schoolCatalogCache.expiresAt = 0;
+  schoolCatalogCache.schools = null;
+}
+
 export async function listSchoolsCatalog(_actorUid) {
+  const now = Date.now();
+  if (schoolCatalogCache.schools && now < schoolCatalogCache.expiresAt) {
+    return { source: getPrimaryEngine(), data: { schools: schoolCatalogCache.schools } };
+  }
   const rows = await dbAll("SELECT * FROM schools ORDER BY name ASC");
-  return {
-    source: getPrimaryEngine(),
-    data: { schools: rows.map(mapSchool) },
-  };
+  const schools = rows.map(mapSchool);
+  schoolCatalogCache.schools = schools;
+  schoolCatalogCache.expiresAt = now + 60_000;
+  return { source: getPrimaryEngine(), data: { schools } };
 }
 
 export async function createSchool(actorUid, body = {}) {
@@ -229,6 +241,7 @@ export async function createSchool(actorUid, body = {}) {
   const row = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
+  invalidateSchoolCatalogCache();
   return {
     source: getPrimaryEngine(),
     data: {
