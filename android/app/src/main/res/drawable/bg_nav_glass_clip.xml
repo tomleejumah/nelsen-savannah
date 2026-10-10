@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The outer BlurView needs a rounded drawable outline to clip the
+     sampling/render layer. Leave it transparent: the blur overlay is
+     configured by MainActivity, and only the nav pill should be glass. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <corners android:radius="22dp" />
+</shape>
