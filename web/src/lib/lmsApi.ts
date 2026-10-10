@@ -498,6 +498,13 @@ export async function fetchLmsTrack(idToken: string, trackId: string) {
   );
 }
 
+export async function fetchLmsTrackOutline(idToken: string, trackId: string) {
+  return lmsFetch<{
+    trackId: string;
+    modules: (ModuleDto & { lessons: LessonDto[] })[];
+  }>(`/lms/tracks/${encodeURIComponent(trackId)}/lessons`, idToken);
+}
+
 export async function fetchLmsModule(idToken: string, moduleId: string) {
   return lmsFetch<ModuleDetailDto>(
     `/lms/modules/${encodeURIComponent(moduleId)}`,
