@@ -879,8 +879,9 @@ async function initSqlite() {
 }
 
 /**
- * Initialize primary store. Tries Postgres when DATABASE_URL is set;
- * on auth/connect failure falls back to SQLite (sql.js WASM).
+ * Initialize the configured primary store.
+ * CRITICAL: never silently switch to an empty SQLite database when a
+ * configured PostgreSQL server is down; that masks an outage as data loss.
  */
 export async function initLmsDb() {
   const databaseUrl = process.env.DATABASE_URL?.trim();
@@ -890,8 +891,14 @@ export async function initLmsDb() {
       console.log(`[lms-db] primary=postgres (DATABASE_URL)`);
       return engine;
     } catch (err) {
-      console.warn(
-        `[lms-db] Postgres unavailable (${err.message}); falling back to SQLite`,
+      console.error(`[lms-db] PostgreSQL startup failed: ${err.message}`);
+      if (pgPool) {
+        await pgPool.end().catch(() => {});
+        pgPool = null;
+      }
+      throw new Error(
+        "DATABASE_URL is configured but PostgreSQL is unavailable; refusing SQLite fallback",
+        { cause: err },
       );
     }
   }
