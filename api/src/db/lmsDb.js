@@ -745,11 +745,21 @@ CREATE TABLE IF NOT EXISTS school_memberships (
   role TEXT NOT NULL,
   status TEXT NOT NULL,
   display_name TEXT,
+  invite_token TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 )`);
   } catch (err) {
     console.warn(`[lms-db] school_memberships: ${err.message}`);
+  }
+
+  // An existing database may have the older table without invite_token.
+  // The initial migrations run before this CREATE TABLE on a fresh install;
+  // ensure the column exists here too, before its UNIQUE index is built.
+  try {
+    await dbRun("ALTER TABLE school_memberships ADD COLUMN invite_token TEXT");
+  } catch {
+    /* already exists */
   }
 
   try {
