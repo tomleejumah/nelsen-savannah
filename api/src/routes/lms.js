@@ -353,6 +353,12 @@ router.put(
   requireRoles("Mentor", "SchoolAdmin", "Admin"),
   lmsController.putLessonQuiz,
 );
+router.post(
+  "/admin/tracks/bulk-delete-unused",
+  authenticateUser,
+  requireRoles("Admin", "SchoolAdmin"),
+  lmsController.adminDeleteUnusedTracks,
+);
 router.get(
   "/admin/tracks/:trackId/outline",
   authenticateUser,
