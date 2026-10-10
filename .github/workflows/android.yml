@@ -87,7 +87,7 @@ jobs:
               f"VERSION_CODE={new_code}" if line.startswith("VERSION_CODE=") else line
               for line in lines
           ]
-          path.write_text("\\n".join(lines) + "\\n")
+          path.write_text(chr(10).join(lines) + chr(10))
           print(f"Release version 1.0.{run_number} (code {new_code})")
           PY
       - name: Assemble release APK
@@ -97,15 +97,19 @@ jobs:
         run: |
           set -euo pipefail
           echo "Release APK outputs:"
-          find app/build/outputs -maxdepth 6 -type f \\( -name '*.apk' -o -name 'output-metadata.json' \\) -print || true
+          find app/build/outputs -type f -name '*.apk' -print || true
           APK_DIR="app/build/outputs/apk/release"
           if [ ! -d "$APK_DIR" ]; then
             echo "::error::Release APK output directory missing: $APK_DIR"
             exit 1
           fi
-          APK=$(find "$APK_DIR" -type f -name '*.apk' ! -name '*-unsigned.apk' -print -quit)
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            APK=$(find "$APK_DIR" -type f -name '*.apk' -print -quit)
+          else
+            APK=$(find "$APK_DIR" -type f -name '*.apk' ! -name '*-unsigned.apk' -print -quit)
+          fi
           if [ -z "$APK" ]; then
-            echo "::error::No signed release APK found in $APK_DIR. Check release signing and build outputs."
+            echo "::error::Expected release APK not found in $APK_DIR"
             exit 1
           fi
           test -s "$APK"
