@@ -9,7 +9,8 @@ export async function sendFCMNotification(receiverId, notification) {
 
     const token = tokenSnap.val();
     if (!token) {
-      console.log("No FCM token for user:", receiverId);
+      // Expected for web-only users and newly registered devices. The caller
+      // records an in-app notification and aggregates missing-token counts.
       return { success: false, reason: "no_token" };
     }
 
