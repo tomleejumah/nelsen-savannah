@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.TaskStackBuilder;
 
-import com.app.nisisiafrica.LiveViewerActivity;
+import com.app.nisisiafrica.LauncherActivity;
 import com.app.nisisiafrica.MainActivity;
 import com.app.nisisiafrica.NotificationsActivity;
 import com.app.nisisiafrica.R;
@@ -81,13 +81,16 @@ public class FCMService extends FirebaseMessagingService {
         String type = value(data.get("type"));
         Intent destination;
 
-        if ("live".equals(type) && !value(data.get("eventId")).isEmpty()) {
-            destination = new Intent(this, LiveViewerActivity.class)
-                    .putExtra(LiveViewerActivity.EXTRA_TITLE, value(data.get("eventTitle")))
-                    .putExtra(LiveViewerActivity.EXTRA_EVENT_ID, value(data.get("eventId")))
-                    .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, value(data.get("youtubeUrl")))
-                    .putExtra(LiveViewerActivity.EXTRA_LIVE_STATUS,
-                            value(data.get("liveStatus")).isEmpty() ? "live" : value(data.get("liveStatus")));
+        boolean isLiveLink = "live".equals(type) && !value(data.get("eventId")).isEmpty();
+        if (isLiveLink) {
+            // Use the canonical verified link. The launcher enforces login,
+            // email verification and PIN before the authenticated viewer opens.
+            String eventId = value(data.get("eventId"));
+            destination = new Intent(this, LauncherActivity.class)
+                    .setAction(Intent.ACTION_VIEW)
+                    .setData(android.net.Uri.parse(
+                            "https://nelsen-savannah.co.ke/live/" + android.net.Uri.encode(eventId)))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         } else {
             destination = new Intent(this, NotificationsActivity.class)
                     .putExtra("courseId", value(data.get("courseId")))
@@ -95,18 +98,22 @@ public class FCMService extends FirebaseMessagingService {
                     .putExtra("type", type);
         }
 
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        stackBuilder.addNextIntent(new Intent(this, MainActivity.class));
-        stackBuilder.addNextIntent(destination);
-
         String key = value(data.get("eventId"));
         if (key.isEmpty()) key = value(data.get("notificationId"));
-        int requestCode = key.isEmpty() ? (int) (System.currentTimeMillis() & 0x7fffffff) : key.hashCode();
-
-        PendingIntent pendingIntent = stackBuilder.getPendingIntent(
-                requestCode,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        int requestCode = key.isEmpty()
+                ? (int) (System.currentTimeMillis() & 0x7fffffff) : key.hashCode();
+        PendingIntent pendingIntent;
+        if (isLiveLink) {
+            pendingIntent = PendingIntent.getActivity(this, requestCode, destination,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        } else {
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+            stackBuilder.addNextIntent(new Intent(this, MainActivity.class));
+            stackBuilder.addNextIntent(destination);
+            pendingIntent = stackBuilder.getPendingIntent(
+                    requestCode,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notifications)
