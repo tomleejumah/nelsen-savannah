@@ -183,6 +183,8 @@
     <string name="courses_from_school">Courses from this school — apply to join, then enroll</string>
     <string name="school_apply_now">Apply now</string>
     <string name="school_apply_pending">Join request pending — waiting for school approval</string>
+    <string name="school_apply_rejected">Your previous application was declined. You may apply again.</string>
+    <string name="school_apply_again">Apply again</string>
     <string name="school_apply_sent">Join request sent</string>
     <string name="enroll_now">Enroll now</string>
     <string name="enroll_continue">Continue learning</string>
