@@ -856,6 +856,54 @@ public class AllCoursesActivity extends AppCompatActivity {
         }
         prompt.setText(details.toString());
         content.addView(prompt);
+        android.widget.TextView history = new android.widget.TextView(this);
+        history.setPadding(0, pad / 2, 0, pad / 2);
+        history.setText("Loading submission history…");
+        content.addView(history);
+        FirebaseUser historyUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (historyUser != null) {
+            historyUser.getIdToken(false).addOnSuccessListener(token ->
+                    ApiClient.getLmsService().mySubmissions("Bearer " + token.getToken(), null, null)
+                            .enqueue(new Callback<>() {
+                                @Override
+                                public void onResponse(Call<LmsModels.SubmissionListEnvelope> call,
+                                        Response<LmsModels.SubmissionListEnvelope> response) {
+                                    LmsModels.SubmissionListEnvelope result = response.body();
+                                    if (!response.isSuccessful() || result == null || !result.ok
+                                            || result.data == null || result.data.submissions == null) {
+                                        history.setText("Submission history unavailable");
+                                        return;
+                                    }
+                                    StringBuilder summary = new StringBuilder();
+                                    int count = 0;
+                                    for (LmsModels.SubmissionDto submission : result.data.submissions) {
+                                        if (!assignment.id.equals(submission.assignmentId)) continue;
+                                        if (count++ >= 3) break;
+                                        if (summary.length() > 0) summary.append("\n");
+                                        summary.append("Submitted ")
+                                                .append(android.text.format.DateFormat.format(
+                                                        "dd MMM yyyy", submission.submittedAt))
+                                                .append(" · ").append(submission.status != null
+                                                        ? submission.status : "submitted");
+                                        if (submission.score != null) {
+                                            summary.append(" · ").append(Math.round(submission.score))
+                                                    .append("/100");
+                                        }
+                                        if (submission.feedback != null && !submission.feedback.isEmpty()) {
+                                            summary.append("\nFeedback: ").append(submission.feedback);
+                                        }
+                                    }
+                                    history.setText(count == 0 ? "Not submitted yet" : summary.toString());
+                                }
+                                @Override
+                                public void onFailure(Call<LmsModels.SubmissionListEnvelope> call, Throwable error) {
+                                    history.setText("Submission history unavailable");
+                                }
+                            })).addOnFailureListener(error ->
+                    history.setText("Submission history unavailable"));
+        } else {
+            history.setText("Sign in to view submission history");
+        }
         android.widget.EditText answer = new android.widget.EditText(this);
         answer.setHint("Write your assignment response");
         answer.setMinLines(5);
