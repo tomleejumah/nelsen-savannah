@@ -18,7 +18,9 @@ function envValue(name) {
   const match = envText.match(new RegExp("^\\s*" + name + "=([^\\r\\n]*)", "m"));
   return match ? match[1].trim().replace(/^['"]|['"]$/g, "") : "";
 }
-const dataDir = path.resolve(envValue("LMS_DATA_DIR") || path.join(appDir, "data"));
+// Paths in .env are relative to the API installation, not the checkout
+// workspace from which the deployment job happened to invoke this script.
+const dataDir = path.resolve(appDir, envValue("LMS_DATA_DIR") || "data");
 const source = path.join(dataDir, "lms.sqlite");
 const destinationDir = path.join(dataDir, "backups");
 const retention = Math.max(1, Math.min(90, Number(envValue("LMS_BACKUP_RETENTION")) || 14));
