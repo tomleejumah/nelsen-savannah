@@ -3,6 +3,7 @@ import {
   getLessonById,
   getModuleById,
   getTrackById,
+  getTrackLessonOutline,
   getTracks,
 } from "../services/lmsCatalogService.js";
 import {
@@ -346,6 +347,20 @@ export async function getTrack(req, res) {
   } catch (err) {
     console.error("[GET /lms/tracks/:id]", err);
     return lmsErr(res, "Failed to load track", 500, getPrimaryEngine());
+  }
+}
+
+export async function getTrackOutline(req, res) {
+  try {
+    const result = await getTrackLessonOutline(req.user.uid, req.params.trackId);
+    if (result.notFound) {
+      return lmsErr(res, "Course not found", 404, result.source);
+    }
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[GET /lms/tracks/:id/lessons]", err);
+    return lmsErr(res, err.message || "Could not load course outline",
+      err.status || 500, getPrimaryEngine());
   }
 }
 
