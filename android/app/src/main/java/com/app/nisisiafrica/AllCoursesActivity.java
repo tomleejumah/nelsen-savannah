@@ -95,12 +95,13 @@ public class AllCoursesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_all_courses);
         offlineCache = new LmsCacheBridge(getApplicationContext());
         View headerContent = findViewById(R.id.headerContent);
+        final int initialHeaderTopPadding = headerContent.getPaddingTop();
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             // Wash draws under status bar; only header + list respect insets.
             headerContent.setPadding(
                     headerContent.getPaddingLeft(),
-                    bars.top + dp(12),
+                    bars.top + initialHeaderTopPadding,
                     headerContent.getPaddingRight(),
                     headerContent.getPaddingBottom());
             v.setPadding(bars.left, 0, bars.right, bars.bottom);
@@ -254,7 +255,11 @@ public class AllCoursesActivity extends AppCompatActivity {
         applyFilter();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
-            tvResultCount.setText(R.string.courses_sign_in_required);
+            catalogLoading = false;
+            catalogRequestComplete = true;
+            catalogFailed = true;
+            applyFilter();
+            tvEmptyTitle.setText(R.string.courses_sign_in_required);
             return;
         }
         if (offlineCache != null) {
