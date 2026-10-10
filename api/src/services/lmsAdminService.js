@@ -22,6 +22,7 @@ import { maybeIssueCertificate } from "./lmsCertificateService.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
 import { getActorSchoolId } from "./lmsSchoolService.js";
 import { invalidatePublicTrackCache } from "./lmsCatalogService.js";
+import { deleteUnusedTrackSql } from "./lmsUnusedCourseDeletion.js";
 
 async function assertCanEditTrack(actorUid, trackId) {
   const role = await loadUserRole(actorUid);
@@ -402,13 +403,6 @@ function normalizeLessonType(type) {
  * track with linked lessons, cohorts, assignments, learners, media or money.
  * Bulk operations return per-item results so partial success is explicit.
  */
-const TRACK_DELETION_BLOCKERS = [
-  "modules", "lessons", "enrollments", "progress", "submissions",
-  "assignments", "cohort_track_runs", "track_pricing", "purchases",
-  "entitlements", "certificates", "track_mentors", "track_likes",
-  "media_assets", "hub_events",
-];
-
 export async function adminDeleteUnusedTracks(actorUid, body = {}) {
   const role = await loadUserRole(actorUid);
   if (!isSuperAdmin(role) && !isSchoolAdmin(role)) {
@@ -437,10 +431,7 @@ export async function adminDeleteUnusedTracks(actorUid, body = {}) {
   const blocked = [];
   // The conditions are evaluated by the DB *inside* the DELETE statement
   // (not in a racy check-then-delete application sequence).
-  const safetyChecks = TRACK_DELETION_BLOCKERS.map(
-    (table) => `NOT EXISTS (SELECT 1 FROM ${table} WHERE ${table}.track_id = tracks.track_id)`,
-  ).join(" AND ");
-  const sql = `DELETE FROM tracks WHERE track_id = ? AND ${safetyChecks}`;
+  const sql = deleteUnusedTrackSql();
   const { default: firebaseAdmin } = await import("../config/firebase.js");
 
   for (const trackId of ids) {
