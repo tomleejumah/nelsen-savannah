@@ -1306,6 +1306,14 @@ export async function adminCreateTrack(
   );
 }
 
+/** Course-authoring outline: one authenticated request, never media bytes. */
+export async function fetchAdminTrackOutline(idToken: string, trackId: string) {
+  return lmsFetch<{
+    trackId: string;
+    modules: (ModuleDto & { lessons: LessonDto[] })[];
+  }>(`/lms/admin/tracks/${encodeURIComponent(trackId)}/outline`, idToken);
+}
+
 export async function adminUpdateTrack(
   idToken: string,
   trackId: string,
