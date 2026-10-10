@@ -386,6 +386,7 @@ export async function setTrackPricing(actorUid, schoolId, trackId, body = {}) {
       ],
     );
   }
+  await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
   return {
     source: source(),
     data: { trackId, price: await getTrackPrice(trackId) },

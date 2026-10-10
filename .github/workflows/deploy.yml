@@ -40,6 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp" "$APP_DIR/uploads/apk"
+          node "${GITHUB_WORKSPACE}/api/scripts/backup-lms.mjs" "$APP_DIR"
           rsync -av --delete \
             --exclude 'node_modules' \
             --exclude '.env' \
@@ -79,6 +80,7 @@ jobs:
             "$PM2" logs nelsen-savannah --lines 50 --nostream || true
             exit 1
           fi
+          node scripts/check-lms-db.mjs "$APP_DIR"
 
       - name: Build and deploy web
         if: inputs.target == 'all' || inputs.target == 'web'

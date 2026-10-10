@@ -60,6 +60,9 @@ export async function clearCatalogTables() {
       console.warn(`[lms-seed] clear skip: ${sql} — ${err.message}`);
     }
   }
+  // Purges bypass the normal CMS mutations: immediately evict all published
+  // per-school catalog variants before returning to an administrator.
+  await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
 }
 
 /** Clear RTDB catalog mirrors (tracks / modules / lessons). */
@@ -263,6 +266,7 @@ export async function seedLmsCatalog({ force = false } = {}) {
   console.log(
     `[lms-seed] inserted tracks=${trackN} modules=${moduleN} lessons=${lessonN} engine=${getPrimaryEngine()}`,
   );
+  await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
   return {
     seeded: true,
     trackCount: trackN,

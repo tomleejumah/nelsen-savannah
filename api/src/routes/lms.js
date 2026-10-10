@@ -92,6 +92,7 @@ router.post("/join/:token", authenticateUser, lmsController.postJoinInvite);
 
 router.get("/tracks", optionalAuthenticate, lmsController.listTracks);
 router.get("/tracks/:trackId", optionalAuthenticate, lmsController.getTrack);
+router.get("/tracks/:trackId/lessons", authenticateUser, lmsController.getTrackOutline);
 router.get("/tracks/:trackId/ide", authenticateUser, lmsController.getTrackIdeConfig);
 router.post(
   "/tracks/:trackId/ide/run",
@@ -351,6 +352,18 @@ router.put(
   authenticateUser,
   requireRoles("Mentor", "SchoolAdmin", "Admin"),
   lmsController.putLessonQuiz,
+);
+router.post(
+  "/admin/tracks/bulk-delete-unused",
+  authenticateUser,
+  requireRoles("Admin", "SchoolAdmin"),
+  lmsController.adminDeleteUnusedTracks,
+);
+router.get(
+  "/admin/tracks/:trackId/outline",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminGetTrackOutline,
 );
 router.post(
   "/admin/tracks",
