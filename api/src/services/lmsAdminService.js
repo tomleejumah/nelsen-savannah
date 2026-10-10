@@ -87,6 +87,7 @@ export async function linkTrackMentor(trackId, actorUid) {
      WHERE track_id = ?`,
     [actorUid, displayName, avatarUrl, now, trackId],
   );
+  await invalidatePublicTrackCache();
 }
 
 export async function listTrackMentors(trackId) {
