@@ -1307,6 +1307,18 @@ export async function adminCreateTrack(
 }
 
 /** Course-authoring outline: one authenticated request, never media bytes. */
+/** Permanently removes only unused, dependency-free course records. */
+export async function adminDeleteUnusedTracks(idToken: string, trackIds: string[]) {
+  return lmsFetch<{
+    deleted: { trackId: string; mirrorSynced: boolean }[];
+    blocked: { trackId: string; reason: string }[];
+  }>("/lms/admin/tracks/bulk-delete-unused", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackIds, confirm: "DELETE_UNUSED_TRACKS" }),
+  });
+}
+
 export async function fetchAdminTrackOutline(idToken: string, trackId: string) {
   return lmsFetch<{
     trackId: string;
