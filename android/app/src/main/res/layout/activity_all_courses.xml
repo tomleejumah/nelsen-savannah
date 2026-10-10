@@ -22,15 +22,14 @@
         android:id="@+id/headerScroll"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:fillViewport="true"
-        android:maxHeight="360dp"
+        android:fillViewport="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
     <LinearLayout
         android:id="@+id/headerContent"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="20dp"
