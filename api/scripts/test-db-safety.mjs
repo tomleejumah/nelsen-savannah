@@ -33,11 +33,11 @@ test("deployment snapshots SQLite, detects lost rows and refuses corrupt data", 
     db.exec("INSERT INTO schools (id) VALUES ('nelsen')");
     db.exec("INSERT INTO tracks (id) VALUES ('course')");
     fs.writeFileSync(source, Buffer.from(db.export()));
-    const before = run(backupScript, folder);
+    const before = run(backupScript, folder, { LMS_DATA_DIR: "./data" });
     assert.equal(before.status, 0, before.stderr);
     const snapshots = fs.readdirSync(path.join(data, "backups"));
     assert.equal(snapshots.length, 1);
-    assert.equal(run(checkScript, folder).status, 0);
+    assert.equal(run(checkScript, folder, { LMS_DATA_DIR: "./data" }).status, 0);
 
     db.exec("DELETE FROM tracks");
     fs.writeFileSync(source, Buffer.from(db.export()));
