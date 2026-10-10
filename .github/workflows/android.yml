@@ -63,26 +63,33 @@ jobs:
           echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/android/app/nelsen-release.jks" >> "$GITHUB_ENV"
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Bump app version on main release builds
+      # Release builds must not push version commits back to a protected main.
+      # A workflow-run-based version is unique and reproducible for each run.
+      - name: Set release version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: ./gradlew bumpVersion --no-daemon
-      - name: Commit version bump
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          RELEASE_RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.properties
-          if git diff --cached --quiet; then
-            echo "No version change"
-          else
-            git commit -m "Bump Android version for release"
-            # Another main commit may land while this build is running. Rebase the
-            # version-only commit onto the latest main before pushing.
-            git fetch origin "${{ github.ref_name }}"
-            git rebase "origin/${{ github.ref_name }}"
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path("version.properties")
+          lines = path.read_text().splitlines()
+          run_number = int(os.environ["RELEASE_RUN_NUMBER"])
+          current_code = int(next(line.split("=", 1)[1] for line in lines if line.startswith("VERSION_CODE=")))
+          # Existing releases have codes <= 75; keep a safe offset for future runs.
+          new_code = run_number + 1000
+          if new_code <= current_code:
+              raise SystemExit(f"Release code {new_code} must exceed current {current_code}")
+          lines = [
+              f"VERSION_NAME=1.0.{run_number}" if line.startswith("VERSION_NAME=") else
+              f"VERSION_CODE={new_code}" if line.startswith("VERSION_CODE=") else line
+              for line in lines
+          ]
+          path.write_text("\\n".join(lines) + "\\n")
+          print(f"Release version 1.0.{run_number} (code {new_code})")
+          PY
       - name: Assemble release APK
         run: ./gradlew assembleRelease --no-daemon
       - name: Locate APK + version meta
