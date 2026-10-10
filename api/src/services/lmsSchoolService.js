@@ -989,6 +989,7 @@ export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = 
      FROM track_mentors WHERE track_id = ? ORDER BY linked_at ASC`,
     [trackId],
   );
+  await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
