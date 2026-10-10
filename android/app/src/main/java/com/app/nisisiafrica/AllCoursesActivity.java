@@ -809,15 +809,20 @@ public class AllCoursesActivity extends AppCompatActivity {
                                             "No assigned work", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
-                                CharSequence[] lines = new CharSequence[body.data.assignments.size()];
-                                for (int i = 0; i < body.data.assignments.size(); i++) {
-                                    LmsModels.AssignmentDto a = body.data.assignments.get(i);
-                                    lines[i] = a.title + (a.trackId != null ? " · " + a.trackId : "");
+                                List<LmsModels.AssignmentDto> assignments = body.data.assignments;
+                                CharSequence[] lines = new CharSequence[assignments.size()];
+                                for (int i = 0; i < assignments.size(); i++) {
+                                    LmsModels.AssignmentDto a = assignments.get(i);
+                                    boolean late = a.dueAt != null && a.dueAt > 0
+                                            && a.dueAt < System.currentTimeMillis();
+                                    lines[i] = (a.title != null ? a.title : "Assignment")
+                                            + (late ? " · Past due (submission open)" : "");
                                 }
                                 new AlertDialog.Builder(AllCoursesActivity.this)
-                                        .setTitle("Assigned to you")
-                                        .setItems(lines, null)
-                                        .setPositiveButton("OK", null)
+                                        .setTitle("Your assignments")
+                                        .setItems(lines, (dialog, which) ->
+                                                showAssignmentEditor(assignments.get(which)))
+                                        .setNegativeButton("Close", null)
                                         .show();
                             }
 
@@ -827,6 +832,88 @@ public class AllCoursesActivity extends AppCompatActivity {
                                         "Could not load assignments", Toast.LENGTH_SHORT).show();
                             }
                         }));
+    }
+
+    private void showAssignmentEditor(LmsModels.AssignmentDto assignment) {
+        if (assignment == null) return;
+        android.widget.LinearLayout content = new android.widget.LinearLayout(this);
+        content.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        content.setPadding(pad, pad, pad, pad);
+        android.widget.TextView prompt = new android.widget.TextView(this);
+        StringBuilder details = new StringBuilder();
+        if (assignment.prompt != null && !assignment.prompt.trim().isEmpty()) {
+            details.append(assignment.prompt.trim());
+        }
+        if (assignment.dueAt != null && assignment.dueAt > 0) {
+            String date = android.text.format.DateFormat.format(
+                    "dd MMM yyyy, HH:mm", assignment.dueAt).toString();
+            if (details.length() > 0) details.append("\n\n");
+            details.append("Deadline: ").append(date);
+            if (assignment.dueAt < System.currentTimeMillis()) {
+                details.append("\nPast due — you can still submit.");
+            }
+        }
+        prompt.setText(details.toString());
+        content.addView(prompt);
+        android.widget.EditText answer = new android.widget.EditText(this);
+        answer.setHint("Write your assignment response");
+        answer.setMinLines(5);
+        answer.setGravity(android.view.Gravity.TOP);
+        answer.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        content.addView(answer);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(assignment.title != null ? assignment.title : "Assignment")
+                .setView(content)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Submit", null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    String responseText = answer.getText().toString().trim();
+                    if (responseText.isEmpty()) {
+                        answer.setError("Write an answer first");
+                        return;
+                    }
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user == null) {
+                        Toast.makeText(this, "Sign in required", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                    user.getIdToken(false).addOnSuccessListener(token ->
+                            ApiClient.getLmsService().submitAssignment(
+                                    "Bearer " + token.getToken(),
+                                    new LmsModels.SubmissionBody(assignment.lessonId, responseText, assignment.id))
+                                    .enqueue(new Callback<>() {
+                                        @Override
+                                        public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
+                                                               Response<LmsModels.SubmissionEnvelope> response) {
+                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                                            if (response.isSuccessful() && response.body() != null
+                                                    && response.body().ok) {
+                                                dialog.dismiss();
+                                                Toast.makeText(AllCoursesActivity.this,
+                                                        "Assignment submitted", Toast.LENGTH_SHORT).show();
+                                            } else {
+                                                Toast.makeText(AllCoursesActivity.this,
+                                                        "Submission rejected. Please try again.", Toast.LENGTH_LONG).show();
+                                            }
+                                        }
+                                        @Override
+                                        public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable error) {
+                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                                            Toast.makeText(AllCoursesActivity.this,
+                                                    "Network error. Your answer is still here.", Toast.LENGTH_LONG).show();
+                                        }
+                                    }))
+                            .addOnFailureListener(error -> {
+                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                                Toast.makeText(this, "Could not authenticate", Toast.LENGTH_SHORT).show();
+                            });
+                }));
+        dialog.show();
     }
 
     @Override

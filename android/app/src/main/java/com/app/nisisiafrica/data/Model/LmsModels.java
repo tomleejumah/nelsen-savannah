@@ -686,6 +686,7 @@ public final class LmsModels {
         public String trackId;
         public String lessonId;
         public String assigneeUid;
+        public Long dueAt;
         public long createdAt;
     }
 
