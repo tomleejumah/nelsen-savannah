@@ -79,6 +79,7 @@ jobs:
             "$PM2" logs nelsen-savannah --lines 50 --nostream || true
             exit 1
           fi
+          node scripts/check-lms-db.mjs "$APP_DIR"
 
       - name: Build and deploy web
         if: inputs.target == 'all' || inputs.target == 'web'
