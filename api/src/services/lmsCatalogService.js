@@ -11,6 +11,8 @@ import {
 } from "../db/lmsDb.js";
 import admin from "../config/firebase.js";
 import { parseLab } from "./lmsLabService.js";
+import { createHash } from "node:crypto";
+import { redisGetJson, redisSetJson, redisBumpVersion, redisGetVersion, redisConfigured } from "./lmsRedisCache.js";
 
 function parseAudience(json) {
   try {
@@ -364,18 +366,40 @@ async function listTracksFromRtdb(uid, filters = {}) {
   return tracks;
 }
 
-// Cache only anonymous public catalog responses. Authenticated responses contain
-// enrollment, likes and role-specific visibility and must never be shared.
+// Catalog output may embed enrollment, likes, roles and learner-specific progress.
+// Cache ONLY truly anonymous public results. Never cache authenticated responses.
+// Redis version keys invalidate all school/audience variants without KEYS or SCAN.
 const publicTrackCache = new Map();
-export function invalidatePublicTrackCache() {
+const CATALOG_VERSION_KEY = "nelsen:lms:public-catalog:version";
+let localRevision = 0;
+
+export async function invalidatePublicTrackCache() {
+  localRevision += 1;
   publicTrackCache.clear();
+  await redisBumpVersion(CATALOG_VERSION_KEY);
 }
 
 export async function getTracks(uid, query = {}) {
   const cacheable = !uid && !query.enrolled;
-  const key = JSON.stringify([query.schoolId || "", query.audience || ""]);
-  const cached = cacheable ? publicTrackCache.get(key) : null;
-  if (cached && cached.expiresAt > Date.now()) return cached.result;
+  const variant = JSON.stringify([query.schoolId || "", query.audience || ""]);
+  let cacheKey = null;
+  let version;
+  if (cacheable) {
+    const remoteVersion = await redisGetVersion(CATALOG_VERSION_KEY);
+    version = remoteVersion === null ? `local-${localRevision}` : remoteVersion;
+    const local = publicTrackCache.get(variant);
+    if (local && local.expiresAt > Date.now() && local.version === version) {
+      return local.result;
+    }
+    cacheKey = "nelsen:lms:public-catalog:v2:" +
+      createHash("sha256").update(variant + ":" + version).digest("hex").slice(0, 24);
+    const remote = await redisGetJson(cacheKey);
+    if (remote && Array.isArray(remote.data?.tracks)) {
+      publicTrackCache.set(variant, { result: remote, version,
+        expiresAt: Date.now() + (redisConfigured() ? 5_000 : 30_000) });
+      return remote;
+    }
+  }
   const health = await checkPrimaryHealth();
   if (health.ok) {
     try {
@@ -383,13 +407,16 @@ export async function getTracks(uid, query = {}) {
       const result = { source: getPrimaryEngine(), data: { tracks } };
       if (cacheable) {
         if (publicTrackCache.size >= 64) publicTrackCache.clear();
-        publicTrackCache.set(key, { result, expiresAt: Date.now() + 30_000 });
+        publicTrackCache.set(variant, { result, version,
+          expiresAt: Date.now() + (redisConfigured() ? 5_000 : 30_000) });
+        await redisSetJson(cacheKey, result, 30);
       }
       return result;
     } catch (err) {
       console.error("[lms-tracks] primary failed:", err.message);
     }
   }
+  // RTDB fallback remains uncached so recovering primary data is visible quickly.
   const tracks = await listTracksFromRtdb(uid, query);
   return { source: "rtdb", data: { tracks } };
 }
