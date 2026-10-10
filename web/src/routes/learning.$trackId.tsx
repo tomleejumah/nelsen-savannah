@@ -19,6 +19,7 @@ import {
 import {
   fetchLmsModule,
   fetchLmsTrack,
+  fetchLmsTrackOutline,
   fetchMyProgress,
   unenrollFromTrack,
   type LessonDto,
@@ -83,29 +84,43 @@ function TrackDetailPage() {
         setDetail(trackEnv.data);
 
         const byLesson = progressEnv.data?.byLessonId ?? {};
-        const loaded = await Promise.all(
-          trackEnv.data.modules.map(async (mod) => {
-            const modEnv = await fetchLmsModule(token, mod.moduleId);
-            const lessons = (modEnv.data?.lessons ?? []).map((lesson) => {
-              const prog = byLesson[lesson.lessonId];
-              return {
-                ...lesson,
-                lessonPercent: prog?.lessonPercent ?? lesson.lessonPercent ?? 0,
-                status: prog?.status ?? lesson.status ?? "available",
-              };
-            });
-            return {
-              moduleId: mod.moduleId,
-              title: mod.title,
-              does: mod.does,
-              lessonCount: lessons.length || mod.lessonCount,
-              modulePercent: mod.modulePercent,
-              releaseAt: mod.releaseAt ?? null,
-              dueAt: mod.dueAt ?? null,
-              lessons,
-            };
-          }),
+        const learnerEnrolled = Boolean(
+          trackEnv.data.enrollment || trackEnv.data.track?.enrolled,
         );
+        // Fetch all chapters + lessons with one request instead of one HTTP
+        // request per module. A legacy backend can still use the safe fallback.
+        const outlineEnv = learnerEnrolled
+          ? await fetchLmsTrackOutline(token, trackId)
+          : null;
+        const rawModules = outlineEnv?.ok && outlineEnv.data?.modules
+          ? outlineEnv.data.modules
+          : await Promise.all(
+              trackEnv.data.modules.map(async (mod) => {
+                if (!learnerEnrolled) return { ...mod, lessons: [] as LessonDto[] };
+                const result = await fetchLmsModule(token, mod.moduleId);
+                return { ...mod, lessons: result.data?.lessons ?? [] };
+              }),
+            );
+        const loaded = rawModules.map((mod) => {
+          const lessons = (mod.lessons ?? []).map((lesson) => {
+            const prog = byLesson[lesson.lessonId];
+            return {
+              ...lesson,
+              lessonPercent: prog?.lessonPercent ?? lesson.lessonPercent ?? 0,
+              status: prog?.status ?? lesson.status ?? "available",
+            };
+          });
+          return {
+            moduleId: mod.moduleId,
+            title: mod.title,
+            does: mod.does,
+            lessonCount: lessons.length || mod.lessonCount,
+            modulePercent: mod.modulePercent,
+            releaseAt: mod.releaseAt ?? null,
+            dueAt: mod.dueAt ?? null,
+            lessons,
+          };
+        });
         setModules(loaded);
       } catch (err) {
         setDetail(null);
