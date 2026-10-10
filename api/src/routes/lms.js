@@ -353,6 +353,12 @@ router.put(
   requireRoles("Mentor", "SchoolAdmin", "Admin"),
   lmsController.putLessonQuiz,
 );
+router.get(
+  "/admin/tracks/:trackId/outline",
+  authenticateUser,
+  requireRoles("Mentor", "Admin", "SchoolAdmin"),
+  lmsController.adminGetTrackOutline,
+);
 router.post(
   "/admin/tracks",
   authenticateUser,
