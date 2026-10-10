@@ -529,6 +529,7 @@ export async function updateSchoolBranding(actorUid, schoolId, body = {}) {
   const row = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
+  await invalidateSchoolCatalogCache();
   return {
     source: getPrimaryEngine(),
     data: {
