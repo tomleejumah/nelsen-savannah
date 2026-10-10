@@ -54,6 +54,7 @@ if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
     sleep 1
   done
   test "$ok" = 1
+  node scripts/check-lms-db.mjs "$APP_DIR"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "web" ]; then
