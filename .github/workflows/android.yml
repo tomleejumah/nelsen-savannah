@@ -87,7 +87,7 @@ jobs:
               f"VERSION_CODE={new_code}" if line.startswith("VERSION_CODE=") else line
               for line in lines
           ]
-          path.write_text("\\n".join(lines) + "\\n")
+          path.write_text(chr(10).join(lines) + chr(10))
           print(f"Release version 1.0.{run_number} (code {new_code})")
           PY
       - name: Assemble release APK
@@ -96,11 +96,23 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
-          APK=$(find app/build/outputs/apk/release -name '*.apk' ! -name '*-unsigned.apk' | head -n1)
-          if [ -z "$APK" ]; then
-            APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n1)
+          echo "Release APK outputs:"
+          find app/build/outputs -type f -name '*.apk' -print || true
+          APK_DIR="app/build/outputs/apk/release"
+          if [ ! -d "$APK_DIR" ]; then
+            echo "::error::Release APK output directory missing: $APK_DIR"
+            exit 1
           fi
-          test -n "$APK" && test -f "$APK"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            APK=$(find "$APK_DIR" -type f -name '*.apk' -print -quit)
+          else
+            APK=$(find "$APK_DIR" -type f -name '*.apk' ! -name '*-unsigned.apk' -print -quit)
+          fi
+          if [ -z "$APK" ]; then
+            echo "::error::Expected release APK not found in $APK_DIR"
+            exit 1
+          fi
+          test -s "$APK"
           cp "$APK" "${GITHUB_WORKSPACE}/nelsen-savannah.apk"
           # version.properties lives at android/
           VNAME=$(grep -E '^VERSION_NAME=' version.properties | cut -d= -f2- | tr -d '\r')
