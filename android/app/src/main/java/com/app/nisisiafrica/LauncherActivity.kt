@@ -28,14 +28,7 @@ class LauncherActivity : AppCompatActivity() {
         splashScreen.setKeepOnScreenCondition { !isReady }
 
         super.onCreate(savedInstanceState)
-        // Persist a verified canonical link across intro, sign-in, email verification
-        // and PIN unlock. Those screens need not know about every deep-link type.
-        intent?.data?.takeIf {
-            it.scheme == "https" && it.host == "nelsen-savannah.co.ke"
-        }?.let { link ->
-            getSharedPreferences("nelsen_app_links", MODE_PRIVATE)
-                .edit().putString("pending_url", link.toString()).apply()
-        }
+        persistIncomingLink(intent)
         enableEdgeToEdge()
         setContentView(R.layout.activity_launcher)
 
@@ -58,6 +51,24 @@ class LauncherActivity : AppCompatActivity() {
                 continueLaunch()
             },
         )
+    }
+
+    // The launcher is singleTop. A second shared URL arriving while startup is
+    // in progress must replace the pending destination, not silently disappear.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        persistIncomingLink(intent)
+    }
+
+    private fun persistIncomingLink(source: Intent?) {
+        // Keep canonical App Links through intro, sign-in, verification and PIN.
+        source?.data?.takeIf {
+            it.scheme == "https" && it.host == "nelsen-savannah.co.ke"
+        }?.let { link ->
+            getSharedPreferences("nelsen_app_links", MODE_PRIVATE)
+                .edit().putString("pending_url", link.toString()).apply()
+        }
     }
 
     private fun continueLaunch() {
