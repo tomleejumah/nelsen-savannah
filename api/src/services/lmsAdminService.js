@@ -396,6 +396,88 @@ function normalizeLessonType(type) {
   return "text";
 }
 
+/**
+ * Delete accidental/unused empty courses only. Existing learner data is
+ * never cascaded or erased: a single guarded DELETE atomically refuses any
+ * track with linked lessons, cohorts, assignments, learners, media or money.
+ * Bulk operations return per-item results so partial success is explicit.
+ */
+const TRACK_DELETION_BLOCKERS = [
+  "modules", "lessons", "enrollments", "progress", "submissions",
+  "assignments", "cohort_track_runs", "track_pricing", "purchases",
+  "entitlements", "certificates", "track_mentors", "track_likes",
+  "media_assets", "hub_events",
+];
+
+export async function adminDeleteUnusedTracks(actorUid, body = {}) {
+  const role = await loadUserRole(actorUid);
+  if (!isSuperAdmin(role) && !isSchoolAdmin(role)) {
+    const err = new Error("School admin required to delete courses");
+    err.status = 403;
+    throw err;
+  }
+  if (body.confirm !== "DELETE_UNUSED_TRACKS") {
+    const err = new Error("Confirm the deletion of unused courses");
+    err.status = 400;
+    throw err;
+  }
+  const ids = Array.isArray(body.trackIds)
+    ? [...new Set(body.trackIds.map((id) => String(id).trim()))]
+    : [];
+  if (ids.length < 1 || ids.length > 20 || ids.some((id) => !id || id.length > 128)) {
+    const err = new Error("Provide 1–20 unique course IDs");
+    err.status = 400;
+    throw err;
+  }
+
+  // Authenticate and authorize ALL IDs before modifying the first one.
+  for (const trackId of ids) await assertCanEditTrack(actorUid, trackId);
+
+  const deleted = [];
+  const blocked = [];
+  // The conditions are evaluated by the DB *inside* the DELETE statement
+  // (not in a racy check-then-delete application sequence).
+  const safetyChecks = TRACK_DELETION_BLOCKERS.map(
+    (table) => `NOT EXISTS (SELECT 1 FROM ${table} WHERE ${table}.track_id = tracks.track_id)`,
+  ).join(" AND ");
+  const sql = `DELETE FROM tracks WHERE track_id = ? AND ${safetyChecks}`;
+  const { default: firebaseAdmin } = await import("../config/firebase.js");
+
+  for (const trackId of ids) {
+    try {
+      const result = await dbRun(sql, [trackId]);
+      const affected = Number(result?.changes ?? result?.rowCount ?? 0);
+      if (!affected) {
+        blocked.push({
+          trackId,
+          reason: "Course has linked lessons, learners, mentors, media or payments; it was preserved",
+        });
+        continue;
+      }
+      let mirrorSynced = true;
+      try {
+        await firebaseAdmin.database().ref(`lms/tracks/${trackId}`).remove();
+      } catch (err) {
+        mirrorSynced = false;
+        console.error(`[lms-delete] RTDB cleanup for ${trackId} failed:`, err.message);
+      }
+      deleted.push({ trackId, mirrorSynced });
+    } catch (err) {
+      if (/foreign key|constraint/i.test(err.message || "")) {
+        blocked.push({ trackId, reason: "Related LMS data exists; course was preserved" });
+        continue;
+      }
+      console.error(`[lms-delete] ${trackId} failed:`, err);
+      blocked.push({ trackId, reason: "Database error; course was not deleted" });
+    }
+  }
+  if (deleted.length) await invalidatePublicTrackCache();
+  return {
+    source: getPrimaryEngine(),
+    data: { deleted, blocked },
+  };
+}
+
 export async function adminCreateModule(actorUid, body = {}) {
   const { moduleId, trackId, title } = body;
   if (!moduleId || !trackId || !title) {
