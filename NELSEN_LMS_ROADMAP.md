@@ -1,5 +1,11 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Android bottom navigation glass — requested refinement (October 11, 2026)
+
+- [ ] Change the bottom navigation hierarchy to **BlurView (outer) → CardView (inner) → tab row**, rather than CardView → BlurView. Apply it consistently to `activity_main.xml` and both `main_bottom_bar.xml` resource variants.
+- [ ] Preserve a **22dp rounded clipped blur region**, no rectangular blur bleed, accessible tab hit targets, and a separately opaque FAB (do not blur the FAB).
+- [ ] Verify active-tab selection, bottom inset/gesture navigation, narrow phones, tablets, light/dark themes, blur visibility and performance on a real device.
+
 ## Single integration PR #78 — learner UI, catalog latency and production hardening (October 11, 2026)
 
 The implementation is consolidated on `feat/learner-platform-roadmap` in **one draft PR**. Do not open a new PR per small fix or auto-merge. A checked box below means the **code is implemented**, not that real-device or VPS validation was performed.
