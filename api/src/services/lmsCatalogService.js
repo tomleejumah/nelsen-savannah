@@ -529,6 +529,47 @@ export async function getTrackById(uid, trackId) {
   };
 }
 
+/**
+ * One authenticated request for a course's entire chapter/lesson outline.
+ * Avoids N module round trips in the learner sidebar. Media signing remains
+ * lesson-scoped, so this bulk read never leaks signed playback URLs.
+ */
+export async function getTrackLessonOutline(uid, trackId) {
+  const health = await checkPrimaryHealth();
+  if (!health.ok) {
+    const err = new Error("Course outline temporarily unavailable");
+    err.status = 503;
+    throw err;
+  }
+  const track = await dbGet(
+    "SELECT track_id FROM tracks WHERE track_id = ? AND published = 1",
+    [trackId],
+  );
+  if (!track) return { source: getPrimaryEngine(), notFound: true, data: null };
+  const { assertLearningAccess } = await import("./lmsMembershipService.js");
+  await assertLearningAccess(uid, trackId);
+
+  const [modules, lessons] = await Promise.all([
+    dbAll("SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order ASC, module_id ASC", [trackId]),
+    dbAll("SELECT * FROM lessons WHERE track_id = ? ORDER BY module_id ASC, sort_order ASC, lesson_id ASC", [trackId]),
+  ]);
+  const grouped = new Map(modules.map((row) => [row.module_id, []]));
+  for (const row of lessons) {
+    const list = grouped.get(row.module_id);
+    if (list) list.push(mapLesson(row));
+  }
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      trackId,
+      modules: modules.map((row) => ({
+        ...mapModule(row, { lessonCount: grouped.get(row.module_id)?.length || 0 }),
+        lessons: grouped.get(row.module_id) || [],
+      })),
+    },
+  };
+}
+
 export async function getModuleById(uid, moduleId) {
   const health = await checkPrimaryHealth();
   if (health.ok) {
