@@ -199,7 +199,7 @@ function EventsPage() {
                     <div className="aspect-video">
                       <iframe
                         src={embedUrl}
-                        title={`${event.title} — YouTube Live`}
+                        title={`${event.title} — Live session`}
                         className="h-full w-full"
                         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                         allowFullScreen
@@ -213,7 +213,7 @@ function EventsPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 font-semibold text-ember"
                       >
-                        Open in YouTube <ExternalLink className="h-3.5 w-3.5" />
+                        Open external player <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
                   </div>
@@ -221,7 +221,7 @@ function EventsPage() {
                   <div className="mt-5 rounded-2xl border border-border/70 bg-secondary/40 p-5">
                     <p className="font-semibold">Live video unavailable</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      This YouTube live or replay may be private, deleted, or no longer accessible.
+                      This live session or replay may be private, removed, or no longer accessible.
                     </p>
                   </div>
                 ) : null}
@@ -281,7 +281,7 @@ function EventsPage() {
               <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Watch recent replays</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Ended YouTube Live sessions remain available to their original audience.
+              Ended live sessions remain available to their original audience.
             </p>
           </div>
 
@@ -305,7 +305,7 @@ function EventsPage() {
                 )}
                 {event.liveAvailability === "unavailable" ? (
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Replay unavailable — it may be private or deleted on YouTube.
+                    Replay unavailable — it may be private or removed.
                   </p>
                 ) : (
                   <a
@@ -314,7 +314,7 @@ function EventsPage() {
                     rel="noreferrer"
                     className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-ember"
                   >
-                    Watch replay on YouTube <ExternalLink className="h-4 w-4" />
+                    Watch replay externally <ExternalLink className="h-4 w-4" />
                   </a>
                 )}
               </article>
