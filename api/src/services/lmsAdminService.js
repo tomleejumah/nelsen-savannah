@@ -21,6 +21,7 @@ import { patchLessonProgress } from "./lmsEnrollmentService.js";
 import { maybeIssueCertificate } from "./lmsCertificateService.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
 import { getActorSchoolId } from "./lmsSchoolService.js";
+import { invalidatePublicTrackCache } from "./lmsCatalogService.js";
 
 async function assertCanEditTrack(actorUid, trackId) {
   const role = await loadUserRole(actorUid);
@@ -216,6 +217,7 @@ async function actorDisplayName(uid) {
   if (row?.display_name && row.display_name !== uid) return row.display_name;
   if (row?.email) return String(row.email).split("@")[0];
   return "Mentor";
+  invalidatePublicTrackCache();
 }
 
 export async function adminUpdateTrack(actorUid, trackId, body = {}) {
@@ -334,6 +336,7 @@ function normalizeLessonType(type) {
     return t;
   }
   return "text";
+  invalidatePublicTrackCache();
 }
 
 export async function adminCreateModule(actorUid, body = {}) {
@@ -395,6 +398,7 @@ export async function adminCreateModule(actorUid, body = {}) {
       },
     },
   };
+  invalidatePublicTrackCache();
 }
 
 export async function adminUpdateModule(actorUid, moduleId, body = {}) {
@@ -482,6 +486,7 @@ export async function adminUpdateModule(actorUid, moduleId, body = {}) {
       },
     },
   };
+  invalidatePublicTrackCache();
 }
 
 export async function adminDeleteModule(actorUid, moduleId) {
@@ -551,6 +556,7 @@ export async function adminDeleteModule(actorUid, moduleId) {
     source: getPrimaryEngine(),
     data: { deleted: true, moduleId: mid, lessonsDeleted: lessons.length },
   };
+  invalidatePublicTrackCache();
 }
 
 export async function adminCreateLesson(actorUid, body = {}) {
@@ -616,6 +622,7 @@ export async function adminCreateLesson(actorUid, body = {}) {
     source: getPrimaryEngine(),
     data: { lesson: { lessonId, moduleId, trackId, title, type, does } },
   };
+  invalidatePublicTrackCache();
 }
 
 export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
@@ -729,6 +736,7 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
       },
     },
   };
+  invalidatePublicTrackCache();
 }
 
 export async function adminDeleteLesson(actorUid, lessonId) {
@@ -779,6 +787,7 @@ export async function adminDeleteLesson(actorUid, lessonId) {
     },
   });
   return { source: getPrimaryEngine(), data: { deleted: true, lessonId: lid } };
+  invalidatePublicTrackCache();
 }
 
 export async function adminSetRole(actorUid, targetUid, userRole) {
