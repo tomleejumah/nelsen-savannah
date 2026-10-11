@@ -1,5 +1,41 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## October 11 follow-up — safety and authoring changes
+
+- [x] Added per-school protected bulk authoring outline for mentors/admins. Web editor uses the single request and falls back to legacy module requests during rollout.
+- [x] Corrected invite-token migration order and added a clean SQLite initialization test.
+- [x] Android now distinguishes rejected school membership applications from pending ones, and offers reapplication where allowed.
+- [x] PostgreSQL-configured startup fails closed if the server is unavailable, rather than presenting a new SQLite catalog. A missing SQLite file with retained backups also fails closed; regression tests added.
+- [x] School admins can multi-select **unused empty courses** for guarded permanent deletion with explicit partial-success reporting. Existing enrollments, lessons, media, mentors, transactions and related LMS data block deletion.
+- [ ] Full deletion/archival design for populated courses: plan safe reversible deletion/transactional cleanup, retention rules, dependent records and rollback before enabling broad destructive deletion.
+- [ ] Validate all of the above on final PR CI and real devices; no production deployment or merge before manual review.
+
+## Android bottom navigation glass — requested refinement (October 11, 2026)
+
+- [x] Change the bottom navigation hierarchy to **BlurView (outer) → CardView (inner) → tab row**, rather than CardView → BlurView. Apply it consistently to `activity_main.xml` and both `main_bottom_bar.xml` resource variants.
+- [x] Preserve a **22dp rounded clipped blur region**, no rectangular blur bleed, accessible tab hit targets, and a separately opaque FAB (do not blur the FAB).
+- [ ] Verify active-tab selection, bottom inset/gesture navigation, narrow phones, tablets, light/dark themes, blur visibility and performance on a real device.
+
+## Single integration PR #78 — learner UI, catalog latency and production hardening (October 11, 2026)
+
+The implementation is consolidated on `feat/learner-platform-roadmap` in **one draft PR**. Do not open a new PR per small fix or auto-merge. A checked box below means the **code is implemented**, not that real-device or VPS validation was performed.
+
+- [x] Android learner coursework inbox: visible entry point, assignment prompts, late submissions, text responses, submission history, status, score and mentor feedback.
+- [x] Android video/reader UX: 16:9 inline video with mute/fullscreen, taller PDF reader viewport, lesson sheet remains scrollable.
+- [x] Android link continuation: persist verified canonical HTTPS links through onboarding, login, verification and PIN; route cold and warm intents.
+- [x] Web fallback for canonical live links with matching event/replay anchor and provider-neutral live copy.
+- [x] Course syllabus batch endpoint `GET /lms/tracks/:trackId/lessons` with learning-access guard; web course page uses one request instead of N module requests, with fallback for older servers.
+- [x] Redis catalog base caching: shared public school directory and per-school published track metadata; short TTL, versioned invalidation after CMS, mentor, school and pricing writes, safe DB fallback, no shared learner-specific progress/likes/roles.
+- [x] SQL.js persistence: replace direct overwrite with atomic fsync + rename.
+- [x] Pre-deploy SQLite snapshots and post-deploy row-count/integrity guard wired into API, manual and self-hosted deploy flows.
+- [x] API Redis mock-protocol test and SQLite backup/loss tests in CI; operator configuration and recovery documented.
+- [ ] **CI exit criterion:** final PR HEAD passes API, Web and Android CI after the last commit (previous runs cancelled by further commits do not count).
+- [ ] **Physical Android QA:** phone/tablet, orientation, IME, video mute/fullscreen, PDFs, assignment submit/feedback, expired lesson, offline/reconnection and all deep links.
+- [ ] **Live two-account regression:** school/course/platform scopes, join/leave attendance, live chat, screen-share, camera toggle, PiP, notifications (including no-token cases), ended/replay transitions.
+- [ ] **Production operations:** configure/test Redis on VPS, ensure backups are copied off-host, test safe restore, check Firebase `.indexOn` timestamps and 13+ notification permission/token registration.
+- [ ] **Release acceptance:** verify App Links on a real device and web fallbacks, check API enrollment/school gate, and obtain manual merge approval.
+
+
 ## Live follow-up stability — October 9, 2026
 
 Changes are tracked separately from end-to-end verification. **Do not mark a task complete until CI and required on-device scenarios have passed.**
@@ -513,15 +549,15 @@ This milestone tracks the current production-hardening work before the remaining
 - [ ] Add safe backend course/track deletion with transactional cleanup of dependent LMS records.
 - [ ] Add single-course deletion UI backed by the safe deletion service.
 - [ ] Add multi-select course deletion with one confirmation and clear partial/failure handling.
-- [ ] Replace per-module course-editor loading with one course-authoring metadata request/query returning chapters + lesson metadata only (never PDF/video bytes).
+- [x] Replace per-module course-editor loading with one course-authoring metadata request/query returning chapters + lesson metadata only (never PDF/video bytes).
 
 ### Deployment and database protection — required before production deployment
 
-- [ ] Create an automatic timestamped SQLite snapshot before deployment.
+- [x] Create an automatic timestamped SQLite snapshot before deployment.
 - [ ] Abort deployment if the database backup cannot be created or validated.
 - [ ] Add pre-deploy and post-deploy LMS database sanity checks for critical tables/counts/relationships.
 - [ ] Ensure normal deployment/startup cannot seed, purge, clear, recreate, or silently replace the production LMS database.
-- [ ] Fix the `school_memberships.invite_token` migration-order warning.
+- [x] Fix the `school_memberships.invite_token` migration-order warning.
 - [ ] Verify all current lesson/media records still resolve to valid storage paths before deployment.
 - [ ] Keep the recovered SQLite database and known-good backup available as rollback material until PostgreSQL migration is complete.
 
@@ -540,7 +576,7 @@ This milestone tracks the current production-hardening work before the remaining
 ### LMS performance, school access and applications
 
 - [ ] Add Redis-backed API caching for expensive read-heavy LMS/catalog/course/school queries with explicit TTLs and invalidation on writes; measure slow endpoints before and after caching.
-- [ ] Cache the public school directory and published course catalogs per school in Redis (separate keys, short TTLs, periodic refresh, invalidate on school/course writes). Never cache enrollment/progress/roles in shared keys.
+- [x] Cache the public school directory and published course catalogs per school in Redis (separate keys, short TTLs, periodic refresh, invalidate on school/course writes). Never cache enrollment/progress/roles in shared keys.
 - [ ] Diagnose and verify phone-width Schools → Courses navigation on a real device: distinguish empty published catalog from API error, validate selected schoolId and refresh/retry behavior.
 - [ ] Complete the school application flow across API/Web/Android: Apply to school → pending/application status → approved/active membership → rejected state where applicable.
 - [x] Android school course list exposes Apply to school and pending membership state.

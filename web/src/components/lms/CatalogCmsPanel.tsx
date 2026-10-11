@@ -17,6 +17,7 @@ import {
   authorLessonQuiz,
   createAssignment,
   fetchAdminStats,
+  fetchAdminTrackOutline,
   fetchLmsModule,
   fetchLmsTrack,
   uploadLessonMedia,
@@ -185,7 +186,12 @@ export function CatalogCmsPanel({
     setBusy(true);
     try {
       const token = await user.getIdToken();
-      const envelope = await fetchLmsTrack(token, tid);
+      // Parallelize track metadata with a single school-authorized syllabus
+      // request (previously one additional HTTP call for every chapter).
+      const [envelope, outline] = await Promise.all([
+        fetchLmsTrack(token, tid),
+        fetchAdminTrackOutline(token, tid),
+      ]);
       if (!envelope.ok || !envelope.data) return;
       const track = envelope.data.track;
       setEditTrackId(tid);
@@ -194,14 +200,20 @@ export function CatalogCmsPanel({
       setEditPublished(true);
       setEditIdeEnabled(Boolean(track.ideEnabled));
       const mods = envelope.data.modules || [];
-      // Fetch lesson metadata concurrently. The editor never downloads PDF/video
-      // bytes; actual media is fetched only by the learner/player when opened.
-      const moduleEnvelopes = await Promise.all(
-        mods.map((m) => fetchLmsModule(token, m.moduleId)),
+      // The authoring endpoint enforces school/mentor scope, but does not
+      // require learner enrollment. Keep a legacy fallback for rolling deploys.
+      const bulk = outline.ok ? outline.data?.modules : null;
+      const chapterLessons = bulk
+        ? new Map(bulk.map((mod) => [mod.moduleId, mod.lessons]))
+        : null;
+      const oldResponses = chapterLessons ? null : await Promise.all(
+        mods.map((mod) => fetchLmsModule(token, mod.moduleId)),
       );
-      const loaded: ChapterState[] = mods.map((m, index) => ({
-        ...m,
-        lessons: moduleEnvelopes[index]?.data?.lessons || [],
+      const loaded: ChapterState[] = mods.map((mod, index) => ({
+        ...mod,
+        lessons: chapterLessons
+          ? chapterLessons.get(mod.moduleId) || []
+          : oldResponses?.[index]?.data?.lessons || [],
       }));
       setChapters(loaded);
       if (

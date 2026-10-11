@@ -21,6 +21,8 @@ import { patchLessonProgress } from "./lmsEnrollmentService.js";
 import { maybeIssueCertificate } from "./lmsCertificateService.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
 import { getActorSchoolId } from "./lmsSchoolService.js";
+import { invalidatePublicTrackCache } from "./lmsCatalogService.js";
+import { deleteUnusedTrackSql } from "./lmsUnusedCourseDeletion.js";
 
 async function assertCanEditTrack(actorUid, trackId) {
   const role = await loadUserRole(actorUid);
@@ -49,6 +51,62 @@ async function assertCanEditTrack(actorUid, trackId) {
     err.status = 403;
     throw err;
   }
+}
+
+/**
+ * CMS bulk outline for the editor. One request/three bounded queries, without
+ * video/PDF bytes or playback signatures. Unlike learner outline this permits
+ * assigned mentors and school admins to edit courses before enrolling.
+ */
+export async function adminTrackAuthoringOutline(actorUid, trackId) {
+  await assertCanEditTrack(actorUid, trackId);
+  const track = await dbGet("SELECT track_id FROM tracks WHERE track_id = ?", [trackId]);
+  if (!track) {
+    const err = new Error("Course not found");
+    err.status = 404;
+    throw err;
+  }
+  const [modules, lessons] = await Promise.all([
+    dbAll("SELECT * FROM modules WHERE track_id = ? ORDER BY sort_order, module_id", [trackId]),
+    dbAll("SELECT * FROM lessons WHERE track_id = ? ORDER BY module_id, sort_order, lesson_id", [trackId]),
+  ]);
+  const byModule = new Map(modules.map((row) => [row.module_id, []]));
+  for (const row of lessons) {
+    const bucket = byModule.get(row.module_id);
+    if (!bucket) continue;
+    bucket.push({
+      lessonId: row.lesson_id,
+      moduleId: row.module_id,
+      trackId,
+      title: row.title,
+      does: row.does || "",
+      type: row.type === "read" ? "text" : row.type,
+      estimatedMinutes: Number(row.estimated_minutes) || 0,
+      hasQuiz: Boolean(row.has_quiz),
+      hasAssignment: Boolean(row.has_assignment),
+      mediaId: row.media_id || null,
+      contentUrl: row.content_url || null,
+      lessonPercent: 0,
+      status: "available",
+    });
+  }
+  return {
+    source: getPrimaryEngine(),
+    data: {
+      trackId,
+      modules: modules.map((row) => ({
+        moduleId: row.module_id,
+        trackId,
+        title: row.title,
+        does: row.does || "",
+        estimatedMinutes: Number(row.estimated_minutes) || 0,
+        lessonCount: byModule.get(row.module_id)?.length || 0,
+        releaseAt: row.release_at == null ? null : Number(row.release_at),
+        dueAt: row.due_at == null ? null : Number(row.due_at),
+        lessons: byModule.get(row.module_id) || [],
+      })),
+    },
+  };
 }
 
 /** Mentors/school admins who edit a track get linked (multi-tutor); creators alone do not. */
@@ -86,6 +144,7 @@ export async function linkTrackMentor(trackId, actorUid) {
      WHERE track_id = ?`,
     [actorUid, displayName, avatarUrl, now, trackId],
   );
+  await invalidatePublicTrackCache();
 }
 
 export async function listTrackMentors(trackId) {
@@ -187,6 +246,7 @@ export async function adminCreateTrack(actorUid, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -281,6 +341,7 @@ export async function adminUpdateTrack(actorUid, trackId, body = {}) {
   const mentors = await listTrackMentors(trackId);
   const primary = mentors.length ? mentors[mentors.length - 1] : null;
   const { formatTutorLabel } = await import("./lmsCatalogService.js");
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -336,6 +397,78 @@ function normalizeLessonType(type) {
   return "text";
 }
 
+/**
+ * Delete accidental/unused empty courses only. Existing learner data is
+ * never cascaded or erased: a single guarded DELETE atomically refuses any
+ * track with linked lessons, cohorts, assignments, learners, media or money.
+ * Bulk operations return per-item results so partial success is explicit.
+ */
+export async function adminDeleteUnusedTracks(actorUid, body = {}) {
+  const role = await loadUserRole(actorUid);
+  if (!isSuperAdmin(role) && !isSchoolAdmin(role)) {
+    const err = new Error("School admin required to delete courses");
+    err.status = 403;
+    throw err;
+  }
+  if (body.confirm !== "DELETE_UNUSED_TRACKS") {
+    const err = new Error("Confirm the deletion of unused courses");
+    err.status = 400;
+    throw err;
+  }
+  const ids = Array.isArray(body.trackIds)
+    ? [...new Set(body.trackIds.map((id) => String(id).trim()))]
+    : [];
+  if (ids.length < 1 || ids.length > 20 || ids.some((id) => !id || id.length > 128)) {
+    const err = new Error("Provide 1–20 unique course IDs");
+    err.status = 400;
+    throw err;
+  }
+
+  // Authenticate and authorize ALL IDs before modifying the first one.
+  for (const trackId of ids) await assertCanEditTrack(actorUid, trackId);
+
+  const deleted = [];
+  const blocked = [];
+  // The conditions are evaluated by the DB *inside* the DELETE statement
+  // (not in a racy check-then-delete application sequence).
+  const sql = deleteUnusedTrackSql();
+  const { default: firebaseAdmin } = await import("../config/firebase.js");
+
+  for (const trackId of ids) {
+    try {
+      const result = await dbRun(sql, [trackId]);
+      const affected = Number(result?.changes ?? result?.rowCount ?? 0);
+      if (!affected) {
+        blocked.push({
+          trackId,
+          reason: "Course has linked lessons, learners, mentors, media or payments; it was preserved",
+        });
+        continue;
+      }
+      let mirrorSynced = true;
+      try {
+        await firebaseAdmin.database().ref(`lms/tracks/${trackId}`).remove();
+      } catch (err) {
+        mirrorSynced = false;
+        console.error(`[lms-delete] RTDB cleanup for ${trackId} failed:`, err.message);
+      }
+      deleted.push({ trackId, mirrorSynced });
+    } catch (err) {
+      if (/foreign key|constraint/i.test(err.message || "")) {
+        blocked.push({ trackId, reason: "Related LMS data exists; course was preserved" });
+        continue;
+      }
+      console.error(`[lms-delete] ${trackId} failed:`, err);
+      blocked.push({ trackId, reason: "Database error; course was not deleted" });
+    }
+  }
+  if (deleted.length) await invalidatePublicTrackCache();
+  return {
+    source: getPrimaryEngine(),
+    data: { deleted, blocked },
+  };
+}
+
 export async function adminCreateModule(actorUid, body = {}) {
   const { moduleId, trackId, title } = body;
   if (!moduleId || !trackId || !title) {
@@ -382,6 +515,7 @@ export async function adminCreateModule(actorUid, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -469,6 +603,7 @@ export async function adminUpdateModule(actorUid, moduleId, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -547,6 +682,7 @@ export async function adminDeleteModule(actorUid, moduleId) {
       await admin.database().ref(`lms/modules/${mid}`).remove();
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: { deleted: true, moduleId: mid, lessonsDeleted: lessons.length },
@@ -612,6 +748,7 @@ export async function adminCreateLesson(actorUid, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: { lesson: { lessonId, moduleId, trackId, title, type, does } },
@@ -714,6 +851,7 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
       });
     },
   });
+  await invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -778,6 +916,7 @@ export async function adminDeleteLesson(actorUid, lessonId) {
       await admin.database().ref(`lms/lessons/${lid}`).remove();
     },
   });
+  await invalidatePublicTrackCache();
   return { source: getPrimaryEngine(), data: { deleted: true, lessonId: lid } };
 }
 

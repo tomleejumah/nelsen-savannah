@@ -498,6 +498,13 @@ export async function fetchLmsTrack(idToken: string, trackId: string) {
   );
 }
 
+export async function fetchLmsTrackOutline(idToken: string, trackId: string) {
+  return lmsFetch<{
+    trackId: string;
+    modules: (ModuleDto & { lessons: LessonDto[] })[];
+  }>(`/lms/tracks/${encodeURIComponent(trackId)}/lessons`, idToken);
+}
+
 export async function fetchLmsModule(idToken: string, moduleId: string) {
   return lmsFetch<ModuleDetailDto>(
     `/lms/modules/${encodeURIComponent(moduleId)}`,
@@ -1297,6 +1304,26 @@ export async function adminCreateTrack(
       body: JSON.stringify(body),
     },
   );
+}
+
+/** Course-authoring outline: one authenticated request, never media bytes. */
+/** Permanently removes only unused, dependency-free course records. */
+export async function adminDeleteUnusedTracks(idToken: string, trackIds: string[]) {
+  return lmsFetch<{
+    deleted: { trackId: string; mirrorSynced: boolean }[];
+    blocked: { trackId: string; reason: string }[];
+  }>("/lms/admin/tracks/bulk-delete-unused", idToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackIds, confirm: "DELETE_UNUSED_TRACKS" }),
+  });
+}
+
+export async function fetchAdminTrackOutline(idToken: string, trackId: string) {
+  return lmsFetch<{
+    trackId: string;
+    modules: (ModuleDto & { lessons: LessonDto[] })[];
+  }>(`/lms/admin/tracks/${encodeURIComponent(trackId)}/outline`, idToken);
 }
 
 export async function adminUpdateTrack(

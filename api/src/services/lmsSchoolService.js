@@ -21,6 +21,7 @@ import { loadUserRole } from "../middleware/lmsRoles.js";
 import { setUserRole } from "./lmsMeService.js";
 import { inviteUrlForToken } from "./lmsMembershipService.js";
 import { notifySchoolDecisionEmail } from "./inquiryEmail.js";
+import { redisGetJson, redisSetJson, redisDelete } from "./lmsRedisCache.js";
 
 function slugify(name) {
   return String(name || "school")
@@ -166,12 +167,33 @@ export async function listSchools(actorUid) {
 }
 
 /** Any signed-in user — school picker / Explore other schools. */
+// Public directory only: never cache membership/role-specific school data.
+// Redis shares the snapshot across API workers; local cache is a 5s hot path.
+const SCHOOL_CACHE_KEY = "nelsen:lms:schools:v1";
+const schoolCatalogCache = { expiresAt: 0, schools: null };
+export async function invalidateSchoolCatalogCache() {
+  schoolCatalogCache.expiresAt = 0;
+  schoolCatalogCache.schools = null;
+  await redisDelete(SCHOOL_CACHE_KEY);
+}
+
 export async function listSchoolsCatalog(_actorUid) {
+  const now = Date.now();
+  if (schoolCatalogCache.schools && now < schoolCatalogCache.expiresAt) {
+    return { source: getPrimaryEngine(), data: { schools: schoolCatalogCache.schools } };
+  }
+  const redisSchools = await redisGetJson(SCHOOL_CACHE_KEY);
+  if (Array.isArray(redisSchools)) {
+    schoolCatalogCache.schools = redisSchools;
+    schoolCatalogCache.expiresAt = Date.now() + 5_000;
+    return { source: getPrimaryEngine(), data: { schools: redisSchools } };
+  }
   const rows = await dbAll("SELECT * FROM schools ORDER BY name ASC");
-  return {
-    source: getPrimaryEngine(),
-    data: { schools: rows.map(mapSchool) },
-  };
+  const schools = rows.map(mapSchool);
+  schoolCatalogCache.schools = schools;
+  schoolCatalogCache.expiresAt = Date.now() + 5_000;
+  await redisSetJson(SCHOOL_CACHE_KEY, schools, 60);
+  return { source: getPrimaryEngine(), data: { schools } };
 }
 
 export async function createSchool(actorUid, body = {}) {
@@ -229,6 +251,7 @@ export async function createSchool(actorUid, body = {}) {
   const row = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
+  await invalidateSchoolCatalogCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -506,6 +529,7 @@ export async function updateSchoolBranding(actorUid, schoolId, body = {}) {
   const row = await dbGet("SELECT * FROM schools WHERE school_id = ?", [
     schoolId,
   ]);
+  await invalidateSchoolCatalogCache();
   return {
     source: getPrimaryEngine(),
     data: {
@@ -965,6 +989,7 @@ export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = 
      FROM track_mentors WHERE track_id = ? ORDER BY linked_at ASC`,
     [trackId],
   );
+  await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
   return {
     source: getPrimaryEngine(),
     data: {

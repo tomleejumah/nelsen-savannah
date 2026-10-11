@@ -33,6 +33,7 @@ echo "HEAD $(git rev-parse --short HEAD)"
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
   echo "==> Deploy API"
   mkdir -p "$APP_DIR" "$APP_DIR/data" "$APP_DIR/uploads" "$APP_DIR/uploads/_tmp"
+  node "$WORKDIR/api/scripts/backup-lms.mjs" "$APP_DIR"
   rsync -a --delete \
     --exclude node_modules --exclude .env --exclude firebase-service-account.json \
     --exclude .github --exclude uploads/ --exclude data/ --exclude .git \
@@ -54,6 +55,7 @@ if [ "$TARGET" = "all" ] || [ "$TARGET" = "api" ]; then
     sleep 1
   done
   test "$ok" = 1
+  node scripts/check-lms-db.mjs "$APP_DIR"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "web" ]; then

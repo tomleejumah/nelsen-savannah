@@ -25,10 +25,24 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+// sql.js writes the whole SQLite file on every commit. Never overwrite the
+// only healthy copy in place: an interrupted write could truncate the database.
 function persistSqlite() {
   if (!sqlite || !sqlitePath) return;
-  const data = sqlite.export();
-  fs.writeFileSync(sqlitePath, Buffer.from(data));
+  const data = Buffer.from(sqlite.export());
+  const tempPath = `${sqlitePath}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let fd;
+  try {
+    fd = fs.openSync(tempPath, "wx", 0o600);
+    fs.writeFileSync(fd, data);
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    fd = undefined;
+    fs.renameSync(tempPath, sqlitePath);
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
 }
 
 const SQLITE_SCHEMA = `
@@ -731,11 +745,21 @@ CREATE TABLE IF NOT EXISTS school_memberships (
   role TEXT NOT NULL,
   status TEXT NOT NULL,
   display_name TEXT,
+  invite_token TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 )`);
   } catch (err) {
     console.warn(`[lms-db] school_memberships: ${err.message}`);
+  }
+
+  // An existing database may have the older table without invite_token.
+  // The initial migrations run before this CREATE TABLE on a fresh install;
+  // ensure the column exists here too, before its UNIQUE index is built.
+  try {
+    await dbRun("ALTER TABLE school_memberships ADD COLUMN invite_token TEXT");
+  } catch {
+    /* already exists */
   }
 
   try {
@@ -845,6 +869,16 @@ async function initSqlite() {
   if (fs.existsSync(sqlitePath)) {
     sqlite = new SQL.Database(fs.readFileSync(sqlitePath));
   } else {
+    // If a prior dataset was backed up, absence of its live file is an
+    // incident, NOT permission to silently reinitialize the entire LMS.
+    const backupDir = path.join(dataDir, "backups");
+    const hasPriorBackup = fs.existsSync(backupDir) &&
+      fs.readdirSync(backupDir).some((name) => /^lms-.*\.sqlite$/.test(name));
+    if (hasPriorBackup || process.env.LMS_REQUIRE_EXISTING_DB === "1") {
+      throw new Error(
+        "LMS SQLite file is missing; refusing to create a new database while existing data is expected",
+      );
+    }
     sqlite = new SQL.Database();
   }
   sqlite.run("PRAGMA foreign_keys = ON;");
@@ -855,8 +889,9 @@ async function initSqlite() {
 }
 
 /**
- * Initialize primary store. Tries Postgres when DATABASE_URL is set;
- * on auth/connect failure falls back to SQLite (sql.js WASM).
+ * Initialize the configured primary store.
+ * CRITICAL: never silently switch to an empty SQLite database when a
+ * configured PostgreSQL server is down; that masks an outage as data loss.
  */
 export async function initLmsDb() {
   const databaseUrl = process.env.DATABASE_URL?.trim();
@@ -866,8 +901,14 @@ export async function initLmsDb() {
       console.log(`[lms-db] primary=postgres (DATABASE_URL)`);
       return engine;
     } catch (err) {
-      console.warn(
-        `[lms-db] Postgres unavailable (${err.message}); falling back to SQLite`,
+      console.error(`[lms-db] PostgreSQL startup failed: ${err.message}`);
+      if (pgPool) {
+        await pgPool.end().catch(() => {});
+        pgPool = null;
+      }
+      throw new Error(
+        "DATABASE_URL is configured but PostgreSQL is unavailable; refusing SQLite fallback",
+        { cause: err },
       );
     }
   }

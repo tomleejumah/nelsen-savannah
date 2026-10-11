@@ -81,6 +81,7 @@ public class AllCoursesActivity extends AppCompatActivity {
     /** null = unknown/loading, true = active member, false = not, "pending" handled separately */
     private Boolean schoolMemberActive = null;
     private boolean schoolJoinPending = false;
+    private boolean schoolJoinRejected = false;
     private LmsCacheBridge offlineCache;
     private com.google.android.material.button.MaterialButton btnRetryCourses;
     private PagingDataAdapter<CourseItem, RecyclerView.ViewHolder> pagingBridge;
@@ -161,8 +162,12 @@ public class AllCoursesActivity extends AppCompatActivity {
             tvSubtitle.setOnClickListener(v ->
                     startActivity(new Intent(this, MentorBoardActivity.class)));
         } else if (tvSubtitle != null) {
-            tvSubtitle.setText("Tap for assigned coursework inbox");
-            tvSubtitle.setOnClickListener(v -> showAssignmentsInbox());
+            tvSubtitle.setText("Explore courses, complete lessons and track your coursework.");
+        }
+        View assignmentsButton = findViewById(R.id.btnAssignmentInbox);
+        if (assignmentsButton != null && Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
+            assignmentsButton.setVisibility(View.VISIBLE);
+            assignmentsButton.setOnClickListener(v -> showAssignmentsInbox());
         }
 
         if (btnApplySchool != null) {
@@ -363,6 +368,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                            @NonNull Response<LmsModels.MeEnvelope> response) {
                         schoolMemberActive = false;
                         schoolJoinPending = false;
+                        schoolJoinRejected = false;
                         LmsModels.MeEnvelope body = response.body();
                         if (response.isSuccessful() && body != null && body.ok && body.data != null) {
                             Object mem = body.data.get("memberships");
@@ -381,6 +387,9 @@ public class AllCoursesActivity extends AppCompatActivity {
                                     }
                                     if ("applied".equals(status) || "invited".equals(status)) {
                                         schoolJoinPending = true;
+                                        schoolJoinRejected = false;
+                                    } else if ("rejected".equals(status)) {
+                                        schoolJoinRejected = true;
                                     }
                                 }
                             }
@@ -410,8 +419,15 @@ public class AllCoursesActivity extends AppCompatActivity {
             tvApplyPending.setVisibility(View.GONE);
         } else if (schoolJoinPending) {
             btnApplySchool.setVisibility(View.GONE);
+            tvApplyPending.setText(R.string.school_apply_pending);
+            tvApplyPending.setVisibility(View.VISIBLE);
+        } else if (schoolJoinRejected) {
+            btnApplySchool.setText(R.string.school_apply_again);
+            btnApplySchool.setVisibility(View.VISIBLE);
+            tvApplyPending.setText(R.string.school_apply_rejected);
             tvApplyPending.setVisibility(View.VISIBLE);
         } else {
+            btnApplySchool.setText(R.string.school_apply_now);
             btnApplySchool.setVisibility(View.VISIBLE);
             tvApplyPending.setVisibility(View.GONE);
         }
@@ -453,6 +469,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                     Toast.makeText(AllCoursesActivity.this,
                                             R.string.school_apply_sent, Toast.LENGTH_SHORT).show();
                                     schoolJoinPending = true;
+                                    schoolJoinRejected = false;
                                     schoolMemberActive = false;
                                     bindApplyUi();
                                 } else {
@@ -856,6 +873,54 @@ public class AllCoursesActivity extends AppCompatActivity {
         }
         prompt.setText(details.toString());
         content.addView(prompt);
+        android.widget.TextView history = new android.widget.TextView(this);
+        history.setPadding(0, pad / 2, 0, pad / 2);
+        history.setText("Loading submission history…");
+        content.addView(history);
+        FirebaseUser historyUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (historyUser != null) {
+            historyUser.getIdToken(false).addOnSuccessListener(token ->
+                    ApiClient.getLmsService().mySubmissions("Bearer " + token.getToken(), assignment.trackId)
+                            .enqueue(new Callback<>() {
+                                @Override
+                                public void onResponse(Call<LmsModels.SubmissionListEnvelope> call,
+                                        Response<LmsModels.SubmissionListEnvelope> response) {
+                                    LmsModels.SubmissionListEnvelope result = response.body();
+                                    if (!response.isSuccessful() || result == null || !result.ok
+                                            || result.data == null || result.data.submissions == null) {
+                                        history.setText("Submission history unavailable");
+                                        return;
+                                    }
+                                    StringBuilder summary = new StringBuilder();
+                                    int count = 0;
+                                    for (LmsModels.SubmissionDto submission : result.data.submissions) {
+                                        if (!assignment.id.equals(submission.assignmentId)) continue;
+                                        if (count++ >= 3) break;
+                                        if (summary.length() > 0) summary.append("\n");
+                                        summary.append("Submitted ")
+                                                .append(android.text.format.DateFormat.format(
+                                                        "dd MMM yyyy", submission.submittedAt))
+                                                .append(" · ").append(submission.status != null
+                                                        ? submission.status : "submitted");
+                                        if (submission.score != null) {
+                                            summary.append(" · ").append(Math.round(submission.score))
+                                                    .append("/100");
+                                        }
+                                        if (submission.feedback != null && !submission.feedback.isEmpty()) {
+                                            summary.append("\nFeedback: ").append(submission.feedback);
+                                        }
+                                    }
+                                    history.setText(count == 0 ? "Not submitted yet" : summary.toString());
+                                }
+                                @Override
+                                public void onFailure(Call<LmsModels.SubmissionListEnvelope> call, Throwable error) {
+                                    history.setText("Submission history unavailable");
+                                }
+                            })).addOnFailureListener(error ->
+                    history.setText("Submission history unavailable"));
+        } else {
+            history.setText("Sign in to view submission history");
+        }
         android.widget.EditText answer = new android.widget.EditText(this);
         answer.setHint("Write your assignment response");
         answer.setMinLines(5);

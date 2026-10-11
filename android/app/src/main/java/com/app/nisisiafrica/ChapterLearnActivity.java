@@ -595,6 +595,30 @@ public class ChapterLearnActivity extends AppCompatActivity {
         if (btnFullscreenVideo != null) btnFullscreenVideo.setText(videoFullscreen ? "Exit" : "Full");
     }
 
+    /**
+     * Videos have a 16:9 viewport. PDFs need a tall reading canvas instead;
+     * applying the video ratio to PDFs made documents almost unreadable.
+     * Leave usable space for the lesson list on short phones.
+     */
+    private void setPdfViewport(boolean pdf) {
+        if (playerFrame == null || videoFullscreen) return;
+        ConstraintLayout.LayoutParams lp =
+                (ConstraintLayout.LayoutParams) playerFrame.getLayoutParams();
+        if (pdf) {
+            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            lp.height = Math.max(dp(180), Math.min(dp(520), Math.round(screenHeight * 0.56f)));
+            lp.dimensionRatio = null;
+        } else {
+            lp.height = 0;
+            lp.dimensionRatio = "16:9";
+        }
+        lp.topToTop = ConstraintSet.UNSET;
+        lp.topToBottom = R.id.headerContent;
+        lp.bottomToBottom = ConstraintSet.UNSET;
+        lp.bottomToTop = ConstraintSet.UNSET;
+        playerFrame.setLayoutParams(lp);
+    }
+
     private void setVideoFullscreen(boolean fullscreen) {
         if (playerFrame == null || headerContent == null || lessonsSheet == null) return;
         videoFullscreen = fullscreen;
@@ -606,6 +630,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             lp.topToBottom = ConstraintSet.UNSET;
             lp.bottomToTop = ConstraintSet.UNSET;
             lp.dimensionRatio = null;
+            lp.height = 0;
             lp.topToTop = ConstraintSet.PARENT_ID;
             lp.bottomToBottom = ConstraintSet.PARENT_ID;
         } else {
@@ -614,6 +639,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             lp.topToBottom = R.id.headerContent;
             lp.bottomToTop = ConstraintSet.UNSET;
             lp.dimensionRatio = "16:9";
+            lp.height = 0;
         }
         playerFrame.setLayoutParams(lp);
 
@@ -628,6 +654,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
 
     private void playUrl(String url) {
         hidePdf();
+        setPdfViewport(false);
         tvPlayerPlaceholder.setVisibility(View.GONE);
         if (tvPageHint != null) tvPageHint.setVisibility(View.GONE);
         videoView.setVisibility(View.VISIBLE);
@@ -659,6 +686,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private void openPdf(String url, int lastPage) {
         if (videoFullscreen) setVideoFullscreen(false);
         hideVideo();
+        setPdfViewport(true);
         pdfView.setVisibility(View.VISIBLE);
         tvPlayerPlaceholder.setVisibility(View.VISIBLE);
         tvPlayerPlaceholder.setText("Opening PDF…");

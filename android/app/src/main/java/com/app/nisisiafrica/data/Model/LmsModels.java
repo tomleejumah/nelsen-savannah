@@ -574,6 +574,7 @@ public final class LmsModels {
 
     public static class SubmissionDto {
         public String id;
+        public String assignmentId;
         public String lessonId;
         public String trackId;
         public String status;

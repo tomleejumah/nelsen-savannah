@@ -3,6 +3,7 @@ import {
   getLessonById,
   getModuleById,
   getTrackById,
+  getTrackLessonOutline,
   getTracks,
 } from "../services/lmsCatalogService.js";
 import {
@@ -346,6 +347,20 @@ export async function getTrack(req, res) {
   } catch (err) {
     console.error("[GET /lms/tracks/:id]", err);
     return lmsErr(res, "Failed to load track", 500, getPrimaryEngine());
+  }
+}
+
+export async function getTrackOutline(req, res) {
+  try {
+    const result = await getTrackLessonOutline(req.user.uid, req.params.trackId);
+    if (result.notFound) {
+      return lmsErr(res, "Course not found", 404, result.source);
+    }
+    return lmsOk(res, result.data, result.source);
+  } catch (err) {
+    console.error("[GET /lms/tracks/:id/lessons]", err);
+    return lmsErr(res, err.message || "Could not load course outline",
+      err.status || 500, getPrimaryEngine());
   }
 }
 
@@ -909,6 +924,22 @@ export const putLessonQuiz = handle(
       req.params.lessonId,
       req.body || {},
     );
+  },
+);
+
+export const adminGetTrackOutline = handle(
+  "[GET /lms/admin/tracks/:trackId/outline]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminTrackAuthoringOutline(req.user.uid, req.params.trackId);
+  },
+);
+
+export const adminDeleteUnusedTracks = handle(
+  "[POST /lms/admin/tracks/bulk-delete-unused]",
+  async (req) => {
+    const svc = await import("../services/lmsAdminService.js");
+    return svc.adminDeleteUnusedTracks(req.user.uid, req.body || {});
   },
 );
 
