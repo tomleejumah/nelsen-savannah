@@ -9,7 +9,7 @@
  *
  *   Non-interactive:
  *     node scripts/lms-change-school.mjs "a@x.com, b@y.com" school-qa-edenpulp
- *     node scripts/lms-change-school.mjs "a@x.com" school-id SchoolAdmin
+ *     node scripts/lms-change-school.mjs "a@x.com" school-id SchoolAdmin\n *     # Omitting the role defaults to Mentee (interactive and CLI).
  *
  * Updates LMS DB (users_mirror + school_memberships) and RTDB role/user mirror.
  * Run on the API host (or with the same DATABASE_URL / LMS_DATA_DIR as production).
@@ -47,7 +47,7 @@ async function promptInputs() {
     return {
       emails: parseEmails(argvEmails),
       schoolId: String(argvSchool).trim(),
-      role: normalizeRole(argvRole || ROLES.SchoolAdmin),
+      role: normalizeRole(argvRole || ROLES.Mentee),
     };
   }
 
@@ -69,9 +69,9 @@ async function promptInputs() {
     );
     const schoolLine = await rl.question("Target schoolId:\n> ");
     const roleLine = await rl.question(
-      `Role at that school [${STAFF.join(" | ")}] (default SchoolAdmin):\n> `,
+      `Role at that school [${STAFF.join(" | ")}] (default Mentee):\n> `,
     );
-    const roleRaw = roleLine.trim() || ROLES.SchoolAdmin;
+    const roleRaw = roleLine.trim() || ROLES.Mentee;
     if (!STAFF.map((r) => r.toLowerCase()).includes(roleRaw.toLowerCase())) {
       console.error(`Unknown role "${roleRaw}". Use one of: ${STAFF.join(", ")}`);
       process.exit(1);
