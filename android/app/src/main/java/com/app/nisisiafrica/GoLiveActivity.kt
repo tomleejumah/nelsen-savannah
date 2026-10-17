@@ -90,6 +90,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var finishingLive = false
     private var wentLive = false
     private var endedSent = false
+    private var reconnectPromptVisible = false
+    private var reconnectAttemptsExhausted = false
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -198,6 +200,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
         // library's Java socket implementation and avoids that dependency path.
         stream.getStreamClient().setSocketType(SocketType.JAVA)
+        // A brief mobile-data/Wi-Fi interruption should not terminate the
+        // broadcast. RootEncoder reconnects the RTMPS socket without creating
+        // a second Nelsen live session or restarting the camera encoder.
+        stream.getStreamClient().setReTries(6)
         preview.holder.addCallback(this)
 
         endButton.setOnClickListener { confirmEndLive() }
@@ -543,12 +549,17 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionSuccess() {
+        if (finishingLive || isFinishing || isDestroyed) return
+        val firstConnection = !wentLive
         wentLive = true
-        markNelsenLiveStatus("live")
-        telemetryHandler.removeCallbacks(telemetryPoll)
-        telemetryHandler.post(telemetryPoll)
+        reconnectAttemptsExhausted = false
+        // Do not emit a new live-start event on every successful reconnect.
+        if (firstConnection) markNelsenLiveStatus("live")
         runOnUiThread {
-            status.text = "LIVE · Streaming"
+            if (finishingLive || isDestroyed) return@runOnUiThread
+            telemetryHandler.removeCallbacks(telemetryPoll)
+            telemetryHandler.post(telemetryPoll)
+            status.text = if (sharingScreen) "LIVE · Sharing screen" else "LIVE · Streaming"
             endButton.isEnabled = true
         }
     }
@@ -558,20 +569,76 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionFailed(reason: String) {
+        if (finishingLive || isFinishing || isDestroyed || reconnectAttemptsExhausted) return
+        val retrying = try {
+            // RootEncoder handles re-establishing the stream socket and bounds
+            // retries through setReTries(6). Do not mark the Hub event ended.
+            stream.getStreamClient().reTry(5_000L, reason)
+        } catch (e: Exception) {
+            android.util.Log.w("NelsenLive", "RTMPS reconnect attempt failed", e)
+            false
+        }
         runOnUiThread {
-            status.text = "Live connection failed"
-            Toast.makeText(this, reason, Toast.LENGTH_LONG).show()
+            if (finishingLive || isFinishing || isDestroyed) return@runOnUiThread
+            if (retrying) {
+                status.text = "Connection interrupted · Reconnecting…"
+            } else {
+                reconnectAttemptsExhausted = true
+                status.text = "Connection lost · Tap reconnect"
+                showReconnectPrompt()
+            }
+        }
+    }
+
+    private fun showReconnectPrompt() {
+        if (reconnectPromptVisible || finishingLive || isFinishing || isDestroyed) return
+        reconnectPromptVisible = true
+        AlertDialog.Builder(this)
+            .setTitle("Connection interrupted")
+            .setMessage("Nelsen Live is still scheduled as active. Check your network and reconnect without ending the session.")
+            .setPositiveButton("Reconnect") { _, _ ->
+                reconnectPromptVisible = false
+                retryHostConnection()
+            }
+            .setNegativeButton("Later") { _, _ -> reconnectPromptVisible = false }
+            .setOnCancelListener { reconnectPromptVisible = false }
+            .show()
+    }
+
+    private fun retryHostConnection() {
+        if (finishingLive || isFinishing || isDestroyed) return
+        reconnectAttemptsExhausted = false
+        try {
+            if (stream.isStreaming) stream.stopStream()
+            stream.getStreamClient().setReTries(6)
+            status.text = "Reconnecting to live…"
+            // The encoder was already prepared. Restart only the RTMPS socket.
+            if (prepared) stream.startStream(ingestUrl) else maybeStartLive()
+        } catch (e: Exception) {
+            android.util.Log.e("NelsenLive", "Could not restart RTMPS", e)
+            status.text = "Could not reconnect"
+            showReconnectPrompt()
         }
     }
 
     override fun onDisconnect() {
         runOnUiThread {
-            if (!finishingLive) status.text = "Disconnected from live"
+            if (!finishingLive && !reconnectAttemptsExhausted && !isDestroyed) {
+                status.text = "Connection interrupted"
+            }
         }
     }
 
     override fun onAuthError() {
-        runOnUiThread { status.text = "Live stream authorization failed" }
+        // An invalid stream key is not a transient network error. Stop
+        // automatic retries; the host can leave safely without false "ended".
+        reconnectAttemptsExhausted = true
+        runOnUiThread {
+            if (!finishingLive && !isDestroyed) {
+                status.text = "Live authorization failed · Reconnect channel"
+                Toast.makeText(this, "Live connection rejected. Check the school channel connection.", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onAuthSuccess() {
@@ -621,10 +688,11 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             stream.release()
         } catch (_: Exception) {
         }
-        if (wentLive && !endedSent && !isChangingConfigurations) {
-            endedSent = true
-            markNelsenLiveStatus("ended")
-        }
+        // An Activity can be destroyed during an Android lifecycle change,
+        // memory pressure or PiP transition. Ending the Hub broadcast here
+        // used to mark otherwise recoverable streams as ended mid-session.
+        // Only the host's confirmed End live action sends an "ended" update;
+        // upstream sync handles an actual provider-ended broadcast.
         super.onDestroy()
     }
 }
