@@ -129,15 +129,25 @@
             android:textSize="16sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvLiveChat"
+        <ScrollView
+            android:id="@+id/liveChatScroll"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="10dp"
             android:layout_weight="1"
-            android:text="Live chat will appear here."
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="14sp" />
+            android:fadeScrollbars="true"
+            android:fillViewport="true"
+            android:verticalScrollbarPosition="right">
+
+            <TextView
+                android:id="@+id/tvLiveChat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="12dp"
+                android:text="Live chat will appear here."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="14sp" />
+        </ScrollView>
 
         <LinearLayout
             android:layout_width="match_parent"
