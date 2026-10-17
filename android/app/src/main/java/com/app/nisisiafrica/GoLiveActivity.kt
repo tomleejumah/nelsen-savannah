@@ -180,6 +180,11 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
         preview = findViewById(R.id.livePreview)
         status = findViewById(R.id.tvLiveStatus)
+        // If the host dismisses the reconnect prompt, the status remains an
+        // explicit way to recover without leaving or ending the broadcast.
+        status.setOnClickListener {
+            if (reconnectAttemptsExhausted) showReconnectPrompt()
+        }
         viewers = findViewById(R.id.tvLiveViewers)
         attendance = findViewById(R.id.tvHostAttendance)
         attendance.setOnClickListener { showAttendanceDialog() }
