@@ -5,7 +5,7 @@
 All changes are on one **fix/live-followup-stability** branch / PR #80. The
 Android APK installation/update pipeline is **out of scope** by request.
 
-- [x] Add bounded RootEncoder RTMPS socket reconnects after transient failures, plus a manual reconnect fallback.
+- [x] Add bounded RootEncoder RTMPS socket reconnects after transient failures, plus a manual reconnect fallback. Cover unexpected `onDisconnect` callbacks even if `onConnectionFailed` never fires; avoid double reconnect if both fire.
 - [x] Do not end a live Hub session just because the Android host Activity is destroyed by OS lifecycle/PiP/configuration. End only on confirmed host action or observed upstream end.
 - [x] Avoid stale disconnect callbacks changing host status after reconnect; suppress reconnect prompts in PiP and ignore callbacks after host destruction.
 - [x] Prevent concurrent provider/host updates from downgrading live status or resurrecting ended sessions, and prohibit notification claims after end.
