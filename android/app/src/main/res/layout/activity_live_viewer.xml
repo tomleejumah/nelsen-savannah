@@ -129,6 +129,15 @@
             android:textSize="16sp"
             android:textStyle="bold" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLiveChatEarlier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
+            android:text="Load earlier messages"
+            android:textAllCaps="false"
+            android:visibility="gone" />
+
         <ScrollView
             android:id="@+id/liveChatScroll"
             android:layout_width="match_parent"
