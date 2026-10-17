@@ -258,7 +258,7 @@ async function notifyLiveIfNeeded(eventId) {
   const claim = await dbRun(
     `UPDATE hub_events
      SET live_notified_at = ?, updated_at = ?
-     WHERE event_id = ? AND live_notified_at IS NULL`,
+     WHERE event_id = ? AND live_notified_at IS NULL AND status = 1`,
     [notifiedAt, notifiedAt, eventId],
   );
   const changed = Number(claim?.changes ?? claim?.rowCount ?? 0);
@@ -565,10 +565,19 @@ export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
     }
   }
 
-  await dbRun(
-    `UPDATE hub_events SET status = ?, meeting_link = ?, updated_at = ? WHERE event_id = ?`,
-    [status, meetingLink, Date.now(), eventId],
+  // Atomic monotonic transition: a delayed provider poll or host reconnect
+  // must not resurrect an ended session (or downgrade live to scheduled).
+  // Checking existing.status above is not sufficient under concurrent requests.
+  const updated = await dbRun(
+    `UPDATE hub_events SET status = ?, meeting_link = ?, updated_at = ?
+     WHERE event_id = ? AND event_type = 'live' AND status <= ?`,
+    [status, meetingLink, Date.now(), eventId, status],
   );
+  if (Number(updated?.changes ?? updated?.rowCount ?? 0) === 0) {
+    const err = new Error("Live session already moved to a later state");
+    err.status = 409;
+    throw err;
+  }
   if (status === LIVE_STATUS.live) {
     return notifyLiveIfNeeded(eventId);
   }
