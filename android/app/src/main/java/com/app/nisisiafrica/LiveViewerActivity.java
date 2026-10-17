@@ -30,6 +30,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
+import com.app.nisisiafrica.Utils.LiveChatTimeline;
 import com.google.firebase.auth.FirebaseAuth;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -55,6 +56,9 @@ public class LiveViewerActivity extends AppCompatActivity {
     private TextView chatView;
     private ScrollView chatScroll;
     private String lastChatSnapshot = "";
+    private final LiveChatTimeline chatTimeline = new LiveChatTimeline();
+    private MaterialButton loadOlderChatButton;
+    private boolean olderChatLoading = false;
     private MaterialButton openYoutubeButton;
     private final Handler telemetryHandler = new Handler(Looper.getMainLooper());
     private boolean telemetryRunning = false;
@@ -115,6 +119,8 @@ public class LiveViewerActivity extends AppCompatActivity {
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
         chatScroll = findViewById(R.id.liveChatScroll);
+        loadOlderChatButton = findViewById(R.id.btnLiveChatEarlier);
+        loadOlderChatButton.setOnClickListener(v -> loadOlderChat());
         TextInputEditText chatInput = findViewById(R.id.inputLiveChat);
         sendChatButton = findViewById(R.id.btnSendLiveChat);
         sendChatButton.setOnClickListener(v -> sendLiveChat(chatInput));
@@ -188,41 +194,87 @@ public class LiveViewerActivity extends AppCompatActivity {
                                     viewerCountView.setText(data.concurrentViewers + " watching");
                                     viewerCountView.setVisibility(View.VISIBLE);
                                 }
-                                if (chatView != null) {
-                                    StringBuilder lines = new StringBuilder();
-                                    if (data.chat != null) {
-                                        for (LmsModels.NativeLiveChatMessage item : data.chat) {
-                                            if (lines.length() > 0) lines.append("\n\n");
-                                            if (!TextUtils.isEmpty(item.author)) lines.append(item.author).append(": ");
-                                            lines.append(value(item.message));
-                                        }
-                                    }
-                                    String nextChat = lines.length() == 0
-                                            ? "Be the first to say something." : lines.toString();
-                                    if (!nextChat.equals(lastChatSnapshot)) {
-                                        // Keep following new messages only if the viewer was
-                                        // already at the bottom. Never yank someone away from
-                                        // older messages while they scroll/read the history.
-                                        View content = chatScroll != null ? chatScroll.getChildAt(0) : null;
-                                        int threshold = Math.round(48 * getResources().getDisplayMetrics().density);
-                                        boolean followLatest = chatScroll != null && content != null
-                                                && chatScroll.getScrollY() + chatScroll.getHeight()
-                                                   >= content.getHeight() - threshold;
-                                        lastChatSnapshot = nextChat;
-                                        chatView.setText(nextChat);
-                                        if (followLatest && chatScroll != null) {
-                                            chatScroll.post(() -> {
-                                                View child = chatScroll.getChildAt(0);
-                                                if (!isDestroyed() && child != null) {
-                                                    chatScroll.scrollTo(0, child.getHeight());
-                                                }
-                                            });
-                                        }
-                                    }
+                                if (!isFinishing() && !isDestroyed() && chatView != null) {
+                                    if (chatTimeline.appendLatest(data)) renderChat(false);
+                                    refreshOlderChatButton();
                                 }
                             }
                             @Override public void onFailure(Call<LmsModels.LiveStateEnvelope> call, Throwable t) {}
                         }));
+    }
+
+    private void refreshOlderChatButton() {
+        if (loadOlderChatButton == null) return;
+        loadOlderChatButton.setVisibility(chatTimeline.hasOlder() ? View.VISIBLE : View.GONE);
+        loadOlderChatButton.setEnabled(!olderChatLoading);
+        loadOlderChatButton.setText(olderChatLoading ? "Loading messages…" : "Load earlier messages");
+    }
+
+    private void renderChat(boolean historyPrepended) {
+        if (chatView == null || chatScroll == null) return;
+        String next = chatTimeline.displayText();
+        if (next.equals(lastChatSnapshot)) return;
+        View child = chatScroll.getChildAt(0);
+        int previousHeight = child == null ? 0 : child.getHeight();
+        int oldScrollY = chatScroll.getScrollY();
+        int threshold = Math.round(48 * getResources().getDisplayMetrics().density);
+        boolean followingLatest = child != null &&
+                oldScrollY + chatScroll.getHeight() >= previousHeight - threshold;
+        lastChatSnapshot = next;
+        chatView.setText(next);
+        chatScroll.post(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            View updated = chatScroll.getChildAt(0);
+            if (updated == null) return;
+            if (historyPrepended) {
+                chatScroll.scrollTo(0, oldScrollY + Math.max(0, updated.getHeight() - previousHeight));
+            } else if (followingLatest) {
+                chatScroll.scrollTo(0, updated.getHeight());
+            }
+        });
+    }
+
+    private void loadOlderChat() {
+        if (olderChatLoading || !chatTimeline.hasOlder() || TextUtils.isEmpty(eventId)) return;
+        com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        String cursor = chatTimeline.nextCursor();
+        olderChatLoading = true;
+        refreshOlderChatButton();
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            if (isFinishing() || isDestroyed()) {
+                olderChatLoading = false;
+                return;
+            }
+            ApiClient.getLmsService().liveChatHistory(
+                    "Bearer " + token.getToken(), eventId, cursor, 50)
+                    .enqueue(new Callback<LmsModels.LiveChatHistoryEnvelope>() {
+                        @Override public void onResponse(Call<LmsModels.LiveChatHistoryEnvelope> call,
+                                                         Response<LmsModels.LiveChatHistoryEnvelope> response) {
+                            if (isFinishing() || isDestroyed()) return;
+                            olderChatLoading = false;
+                            LmsModels.LiveChatHistoryData data =
+                                    response.body() != null ? response.body().data : null;
+                            if (!response.isSuccessful() || data == null) {
+                                Toast.makeText(LiveViewerActivity.this,
+                                        "Could not load earlier messages", Toast.LENGTH_SHORT).show();
+                            } else {
+                                if (chatTimeline.prependHistory(data)) renderChat(true);
+                            }
+                            refreshOlderChatButton();
+                        }
+                        @Override public void onFailure(Call<LmsModels.LiveChatHistoryEnvelope> call, Throwable t) {
+                            if (isFinishing() || isDestroyed()) return;
+                            olderChatLoading = false;
+                            refreshOlderChatButton();
+                            Toast.makeText(LiveViewerActivity.this,
+                                    "Could not load earlier messages", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }).addOnFailureListener(error -> {
+            olderChatLoading = false;
+            if (!isFinishing() && !isDestroyed()) refreshOlderChatButton();
+        });
     }
 
     private void sendLiveChat(TextInputEditText input) {
