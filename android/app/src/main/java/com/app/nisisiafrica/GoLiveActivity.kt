@@ -91,7 +91,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var wentLive = false
     private var endedSent = false
     private var reconnectPromptVisible = false
-    private var reconnectAttemptsExhausted = false
+    @Volatile private var reconnectAttemptsExhausted = false
+    @Volatile private var streamDisposed = false
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -549,7 +550,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionSuccess() {
-        if (finishingLive || isFinishing || isDestroyed) return
+        if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
         val firstConnection = !wentLive
         wentLive = true
         reconnectAttemptsExhausted = false
@@ -569,7 +570,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionFailed(reason: String) {
-        if (finishingLive || isFinishing || isDestroyed || reconnectAttemptsExhausted) return
+        if (streamDisposed || finishingLive || isFinishing || isDestroyed || reconnectAttemptsExhausted) return
         val retrying = try {
             // RootEncoder handles re-establishing the stream socket and bounds
             // retries through setReTries(6). Do not mark the Hub event ended.
@@ -579,7 +580,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             false
         }
         runOnUiThread {
-            if (finishingLive || isFinishing || isDestroyed) return@runOnUiThread
+            if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@runOnUiThread
             if (retrying) {
                 status.text = "Connection interrupted · Reconnecting…"
             } else {
@@ -591,7 +592,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private fun showReconnectPrompt() {
-        if (reconnectPromptVisible || finishingLive || isFinishing || isDestroyed) return
+        if (streamDisposed || reconnectPromptVisible || finishingLive || isFinishing || isDestroyed) return
         reconnectPromptVisible = true
         AlertDialog.Builder(this)
             .setTitle("Connection interrupted")
@@ -606,7 +607,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private fun retryHostConnection() {
-        if (finishingLive || isFinishing || isDestroyed) return
+        if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
         reconnectAttemptsExhausted = false
         try {
             if (stream.isStreaming) stream.stopStream()
@@ -623,7 +624,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onDisconnect() {
         runOnUiThread {
-            if (!finishingLive && !reconnectAttemptsExhausted && !isDestroyed) {
+            if (!streamDisposed && !finishingLive && !reconnectAttemptsExhausted && !isDestroyed) {
                 status.text = "Connection interrupted"
             }
         }
@@ -634,7 +635,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         // automatic retries; the host can leave safely without false "ended".
         reconnectAttemptsExhausted = true
         runOnUiThread {
-            if (!finishingLive && !isDestroyed) {
+            if (!streamDisposed && !finishingLive && !isDestroyed) {
                 status.text = "Live authorization failed · Reconnect channel"
                 Toast.makeText(this, "Live connection rejected. Check the school channel connection.", Toast.LENGTH_LONG).show()
             }
@@ -679,6 +680,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onDestroy() {
+        streamDisposed = true
+        reconnectAttemptsExhausted = true
         telemetryHandler.removeCallbacks(telemetryPoll)
         try {
             if (stream.isStreaming) stream.stopStream()
