@@ -19,10 +19,17 @@ Android APK installation/update pipeline is **out of scope** by request.
 - [x] Deduplicate and cap server-recorded watched seconds based on elapsed time between attendance heartbeats, including retries/out-of-order requests; regression-tested.
 - [x] Initialize live tables and event/time indexes once per API worker, not on every five-second poll, to avoid rewriting sql.js SQLite repeatedly.
 - [x] Include authoritative scheduled/live/ended status in live-state polling; Android viewer updates status, disables chat after end, and only counts attendees once the stream is live.
+- [x] Fail closed for pre-audience-scope legacy live events: require authentication, infer recorded school/course only, and preserve host/admin access to private live sessions without exposing them broadly.
 
 - [ ] Verify live-chat pagination on production SQLite and PostgreSQL, and during a high-volume session on two Android devices.
 - [ ] **Final CI:** API, Android build on the same PR head (including unit/smoke checks); merge only after manual approval.
 - [ ] **Real-device live validation:** test host losing Wi-Fi then mobile reconnect, connection retry exhaustion, manual reconnect, PiP/background transitions and deliberate End Live; check provider analytics for uninterrupted live identity.
+  - Device A (SchoolAdmin host): broadcast a school-scoped session, keep it running for at least 5 minutes; switch from Wi-Fi to mobile data and back; confirm retry/status UI, camera/screen-share restoration and that the same Nelsen Hub event remains active.
+  - Device B (enrolled Mentee): join during live, enter PiP for at least a minute, return and send over 60 chat messages across both devices; load older chat pages and verify no duplicates or forced jump while scrolled upward.
+  - End session from Device A. Device B should change to replay/ended, stop attendance heartbeats and disable new chat. Confirm provider actually marks the broadcast ended rather than assuming API success.
+  - Change Device B to an unrelated school; course/school lives, chat history and FCM recipients should not cross that boundary. Repeat with a pending school applicant and a mentor unassigned to the course.
+  - During a failed host reconnect, capture `adb logcat -v time -s NelsenLive AndroidRuntime`; correlate with API logs `[youtube-live-sync]`, `[live-notify]` and `[live-attendance]` and provider dashboard timestamps. Never paste stream keys into logs or issues.
+
 - [ ] **Real-account permissions:** SchoolAdmin and Mentor on two schools, pending/not-active members, course enrollments, active-school switch and FCM delivery. Validate database membership migration for upgraded mentor profiles.
 - [ ] **Production setup:** verify channel connection, notification token presence and Firebase Notification timestamp index; inspect RTMPS/encoder logs when a device still stops mid-stream.
 - [ ] **Longer-term resilience:** move camera broadcaster to a dedicated foreground lifecycle service if Android process loss and multi-task broadcasting must survive host Activity recreation.
