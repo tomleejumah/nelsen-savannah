@@ -1,4 +1,19 @@
 /**
+ * Legacy events may predate explicit audience_scope. Restrict such lives to
+ * their recorded school/course instead of treating missing scope as public.
+ * Without an owning school they remain host/admin-only.
+ */
+export function effectiveLiveAudienceScope(event) {
+  if (!event || event.eventType !== "live") return null;
+  if (["platform", "school", "course"].includes(event.audienceScope)) {
+    return event.audienceScope;
+  }
+  if (event.trackId && event.schoolId) return "course";
+  if (event.schoolId) return "school";
+  return null;
+}
+
+/**
  * Pure tenant/role rules used by the course/school live-creation API.
  * Keeping these free of Firebase/DB state allows regression testing without
  * requiring credentials in PR CI.
