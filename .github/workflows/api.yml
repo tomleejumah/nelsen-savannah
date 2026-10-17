@@ -48,6 +48,8 @@ jobs:
         run: node --test scripts/test-live-recipients.mjs
       - name: Live lifecycle concurrency tests
         run: node --test scripts/test-live-status.mjs
+      - name: Live tenant ownership and host role tests
+        run: node --test scripts/test-live-scope.mjs
 
   deploy:
     needs: check
