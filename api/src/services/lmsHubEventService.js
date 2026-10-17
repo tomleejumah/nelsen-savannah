@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
+import { LIVE_STATUS_UPDATE_SQL, LIVE_NOTIFY_CLAIM_SQL } from "./lmsLiveStatusSql.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -256,9 +257,7 @@ async function notifyLiveIfNeeded(eventId) {
 
   const notifiedAt = Date.now();
   const claim = await dbRun(
-    `UPDATE hub_events
-     SET live_notified_at = ?, updated_at = ?
-     WHERE event_id = ? AND live_notified_at IS NULL AND status = 1`,
+    LIVE_NOTIFY_CLAIM_SQL,
     [notifiedAt, notifiedAt, eventId],
   );
   const changed = Number(claim?.changes ?? claim?.rowCount ?? 0);
@@ -569,8 +568,7 @@ export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
   // must not resurrect an ended session (or downgrade live to scheduled).
   // Checking existing.status above is not sufficient under concurrent requests.
   const updated = await dbRun(
-    `UPDATE hub_events SET status = ?, meeting_link = ?, updated_at = ?
-     WHERE event_id = ? AND event_type = 'live' AND status <= ?`,
+    LIVE_STATUS_UPDATE_SQL,
     [status, meetingLink, Date.now(), eventId, status],
   );
   if (Number(updated?.changes ?? updated?.rowCount ?? 0) === 0) {
