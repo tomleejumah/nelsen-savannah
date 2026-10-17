@@ -26,6 +26,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.app.nisisiafrica.Service.LiveProjectionService
+import com.app.nisisiafrica.Utils.LiveChatTimeline
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.android.material.button.MaterialButton
@@ -58,6 +59,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var chat: TextView
     private lateinit var chatScroll: ScrollView
     private var lastChatSnapshot = ""
+    private val chatTimeline = LiveChatTimeline()
+    private lateinit var olderChatButton: MaterialButton
+    private var olderChatLoading = false
     private lateinit var hostChatInput: TextInputEditText
     private lateinit var hostChatSend: MaterialButton
     private var hostChatSending = false
@@ -190,6 +194,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         attendance.setOnClickListener { showAttendanceDialog() }
         chat = findViewById(R.id.tvLiveChat)
         chatScroll = findViewById(R.id.hostChatScroll)
+        olderChatButton = findViewById(R.id.btnLiveChatEarlier)
+        olderChatButton.setOnClickListener { loadOlderHostChat() }
         hostChatInput = findViewById(R.id.inputHostLiveChat)
         hostChatSend = findViewById(R.id.btnHostSendLiveChat)
         hostChatSend.setOnClickListener { sendHostChat() }
@@ -373,22 +379,92 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         response: Response<LmsModels.LiveStateEnvelope>,
                     ) {
                         val data = response.body()?.data ?: return
+                        if (streamDisposed || isFinishing || isDestroyed) return
                         viewers.text = "${data.concurrentViewers} watching"
-                        val messages = data.chat.orEmpty()
-                        val snapshot = if (messages.isEmpty()) "Live · waiting for chat" else
-                            messages.joinToString("\n") { "${it.author}: ${it.message}" }
-                        if (snapshot != lastChatSnapshot) {
-                            val wasAtBottom = !chatScroll.canScrollVertically(1)
-                            lastChatSnapshot = snapshot
-                            chat.text = snapshot
-                            if (wasAtBottom) chatScroll.post { chatScroll.fullScroll(android.view.View.FOCUS_DOWN) }
-                        }
+                        if (chatTimeline.appendLatest(data)) renderHostChat(false)
+                        refreshOlderHostButton()
                     }
                     override fun onFailure(
                         call: Call<LmsModels.LiveStateEnvelope>,
                         t: Throwable,
                     ) = Unit
                 })
+        }
+    }
+
+    private fun refreshOlderHostButton() {
+        if (!::olderChatButton.isInitialized) return
+        olderChatButton.visibility =
+            if (chatTimeline.hasOlder()) android.view.View.VISIBLE else android.view.View.GONE
+        olderChatButton.isEnabled = !olderChatLoading
+        olderChatButton.text =
+            if (olderChatLoading) "Loading messages…" else "Load earlier messages"
+    }
+
+    private fun renderHostChat(historyPrepended: Boolean) {
+        if (!::chatScroll.isInitialized || !::chat.isInitialized) return
+        val snapshot = chatTimeline.displayText()
+        if (snapshot == lastChatSnapshot) return
+        val previousHeight = chatScroll.getChildAt(0)?.height ?: 0
+        val previousY = chatScroll.scrollY
+        val nearBottom = !chatScroll.canScrollVertically(1)
+        lastChatSnapshot = snapshot
+        chat.text = snapshot
+        chatScroll.post {
+            if (streamDisposed || isFinishing || isDestroyed) return@post
+            val newHeight = chatScroll.getChildAt(0)?.height ?: return@post
+            if (historyPrepended) {
+                chatScroll.scrollTo(0, previousY + (newHeight - previousHeight).coerceAtLeast(0))
+            } else if (nearBottom) {
+                chatScroll.scrollTo(0, newHeight)
+            }
+        }
+    }
+
+    private fun loadOlderHostChat() {
+        if (olderChatLoading || !chatTimeline.hasOlder() ||
+            streamDisposed || finishingLive || eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        val cursor = chatTimeline.nextCursor()
+        olderChatLoading = true
+        refreshOlderHostButton()
+        user.getIdToken(false).addOnSuccessListener { token ->
+            if (streamDisposed || isFinishing || isDestroyed) {
+                olderChatLoading = false
+                return@addOnSuccessListener
+            }
+            ApiClient.getLmsService()
+                .liveChatHistory("Bearer ${token.token}", eventId, cursor, 50)
+                .enqueue(object : Callback<LmsModels.LiveChatHistoryEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.LiveChatHistoryEnvelope>,
+                        response: Response<LmsModels.LiveChatHistoryEnvelope>,
+                    ) {
+                        if (streamDisposed || isFinishing || isDestroyed) return
+                        olderChatLoading = false
+                        val page = if (response.isSuccessful) response.body()?.data else null
+                        if (page != null) {
+                            if (chatTimeline.prependHistory(page)) renderHostChat(true)
+                        } else {
+                            Toast.makeText(this@GoLiveActivity,
+                                "Could not load earlier messages", Toast.LENGTH_SHORT).show()
+                        }
+                        refreshOlderHostButton()
+                    }
+                    override fun onFailure(
+                        call: Call<LmsModels.LiveChatHistoryEnvelope>,
+                        t: Throwable,
+                    ) {
+                        if (streamDisposed || isFinishing || isDestroyed) return
+                        olderChatLoading = false
+                        refreshOlderHostButton()
+                        Toast.makeText(this@GoLiveActivity,
+                            "Could not load earlier messages", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }.addOnFailureListener {
+            olderChatLoading = false
+            if (!streamDisposed && !isFinishing && !isDestroyed) refreshOlderHostButton()
         }
     }
 
