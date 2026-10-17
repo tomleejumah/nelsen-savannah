@@ -50,6 +50,8 @@ jobs:
         run: node --test scripts/test-live-status.mjs
       - name: Live tenant ownership and host role tests
         run: node --test scripts/test-live-scope.mjs
+      - name: Live chat cursor pagination tests
+        run: node --test scripts/test-live-chat-pagination.mjs
 
   deploy:
     needs: check
