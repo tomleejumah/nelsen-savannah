@@ -67,6 +67,8 @@ public class LiveViewerActivity extends AppCompatActivity {
     };
     private final Handler attendanceHandler = new Handler(Looper.getMainLooper());
     private boolean attendanceRunning = false;
+    private boolean attendanceEligible = false;
+    private boolean attendanceLeaveSent = false;
     private long lastWatchTickMs = 0L;
     private boolean chatSending = false;
     private MaterialButton sendChatButton;
@@ -125,6 +127,11 @@ public class LiveViewerActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.liveWebView);
         String videoId = youtubeVideoId(youtubeUrl);
+        // Count attendance only when the broadcast is actually live and a
+        // playable stream is present. Upcoming/unavailable/replay views must
+        // not create false live attendance or repeated API 409 responses.
+        attendanceEligible = "live".equals(status) && !TextUtils.isEmpty(videoId)
+                && !"unavailable".equals(availability);
         if (TextUtils.isEmpty(videoId) || "unavailable".equals(availability)) {
             webView.setVisibility(View.GONE);
             TextView unavailable = findViewById(R.id.liveUnavailable);
@@ -259,6 +266,12 @@ public class LiveViewerActivity extends AppCompatActivity {
         if (sendChatButton != null) sendChatButton.setEnabled(true);
     }
 
+    private void recordLeaveOnce() {
+        if (!attendanceEligible || attendanceLeaveSent) return;
+        attendanceLeaveSent = true;
+        recordAttendance(0, "leave");
+    }
+
     private void recordAttendance(int watchedSeconds, String action) {
         if (TextUtils.isEmpty(eventId)) return;
         com.google.firebase.auth.FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -338,7 +351,7 @@ public class LiveViewerActivity extends AppCompatActivity {
             loadTelemetry();
             telemetryHandler.postDelayed(telemetryPoll, 5_000L);
         }
-        if (!attendanceRunning) {
+        if (attendanceEligible && !attendanceRunning) {
             attendanceRunning = true;
             lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
             recordAttendance(0, "heartbeat");
@@ -375,7 +388,7 @@ public class LiveViewerActivity extends AppCompatActivity {
             attendanceRunning = false;
             attendanceHandler.removeCallbacks(attendanceHeartbeat);
             lastWatchTickMs = 0L;
-            if (isFinishing()) recordAttendance(0, "leave");
+            if (isFinishing()) recordLeaveOnce();
         }
         super.onStop();
     }
@@ -406,7 +419,7 @@ public class LiveViewerActivity extends AppCompatActivity {
                 loadTelemetry();
                 telemetryHandler.postDelayed(telemetryPoll, 5_000L);
             }
-            if (!attendanceRunning) {
+            if (attendanceEligible && !attendanceRunning) {
                 attendanceRunning = true;
                 lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
                 recordAttendance(0, "heartbeat");
@@ -429,7 +442,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         telemetryHandler.removeCallbacks(telemetryPoll);
         attendanceRunning = false;
         attendanceHandler.removeCallbacks(attendanceHeartbeat);
-        if (isFinishing()) recordAttendance(0, "leave");
+        if (isFinishing()) recordLeaveOnce();
         if (webView != null) {
             webView.stopLoading();
             webView.loadUrl("about:blank");
