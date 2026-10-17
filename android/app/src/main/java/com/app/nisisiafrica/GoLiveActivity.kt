@@ -557,12 +557,13 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onConnectionSuccess() {
         if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
-        val firstConnection = !wentLive
         wentLive = true
         reconnectAttemptsExhausted = false
         reconnectInProgress = false
-        // Do not emit a new live-start event on every successful reconnect.
-        if (firstConnection) markNelsenLiveStatus("live")
+        // Reconcile the Nelsen event after reconnect too: the first API status
+        // update may have failed while the device was offline. The server has
+        // an atomic once-only notification claim and monotonic live state.
+        markNelsenLiveStatus("live")
         runOnUiThread {
             if (finishingLive || isDestroyed) return@runOnUiThread
             telemetryHandler.removeCallbacks(telemetryPoll)
