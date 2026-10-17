@@ -1,5 +1,6 @@
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { canViewHubEvent, getHubEvent } from "./lmsHubEventService.js";
+import { liveChatPageQuery, formatChatPage } from "./lmsLiveChatPagination.js";
 
 const ACTIVE_MS = 30_000;
 const CHAT_COOLDOWN_MS = 1_500;
@@ -128,29 +129,33 @@ export async function getLiveAudienceState(eventId, uid) {
      ORDER BY a.first_joined_at ASC`,
     [eventId, cutoff],
   );
-  const chat = await dbAll(
-    `SELECT c.id, c.uid, c.message, c.created_at,
-            COALESCE(u.display_name, u.email, c.uid) AS display_name
-     FROM live_chat_messages c
-     LEFT JOIN users_mirror u ON u.uid = c.uid
-     WHERE c.event_id = ?
-     ORDER BY c.created_at DESC LIMIT 50`,
-    [eventId],
-  );
+  const query = liveChatPageQuery(eventId);
+  const chatRows = await dbAll(query.sql, query.params);
+  const page = formatChatPage(chatRows, query.limit);
   return {
     eventId,
     concurrentViewers: attendees.length,
     // Public live-state is readable by attendees; identifiable attendance is host-only.
     // Hosts retrieve names and watch durations from the authorized attendance endpoint.
     attendees: [],
-    chat: chat.reverse().map((row) => ({
-      id: String(row.id),
-      uid: String(row.uid),
-      author: String(row.display_name || row.uid),
-      message: String(row.message),
-      createdAt: Number(row.created_at),
-    })),
+    chat: page.messages,
+    chatHasMore: page.hasMore,
+    chatNextCursor: page.nextCursor,
   };
+}
+
+/**
+ * Fetch older chat pages for a viewer or host. Authorization is checked on
+ * every request, so losing school membership also revokes history access.
+ */
+export async function getLiveChatHistory(eventId, uid, query = {}) {
+  await ensureTable();
+  await requireLiveEvent(eventId, uid);
+  const { before = null, limit = 50 } = query;
+  const pageQuery = liveChatPageQuery(eventId, { before, limit });
+  const rows = await dbAll(pageQuery.sql, pageQuery.params);
+  const page = formatChatPage(rows, pageQuery.limit);
+  return { eventId, ...page };
 }
 
 export async function postLiveChatMessage(eventId, uid, body = {}) {
