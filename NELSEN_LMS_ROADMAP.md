@@ -15,7 +15,8 @@ Android APK installation/update pipeline is **out of scope** by request.
 - [x] Add automated live-state SQL, school recipient, cross-school ownership and staff-role tests to API CI.
 - [x] Make Android learner live chat independently scrollable with new-message auto-follow only when already near the bottom; keep attendance/stats polling alive while the viewer remains visible in PiP.
 - [x] Do not send live attendance heartbeats for scheduled, ended, or unavailable streams; send viewer leave only once when finishing.
-- [ ] Add cursor/pagination support for live-chat history beyond the latest 50 messages (current API returns a recent bounded window).
+- [x] Add access-controlled cursor pagination for live-chat history beyond 50 messages, with same-timestamp ordering, multi-page API tests and Android **Load earlier messages** for host and viewer. Preserve scroll position and merge live polling with history without duplicates.
+- [ ] Verify live-chat pagination on production SQLite and PostgreSQL, and during a high-volume session on two Android devices.
 - [ ] **Final CI:** API, Android build on the same PR head (including unit/smoke checks); merge only after manual approval.
 - [ ] **Real-device live validation:** test host losing Wi-Fi then mobile reconnect, connection retry exhaustion, manual reconnect, PiP/background transitions and deliberate End Live; check provider analytics for uninterrupted live identity.
 - [ ] **Real-account permissions:** SchoolAdmin and Mentor on two schools, pending/not-active members, course enrollments, active-school switch and FCM delivery. Validate database membership migration for upgraded mentor profiles.
