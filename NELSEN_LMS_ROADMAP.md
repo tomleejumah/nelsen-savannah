@@ -1,5 +1,26 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Live stability, notifications and school-scope hardening — October 17, 2026
+
+All changes are on one **fix/live-followup-stability** branch / PR #80. The
+Android APK installation/update pipeline is **out of scope** by request.
+
+- [x] Add bounded RootEncoder RTMPS socket reconnects after transient failures, plus a manual reconnect fallback.
+- [x] Do not end a live Hub session just because the Android host Activity is destroyed by OS lifecycle/PiP/configuration. End only on confirmed host action or observed upstream end.
+- [x] Avoid stale disconnect callbacks changing host status after reconnect; suppress reconnect prompts in PiP and ignore callbacks after host destruction.
+- [x] Prevent concurrent provider/host updates from downgrading live status or resurrecting ended sessions, and prohibit notification claims after end.
+- [x] Bind course lives to the course's canonical school; reject mismatched IDs and require active-school staff scope. Mentors host only assigned course lives; SchoolAdmin may host within their active school.
+- [x] Scope school/course notification recipient queries to active membership, active school and valid course enrollment/mentoring. Avoid verbose recipient UID lists in fanout logs.
+- [x] Do not let missing legacy sender profiles block live-start push notifications when a complete title/body is supplied.
+- [x] Add automated live-state SQL, school recipient, cross-school ownership and staff-role tests to API CI.
+- [ ] **Final CI:** API, Android build on the same PR head (including unit/smoke checks); merge only after manual approval.
+- [ ] **Real-device live validation:** test host losing Wi-Fi then mobile reconnect, connection retry exhaustion, manual reconnect, PiP/background transitions and deliberate End Live; check provider analytics for uninterrupted live identity.
+- [ ] **Real-account permissions:** SchoolAdmin and Mentor on two schools, pending/not-active members, course enrollments, active-school switch and FCM delivery. Validate database membership migration for upgraded mentor profiles.
+- [ ] **Production setup:** verify channel connection, notification token presence and Firebase Notification timestamp index; inspect RTMPS/encoder logs when a device still stops mid-stream.
+- [ ] **Longer-term resilience:** move camera broadcaster to a dedicated foreground lifecycle service if Android process loss and multi-task broadcasting must survive host Activity recreation.
+- [ ] **Other roadmap work:** tablet/adaptive UI QA, selective offline materials, safe archiving of non-empty courses, chat attachments/voice notes, Web live relay, PostgreSQL migration.
+
+
 ## October 11 follow-up — safety and authoring changes
 
 - [x] Added per-school protected bulk authoring outline for mentors/admins. Web editor uses the single request and falls back to legacy module requests during rollout.
