@@ -1,6 +1,7 @@
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { canViewHubEvent, getHubEvent } from "./lmsHubEventService.js";
 import { liveChatPageQuery, formatChatPage } from "./lmsLiveChatPagination.js";
+import { LIVE_ATTENDANCE_HEARTBEAT_SQL, LIVE_ATTENDANCE_LEAVE_SQL } from "./lmsLiveAttendanceSql.js";
 
 const ACTIVE_MS = 30_000;
 const CHAT_COOLDOWN_MS = 1_500;
@@ -48,7 +49,7 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
   if (!["heartbeat", "leave"].includes(action)) throw liveError("Unsupported attendance action", 400);
   if (action === "leave") {
     const updated = await dbRun(
-      "UPDATE live_attendance SET last_seen_at = ? WHERE event_id = ? AND uid = ? AND last_seen_at >= ?",
+      LIVE_ATTENDANCE_LEAVE_SQL,
       [now - ACTIVE_MS - 1, eventId, uid, now - ACTIVE_MS],
     );
     if (Number(updated?.changes ?? updated?.rowCount ?? 0) > 0) {
@@ -64,13 +65,10 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
   const previousSeen = Number(existing?.last_seen_at || 0);
   const rejoined = previousSeen > 0 && previousSeen < now - ACTIVE_MS;
   await dbRun(
-    `INSERT INTO live_attendance
-     (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(event_id, uid) DO UPDATE SET
-       last_seen_at = excluded.last_seen_at,
-       watch_seconds = live_attendance.watch_seconds + excluded.watch_seconds`,
-    [eventId, uid, now, now, requested],
+    LIVE_ATTENDANCE_HEARTBEAT_SQL,
+    // The first request only establishes presence; there is no elapsed
+    // session time yet to credit from client-supplied watchedSeconds.
+    [eventId, uid, now, now, existing ? requested : 0],
   );
   if (!existing) console.info("[live-attendance] join", { eventId, uid });
   else if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });
