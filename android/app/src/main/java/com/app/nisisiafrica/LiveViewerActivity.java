@@ -53,6 +53,9 @@ public class LiveViewerActivity extends AppCompatActivity {
     private String eventId = "";
     private WebView webView;
     private TextView viewerCountView;
+    private TextView liveStatusView;
+    private String currentLiveStatus = "";
+    private boolean streamPlayable = false;
     private TextView chatView;
     private ScrollView chatScroll;
     private String lastChatSnapshot = "";
@@ -111,8 +114,9 @@ public class LiveViewerActivity extends AppCompatActivity {
         toolbar.setTitle(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        TextView statusView = findViewById(R.id.tvLiveStatus);
-        statusView.setText(statusLabel(status));
+        liveStatusView = findViewById(R.id.tvLiveStatus);
+        currentLiveStatus = status;
+        liveStatusView.setText(statusLabel(status));
 
         openYoutubeButton = findViewById(R.id.btnOpenYoutube);
         openYoutubeButton.setOnClickListener(v -> openLiveExternally());
@@ -124,6 +128,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         TextInputEditText chatInput = findViewById(R.id.inputLiveChat);
         sendChatButton = findViewById(R.id.btnSendLiveChat);
         sendChatButton.setOnClickListener(v -> sendLiveChat(chatInput));
+        sendChatButton.setEnabled("live".equals(status));
         TextView hostView = findViewById(R.id.tvLiveHost);
         TextView subtitleView = findViewById(R.id.tvLiveSubtitle);
         hostView.setText(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
@@ -136,8 +141,8 @@ public class LiveViewerActivity extends AppCompatActivity {
         // Count attendance only when the broadcast is actually live and a
         // playable stream is present. Upcoming/unavailable/replay views must
         // not create false live attendance or repeated API 409 responses.
-        attendanceEligible = "live".equals(status) && !TextUtils.isEmpty(videoId)
-                && !"unavailable".equals(availability);
+        streamPlayable = !TextUtils.isEmpty(videoId) && !"unavailable".equals(availability);
+        attendanceEligible = "live".equals(status) && streamPlayable;
         if (TextUtils.isEmpty(videoId) || "unavailable".equals(availability)) {
             webView.setVisibility(View.GONE);
             TextView unavailable = findViewById(R.id.liveUnavailable);
@@ -190,6 +195,8 @@ public class LiveViewerActivity extends AppCompatActivity {
                             @Override public void onResponse(Call<LmsModels.LiveStateEnvelope> call, Response<LmsModels.LiveStateEnvelope> response) {
                                 LmsModels.LiveStateData data = response.body() != null ? response.body().data : null;
                                 if (!response.isSuccessful() || data == null) return;
+                                if (isFinishing() || isDestroyed()) return;
+                                refreshLiveLifecycle(data);
                                 if (viewerCountView != null) {
                                     viewerCountView.setText(data.concurrentViewers + " watching");
                                     viewerCountView.setVisibility(View.VISIBLE);
@@ -201,6 +208,38 @@ public class LiveViewerActivity extends AppCompatActivity {
                             }
                             @Override public void onFailure(Call<LmsModels.LiveStateEnvelope> call, Throwable t) {}
                         }));
+    }
+
+    private void refreshLiveLifecycle(LmsModels.LiveStateData data) {
+        if (data == null) return;
+        String next = value(data.liveStatus).toLowerCase(Locale.US);
+        if (!"live".equals(next) && !"scheduled".equals(next) && !"ended".equals(next)) return;
+        if (!next.equals(currentLiveStatus)) {
+            currentLiveStatus = next;
+            if (liveStatusView != null) liveStatusView.setText(statusLabel(next));
+        }
+        boolean mayAttend = streamPlayable && "live".equals(next);
+        if (sendChatButton != null && !chatSending) sendChatButton.setEnabled(mayAttend);
+
+        if (!mayAttend && attendanceRunning) {
+            attendanceRunning = false;
+            attendanceHandler.removeCallbacks(attendanceHeartbeat);
+            lastWatchTickMs = 0L;
+            recordLeaveOnce();
+        }
+        attendanceEligible = mayAttend;
+
+        // A viewer can open an upcoming broadcast before the provider starts.
+        // Begin counting only when it is actually live and visible on screen.
+        boolean visible = hasWindowFocus() ||
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode());
+        if (mayAttend && visible && !attendanceRunning) {
+            attendanceLeaveSent = false;
+            attendanceRunning = true;
+            lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
+            recordAttendance(0, "heartbeat");
+            attendanceHandler.postDelayed(attendanceHeartbeat, 15_000L);
+        }
     }
 
     private void refreshOlderChatButton() {
