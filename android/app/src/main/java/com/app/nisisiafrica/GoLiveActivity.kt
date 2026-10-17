@@ -712,10 +712,21 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onDisconnect() {
+        // RootEncoder may report a clean socket disconnect without calling
+        // onConnectionFailed (for example when upstream closes RTMPS). Cover
+        // that path too, but never restart an explicitly ended host session.
+        if (!wentLive || streamDisposed || finishingLive || reconnectInProgress ||
+            reconnectAttemptsExhausted || isFinishing || isDestroyed) return
+        reconnectInProgress = true
         runOnUiThread {
-            if (!streamDisposed && !finishingLive && !reconnectInProgress && !reconnectAttemptsExhausted && !isDestroyed) {
-                status.text = "Connection interrupted"
-            }
+            if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@runOnUiThread
+            status.text = "Connection interrupted · Reconnecting…"
+            telemetryHandler.postDelayed({
+                if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@postDelayed
+                // A connection-success callback may have already recovered
+                // the socket; do not interrupt that healthy broadcast.
+                if (reconnectInProgress) retryHostConnection()
+            }, 3_000L)
         }
     }
 
