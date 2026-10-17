@@ -46,6 +46,8 @@ jobs:
         run: node --test scripts/test-unused-course-delete.mjs
       - name: Live audience isolation tests
         run: node --test scripts/test-live-recipients.mjs
+      - name: Live lifecycle concurrency tests
+        run: node --test scripts/test-live-status.mjs
 
   deploy:
     needs: check
