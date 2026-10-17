@@ -16,6 +16,10 @@ Android APK installation/update pipeline is **out of scope** by request.
 - [x] Make Android learner live chat independently scrollable with new-message auto-follow only when already near the bottom; keep attendance/stats polling alive while the viewer remains visible in PiP.
 - [x] Do not send live attendance heartbeats for scheduled, ended, or unavailable streams; send viewer leave only once when finishing.
 - [x] Add access-controlled cursor pagination for live-chat history beyond 50 messages, with same-timestamp ordering, multi-page API tests and Android **Load earlier messages** for host and viewer. Preserve scroll position and merge live polling with history without duplicates.
+- [x] Deduplicate and cap server-recorded watched seconds based on elapsed time between attendance heartbeats, including retries/out-of-order requests; regression-tested.
+- [x] Initialize live tables and event/time indexes once per API worker, not on every five-second poll, to avoid rewriting sql.js SQLite repeatedly.
+- [x] Include authoritative scheduled/live/ended status in live-state polling; Android viewer updates status, disables chat after end, and only counts attendees once the stream is live.
+
 - [ ] Verify live-chat pagination on production SQLite and PostgreSQL, and during a high-volume session on two Android devices.
 - [ ] **Final CI:** API, Android build on the same PR head (including unit/smoke checks); merge only after manual approval.
 - [ ] **Real-device live validation:** test host losing Wi-Fi then mobile reconnect, connection retry exhaustion, manual reconnect, PiP/background transitions and deliberate End Live; check provider analytics for uninterrupted live identity.
