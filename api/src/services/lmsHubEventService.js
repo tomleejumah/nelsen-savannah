@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
+import { LIVE_STATUS_UPDATE_SQL, LIVE_NOTIFY_CLAIM_SQL } from "./lmsLiveStatusSql.js";
+import { canonicalCourseLiveSchool, assertLiveHostScope, effectiveLiveAudienceScope } from "./lmsLiveScopePolicy.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -138,7 +140,7 @@ export async function resolveLiveAudience(actor, body) {
       err.status = 400;
       throw err;
     }
-    schoolId = schoolId || String(track.school_id || "").trim();
+    schoolId = canonicalCourseLiveSchool(schoolId, track.school_id, ownSchool);
   }
 
   if (scope === "school" && !schoolId) {
@@ -150,14 +152,15 @@ export async function resolveLiveAudience(actor, body) {
     throw err;
   }
 
-  if (!isPlatformAdmin && schoolId) {
-    const allowed = ownSchool === schoolId || await hasActiveSchoolMembership(uid, schoolId);
-    if (!allowed) {
-      const err = new Error("You are not an active member of that school");
-      err.status = 403;
-      throw err;
-    }
-  }
+  assertLiveHostScope({
+    role,
+    scope,
+    schoolId,
+    activeSchoolId: ownSchool,
+    memberActive: isPlatformAdmin || (
+      !!schoolId && await hasActiveSchoolMembership(uid, schoolId)
+    ),
+  });
 
   if (!isPlatformAdmin && role === "Mentor" && scope === "course") {
     const assigned = await isTrackMentor(uid, trackId);
@@ -193,8 +196,8 @@ async function isTrackMentor(uid, trackId) {
 }
 
 export async function canViewHubEvent(event, uid = null) {
-  if (!event || !event.isPublic) return false;
-  if (event.eventType !== "live" || !event.audienceScope) return true;
+  if (!event) return false;
+  if (event.eventType !== "live") return Boolean(event.isPublic);
   if (!uid) return false;
 
   const viewerUid = String(uid);
@@ -202,23 +205,27 @@ export async function canViewHubEvent(event, uid = null) {
 
   const role = await actorRole(viewerUid);
   if (role === "Admin" || role === "SuperAdmin") return true;
+  if (!event.isPublic) return false;
 
-  // Platform-wide live sessions are an explicit Admin/SuperAdmin broadcast.
-  if (event.audienceScope === "platform") return true;
+  // Legacy unscoped live sessions are not automatically public. Without
+  // a canonical school/course, only the host/platform admin may view them.
+  const scope = effectiveLiveAudienceScope(event);
+  if (!scope) return false;
+  if (scope === "platform") return true;
 
   const viewerSchool = await actorSchool(viewerUid);
 
-  if (event.audienceScope === "school") {
+  if (scope === "school") {
     if (!event.schoolId) return false;
     // Mentors, mentees and SchoolAdmin are school-bound: no cross-school lives.
     return viewerSchool === event.schoolId
-      || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+      && await hasActiveSchoolMembership(viewerUid, event.schoolId);
   }
 
-  if (event.audienceScope === "course") {
+  if (scope === "course") {
     if (!event.trackId || !event.schoolId) return false;
     const inSchool = viewerSchool === event.schoolId
-      || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+      && await hasActiveSchoolMembership(viewerUid, event.schoolId);
     if (!inSchool) return false;
 
     // Mentees only see course lives for courses they are actively enrolled in.
@@ -243,9 +250,7 @@ async function notifyLiveIfNeeded(eventId) {
 
   const notifiedAt = Date.now();
   const claim = await dbRun(
-    `UPDATE hub_events
-     SET live_notified_at = ?, updated_at = ?
-     WHERE event_id = ? AND live_notified_at IS NULL`,
+    LIVE_NOTIFY_CLAIM_SQL,
     [notifiedAt, notifiedAt, eventId],
   );
   const changed = Number(claim?.changes ?? claim?.rowCount ?? 0);
@@ -552,10 +557,18 @@ export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
     }
   }
 
-  await dbRun(
-    `UPDATE hub_events SET status = ?, meeting_link = ?, updated_at = ? WHERE event_id = ?`,
-    [status, meetingLink, Date.now(), eventId],
+  // Atomic monotonic transition: a delayed provider poll or host reconnect
+  // must not resurrect an ended session (or downgrade live to scheduled).
+  // Checking existing.status above is not sufficient under concurrent requests.
+  const updated = await dbRun(
+    LIVE_STATUS_UPDATE_SQL,
+    [status, meetingLink, Date.now(), eventId, status],
   );
+  if (Number(updated?.changes ?? updated?.rowCount ?? 0) === 0) {
+    const err = new Error("Live session already moved to a later state");
+    err.status = 409;
+    throw err;
+  }
   if (status === LIVE_STATUS.live) {
     return notifyLiveIfNeeded(eventId);
   }

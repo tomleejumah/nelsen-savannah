@@ -1,5 +1,7 @@
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { canViewHubEvent, getHubEvent } from "./lmsHubEventService.js";
+import { liveChatPageQuery, formatChatPage } from "./lmsLiveChatPagination.js";
+import { LIVE_ATTENDANCE_HEARTBEAT_SQL, LIVE_ATTENDANCE_LEAVE_SQL } from "./lmsLiveAttendanceSql.js";
 
 const ACTIVE_MS = 30_000;
 const CHAT_COOLDOWN_MS = 1_500;
@@ -21,22 +23,42 @@ async function requireLiveEvent(eventId, uid, { active = false } = {}) {
   return event;
 }
 
+let schemaReadyPromise = null;
+
+/**
+ * Initialize once per API process. Repeating CREATE TABLE through sql.js on
+ * every 5-second live poll exported and rewrote the full SQLite DB twice per
+ * request, unnecessarily inflating API latency during busy broadcasts.
+ * On failure we discard the promise so the next request retries migration.
+ */
 async function ensureTable() {
-  await dbRun(`CREATE TABLE IF NOT EXISTS live_attendance (
-    event_id TEXT NOT NULL,
-    uid TEXT NOT NULL,
-    first_joined_at BIGINT NOT NULL,
-    last_seen_at BIGINT NOT NULL,
-    watch_seconds INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (event_id, uid)
-  )`);
-  await dbRun(`CREATE TABLE IF NOT EXISTS live_chat_messages (
-    id TEXT PRIMARY KEY,
-    event_id TEXT NOT NULL,
-    uid TEXT NOT NULL,
-    message TEXT NOT NULL,
-    created_at BIGINT NOT NULL
-  )`);
+  if (!schemaReadyPromise) {
+    schemaReadyPromise = (async () => {
+      await dbRun(`CREATE TABLE IF NOT EXISTS live_attendance (
+        event_id TEXT NOT NULL,
+        uid TEXT NOT NULL,
+        first_joined_at BIGINT NOT NULL,
+        last_seen_at BIGINT NOT NULL,
+        watch_seconds INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (event_id, uid)
+      )`);
+      await dbRun(`CREATE TABLE IF NOT EXISTS live_chat_messages (
+        id TEXT PRIMARY KEY,
+        event_id TEXT NOT NULL,
+        uid TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at BIGINT NOT NULL
+      )`);
+      await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_chat_event_time
+        ON live_chat_messages(event_id, created_at DESC, id DESC)`);
+      await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_attendance_current
+        ON live_attendance(event_id, last_seen_at)`);
+    })().catch((error) => {
+      schemaReadyPromise = null;
+      throw error;
+    });
+  }
+  return schemaReadyPromise;
 }
 
 export async function recordLiveAttendance(eventId, uid, body = {}) {
@@ -47,7 +69,7 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
   if (!["heartbeat", "leave"].includes(action)) throw liveError("Unsupported attendance action", 400);
   if (action === "leave") {
     const updated = await dbRun(
-      "UPDATE live_attendance SET last_seen_at = ? WHERE event_id = ? AND uid = ? AND last_seen_at >= ?",
+      LIVE_ATTENDANCE_LEAVE_SQL,
       [now - ACTIVE_MS - 1, eventId, uid, now - ACTIVE_MS],
     );
     if (Number(updated?.changes ?? updated?.rowCount ?? 0) > 0) {
@@ -63,13 +85,10 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
   const previousSeen = Number(existing?.last_seen_at || 0);
   const rejoined = previousSeen > 0 && previousSeen < now - ACTIVE_MS;
   await dbRun(
-    `INSERT INTO live_attendance
-     (event_id, uid, first_joined_at, last_seen_at, watch_seconds)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(event_id, uid) DO UPDATE SET
-       last_seen_at = excluded.last_seen_at,
-       watch_seconds = live_attendance.watch_seconds + excluded.watch_seconds`,
-    [eventId, uid, now, now, requested],
+    LIVE_ATTENDANCE_HEARTBEAT_SQL,
+    // The first request only establishes presence; there is no elapsed
+    // session time yet to credit from client-supplied watchedSeconds.
+    [eventId, uid, now, now, existing ? requested : 0],
   );
   if (!existing) console.info("[live-attendance] join", { eventId, uid });
   else if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });
@@ -117,7 +136,7 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
 
 export async function getLiveAudienceState(eventId, uid) {
   await ensureTable();
-  await requireLiveEvent(eventId, uid);
+  const event = await requireLiveEvent(eventId, uid);
   const cutoff = Date.now() - ACTIVE_MS;
   const attendees = await dbAll(
     `SELECT a.uid, a.first_joined_at, a.last_seen_at, a.watch_seconds,
@@ -128,29 +147,35 @@ export async function getLiveAudienceState(eventId, uid) {
      ORDER BY a.first_joined_at ASC`,
     [eventId, cutoff],
   );
-  const chat = await dbAll(
-    `SELECT c.id, c.uid, c.message, c.created_at,
-            COALESCE(u.display_name, u.email, c.uid) AS display_name
-     FROM live_chat_messages c
-     LEFT JOIN users_mirror u ON u.uid = c.uid
-     WHERE c.event_id = ?
-     ORDER BY c.created_at DESC LIMIT 50`,
-    [eventId],
-  );
+  const query = liveChatPageQuery(eventId);
+  const chatRows = await dbAll(query.sql, query.params);
+  const page = formatChatPage(chatRows, query.limit);
   return {
     eventId,
+    liveStatus: event.liveStatus,
+    liveAvailability: event.liveAvailability,
     concurrentViewers: attendees.length,
     // Public live-state is readable by attendees; identifiable attendance is host-only.
     // Hosts retrieve names and watch durations from the authorized attendance endpoint.
     attendees: [],
-    chat: chat.reverse().map((row) => ({
-      id: String(row.id),
-      uid: String(row.uid),
-      author: String(row.display_name || row.uid),
-      message: String(row.message),
-      createdAt: Number(row.created_at),
-    })),
+    chat: page.messages,
+    chatHasMore: page.hasMore,
+    chatNextCursor: page.nextCursor,
   };
+}
+
+/**
+ * Fetch older chat pages for a viewer or host. Authorization is checked on
+ * every request, so losing school membership also revokes history access.
+ */
+export async function getLiveChatHistory(eventId, uid, query = {}) {
+  await ensureTable();
+  await requireLiveEvent(eventId, uid);
+  const { before = null, limit = 50 } = query;
+  const pageQuery = liveChatPageQuery(eventId, { before, limit });
+  const rows = await dbAll(pageQuery.sql, pageQuery.params);
+  const page = formatChatPage(rows, pageQuery.limit);
+  return { eventId, ...page };
 }
 
 export async function postLiveChatMessage(eventId, uid, body = {}) {

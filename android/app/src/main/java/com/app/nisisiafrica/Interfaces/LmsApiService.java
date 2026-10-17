@@ -236,6 +236,13 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("eventId") String eventId);
 
+    @GET("lms/events/{eventId}/chat")
+    Call<LmsModels.LiveChatHistoryEnvelope> liveChatHistory(
+            @Header("Authorization") String bearer,
+            @Path("eventId") String eventId,
+            @Query("before") String before,
+            @Query("limit") int limit);
+
     @POST("lms/events/{eventId}/chat")
     Call<LmsModels.MapEnvelope> postLiveChat(
             @Header("Authorization") String bearer,
