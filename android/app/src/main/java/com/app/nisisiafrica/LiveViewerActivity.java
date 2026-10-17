@@ -17,6 +17,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import android.widget.ScrollView;
 import com.google.android.material.textfield.TextInputEditText;
 import android.widget.Toast;
 
@@ -52,6 +53,8 @@ public class LiveViewerActivity extends AppCompatActivity {
     private WebView webView;
     private TextView viewerCountView;
     private TextView chatView;
+    private ScrollView chatScroll;
+    private String lastChatSnapshot = "";
     private MaterialButton openYoutubeButton;
     private final Handler telemetryHandler = new Handler(Looper.getMainLooper());
     private boolean telemetryRunning = false;
@@ -109,6 +112,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         openYoutubeButton.setOnClickListener(v -> openLiveExternally());
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
+        chatScroll = findViewById(R.id.liveChatScroll);
         TextInputEditText chatInput = findViewById(R.id.inputLiveChat);
         sendChatButton = findViewById(R.id.btnSendLiveChat);
         sendChatButton.setOnClickListener(v -> sendLiveChat(chatInput));
@@ -186,7 +190,28 @@ public class LiveViewerActivity extends AppCompatActivity {
                                             lines.append(value(item.message));
                                         }
                                     }
-                                    chatView.setText(lines.length() == 0 ? "Be the first to say something." : lines.toString());
+                                    String nextChat = lines.length() == 0
+                                            ? "Be the first to say something." : lines.toString();
+                                    if (!nextChat.equals(lastChatSnapshot)) {
+                                        // Keep following new messages only if the viewer was
+                                        // already at the bottom. Never yank someone away from
+                                        // older messages while they scroll/read the history.
+                                        View content = chatScroll != null ? chatScroll.getChildAt(0) : null;
+                                        int threshold = Math.round(48 * getResources().getDisplayMetrics().density);
+                                        boolean followLatest = chatScroll != null && content != null
+                                                && chatScroll.getScrollY() + chatScroll.getHeight()
+                                                   >= content.getHeight() - threshold;
+                                        lastChatSnapshot = nextChat;
+                                        chatView.setText(nextChat);
+                                        if (followLatest && chatScroll != null) {
+                                            chatScroll.post(() -> {
+                                                View child = chatScroll.getChildAt(0);
+                                                if (!isDestroyed() && child != null) {
+                                                    chatScroll.scrollTo(0, child.getHeight());
+                                                }
+                                            });
+                                        }
+                                    }
                                 }
                             }
                             @Override public void onFailure(Call<LmsModels.LiveStateEnvelope> call, Throwable t) {}
@@ -373,20 +398,35 @@ public class LiveViewerActivity extends AppCompatActivity {
     @Override
     public void onPictureInPictureModeChanged(boolean inPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(inPictureInPictureMode, newConfig);
-        if (inPictureInPictureMode && !attendanceRunning) {
-            attendanceRunning = true;
-            lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
-            recordAttendance(0, "heartbeat");
-            attendanceHandler.postDelayed(attendanceHeartbeat, 15_000L);
-        } else if (!inPictureInPictureMode && !hasWindowFocus() && attendanceRunning) {
-            attendanceRunning = false;
-            attendanceHandler.removeCallbacks(attendanceHeartbeat);
-            lastWatchTickMs = 0L;
+        if (inPictureInPictureMode) {
+            // onPause happens before the PiP transition. Resume live stats
+            // while the video remains visible and the learner is counted.
+            if (!telemetryRunning) {
+                telemetryRunning = true;
+                loadTelemetry();
+                telemetryHandler.postDelayed(telemetryPoll, 5_000L);
+            }
+            if (!attendanceRunning) {
+                attendanceRunning = true;
+                lastWatchTickMs = android.os.SystemClock.elapsedRealtime();
+                recordAttendance(0, "heartbeat");
+                attendanceHandler.postDelayed(attendanceHeartbeat, 15_000L);
+            }
+        } else if (!hasWindowFocus()) {
+            telemetryRunning = false;
+            telemetryHandler.removeCallbacks(telemetryPoll);
+            if (attendanceRunning) {
+                attendanceRunning = false;
+                attendanceHandler.removeCallbacks(attendanceHeartbeat);
+                lastWatchTickMs = 0L;
+            }
         }
     }
 
     @Override
     protected void onDestroy() {
+        telemetryRunning = false;
+        telemetryHandler.removeCallbacks(telemetryPoll);
         attendanceRunning = false;
         attendanceHandler.removeCallbacks(attendanceHeartbeat);
         if (isFinishing()) recordAttendance(0, "leave");
