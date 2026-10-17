@@ -97,6 +97,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var reconnectPromptVisible = false
     @Volatile private var reconnectAttemptsExhausted = false
     @Volatile private var reconnectInProgress = false
+    @Volatile private var encoderRetryScheduled = false
     @Volatile private var streamDisposed = false
 
     private val screenCaptureLauncher =
@@ -636,6 +637,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         wentLive = true
         reconnectAttemptsExhausted = false
         reconnectInProgress = false
+        encoderRetryScheduled = false
         // Reconcile the Nelsen event after reconnect too: the first API status
         // update may have failed while the device was offline. The server has
         // an atomic once-only notification claim and monotonic live state.
@@ -664,6 +666,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             false
         }
         reconnectInProgress = retrying
+        encoderRetryScheduled = retrying
         runOnUiThread {
             if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@runOnUiThread
             if (retrying) {
@@ -696,6 +699,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
         reconnectAttemptsExhausted = false
         reconnectInProgress = true
+        encoderRetryScheduled = false
         try {
             if (stream.isStreaming) stream.stopStream()
             stream.getStreamClient().setReTries(6)
@@ -725,7 +729,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                 if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@postDelayed
                 // A connection-success callback may have already recovered
                 // the socket; do not interrupt that healthy broadcast.
-                if (reconnectInProgress) retryHostConnection()
+                if (reconnectInProgress && !encoderRetryScheduled) retryHostConnection()
             }, 3_000L)
         }
     }
