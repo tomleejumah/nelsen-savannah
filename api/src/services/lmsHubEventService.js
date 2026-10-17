@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
 import { LIVE_STATUS_UPDATE_SQL, LIVE_NOTIFY_CLAIM_SQL } from "./lmsLiveStatusSql.js";
-import { canonicalCourseLiveSchool, assertLiveHostScope } from "./lmsLiveScopePolicy.js";
+import { canonicalCourseLiveSchool, assertLiveHostScope, effectiveLiveAudienceScope } from "./lmsLiveScopePolicy.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -196,8 +196,8 @@ async function isTrackMentor(uid, trackId) {
 }
 
 export async function canViewHubEvent(event, uid = null) {
-  if (!event || !event.isPublic) return false;
-  if (event.eventType !== "live" || !event.audienceScope) return true;
+  if (!event) return false;
+  if (event.eventType !== "live") return Boolean(event.isPublic);
   if (!uid) return false;
 
   const viewerUid = String(uid);
@@ -205,20 +205,24 @@ export async function canViewHubEvent(event, uid = null) {
 
   const role = await actorRole(viewerUid);
   if (role === "Admin" || role === "SuperAdmin") return true;
+  if (!event.isPublic) return false;
 
-  // Platform-wide live sessions are an explicit Admin/SuperAdmin broadcast.
-  if (event.audienceScope === "platform") return true;
+  // Legacy unscoped live sessions are not automatically public. Without
+  // a canonical school/course, only the host/platform admin may view them.
+  const scope = effectiveLiveAudienceScope(event);
+  if (!scope) return false;
+  if (scope === "platform") return true;
 
   const viewerSchool = await actorSchool(viewerUid);
 
-  if (event.audienceScope === "school") {
+  if (scope === "school") {
     if (!event.schoolId) return false;
     // Mentors, mentees and SchoolAdmin are school-bound: no cross-school lives.
     return viewerSchool === event.schoolId
       && await hasActiveSchoolMembership(viewerUid, event.schoolId);
   }
 
-  if (event.audienceScope === "course") {
+  if (scope === "course") {
     if (!event.trackId || !event.schoolId) return false;
     const inSchool = viewerSchool === event.schoolId
       && await hasActiveSchoolMembership(viewerUid, event.schoolId);
