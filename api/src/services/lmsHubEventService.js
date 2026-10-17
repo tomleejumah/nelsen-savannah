@@ -138,7 +138,20 @@ export async function resolveLiveAudience(actor, body) {
       err.status = 400;
       throw err;
     }
-    schoolId = schoolId || String(track.school_id || "").trim();
+    const canonicalSchoolId = String(track.school_id || "").trim();
+    // Never let the caller relabel a course from School A as School B.
+    // Otherwise course live alerts and membership gates become cross-tenant.
+    if (canonicalSchoolId && schoolId && schoolId !== canonicalSchoolId) {
+      const err = new Error("Course does not belong to the requested school");
+      err.status = 400;
+      throw err;
+    }
+    schoolId = canonicalSchoolId || schoolId || ownSchool;
+    if (!schoolId) {
+      const err = new Error("Course must have a school before going live");
+      err.status = 400;
+      throw err;
+    }
   }
 
   if (scope === "school" && !schoolId) {
@@ -212,13 +225,13 @@ export async function canViewHubEvent(event, uid = null) {
     if (!event.schoolId) return false;
     // Mentors, mentees and SchoolAdmin are school-bound: no cross-school lives.
     return viewerSchool === event.schoolId
-      || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+      && await hasActiveSchoolMembership(viewerUid, event.schoolId);
   }
 
   if (event.audienceScope === "course") {
     if (!event.trackId || !event.schoolId) return false;
     const inSchool = viewerSchool === event.schoolId
-      || await hasActiveSchoolMembership(viewerUid, event.schoolId);
+      && await hasActiveSchoolMembership(viewerUid, event.schoolId);
     if (!inSchool) return false;
 
     // Mentees only see course lives for courses they are actively enrolled in.
