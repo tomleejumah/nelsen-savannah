@@ -92,6 +92,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var endedSent = false
     private var reconnectPromptVisible = false
     @Volatile private var reconnectAttemptsExhausted = false
+    @Volatile private var reconnectInProgress = false
     @Volatile private var streamDisposed = false
 
     private val screenCaptureLauncher =
@@ -554,6 +555,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         val firstConnection = !wentLive
         wentLive = true
         reconnectAttemptsExhausted = false
+        reconnectInProgress = false
         // Do not emit a new live-start event on every successful reconnect.
         if (firstConnection) markNelsenLiveStatus("live")
         runOnUiThread {
@@ -579,6 +581,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             android.util.Log.w("NelsenLive", "RTMPS reconnect attempt failed", e)
             false
         }
+        reconnectInProgress = retrying
         runOnUiThread {
             if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@runOnUiThread
             if (retrying) {
@@ -593,6 +596,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     private fun showReconnectPrompt() {
         if (streamDisposed || reconnectPromptVisible || finishingLive || isFinishing || isDestroyed) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode) return
         reconnectPromptVisible = true
         AlertDialog.Builder(this)
             .setTitle("Connection interrupted")
@@ -609,6 +613,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private fun retryHostConnection() {
         if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
         reconnectAttemptsExhausted = false
+        reconnectInProgress = true
         try {
             if (stream.isStreaming) stream.stopStream()
             stream.getStreamClient().setReTries(6)
@@ -616,6 +621,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             // The encoder was already prepared. Restart only the RTMPS socket.
             if (prepared) stream.startStream(ingestUrl) else maybeStartLive()
         } catch (e: Exception) {
+            reconnectInProgress = false
+            reconnectAttemptsExhausted = true
             android.util.Log.e("NelsenLive", "Could not restart RTMPS", e)
             status.text = "Could not reconnect"
             showReconnectPrompt()
@@ -624,7 +631,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onDisconnect() {
         runOnUiThread {
-            if (!streamDisposed && !finishingLive && !reconnectAttemptsExhausted && !isDestroyed) {
+            if (!streamDisposed && !finishingLive && !reconnectInProgress && !reconnectAttemptsExhausted && !isDestroyed) {
                 status.text = "Connection interrupted"
             }
         }
@@ -663,6 +670,13 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             }
         }
         super.onStop()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && reconnectAttemptsExhausted && !streamDisposed && !finishingLive &&
+            ::status.isInitialized
+        ) showReconnectPrompt()
     }
 
     override fun onUserLeaveHint() {
