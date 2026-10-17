@@ -503,6 +503,7 @@ router.post(
   lmsController.postLiveAttendance,
 );
 router.get("/events/:eventId/live-state", authenticateUser, lmsController.getLiveAudienceState);
+router.get("/events/:eventId/chat", authenticateUser, lmsController.getLiveChatHistory);
 router.post("/events/:eventId/chat", authenticateUser, lmsController.postLiveChatMessage);
 router.get(
   "/events/:eventId/attendance",
