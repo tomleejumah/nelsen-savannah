@@ -87,8 +87,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var youtubeUrl = ""
     private var surfaceReady = false
     private var prepared = false
-    private var finishingLive = false
-    private var wentLive = false
+    @Volatile private var finishingLive = false
+    @Volatile private var wentLive = false
     private var endedSent = false
     private var reconnectPromptVisible = false
     @Volatile private var reconnectAttemptsExhausted = false
@@ -698,12 +698,17 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         reconnectAttemptsExhausted = true
         telemetryHandler.removeCallbacks(telemetryPoll)
         try {
-            if (stream.isStreaming) stream.stopStream()
+            // This Activity can finish before the encoder is created (for
+            // example an invalid endpoint or denied permissions).
+            if (::stream.isInitialized) {
+                if (stream.isStreaming) stream.stopStream()
+                stream.release()
+            }
             mediaProjection?.stop()
             mediaProjection = null
             stopService(Intent(this, LiveProjectionService::class.java))
-            stream.release()
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            android.util.Log.w("NelsenLive", "Studio cleanup failed", error)
         }
         // An Activity can be destroyed during an Android lifecycle change,
         // memory pressure or PiP transition. Ending the Hub broadcast here
