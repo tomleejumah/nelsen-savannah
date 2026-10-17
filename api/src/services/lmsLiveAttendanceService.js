@@ -136,7 +136,7 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
 
 export async function getLiveAudienceState(eventId, uid) {
   await ensureTable();
-  await requireLiveEvent(eventId, uid);
+  const event = await requireLiveEvent(eventId, uid);
   const cutoff = Date.now() - ACTIVE_MS;
   const attendees = await dbAll(
     `SELECT a.uid, a.first_joined_at, a.last_seen_at, a.watch_seconds,
@@ -152,6 +152,8 @@ export async function getLiveAudienceState(eventId, uid) {
   const page = formatChatPage(chatRows, query.limit);
   return {
     eventId,
+    liveStatus: event.liveStatus,
+    liveAvailability: event.liveAvailability,
     concurrentViewers: attendees.length,
     // Public live-state is readable by attendees; identifiable attendance is host-only.
     // Hosts retrieve names and watch durations from the authorized attendance endpoint.
