@@ -354,7 +354,9 @@ public class LiveViewerActivity extends AppCompatActivity {
 
     private void finishChatSend() {
         chatSending = false;
-        if (sendChatButton != null) sendChatButton.setEnabled(true);
+        if (sendChatButton != null) {
+            sendChatButton.setEnabled("live".equals(currentLiveStatus) && streamPlayable);
+        }
     }
 
     private void recordLeaveOnce() {
