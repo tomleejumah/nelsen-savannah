@@ -13,6 +13,9 @@ Android APK installation/update pipeline is **out of scope** by request.
 - [x] Scope school/course notification recipient queries to active membership, active school and valid course enrollment/mentoring. Avoid verbose recipient UID lists in fanout logs.
 - [x] Do not let missing legacy sender profiles block live-start push notifications when a complete title/body is supplied.
 - [x] Add automated live-state SQL, school recipient, cross-school ownership and staff-role tests to API CI.
+- [x] Make Android learner live chat independently scrollable with new-message auto-follow only when already near the bottom; keep attendance/stats polling alive while the viewer remains visible in PiP.
+- [x] Do not send live attendance heartbeats for scheduled, ended, or unavailable streams; send viewer leave only once when finishing.
+- [ ] Add cursor/pagination support for live-chat history beyond the latest 50 messages (current API returns a recent bounded window).
 - [ ] **Final CI:** API, Android build on the same PR head (including unit/smoke checks); merge only after manual approval.
 - [ ] **Real-device live validation:** test host losing Wi-Fi then mobile reconnect, connection retry exhaustion, manual reconnect, PiP/background transitions and deliberate End Live; check provider analytics for uninterrupted live identity.
 - [ ] **Real-account permissions:** SchoolAdmin and Mentor on two schools, pending/not-active members, course enrollments, active-school switch and FCM delivery. Validate database membership migration for upgraded mentor profiles.
