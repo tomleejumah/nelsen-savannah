@@ -23,22 +23,42 @@ async function requireLiveEvent(eventId, uid, { active = false } = {}) {
   return event;
 }
 
+let schemaReadyPromise = null;
+
+/**
+ * Initialize once per API process. Repeating CREATE TABLE through sql.js on
+ * every 5-second live poll exported and rewrote the full SQLite DB twice per
+ * request, unnecessarily inflating API latency during busy broadcasts.
+ * On failure we discard the promise so the next request retries migration.
+ */
 async function ensureTable() {
-  await dbRun(`CREATE TABLE IF NOT EXISTS live_attendance (
-    event_id TEXT NOT NULL,
-    uid TEXT NOT NULL,
-    first_joined_at BIGINT NOT NULL,
-    last_seen_at BIGINT NOT NULL,
-    watch_seconds INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (event_id, uid)
-  )`);
-  await dbRun(`CREATE TABLE IF NOT EXISTS live_chat_messages (
-    id TEXT PRIMARY KEY,
-    event_id TEXT NOT NULL,
-    uid TEXT NOT NULL,
-    message TEXT NOT NULL,
-    created_at BIGINT NOT NULL
-  )`);
+  if (!schemaReadyPromise) {
+    schemaReadyPromise = (async () => {
+      await dbRun(`CREATE TABLE IF NOT EXISTS live_attendance (
+        event_id TEXT NOT NULL,
+        uid TEXT NOT NULL,
+        first_joined_at BIGINT NOT NULL,
+        last_seen_at BIGINT NOT NULL,
+        watch_seconds INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (event_id, uid)
+      )`);
+      await dbRun(`CREATE TABLE IF NOT EXISTS live_chat_messages (
+        id TEXT PRIMARY KEY,
+        event_id TEXT NOT NULL,
+        uid TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at BIGINT NOT NULL
+      )`);
+      await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_chat_event_time
+        ON live_chat_messages(event_id, created_at DESC, id DESC)`);
+      await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_attendance_current
+        ON live_attendance(event_id, last_seen_at)`);
+    })().catch((error) => {
+      schemaReadyPromise = null;
+      throw error;
+    });
+  }
+  return schemaReadyPromise;
 }
 
 export async function recordLiveAttendance(eventId, uid, body = {}) {
