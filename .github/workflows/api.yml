@@ -44,6 +44,8 @@ jobs:
         run: node --test scripts/test-db-primary-safety.mjs
       - name: Guarded course deletion dependency tests
         run: node --test scripts/test-unused-course-delete.mjs
+      - name: Live audience isolation tests
+        run: node --test scripts/test-live-recipients.mjs
 
   deploy:
     needs: check
