@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   canonicalCourseLiveSchool,
   assertLiveHostScope,
+  effectiveLiveAudienceScope,
 } from "../src/services/lmsLiveScopePolicy.js";
 
 test("live creation rejects cross-school course ownership even for multi-school users", () => {
@@ -54,4 +55,22 @@ test("school admin hosts in active school; platform admin retains platform broad
     role: "SuperAdmin", scope: "platform", schoolId: "",
     activeSchoolId: "", memberActive: false,
   }));
+});
+
+test("legacy live events do not silently become platform-wide broadcasts", () => {
+  assert.equal(effectiveLiveAudienceScope({
+    eventType: "live", audienceScope: null, schoolId: "school-a", trackId: "",
+  }), "school");
+  assert.equal(effectiveLiveAudienceScope({
+    eventType: "live", audienceScope: null, schoolId: "school-a", trackId: "course-a",
+  }), "course");
+  assert.equal(effectiveLiveAudienceScope({
+    eventType: "live", audienceScope: null, schoolId: "", trackId: "",
+  }), null);
+  assert.equal(effectiveLiveAudienceScope({
+    eventType: "live", audienceScope: "platform", schoolId: "",
+  }), "platform");
+  assert.equal(effectiveLiveAudienceScope({
+    eventType: "event", audienceScope: "school", schoolId: "school-a",
+  }), null);
 });
