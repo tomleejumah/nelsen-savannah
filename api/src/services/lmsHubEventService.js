@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
 import { LIVE_STATUS_UPDATE_SQL, LIVE_NOTIFY_CLAIM_SQL } from "./lmsLiveStatusSql.js";
+import { canonicalCourseLiveSchool, assertLiveHostScope } from "./lmsLiveScopePolicy.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -139,20 +140,7 @@ export async function resolveLiveAudience(actor, body) {
       err.status = 400;
       throw err;
     }
-    const canonicalSchoolId = String(track.school_id || "").trim();
-    // Never let the caller relabel a course from School A as School B.
-    // Otherwise course live alerts and membership gates become cross-tenant.
-    if (canonicalSchoolId && schoolId && schoolId !== canonicalSchoolId) {
-      const err = new Error("Course does not belong to the requested school");
-      err.status = 400;
-      throw err;
-    }
-    schoolId = canonicalSchoolId || schoolId || ownSchool;
-    if (!schoolId) {
-      const err = new Error("Course must have a school before going live");
-      err.status = 400;
-      throw err;
-    }
+    schoolId = canonicalCourseLiveSchool(schoolId, track.school_id, ownSchool);
   }
 
   if (scope === "school" && !schoolId) {
@@ -164,24 +152,15 @@ export async function resolveLiveAudience(actor, body) {
     throw err;
   }
 
-  if (!isPlatformAdmin) {
-    // Do not let a staff member host for a second school without switching
-    // active schools. Permissions must reflect the current school context.
-    const allowed = !!schoolId && ownSchool === schoolId
-      && await hasActiveSchoolMembership(uid, schoolId);
-    if (!allowed) {
-      const err = new Error("Switch to an active school membership before hosting its live session");
-      err.status = 403;
-      throw err;
-    }
-    // Mentors may host only courses explicitly assigned to them. School-wide
-    // lives are an active-school SchoolAdmin operation.
-    if (role === "Mentor" && scope === "school") {
-      const err = new Error("Only a school administrator can host a school-wide live session");
-      err.status = 403;
-      throw err;
-    }
-  }
+  assertLiveHostScope({
+    role,
+    scope,
+    schoolId,
+    activeSchoolId: ownSchool,
+    memberActive: isPlatformAdmin || (
+      !!schoolId && await hasActiveSchoolMembership(uid, schoolId)
+    ),
+  });
 
   if (!isPlatformAdmin && role === "Mentor" && scope === "course") {
     const assigned = await isTrackMentor(uid, trackId);
