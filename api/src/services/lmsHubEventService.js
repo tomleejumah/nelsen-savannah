@@ -164,10 +164,20 @@ export async function resolveLiveAudience(actor, body) {
     throw err;
   }
 
-  if (!isPlatformAdmin && schoolId) {
-    const allowed = ownSchool === schoolId || await hasActiveSchoolMembership(uid, schoolId);
+  if (!isPlatformAdmin) {
+    // Do not let a staff member host for a second school without switching
+    // active schools. Permissions must reflect the current school context.
+    const allowed = !!schoolId && ownSchool === schoolId
+      && await hasActiveSchoolMembership(uid, schoolId);
     if (!allowed) {
-      const err = new Error("You are not an active member of that school");
+      const err = new Error("Switch to an active school membership before hosting its live session");
+      err.status = 403;
+      throw err;
+    }
+    // Mentors may host only courses explicitly assigned to them. School-wide
+    // lives are an active-school SchoolAdmin operation.
+    if (role === "Mentor" && scope === "school") {
+      const err = new Error("Only a school administrator can host a school-wide live session");
       err.status = 403;
       throw err;
     }
