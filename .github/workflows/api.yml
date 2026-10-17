@@ -52,6 +52,8 @@ jobs:
         run: node --test scripts/test-live-scope.mjs
       - name: Live chat cursor pagination tests
         run: node --test scripts/test-live-chat-pagination.mjs
+      - name: Live attendance idempotency tests
+        run: node --test scripts/test-live-attendance.mjs
 
   deploy:
     needs: check
