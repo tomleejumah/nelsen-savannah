@@ -50,6 +50,8 @@ jobs:
         run: node --test scripts/test-live-status.mjs
       - name: Live tenant ownership and host role tests
         run: node --test scripts/test-live-scope.mjs
+      - name: Active-school role promotion tests
+        run: node --test scripts/test-school-role-write.mjs
       - name: Live chat cursor pagination tests
         run: node --test scripts/test-live-chat-pagination.mjs
       - name: Live chat duplicate and cooldown tests
