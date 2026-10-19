@@ -596,12 +596,46 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     override fun onResponse(
                         call: Call<LmsModels.HubEventEnvelope>,
                         response: Response<LmsModels.HubEventEnvelope>,
-                    ) = Unit
+                    ) {
+                        if (response.isSuccessful) return
+                        android.util.Log.w(
+                            "NelsenLive", "Hub live status update failed: HTTP ${response.code()}"
+                        )
+                        // A provider-side end is terminal for this broadcast.
+                        // Do not keep automatically reconnecting an RTMPS
+                        // stream whose Hub session can no longer become live.
+                        if (response.code() == 409 && liveStatus == "live" &&
+                            !finishingLive && !streamDisposed && !isFinishing && !isDestroyed
+                        ) {
+                            finishingLive = true
+                            reconnectAttemptsExhausted = true
+                            try {
+                                if (::stream.isInitialized && stream.isStreaming) stream.stopStream()
+                            } catch (error: Exception) {
+                                android.util.Log.w("NelsenLive", "Stop after upstream end failed", error)
+                            }
+                            status.text = "Session ended upstream"
+                            AlertDialog.Builder(this@GoLiveActivity)
+                                .setTitle("Live session has ended")
+                                .setMessage(
+                                    "The broadcast has ended on the streaming service. " +
+                                    "It cannot reconnect to the same session. " +
+                                    "Close this studio and start a new live session."
+                                )
+                                .setPositiveButton("Close studio") { _, _ -> finish() }
+                                .setCancelable(false)
+                                .show()
+                        }
+                    }
 
                     override fun onFailure(
                         call: Call<LmsModels.HubEventEnvelope>,
                         t: Throwable,
-                    ) = Unit
+                    ) {
+                        android.util.Log.w("NelsenLive", "Hub status sync unavailable", t)
+                        // Transient API failures are retried on each confirmed
+                        // RTMPS connection success, not treated as an end.
+                    }
                 })
         }
     }
