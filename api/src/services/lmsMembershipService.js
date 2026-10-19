@@ -28,6 +28,7 @@ import {
 } from "../constants/lmsRoles.js";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { loadUserRole } from "../middleware/lmsRoles.js";
+import { effectiveSchoolStaffRole } from "./lmsLiveScopePolicy.js";
 
 const STATUSES = {
   invited: "invited",
@@ -241,11 +242,21 @@ export async function setActiveSchool(uid, schoolId) {
     `UPDATE users_mirror SET active_school_id = ?, school_id = ?, updated_at = ? WHERE uid = ?`,
     [sid, sid, now, uid],
   );
+  const membership = await dbGet(
+    `SELECT role, status FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active'
+     ORDER BY updated_at DESC LIMIT 1`,
+    [uid, sid],
+  );
+  const activeSchoolRole = effectiveSchoolStaffRole(
+    await loadUserRole(uid), membership,
+  );
   return {
     source: getPrimaryEngine(),
     data: {
       activeSchoolId: sid,
       schoolName: school.name || sid,
+      activeSchoolRole,
     },
   };
 }
