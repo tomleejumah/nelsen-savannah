@@ -941,9 +941,11 @@ async function syncExplicitRoleToSelectedSchool(uid, globalRole) {
 
 export async function adminSetRole(actorUid, targetUid, userRole) {
   const role = normalizeRole(userRole);
-  await setUserRole(targetUid, role);
-  await mirrorRole(targetUid, role);
+  // Revoke (or grant) the selected school's privileges before mirroring
+  // the account-wide legacy role. A failed membership write must not leave
+  // a successful-looking global demotion with stale SchoolAdmin access.
   const schoolRoleUpdated = await syncExplicitRoleToSelectedSchool(targetUid, role);
+  await setUserRole(targetUid, role);
   return {
     source: getPrimaryEngine(),
     data: { uid: targetUid, userRole: role, schoolRoleUpdated },
@@ -984,9 +986,8 @@ export async function adminSetRoleByEmail(actorUid, email, userRole) {
     }
     throw err;
   }
-  await setUserRole(user.uid, role);
-  await mirrorRole(user.uid, role);
   const schoolRoleUpdated = await syncExplicitRoleToSelectedSchool(user.uid, role);
+  await setUserRole(user.uid, role);
   return {
     source: getPrimaryEngine(),
     data: {
