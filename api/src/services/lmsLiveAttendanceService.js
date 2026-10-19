@@ -138,13 +138,12 @@ export async function getLiveAudienceState(eventId, uid) {
   await ensureTable();
   const event = await requireLiveEvent(eventId, uid);
   const cutoff = Date.now() - ACTIVE_MS;
-  const attendees = await dbAll(
-    `SELECT a.uid, a.first_joined_at, a.last_seen_at, a.watch_seconds,
-            COALESCE(u.display_name, u.email, a.uid) AS display_name
-     FROM live_attendance a
-     LEFT JOIN users_mirror u ON u.uid = a.uid
-     WHERE a.event_id = ? AND a.last_seen_at >= ?
-     ORDER BY a.first_joined_at ASC`,
+  // This endpoint is polled every five seconds by every viewer. Counting
+  // presences in SQLite is much cheaper than loading personal identities and
+  // watch totals only to discard them before responding.
+  const presence = await dbGet(
+    `SELECT COUNT(*) AS viewers FROM live_attendance
+     WHERE event_id = ? AND last_seen_at >= ?`,
     [eventId, cutoff],
   );
   const query = liveChatPageQuery(eventId);
@@ -154,7 +153,10 @@ export async function getLiveAudienceState(eventId, uid) {
     eventId,
     liveStatus: event.liveStatus,
     liveAvailability: event.liveAvailability,
-    concurrentViewers: attendees.length,
+    // This is returned only after canViewHubEvent authorization, never
+    // through the unauthenticated public index.
+    meetingLink: event.meetingLink || "",
+    concurrentViewers: event.liveStatus === "live" ? Number(presence?.viewers || 0) : 0,
     // Public live-state is readable by attendees; identifiable attendance is host-only.
     // Hosts retrieve names and watch durations from the authorized attendance endpoint.
     attendees: [],
