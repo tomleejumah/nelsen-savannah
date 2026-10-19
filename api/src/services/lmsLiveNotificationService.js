@@ -64,14 +64,12 @@ export async function notifyLiveStarted(event) {
     const results = await Promise.allSettled(batch.map((uid) => notifyOne(uid, event)));
     for (let index = 0; index < results.length; index += 1) {
       const result = results[index];
-      const uid = batch[index];
       if (result.status === "rejected") {
-        console.error("[live-notify] recipient failed", { eventId: event.eventId, uid, error: result.reason?.message || String(result.reason) });
+        // Never put recipient UIDs, push tokens or per-device FCM payloads in
+        // fanout logs. The final counters are sufficient for operational QA.
         failed += 1;
         continue;
       }
-      console.log("[live-notify] recipient result", { eventId: event.eventId, uid, fcm: result.value });
-
       if (result.value?.success) sent += 1;
       else if (result.value?.reason === "no_token") missingToken += 1;
       else failed += 1;
