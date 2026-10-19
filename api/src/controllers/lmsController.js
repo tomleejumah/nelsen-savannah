@@ -1417,7 +1417,7 @@ export async function getLiveAttendanceSummary(req, res) {
 export async function deleteHubEvent(req, res) {
   try {
     const svc = await import("../services/lmsHubEventService.js");
-    const result = await svc.deleteHubEvent(req.params.eventId);
+    const result = await svc.deleteHubEvent(req.params.eventId, req.user.uid);
     return lmsOk(res, result, result.source);
   } catch (err) {
     console.error("[DELETE /lms/events/:eventId]", err.message);
