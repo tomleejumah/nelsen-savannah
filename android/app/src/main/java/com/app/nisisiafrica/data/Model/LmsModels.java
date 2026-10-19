@@ -954,6 +954,7 @@ public final class LmsModels {
         public String eventId;
         public String liveStatus;
         public String liveAvailability;
+        public String meetingLink;
         public int concurrentViewers;
         public List<LivePresenceAttendee> attendees;
         public List<NativeLiveChatMessage> chat;
