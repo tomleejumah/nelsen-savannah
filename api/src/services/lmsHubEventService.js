@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
 import { LIVE_STATUS_UPDATE_SQL, LIVE_NOTIFY_CLAIM_SQL } from "./lmsLiveStatusSql.js";
-import { canonicalCourseLiveSchool, assertLiveHostScope, effectiveLiveAudienceScope, assertHubEventMutationScope } from "./lmsLiveScopePolicy.js";
+import { canonicalCourseLiveSchool, assertLiveHostScope, effectiveLiveAudienceScope, assertHubEventMutationScope, effectiveSchoolStaffRole } from "./lmsLiveScopePolicy.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -60,7 +60,9 @@ async function actorSchool(uid) {
        WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1`,
       [uid, user.active_school_id],
     );
-    if (active?.school_id) return String(active.school_id);
+    // An explicit choice of a pending/removed school must not restore
+    // permissions from a different membership behind the user's back.
+    return active?.school_id ? String(active.school_id) : "";
   }
   const membership = await dbGet(
     `SELECT school_id FROM school_memberships
@@ -70,6 +72,23 @@ async function actorSchool(uid) {
     [uid],
   );
   return String(membership?.school_id || "").trim();
+}
+
+/**
+ * Effective role belongs to the event's school, not the user's global role.
+ * Platform super admins retain cross-school management independently.
+ */
+export async function getLiveSchoolRole(uid, schoolId) {
+  const globalRole = await actorRole(uid);
+  if (globalRole === "Admin" || globalRole === "SuperAdmin") return "SuperAdmin";
+  if (!uid || !schoolId) return "Mentee";
+  const membership = await dbGet(
+    `SELECT role, status FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active'
+     ORDER BY updated_at DESC LIMIT 1`,
+    [uid, schoolId],
+  );
+  return effectiveSchoolStaffRole(globalRole, membership);
 }
 
 async function hasActiveSchoolMembership(uid, schoolId) {
@@ -85,8 +104,8 @@ async function hasActiveSchoolMembership(uid, schoolId) {
 
 export async function resolveLiveAudience(actor, body) {
   const uid = String(actor?.uid || "");
-  const role = await actorRole(uid);
-  const isPlatformAdmin = role === "Admin" || role === "SuperAdmin";
+  const globalRole = await actorRole(uid);
+  const isPlatformAdmin = globalRole === "Admin" || globalRole === "SuperAdmin";
 
   let scope = String(
     body.audienceScope ?? body.audience_scope ?? body.scope ?? "",
@@ -152,6 +171,7 @@ export async function resolveLiveAudience(actor, body) {
     throw err;
   }
 
+  const role = isPlatformAdmin ? "SuperAdmin" : await getLiveSchoolRole(uid, schoolId);
   assertLiveHostScope({
     role,
     scope,
@@ -203,8 +223,8 @@ export async function canViewHubEvent(event, uid = null) {
   const viewerUid = String(uid);
   if (event.createdBy && String(event.createdBy) === viewerUid) return true;
 
-  const role = await actorRole(viewerUid);
-  if (role === "Admin" || role === "SuperAdmin") return true;
+  const globalRole = await actorRole(viewerUid);
+  if (globalRole === "Admin" || globalRole === "SuperAdmin") return true;
   if (!event.isPublic) return false;
 
   // Legacy unscoped live sessions are not automatically public. Without
@@ -214,6 +234,7 @@ export async function canViewHubEvent(event, uid = null) {
   if (scope === "platform") return true;
 
   const viewerSchool = await actorSchool(viewerUid);
+  const role = await getLiveSchoolRole(viewerUid, event.schoolId);
 
   if (scope === "school") {
     if (!event.schoolId) return false;
