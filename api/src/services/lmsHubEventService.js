@@ -375,7 +375,7 @@ export async function deleteHubEvent(eventId, actorUid) {
     err.status = 404;
     throw err;
   }
-  const role = actorUid ? await actorRole(actorUid) : "";
+  const role = actorUid ? await getLiveSchoolRole(actorUid, existing.schoolId) : "";
   const activeSchoolId = actorUid && role === "SchoolAdmin" ? await actorSchool(actorUid) : "";
   const memberActive = role === "SchoolAdmin" && !!existing.schoolId &&
     await hasActiveSchoolMembership(actorUid, existing.schoolId);
@@ -566,7 +566,7 @@ export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
   }
 
   if (actorUid) {
-    const role = await actorRole(actorUid);
+    const role = await getLiveSchoolRole(actorUid, existing.schoolId);
     const activeSchoolId = role === "SchoolAdmin" ? await actorSchool(actorUid) : "";
     const memberActive = role === "SchoolAdmin" && !!existing.schoolId &&
       await hasActiveSchoolMembership(actorUid, existing.schoolId);
