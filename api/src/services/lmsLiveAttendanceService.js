@@ -2,6 +2,7 @@ import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { canViewHubEvent, getHubEvent } from "./lmsHubEventService.js";
 import { liveChatPageQuery, formatChatPage } from "./lmsLiveChatPagination.js";
 import { LIVE_ATTENDANCE_HEARTBEAT_SQL, LIVE_ATTENDANCE_LEAVE_SQL } from "./lmsLiveAttendanceSql.js";
+import { LIVE_CHAT_INSERT_GUARDED_SQL, chatInsertParams } from "./lmsLiveChatSql.js";
 
 const ACTIVE_MS = 30_000;
 const CHAT_COOLDOWN_MS = 1_500;
@@ -51,6 +52,8 @@ async function ensureTable() {
       )`);
       await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_chat_event_time
         ON live_chat_messages(event_id, created_at DESC, id DESC)`);
+      await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_chat_sender_time
+        ON live_chat_messages(event_id, uid, created_at DESC)`);
       await dbRun(`CREATE INDEX IF NOT EXISTS idx_live_attendance_current
         ON live_attendance(event_id, last_seen_at)`);
     })().catch((error) => {
@@ -201,9 +204,15 @@ export async function postLiveChatMessage(eventId, uid, body = {}) {
     throw liveError("Duplicate message", 409);
   }
   const id = `lchat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  await dbRun(
-    "INSERT INTO live_chat_messages (id, event_id, uid, message, created_at) VALUES (?, ?, ?, ?, ?)",
-    [id, eventId, uid, message, now],
+  const inserted = await dbRun(
+    LIVE_CHAT_INSERT_GUARDED_SQL,
+    chatInsertParams({
+      id, eventId, uid, message, now,
+      cooldownMs: CHAT_COOLDOWN_MS,
+    }),
   );
+  if (Number(inserted?.changes ?? inserted?.rowCount ?? 0) === 0) {
+    throw liveError("Slow down before sending another message", 429);
+  }
   return { id, eventId, uid, message, createdAt: now };
 }
