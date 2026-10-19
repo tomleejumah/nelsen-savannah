@@ -5,6 +5,8 @@ import {
   assertLiveHostScope,
   effectiveLiveAudienceScope,
   assertHubEventMutationScope,
+  effectiveSchoolStaffRole,
+  selectedActiveSchool,
 } from "../src/services/lmsLiveScopePolicy.js";
 
 test("live creation rejects cross-school course ownership even for multi-school users", () => {
@@ -113,4 +115,29 @@ test("only the event owner, platform admin or current-school administrator may m
     () => assertHubEventMutationScope({ ...event, role: "SchoolAdmin", actorUid: "" }),
     (error) => error.status === 401,
   );
+});
+
+test("staff privileges follow the active school's membership, not a global role", () => {
+  const local = (role, status = "active") => ({ role, status });
+
+  assert.equal(effectiveSchoolStaffRole("SchoolAdmin", local("Mentee")), "Mentee",
+    "SchoolAdmin from school A is a Mentee in school B");
+  assert.equal(effectiveSchoolStaffRole("Mentor", local("SchoolAdmin")), "SchoolAdmin",
+    "explicit school membership may grant SchoolAdmin even when global role is Mentor");
+  assert.equal(effectiveSchoolStaffRole("Mentee", local("Mentor")), "Mentor",
+    "assigned local Mentor is respected even with global Mentee");
+  assert.equal(effectiveSchoolStaffRole("Mentor", local(null)), "Mentee",
+    "missing membership role defaults to Mentee");
+  assert.equal(effectiveSchoolStaffRole("Mentor", local("Mentor", "applied")), "Mentee",
+    "pending memberships never confer teaching rights");
+  assert.equal(effectiveSchoolStaffRole("SchoolAdmin", null), "Mentee",
+    "global SchoolAdmin without school membership has no local rights");
+  assert.equal(effectiveSchoolStaffRole("Mentee", local("SuperAdmin")), "SchoolAdmin",
+    "a school membership alone must never grant platform super-admin");
+  assert.equal(effectiveSchoolStaffRole("SuperAdmin", null), "SuperAdmin",
+    "actual platform administrators retain cross-school privileges");
+  assert.equal(selectedActiveSchool("school-b", ["school-a", "school-b"]), "school-b");
+  assert.equal(selectedActiveSchool("school-b", ["school-a"]), "",
+    "explicit selection of a non-member school never falls back to school A");
+  assert.equal(selectedActiveSchool("", ["school-a"]), "school-a");
 });
