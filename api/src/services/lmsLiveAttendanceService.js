@@ -1,5 +1,5 @@
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
-import { canViewHubEvent, getHubEvent } from "./lmsHubEventService.js";
+import { canViewHubEvent, getHubEvent, getLiveSchoolRole } from "./lmsHubEventService.js";
 import { liveChatPageQuery, formatChatPage } from "./lmsLiveChatPagination.js";
 import { LIVE_ATTENDANCE_HEARTBEAT_SQL, LIVE_ATTENDANCE_LEAVE_SQL } from "./lmsLiveAttendanceSql.js";
 import { LIVE_CHAT_INSERT_GUARDED_SQL, chatInsertParams } from "./lmsLiveChatSql.js";
@@ -103,9 +103,9 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
   const event = await getHubEvent(eventId);
   if (!event || event.eventType !== "live") throw liveError("Live session not found", 404);
   if (String(event.createdBy || "") !== String(requesterUid || "")) {
-    const role = await dbGet("SELECT role FROM roles WHERE uid = ?", [requesterUid]);
-    const platformAdmin = ["Admin", "SuperAdmin"].includes(String(role?.role || ""));
-    const schoolAdmin = String(role?.role || "") === "SchoolAdmin"
+    const role = await getLiveSchoolRole(requesterUid, event.schoolId);
+    const platformAdmin = role === "SuperAdmin";
+    const schoolAdmin = role === "SchoolAdmin"
       && !!event.schoolId && await canViewHubEvent(event, requesterUid);
     if (!platformAdmin && !schoolAdmin) {
       throw liveError("Only the host or an authorized administrator can view attendance", 403);
