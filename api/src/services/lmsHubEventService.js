@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { notifyLiveStarted } from "./lmsLiveNotificationService.js";
 import { LIVE_STATUS_UPDATE_SQL, LIVE_NOTIFY_CLAIM_SQL } from "./lmsLiveStatusSql.js";
-import { canonicalCourseLiveSchool, assertLiveHostScope, effectiveLiveAudienceScope } from "./lmsLiveScopePolicy.js";
+import { canonicalCourseLiveSchool, assertLiveHostScope, effectiveLiveAudienceScope, assertHubEventMutationScope } from "./lmsLiveScopePolicy.js";
 
 const id = () => `evt_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -342,13 +342,33 @@ export async function getHubEvent(eventId) {
 }
 
 /**
- * Mentor/Admin delete — removes hub event and its reservations.
+ * Delete a Hub event only when the requester owns it, is a platform admin,
+ * or manages its school in the current active-school context.
+ * Active lives must be ended first; otherwise the event would disappear
+ * from the host and viewers while its upstream broadcast keeps running.
  */
-export async function deleteHubEvent(eventId) {
+export async function deleteHubEvent(eventId, actorUid) {
   const existing = await getHubEvent(eventId);
   if (!existing) {
     const err = new Error("Unknown event");
     err.status = 404;
+    throw err;
+  }
+  const role = actorUid ? await actorRole(actorUid) : "";
+  const activeSchoolId = actorUid && role === "SchoolAdmin" ? await actorSchool(actorUid) : "";
+  const memberActive = role === "SchoolAdmin" && !!existing.schoolId &&
+    await hasActiveSchoolMembership(actorUid, existing.schoolId);
+  assertHubEventMutationScope({
+    role,
+    actorUid,
+    createdBy: existing.createdBy,
+    schoolId: existing.schoolId,
+    activeSchoolId,
+    memberActive,
+  });
+  if (existing.eventType === "live" && existing.liveStatus === "live") {
+    const err = new Error("End the live broadcast before deleting its event");
+    err.status = 409;
     throw err;
   }
   // Announcements from Firebase are not in hub_events — only API hub rows.
@@ -526,17 +546,17 @@ export async function updateHubLiveStatus(eventId, body = {}, actorUid = null) {
 
   if (actorUid) {
     const role = await actorRole(actorUid);
-    const platformAdmin = role === "Admin" || role === "SuperAdmin";
-    const owner = String(existing.createdBy || "") === String(actorUid);
-    let schoolAdmin = false;
-    if (role === "SchoolAdmin" && existing.schoolId) {
-      schoolAdmin = await hasActiveSchoolMembership(actorUid, existing.schoolId);
-    }
-    if (!platformAdmin && !owner && !schoolAdmin) {
-      const err = new Error("Only the live host or an active school admin can change this session");
-      err.status = 403;
-      throw err;
-    }
+    const activeSchoolId = role === "SchoolAdmin" ? await actorSchool(actorUid) : "";
+    const memberActive = role === "SchoolAdmin" && !!existing.schoolId &&
+      await hasActiveSchoolMembership(actorUid, existing.schoolId);
+    assertHubEventMutationScope({
+      role,
+      actorUid,
+      createdBy: existing.createdBy,
+      schoolId: existing.schoolId,
+      activeSchoolId,
+      memberActive,
+    });
   }
 
   const status = parseLiveStatus(body.liveStatus ?? body.status, existing.status);
