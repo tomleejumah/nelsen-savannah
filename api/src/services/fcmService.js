@@ -84,18 +84,18 @@ export async function sendFCMNotification(receiverId, notification) {
     };
 
     const response = await admin.messaging().send(message);
-    console.log("FCM sent successfully:", response);
+    // Log aggregated fanout at caller level; response IDs are not useful
+    // in production logs and may identify individual delivery attempts.
 
     return { success: true, response };
   } catch (error) {
-    console.error("Error sending FCM:", error);
+    console.warn("[fcm] delivery failed", { code: error?.code || "unknown" });
 
     // Handle invalid token
     if (
       error.code === "messaging/invalid-registration-token" ||
       error.code === "messaging/registration-token-not-registered"
     ) {
-      console.log("Removing invalid token for:", receiverId);
       await admin.database().ref(`/Tokens/${receiverId}`).remove();
       return { success: false, reason: "invalid_token" };
     }
