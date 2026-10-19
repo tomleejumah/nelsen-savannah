@@ -189,7 +189,7 @@
             style="@style/Nelsen.Button.Secondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Open on YouTube"
+            android:text="Open external player"
             android:textAllCaps="false"
             android:visibility="gone" />
     </LinearLayout>
