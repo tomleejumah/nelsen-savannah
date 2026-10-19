@@ -21,6 +21,7 @@ import {
   readUserFromRtdb,
 } from "./lmsMirror.js";
 import admin from "../config/firebase.js";
+import { effectiveSchoolStaffRole } from "./lmsLiveScopePolicy.js";
 
 /**
  * Mentors who only use the web never hit Android's saveOrUpdateMentor — so
@@ -123,6 +124,10 @@ function mePayload(profile, user, role, source, extras = {}) {
       schoolId,
       schoolName: user?.schoolName || "",
       activeSchoolId,
+      // Global identity role is retained separately for legacy clients.
+      // School-scoped controls must use this local active membership role.
+      activeSchoolRole: extras.activeSchoolRole ||
+        (normalizeRole(role) === ROLES.SuperAdmin ? ROLES.SuperAdmin : ROLES.Mentee),
       memberships: extras.memberships || [],
       unaffiliated,
       /** True until the mentee has an active school membership (picker / deep link). */
@@ -295,6 +300,10 @@ export async function getMe(profile) {
       }
 
       const activeMemberships = memberships.filter((m) => m.status === "active");
+      const activeSchoolRole = effectiveSchoolStaffRole(
+        role,
+        activeMemberships.find((m) => String(m.schoolId) === String(activeSchoolId)) || null,
+      );
 
       await ensureMentorRtdbProfile(profile, role, user);
 
@@ -315,6 +324,7 @@ export async function getMe(profile) {
         getPrimaryEngine(),
         {
           activeSchoolId,
+          activeSchoolRole,
           memberships,
           unaffiliated: activeMemberships.length === 0,
         },
