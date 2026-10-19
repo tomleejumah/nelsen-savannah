@@ -474,6 +474,18 @@ export async function createHubEvent(actor, body = {}) {
 
   const eventType = String(body.eventType || body.event_type || "event").trim().toLowerCase() || "event";
   const isLive = eventType === "live";
+  if (!isLive) {
+    // The route accepts authenticated users so that staff roles which exist
+    // only inside school_memberships are recognized. The service is the
+    // authority: mentees never gain event-creation rights from route changes.
+    const currentSchool = await actorSchool(actor?.uid);
+    const role = await getLiveSchoolRole(actor?.uid, currentSchool);
+    if (!["Mentor", "SchoolAdmin", "SuperAdmin"].includes(role)) {
+      const err = new Error("Only mentors and administrators can create Hub events");
+      err.status = 403;
+      throw err;
+    }
+  }
   const mode = isLive ? "online" : body.mode === "online" ? "online" : "physical";
   const location = String(body.location || "").trim();
   const meetingLink = String(body.meetingLink || body.meeting_link || "").trim();
