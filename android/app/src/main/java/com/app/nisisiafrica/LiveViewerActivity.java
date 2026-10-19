@@ -56,6 +56,8 @@ public class LiveViewerActivity extends AppCompatActivity {
     private TextView liveStatusView;
     private String currentLiveStatus = "";
     private boolean streamPlayable = false;
+    private String loadedVideoId = "";
+    private TextView playbackUnavailableView;
     private TextView chatView;
     private ScrollView chatScroll;
     private String lastChatSnapshot = "";
@@ -137,23 +139,13 @@ public class LiveViewerActivity extends AppCompatActivity {
         share.setOnClickListener(v -> shareLive(title));
 
         webView = findViewById(R.id.liveWebView);
-        String videoId = youtubeVideoId(youtubeUrl);
-        // Count attendance only when the broadcast is actually live and a
-        // playable stream is present. Upcoming/unavailable/replay views must
-        // not create false live attendance or repeated API 409 responses.
-        streamPlayable = !TextUtils.isEmpty(videoId) && !"unavailable".equals(availability);
-        attendanceEligible = "live".equals(status) && streamPlayable;
-        if (TextUtils.isEmpty(videoId) || "unavailable".equals(availability)) {
-            webView.setVisibility(View.GONE);
-            TextView unavailable = findViewById(R.id.liveUnavailable);
-            unavailable.setText("This live or replay is unavailable. It may have ended or no longer be accessible.");
-            unavailable.setVisibility(View.VISIBLE);
-            openYoutubeButton.setVisibility(TextUtils.isEmpty(videoId) ? View.GONE : View.VISIBLE);
-            return;
-        }
-
+        playbackUnavailableView = findViewById(R.id.liveUnavailable);
+        // Always initialize the player. A viewer can open a session before
+        // its video becomes available; the first valid live-state poll must
+        // be able to reveal playback without recreating the Activity.
         webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setUserAgentString(webView.getSettings().getUserAgentString() + " NelsenSavannah/Android");
+        webView.getSettings().setUserAgentString(
+                webView.getSettings().getUserAgentString() + " NelsenSavannah/Android");
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         webView.setWebChromeClient(new WebChromeClient());
@@ -162,27 +154,56 @@ public class LiveViewerActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String host = uri != null ? uri.getHost() : null;
-                if (host != null && (host.endsWith("youtube.com") || host.equals("youtu.be"))) {
-                    return false;
-                }
-                return true;
+                return host == null || !(host.equals("youtube.com")
+                        || host.endsWith(".youtube.com") || host.equals("youtu.be"));
             }
         });
+        updatePlayback(youtubeUrl, availability, status);
+    }
+
+    /**
+     * Update the existing WebView instead of launching a second player. The
+     * Hub may transition scheduled -> live, or provider availability may
+     * recover after this Activity was opened. Only load when video changes.
+     */
+    private void updatePlayback(String currentLink, String availability, String liveStatus) {
+        if (!TextUtils.isEmpty(currentLink)) youtubeUrl = currentLink;
+        String videoId = youtubeVideoId(youtubeUrl);
+        // IDs are inserted in iframe HTML; only accept canonical YouTube IDs.
+        boolean validVideo = videoId.matches("[A-Za-z0-9_-]{11}");
+        streamPlayable = validVideo && !"unavailable".equalsIgnoreCase(value(availability));
+        if (sendChatButton != null && !chatSending) {
+            sendChatButton.setEnabled(streamPlayable && "live".equalsIgnoreCase(value(liveStatus)));
+        }
+        if (webView == null || playbackUnavailableView == null) return;
+        if (!streamPlayable) {
+            webView.setVisibility(View.GONE);
+            playbackUnavailableView.setText("Waiting for live playback. This page checks for updates automatically.");
+            playbackUnavailableView.setVisibility(View.VISIBLE);
+            if (openYoutubeButton != null) {
+                openYoutubeButton.setVisibility(validVideo ? View.VISIBLE : View.GONE);
+            }
+            return;
+        }
+        playbackUnavailableView.setVisibility(View.GONE);
+        webView.setVisibility(View.VISIBLE);
+        if (openYoutubeButton != null) openYoutubeButton.setVisibility(View.VISIBLE);
+        if (videoId.equals(loadedVideoId)) return;
+        loadedVideoId = videoId;
 
         String embedUrl = "https://www.youtube.com/embed/" + videoId
-                + "?autoplay=" + ("live".equals(status) ? "1" : "0")
+                + "?autoplay=" + ("live".equalsIgnoreCase(value(liveStatus)) ? "1" : "0")
                 + "&playsinline=1&rel=0&modestbranding=1"
                 + "&origin=https%3A%2F%2Fnelsen-savannah.co.ke";
-
         String html = "<!doctype html><html><head>"
                 + "<meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1'>"
                 + "<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}"
                 + "iframe{border:0;width:100%;height:100%}</style></head><body>"
-                + "<iframe src='" + embedUrl + "' allow='autoplay; encrypted-media; picture-in-picture; fullscreen'"
+                + "<iframe src='" + embedUrl
+                + "' allow='autoplay; encrypted-media; picture-in-picture; fullscreen'"
                 + " allowfullscreen></iframe></body></html>";
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Referer", "https://nelsen-savannah.co.ke/");
-        webView.loadDataWithBaseURL("https://nelsen-savannah.co.ke", html, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL(
+                "https://nelsen-savannah.co.ke", html, "text/html", "UTF-8", null);
     }
 
     private void loadTelemetry() {
@@ -196,6 +217,7 @@ public class LiveViewerActivity extends AppCompatActivity {
                                 LmsModels.LiveStateData data = response.body() != null ? response.body().data : null;
                                 if (!response.isSuccessful() || data == null) return;
                                 if (isFinishing() || isDestroyed()) return;
+                                updatePlayback(data.meetingLink, data.liveAvailability, data.liveStatus);
                                 refreshLiveLifecycle(data);
                                 if (viewerCountView != null) {
                                     viewerCountView.setText(data.concurrentViewers + " watching");
