@@ -49,7 +49,7 @@ public final class Roles {
         if (user == null) return MENTEE;
         String schoolRole = Util.getState(SCHOOL_ROLE_KEY + user.getUid(), "");
         if (MENTEE.equals(schoolRole) || MENTOR.equals(schoolRole)
-                || SCHOOL_ADMIN.equals(schoolRole)) {
+                || SCHOOL_ADMIN.equals(schoolRole) || SUPER_ADMIN.equals(schoolRole)) {
             return schoolRole;
         }
         return global;
@@ -57,9 +57,9 @@ public final class Roles {
 
     public static void storeActiveSchoolRole(String uid, String role) {
         if (uid == null || uid.isBlank()) return;
-        String canonical = SCHOOL_ADMIN.equals(role) ? SCHOOL_ADMIN
-                : MENTOR.equals(role) ? MENTOR
-                : MENTEE.equals(role) ? MENTEE : MENTEE;
+        String canonical = isSuperAdmin(role) ? SUPER_ADMIN
+                : SCHOOL_ADMIN.equals(role) ? SCHOOL_ADMIN
+                : MENTOR.equals(role) ? MENTOR : MENTEE;
         Util.saveState(SCHOOL_ROLE_KEY + uid, canonical);
     }
 
