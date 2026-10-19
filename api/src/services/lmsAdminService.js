@@ -23,6 +23,7 @@ import { loadUserRole } from "../middleware/lmsRoles.js";
 import { getActorSchoolId } from "./lmsSchoolService.js";
 import { invalidatePublicTrackCache } from "./lmsCatalogService.js";
 import { deleteUnusedTrackSql } from "./lmsUnusedCourseDeletion.js";
+import { SYNC_SELECTED_SCHOOL_ROLE_SQL, selectedSchoolMembershipRole } from "./lmsSchoolRoleWrite.js";
 
 async function assertCanEditTrack(actorUid, trackId) {
   const role = await loadUserRole(actorUid);
@@ -920,13 +921,32 @@ export async function adminDeleteLesson(actorUid, lessonId) {
   return { source: getPrimaryEngine(), data: { deleted: true, lessonId: lid } };
 }
 
+async function syncExplicitRoleToSelectedSchool(uid, globalRole) {
+  const localRole = selectedSchoolMembershipRole(globalRole);
+  if (!localRole) return null;
+  const user = await dbGet(
+    "SELECT active_school_id, school_id FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  const schoolId = String(user?.active_school_id || user?.school_id || "").trim();
+  if (!schoolId) return null;
+  const result = await dbRun(
+    SYNC_SELECTED_SCHOOL_ROLE_SQL,
+    [localRole, Date.now(), uid, schoolId],
+  );
+  return Number(result?.changes ?? result?.rowCount ?? 0) > 0
+    ? { schoolId, role: localRole }
+    : null;
+}
+
 export async function adminSetRole(actorUid, targetUid, userRole) {
   const role = normalizeRole(userRole);
   await setUserRole(targetUid, role);
   await mirrorRole(targetUid, role);
+  const schoolRoleUpdated = await syncExplicitRoleToSelectedSchool(targetUid, role);
   return {
     source: getPrimaryEngine(),
-    data: { uid: targetUid, userRole: role },
+    data: { uid: targetUid, userRole: role, schoolRoleUpdated },
   };
 }
 
@@ -966,12 +986,14 @@ export async function adminSetRoleByEmail(actorUid, email, userRole) {
   }
   await setUserRole(user.uid, role);
   await mirrorRole(user.uid, role);
+  const schoolRoleUpdated = await syncExplicitRoleToSelectedSchool(user.uid, role);
   return {
     source: getPrimaryEngine(),
     data: {
       uid: user.uid,
       email: user.email || trimmed,
       userRole: role,
+      schoolRoleUpdated,
     },
   };
 }
