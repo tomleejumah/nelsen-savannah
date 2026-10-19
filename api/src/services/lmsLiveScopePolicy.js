@@ -52,3 +52,25 @@ export function assertLiveHostScope({ role, scope, schoolId, activeSchoolId, mem
     throw denied("Only a school administrator can host a school-wide live session");
   }
 }
+
+/**
+ * A global Mentor/SchoolAdmin role must never grant mutation rights over
+ * another school's Hub events. The owner may manage their own event; a
+ * SchoolAdmin may manage only events in their CURRENT active school and only
+ * while holding active membership there.
+ *
+ * Legacy events without school_id are owner/platform-admin only.
+ */
+export function assertHubEventMutationScope({
+  role, actorUid, createdBy, schoolId, activeSchoolId, memberActive,
+}) {
+  if (!actorUid) throw denied("Authenticated event editor required", 401);
+  if (role === "Admin" || role === "SuperAdmin") return;
+  if (String(createdBy || "") === String(actorUid)) return;
+  const currentSchool = String(activeSchoolId || "");
+  const eventSchool = String(schoolId || "");
+  if (role === "SchoolAdmin" && eventSchool && currentSchool === eventSchool && memberActive) {
+    return;
+  }
+  throw denied("Only the event host or active-school administrator can change this event", 403);
+}
