@@ -1,5 +1,23 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## October 19 follow-up — live security, school roles and stream recovery
+
+Implemented and committed to the same **PR #80**, not merged or deployed.
+APK installation, signing, and release publishing remain **out of scope**.
+
+- [x] Only an event's owner, platform SuperAdmin, or currently authorized SchoolAdmin can delete Hub events or change live status. Prevent deleting an active broadcast before it ends; check mutations in the service, not merely the global-role router.
+- [x] Return current authorized watch link in live-state, count attendees with a SQL aggregate, and let Android refresh its embedded viewer when scheduled/unavailable sessions become playable. Validate embedded video IDs before loading HTML.
+- [x] Detect upstream-terminal status (HTTP 409) in the Android host and stop misleading RTMPS reconnection attempts for ended sessions; provide clear instructions to start a new session.
+- [x] Keep Android live external-player wording provider-neutral; reduce sensitive FCM recipient/message logging to aggregate counts.
+- [x] Add server-side chat cooldown/duplicate INSERT guard to prevent simultaneous SQLite sends from bypassing the pre-send check, plus SQLite regression tests.
+- [x] Enforce school-specific **active membership roles** for staff hosting, course viewers, attendance rosters, event updates/deletion and notification recipients. Missing, pending and inactive membership roles default to Mentee; only a global SuperAdmin is platform-wide.
+- [x] Return `activeSchoolRole` independently from `userRole` in the LMS me and active-school APIs. Android course controls and MainActivity refresh that UID-specific active-school role so a SchoolAdmin at School A does not show staff controls at School B.
+- [x] Explicit SuperAdmin role changes via the LMS admin API synchronize **only the user's selected active school membership** (and only when already active), never all school memberships or a pending application; add regression tests.
+- [ ] Audit historical `school_memberships.role` values for mentors/admins promoted via legacy Firebase/RTDB flows. Do not auto-elevate membership roles from a global role in another school; use authorized administrator role assignment for remediation.
+- [ ] Validate the school switch UX for a single UID holding Mentor at School A and Mentee at School B on a real Android device, including logout/account switch, offline mode, FAB/navigation and background FCM events.
+- [ ] Production PostgreSQL concurrency guard for simultaneous chat sends (SQLite single-statement guard is tested; a future PostgreSQL migration needs explicit transactional sender locking).
+- [ ] Run two-account host/viewer stability QA before approving production rollout, including real Wi-Fi/mobile-data handovers and upstream-ended broadcasts.
+
 ## Live stability, notifications and school-scope hardening — October 17, 2026
 
 All changes are on one **fix/live-followup-stability** branch / PR #80. The
