@@ -1,3 +1,34 @@
+import { normalizeRole } from "../constants/lmsRoles.js";
+
+/**
+ * Each school's ACTIVE membership owns its staff privileges. A globally
+ * promoted Mentor or SchoolAdmin must be a regular Mentee in a second school
+ * unless that second membership explicitly grants a staff role.
+ *
+ * Only the global roles table may grant platform SuperAdmin. A corrupt
+ * per-school "Admin" membership is at most a school administrator.
+ */
+export function effectiveSchoolStaffRole(globalRole, membership = null) {
+  if (normalizeRole(globalRole) === "SuperAdmin") return "SuperAdmin";
+  if (!membership || membership.status !== "active") return "Mentee";
+  const local = normalizeRole(membership.role);
+  return local === "SuperAdmin" ? "SchoolAdmin" : local;
+}
+
+/**
+ * A deliberate school selection must not silently fall back to a different
+ * membership when the selected school is pending or revoked.
+ */
+export function selectedActiveSchool(explicitSchool, activeMemberships) {
+  const selected = String(explicitSchool || "").trim();
+  if (selected) {
+    return activeMemberships.includes(selected) ? selected : "";
+  }
+  return activeMemberships[0] || "";
+}
+
+
+
 /**
  * Legacy events may predate explicit audience_scope. Restrict such lives to
  * their recorded school/course instead of treating missing scope as public.
