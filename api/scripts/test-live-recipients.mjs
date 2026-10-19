@@ -17,32 +17,42 @@ function recipients(db, event) {
   }
 }
 
-test("school and course alerts enforce active membership, active school, enrollment and mentor assignment", async () => {
+test("school/course notifications follow active-school membership roles", async () => {
   const SQL = await initSqlJs();
   const db = new SQL.Database();
   try {
     db.exec(`
-      CREATE TABLE school_memberships (uid TEXT, school_id TEXT, status TEXT);
+      CREATE TABLE school_memberships (
+        uid TEXT, school_id TEXT, status TEXT, role TEXT, updated_at BIGINT
+      );
       CREATE TABLE users_mirror (uid TEXT, active_school_id TEXT);
       CREATE TABLE enrollments (uid TEXT, track_id TEXT, status TEXT);
       CREATE TABLE track_mentors (uid TEXT, track_id TEXT);
     `);
     const memberships = [
-      ["learner_a", "school-a", "active"],
-      ["mentor_a", "school-a", "active"],
-      ["inactive", "school-a", "applied"],
-      ["suspended", "school-a", "active"],
-      ["cross_school", "school-b", "active"],
-      ["switched", "school-a", "active"],
-      ["switched", "school-b", "active"],
-      ["learner_without_enrollment", "school-a", "active"],
+      ["learner_a", "school-a", "active", "Mentee", 1],
+      ["mentor_a", "school-a", "active", "Mentor", 1],
+      ["inactive", "school-a", "applied", "Mentee", 1],
+      ["suspended", "school-a", "active", "Mentee", 1],
+      ["cross_school", "school-b", "active", "Mentee", 1],
+      ["switched", "school-a", "active", "Mentee", 1],
+      ["switched", "school-b", "active", "Mentee", 2],
+      ["learner_without_enrollment", "school-a", "active", "Mentee", 1],
+      ["admin_a", "school-a", "active", "SchoolAdmin", 1],
+      ["former_mentor", "school-a", "active", "Mentee", 1],
+      ["dual_legacy", "school-a", "active", "Mentee", 1],
+      ["dual_legacy", "school-b", "active", "Mentee", 2],
     ];
-    for (const row of memberships) db.run("INSERT INTO school_memberships VALUES (?,?,?)", row);
+    for (const row of memberships) {
+      db.run("INSERT INTO school_memberships VALUES (?,?,?,?,?)", row);
+    }
     for (const row of [
       ["learner_a", "school-a"], ["mentor_a", "school-a"],
       ["inactive", "school-a"], ["suspended", "school-a"],
       ["cross_school", "school-b"], ["switched", "school-b"],
       ["learner_without_enrollment", "school-a"],
+      ["admin_a", "school-a"], ["former_mentor", "school-a"],
+      ["dual_legacy", null],
     ]) db.run("INSERT INTO users_mirror VALUES (?,?)", row);
     for (const row of [
       ["learner_a", "course-a", "in_progress"],
@@ -50,24 +60,38 @@ test("school and course alerts enforce active membership, active school, enrollm
       ["cross_school", "course-a", "in_progress"],
       ["switched", "course-a", "in_progress"],
       ["suspended", "course-a", "suspended"],
+      ["dual_legacy", "course-a", "in_progress"],
       ["learner_without_enrollment", "course-b", "in_progress"],
     ]) db.run("INSERT INTO enrollments VALUES (?,?,?)", row);
     db.run("INSERT INTO track_mentors VALUES (?,?)", ["mentor_a", "course-a"]);
+    db.run("INSERT INTO track_mentors VALUES (?,?)", ["former_mentor", "course-a"]);
 
-    assert.deepEqual(recipients(db, { audienceScope: "course", schoolId: "school-a", trackId: "course-a" }), [
-      "learner_a", "mentor_a",
+    assert.deepEqual(recipients(db, {
+      audienceScope: "course", schoolId: "school-a", trackId: "course-a",
+    }), ["admin_a", "learner_a", "mentor_a"],
+    "school admin, current mentor and enrolled learner get course notification");
+    assert.deepEqual(recipients(db, {
+      audienceScope: "school", schoolId: "school-a",
+    }), [
+      "admin_a", "former_mentor", "learner_a",
+      "learner_without_enrollment", "mentor_a", "suspended",
     ]);
-    assert.deepEqual(recipients(db, { audienceScope: "school", schoolId: "school-a" }), [
-      "learner_a", "learner_without_enrollment", "mentor_a", "suspended",
-    ]);
-    assert.deepEqual(recipients(db, { audienceScope: "school", schoolId: "school-b" }), [
-      "cross_school", "switched",
-    ]);
+    assert.deepEqual(recipients(db, {
+      audienceScope: "school", schoolId: "school-b",
+    }), ["cross_school", "dual_legacy", "switched"],
+    "legacy user without active school receives only latest active membership's alerts");
+
+    // Assigned mentor who was downgraded to Mentee cannot receive a
+    // course alert solely because an old track_mentors row still exists.
+    assert.ok(!recipients(db, {
+      audienceScope: "course", schoolId: "school-a", trackId: "course-a",
+    }).includes("former_mentor"));
+
     assert.equal(liveRecipientQuery({ audienceScope: "course", trackId: "course-a" }), null);
     assert.equal(liveRecipientQuery({ audienceScope: "unknown", schoolId: "school-a" }), null);
     assert.deepEqual(recipients(db, { audienceScope: "platform" }), [
-      "cross_school", "inactive", "learner_a", "learner_without_enrollment",
-      "mentor_a", "suspended", "switched",
+      "admin_a", "cross_school", "dual_legacy", "former_mentor", "inactive",
+      "learner_a", "learner_without_enrollment", "mentor_a", "suspended", "switched",
     ]);
   } finally {
     db.close();
