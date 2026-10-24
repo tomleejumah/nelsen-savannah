@@ -3,6 +3,7 @@
 ## Live reliability and scope — PR #81
 
 - [x] Revoke a school live-event host's event mutation permission when the host loses active membership or switches away from the owning school; add regression coverage.
+- [x] Cap attendance watch credit by server-observed heartbeat elapsed time; do not count disconnected gaps as viewing.
 - [ ] Validate real host/viewer reconnect, FCM fan-out, chat, attendance, PiP, screen share, scheduled transitions and replay on staging devices.
 
 
