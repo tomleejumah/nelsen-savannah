@@ -1,5 +1,11 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Live reliability and scope — PR #81
+
+- [x] Revoke a school live-event host's event mutation permission when the host loses active membership or switches away from the owning school; add regression coverage.
+- [ ] Validate real host/viewer reconnect, FCM fan-out, chat, attendance, PiP, screen share, scheduled transitions and replay on staging devices.
+
+
 ## Invitation-token security — PR #81
 
 - [x] Reject invite claims with missing UID, missing invited email, missing authenticated email, or mismatched emails.
