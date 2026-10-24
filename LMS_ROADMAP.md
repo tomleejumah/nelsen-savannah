@@ -1,5 +1,7 @@
 # Nelsen Savannah LMS — capability map & roadmap
 
+> **Historical planning document (not the current source of truth).** Some early endpoint/UI tables and statuses below predate school tenancy, assignments, live Events API, Android profile editing and rounded bottom-nav blur. Use [NELSEN_LMS_ROADMAP.md](./NELSEN_LMS_ROADMAP.md) for current implementation/QA and [IMPLEMENTATION_README_BENCHMARK.md](./IMPLEMENTATION_README_BENCHMARK.md) for the audited code-versus-field-verification distinction. Do not treat unchecked items in old matrices as confirmed missing code.
+
 **Purpose:** Pitch-ready learning platform. Same API for web + Android. Schools get their own wing; Nelsen keeps a digital school.
 
 Repos: monorepo `nelsen-savannah` (`api/` · `web/` · `android/`)  
