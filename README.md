@@ -129,3 +129,5 @@ CI: `.github/workflows/web.yml` (build + rsync deploy), `.github/workflows/api.y
 - Android: global legacy identity is separate from UID-verified `activeSchoolRole` fetched from the LMS API. Staff controls fail closed while that role is unverified; see `android/README.md`.
 
 When unsure about a capability, check `LMS_ROADMAP.md` and `api/src/constants/lmsRoles.js`.
+
+Live event hosts must retain active membership in the owning school to mutate school-scoped events; platform administrators retain global moderation access. This has API regression coverage; real streaming/FCM verification remains pending.
