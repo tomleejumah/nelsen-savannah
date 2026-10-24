@@ -487,7 +487,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         val active = attendanceRows.filter { it.lastSeenAt >= cutoff }
                         val names = active.take(3).joinToString(", ") { it.displayName ?: "Viewer" }
                         attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total · tap to view" +
-                            if (names.isNotBlank()) "\n$names" else ""
+                            if (names.isNotBlank()) "
+$names" else ""
                     }
                     override fun onFailure(
                         call: Call<LmsModels.LiveAttendanceEnvelope>,
@@ -503,7 +504,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             compareByDescending<LmsModels.LivePresenceAttendee> { it.lastSeenAt >= now - 30_000L }
                 .thenByDescending { it.lastSeenAt },
         )
-        val content = if (rows.isEmpty()) "No attendees yet" else rows.joinToString("\n\n") {
+        val content = if (rows.isEmpty()) "No attendees yet" else rows.joinToString("
+
+") {
             val name = it.displayName?.takeIf { name -> name.isNotBlank() } ?: "Viewer"
             val minutes = it.watchSeconds / 60
             val seconds = it.watchSeconds % 60
@@ -604,7 +607,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         // A provider-side end is terminal for this broadcast.
                         // Do not keep automatically reconnecting an RTMPS
                         // stream whose Hub session can no longer become live.
-                        val terminalConflict = response.code() == 409 &&\n                            (response.errorBody()?.string()?.contains("ended live session", ignoreCase = true) == true)\n                        if (terminalConflict && liveStatus == "live" &&
+                        val terminalConflict = response.code() == 409 &&
+                            (response.errorBody()?.string()?.contains("ended live session", ignoreCase = true) == true)
+                        if (terminalConflict && liveStatus == "live" &&
                             !finishingLive && !streamDisposed && !isFinishing && !isDestroyed
                         ) {
                             finishingLive = true
