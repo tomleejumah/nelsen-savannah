@@ -479,7 +479,7 @@ export async function claimInviteByToken(uid, email, token) {
   const actorEmail = String(email || "")
     .trim()
     .toLowerCase();
-  if (invitedEmail && actorEmail && invitedEmail !== actorEmail) {
+  if (invitedEmail && invitedEmail !== actorEmail) {
     const err = new Error(
       `Sign in with ${invitedEmail} to accept this school invite`,
     );
@@ -490,13 +490,26 @@ export async function claimInviteByToken(uid, email, token) {
     "SELECT * FROM school_memberships WHERE invite_token = ?",
     [String(token || "").trim()],
   );
+  if (row.status !== STATUSES.invited || (row.uid && row.uid !== uid)) {
+    const err = new Error("Invitation is no longer available");
+    err.status = 409;
+    throw err;
+  }
   const now = Date.now();
-  await dbRun(
+  const claimed = await dbRun(
     `UPDATE school_memberships
      SET uid = ?, status = ?, updated_at = ?
-     WHERE id = ?`,
-    [uid, STATUSES.active, now, row.id],
+     WHERE id = ? AND status = ? AND (uid IS NULL OR uid = '' OR uid = ?)`,
+    [uid, STATUSES.active, now, row.id, STATUSES.invited, uid],
   );
+  if (!claimed?.changes && !claimed?.rowCount) {
+    const fresh = await dbGet("SELECT uid, status FROM school_memberships WHERE id = ?", [row.id]);
+    if (fresh?.uid !== uid || fresh?.status !== STATUSES.active) {
+      const err = new Error("Invitation has already been claimed");
+      err.status = 409;
+      throw err;
+    }
+  }
   await dbRun(
     `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ?
      WHERE uid = ?`,
