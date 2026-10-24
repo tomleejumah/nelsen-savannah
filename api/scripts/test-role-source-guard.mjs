@@ -11,4 +11,11 @@ assert.match(getMe, /const role = ROLES\.Mentee;/, "RTDB-only fallback must be u
 const membership = readFileSync(new URL("../src/services/lmsMembershipService.js", import.meta.url), "utf8");
 const access = membership.slice(membership.indexOf("export async function getLearningAccess("), membership.indexOf("export async function assertLearningAccess("));
 assert.ok(access.includes("normalizeRole(membership.role || ROLES.Mentee)"), "missing school role must not inherit global staff title");
+const schools = readFileSync(new URL("../src/services/lmsSchoolService.js", import.meta.url), "utf8");
+const patchRole = schools.slice(schools.indexOf("export async function patchSchoolMemberRole("), schools.indexOf("export async function updateSchoolBranding("));
+assert.match(patchRole, /UPDATE school_memberships SET role = \?/, "school role assignment must update membership role");
+assert.match(patchRole, /setUserRole\(targetUid, nextRole\)/, "school role assignment must synchronize legacy global role");
+assert.match(patchRole, /if \(!isSuperAdmin\(globalRole\)\)/, "school assignment must preserve platform SuperAdmin privilege");
+assert.match(patchRole, /activeSchoolRole: nextRole/, "role assignment response must return school role");
+assert.match(patchRole, /status = 'active' LIMIT 1/, "only active school memberships may be assigned");
 console.log("Role source guard passed");
