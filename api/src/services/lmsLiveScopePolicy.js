@@ -97,7 +97,12 @@ export function assertHubEventMutationScope({
 }) {
   if (!actorUid) throw denied("Authenticated event editor required", 401);
   if (role === "Admin" || role === "SuperAdmin") return;
-  if (String(createdBy || "") === String(actorUid)) return;
+  if (String(createdBy || "") === String(actorUid)) {
+    if (schoolId && (!memberActive || String(activeSchoolId || "") !== String(schoolId))) {
+      throw denied("Event host must retain active membership in the event school", 403);
+    }
+    return;
+  }
   const currentSchool = String(activeSchoolId || "");
   const eventSchool = String(schoolId || "");
   if (role === "SchoolAdmin" && eventSchool && currentSchool === eventSchool && memberActive) {
