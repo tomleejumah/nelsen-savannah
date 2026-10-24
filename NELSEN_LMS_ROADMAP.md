@@ -1,5 +1,12 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Single-action school role assignment — PR #81
+
+- [x] School membership-role assignment now updates the active selected-school membership row and synchronizes the legacy global role, rather than updating only `roles` and leaving `school_memberships` stale.
+- [x] The assignment returns `activeSchoolRole`, requires an active membership and preserves platform SuperAdmin. Other schools' memberships are not mutated.
+- [x] Source-level API CI guard added for the school/global role write consistency.
+- [ ] Run final-head CI and real two-school device/account tests. Existing invite, suspension and platform-admin pathways still need an end-to-end consistency audit.
+
 ## October 24 README benchmark and school-role follow-up — PR #81
 
 This follow-up is on the existing `fix/live-followup-stability` branch
