@@ -687,7 +687,8 @@ export async function getLearningAccess(uid, trackId) {
     };
   }
 
-  const memberRole = normalizeRole(membership.role || role);
+  // A missing membership role is a learner, not the user's global staff title.
+  const memberRole = normalizeRole(membership.role || ROLES.Mentee);
   if (memberRole === ROLES.Mentor || memberRole === ROLES.SchoolAdmin) {
     return { allowed: true, schoolId: track.school_id, role: memberRole, staff: true };
   }
