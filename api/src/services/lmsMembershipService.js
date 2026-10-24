@@ -138,18 +138,8 @@ export async function claimInvitesForUser(uid, email) {
       `UPDATE users_mirror SET school_id = ?, updated_at = ? WHERE uid = ?`,
       [row.school_id, now, uid],
     );
-    // Apply invited staff role (Mentor / SchoolAdmin) — never demote SuperAdmin.
-    const inviteRole = normalizeRole(row.role);
-    if (
-      inviteRole === ROLES.Mentor ||
-      inviteRole === ROLES.SchoolAdmin
-    ) {
-      const current = await loadUserRole(uid);
-      if (!isSuperAdmin(current)) {
-        const { setUserRole } = await import("./lmsMeService.js");
-        await setUserRole(uid, inviteRole);
-      }
-    }
+    // Keep the legacy role aligned only when this is the selected school.
+    await syncInvitedSchoolRole(uid, row.school_id, row.role);
   }
   return claimed;
 }
@@ -262,6 +252,28 @@ export async function setActiveSchool(uid, schoolId) {
 }
 
 /** Door A — school admin invites by email (uid optional until they sign in). */
+/**
+ * Project the selected school's assigned role to the legacy identity mirror.
+ * Membership records, not this compatibility value, authorize school actions.
+ */
+async function syncInvitedSchoolRole(uid, schoolId, role) {
+  if (!uid) return;
+  const selected = await dbGet(
+    "SELECT active_school_id FROM users_mirror WHERE uid = ?",
+    [uid],
+  );
+  if (selected?.active_school_id !== schoolId) return;
+  const current = await loadUserRole(uid);
+  if (isSuperAdmin(current)) return;
+  const membership = await dbGet(
+    `SELECT role FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1`,
+    [uid, schoolId],
+  );
+  const { setUserRole } = await import("./lmsMeService.js");
+  await setUserRole(uid, normalizeRole(membership?.role || ROLES.Mentee));
+}
+
 export async function inviteMemberByEmail(actorSchoolId, body = {}) {
   const email = String(body.email || "")
     .trim()
@@ -308,16 +320,12 @@ export async function inviteMemberByEmail(actorSchoolId, body = {}) {
         existing.id,
       ],
     );
-    if (nextUid && (role === ROLES.Mentor || role === ROLES.SchoolAdmin)) {
-      const current = await loadUserRole(nextUid);
-      if (!isSuperAdmin(current)) {
-        const { setUserRole } = await import("./lmsMeService.js");
-        await setUserRole(nextUid, role);
-      }
+    if (nextUid) {
       await dbRun(
         `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
         [actorSchoolId, actorSchoolId, now, nextUid],
       );
+      await syncInvitedSchoolRole(nextUid, actorSchoolId, role);
     }
     await ensureInviteToken(existing.id);
     const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [
@@ -399,13 +407,7 @@ export async function inviteMemberByEmail(actorSchoolId, body = {}) {
       `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ? WHERE uid = ?`,
       [actorSchoolId, actorSchoolId, now, bindUid],
     );
-    if (role === ROLES.Mentor || role === ROLES.SchoolAdmin) {
-      const current = await loadUserRole(bindUid);
-      if (!isSuperAdmin(current)) {
-        const { setUserRole } = await import("./lmsMeService.js");
-        await setUserRole(bindUid, role);
-      }
-    }
+    await syncInvitedSchoolRole(bindUid, actorSchoolId, role);
   }
   await ensureInviteToken(id);
   const row = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [id]);
@@ -500,14 +502,7 @@ export async function claimInviteByToken(uid, email, token) {
      WHERE uid = ?`,
     [row.school_id, row.school_id, now, uid],
   );
-  const inviteRole = normalizeRole(row.role);
-  if (inviteRole === ROLES.Mentor || inviteRole === ROLES.SchoolAdmin) {
-    const current = await loadUserRole(uid);
-    if (!isSuperAdmin(current)) {
-      const { setUserRole } = await import("./lmsMeService.js");
-      await setUserRole(uid, inviteRole);
-    }
-  }
+  await syncInvitedSchoolRole(uid, row.school_id, row.role);
   const fresh = await dbGet("SELECT * FROM school_memberships WHERE id = ?", [
     row.id,
   ]);
