@@ -504,9 +504,7 @@ $names" else ""
             compareByDescending<LmsModels.LivePresenceAttendee> { it.lastSeenAt >= now - 30_000L }
                 .thenByDescending { it.lastSeenAt },
         )
-        val content = if (rows.isEmpty()) "No attendees yet" else rows.joinToString("
-
-") {
+        val content = if (rows.isEmpty()) "No attendees yet" else rows.joinToString("\n\n") {
             val name = it.displayName?.takeIf { name -> name.isNotBlank() } ?: "Viewer"
             val minutes = it.watchSeconds / 60
             val seconds = it.watchSeconds % 60
