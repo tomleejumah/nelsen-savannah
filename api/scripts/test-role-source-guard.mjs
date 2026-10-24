@@ -22,4 +22,14 @@ const statusChange = schools.slice(schools.indexOf("export async function setSch
 assert.match(statusChange, /SELECT school_id, role FROM school_memberships/, "role reconciliation must read other active school memberships");
 assert.match(statusChange, /status = 'active'/, "suspended membership must not drive role projection");
 assert.ok(!statusChange.includes("setUserRole(uid, ROLES.Mentee)"), "suspending a school must not blindly demote globally");
+const invites = readFileSync(new URL("../src/services/lmsMembershipService.js", import.meta.url), "utf8");
+for (const flow of ["claimInvitesForUser", "inviteMemberByEmail", "claimInviteByToken"]) {
+  const start = invites.indexOf("export async function " + flow + "(");
+  assert.ok(start >= 0, flow + " must exist");
+  const end = invites.indexOf("\nexport async function ", start + 1);
+  const body = invites.slice(start, end < 0 ? undefined : end);
+  assert.ok(body.includes("syncInvitedSchoolRole("), flow + " must project the school role");
+}
+assert.ok(invites.includes("status = 'active' LIMIT 1"), "only active memberships drive role projection");
+assert.ok(invites.includes("if (isSuperAdmin(current)) return"), "invites must preserve platform SuperAdmin");
 console.log("Role source guard passed");
