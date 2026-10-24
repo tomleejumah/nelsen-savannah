@@ -104,6 +104,8 @@ test("only the event owner, platform admin or current-school administrator may m
   assert.doesNotThrow(
     () => assertHubEventMutationScope({ ...event, role: "Mentor", actorUid: "mentor-a" }),
   );
+  assert.throws(() => assertHubEventMutationScope({ ...event, role: "Mentor", actorUid: "mentor-a", memberActive: false }), (error) => error.status === 403);
+  assert.throws(() => assertHubEventMutationScope({ ...event, role: "Mentor", actorUid: "mentor-a", activeSchoolId: "school-b" }), (error) => error.status === 403);
   assert.doesNotThrow(
     () => assertHubEventMutationScope({ ...event, role: "Admin", activeSchoolId: "" }),
   );
