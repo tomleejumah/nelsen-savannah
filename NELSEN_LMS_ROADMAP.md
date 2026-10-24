@@ -1,5 +1,12 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Live end-to-end acceptance follow-up
+
+- [x] Add a reproducible two-device acceptance checklist covering host/viewer network handover, FCM recipients, PiP, screen share, chat, attendance, lifecycle, OAuth and provider termination: [LIVE_ACCEPTANCE_CHECKLIST.md](./LIVE_ACCEPTANCE_CHECKLIST.md).
+- [x] Require a nonempty authenticated requester for attendance-roster access.
+- [x] Android host no longer treats every HTTP 409 from Hub status updates as a provider-ended broadcast; only an explicit ended-session response triggers the terminal studio dialog.\n- [ ] Execute the acceptance matrix on staging devices and resolve any failures before release; checklist creation is not verification.
+
+
 ## Live reliability and scope — PR #81
 
 - [x] Revoke a school live-event host's event mutation permission when the host loses active membership or switches away from the owning school; add regression coverage.

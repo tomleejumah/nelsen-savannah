@@ -487,7 +487,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         val active = attendanceRows.filter { it.lastSeenAt >= cutoff }
                         val names = active.take(3).joinToString(", ") { it.displayName ?: "Viewer" }
                         attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total · tap to view" +
-                            if (names.isNotBlank()) "\n$names" else ""
+                            if (names.isNotBlank()) System.lineSeparator() + names else ""
                     }
                     override fun onFailure(
                         call: Call<LmsModels.LiveAttendanceEnvelope>,
@@ -604,7 +604,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         // A provider-side end is terminal for this broadcast.
                         // Do not keep automatically reconnecting an RTMPS
                         // stream whose Hub session can no longer become live.
-                        if (response.code() == 409 && liveStatus == "live" &&
+                        val terminalConflict = response.code() == 409 &&
+                            (response.errorBody()?.string()?.contains("ended live session", ignoreCase = true) == true)
+                        if (terminalConflict && liveStatus == "live" &&
                             !finishingLive && !streamDisposed && !isFinishing && !isDestroyed
                         ) {
                             finishingLive = true
