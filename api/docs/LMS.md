@@ -113,11 +113,12 @@ of truth:
   and staff-only attendance report.
 - `POST /lms/events/:eventId/reserve` — capacity-aware reservation flow.
 
-**Still pending:** the old authenticated `GET /lms/events` and
-`GET /lms/events/:eventId` compatibility routes currently return a
-TODO/501 handler. Do not point new consumers at them without implementing
-and testing their intended semantics. Real broadcast and device QA remain
-outstanding even though the API and Android CI builds pass.
+**Compatibility:** the old authenticated `GET /lms/events` and
+`GET /lms/events/:eventId` routes now delegate to these same Hub list/detail
+handlers, preserving exactly the same school/course visibility checks. New
+clients may prefer `/lms/events/public`, which also accepts optional
+authentication. Real broadcast/device QA remains outstanding even when API
+and Android CI pass.
 
 ### M7 — Hardening / parity (not built)
 
