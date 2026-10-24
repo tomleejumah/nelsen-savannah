@@ -14,6 +14,7 @@ checks, and real-device/server acceptance. See
 - [x] Replace legacy `GET /lms/events` and `GET /lms/events/:eventId` 501 stubs with the existing scoped Hub event handlers; retain their audience authorization.
 - [ ] Real device: test a UID that is SchoolAdmin in School A and Mentee in School B, including offline/resume, logout, a second account using the same phone, staff FABs and deep links.
 - [x] Harden `GET /lms/me` so primary LMS `roles` is authoritative; RTDB cannot promote a signed-in user's global role, and primary-down RTDB fallback is Mentee-only. Added API CI source regression guard.
+- [x] Fix learning access so an active membership with missing school role defaults to Mentee instead of inheriting global Mentor/SchoolAdmin; regression guard added.
 - [ ] Audit/deploy Firebase RTDB write rules for `roles/{uid}` and other legacy role writers (not changed by API source patch). Do not auto-promote school membership records.
 - [ ] Validate scoped event list/detail and reservation compatibility with real school/course accounts.
 - [x] PR #81 head `05d3c7e`: API, Web CI, Android CI and Android Role Tests all passed (October 24, 2026). **Do not merge/deploy without owner approval.**
