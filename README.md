@@ -61,7 +61,7 @@ Appoint SuperAdmin by email from `/admin` (target must have signed in with Fireb
 
 School administrators assign **one role in the selected school** through the membership role API. This updates the school's authoritative membership role and synchronizes the legacy global role mirror for older clients; it does not rewrite other schools' memberships. Platform SuperAdmin remains a separate platform-wide privilege and cannot be removed through school-level assignment. The API returns both `userRole` and `activeSchoolRole` for compatibility, but the user-facing school-role picker is a single action. Changing schools refreshes the selected school's role from its membership record. Invite creation and acceptance now also project the selected school's assigned role—including Mentee—into the legacy role mirror, preserving platform SuperAdmin. Suspending a membership in one school now reconciles the legacy global role from remaining active memberships instead of blindly demoting the user everywhere.
 
-Invite-token claims now require the invitee's matching account email, a still-invited membership, and a conditional database claim. Suspended, already-accepted, concurrently claimed, or another user's invitations cannot be claimed as fresh invitations. A raced duplicate returns HTTP 409 instead of appearing accepted.
+Invite-token claims now require a nonempty authenticated UID and an exact nonempty invited/account email match, a still-invited membership, and a conditional database claim. Suspended, already-accepted, concurrently claimed, or another user's invitations cannot be claimed as fresh invitations. A raced duplicate returns HTTP 409 instead of appearing accepted.
 
 ### Schools / tenancy
 
