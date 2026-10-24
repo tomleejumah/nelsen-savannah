@@ -103,7 +103,8 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
   const event = await getHubEvent(eventId);
   if (!event || event.eventType !== "live") throw liveError("Live session not found", 404);
   if (!requesterUid) throw liveError("Authentication required", 401);
-  // Owning a school event does not retain roster access after losing that school.\n  if (String(event.createdBy || "") === String(requesterUid || "") && event.schoolId) {\n    const role = await getLiveSchoolRole(requesterUid, event.schoolId);\n    if (role !== "SuperAdmin" && !(await canViewHubEvent(event, requesterUid))) {\n      throw liveError("School access has been revoked", 403);\n    }\n  }\n  if (String(event.createdBy || "") !== String(requesterUid || "")) {
+  // Owning a school event does not retain roster access after losing that school.\n  if (String(event.createdBy || "") === String(requesterUid || "") && event.schoolId) {\n    const role = await getLiveSchoolRole(requesterUid, event.schoolId);\n    const membership = await dbGet("SELECT 1 AS ok FROM school_memberships WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1", [requesterUid, event.schoolId]);
+    if (role !== "SuperAdmin" && !membership) {\n      throw liveError("School access has been revoked", 403);\n    }\n  }\n  if (String(event.createdBy || "") !== String(requesterUid || "")) {
     const role = await getLiveSchoolRole(requesterUid, event.schoolId);
     const platformAdmin = role === "SuperAdmin";
     const schoolAdmin = role === "SchoolAdmin"
