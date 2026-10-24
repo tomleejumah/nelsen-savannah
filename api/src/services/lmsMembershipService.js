@@ -479,7 +479,7 @@ export async function claimInviteByToken(uid, email, token) {
   const actorEmail = String(email || "")
     .trim()
     .toLowerCase();
-  if (invitedEmail && invitedEmail !== actorEmail) {
+  if (!uid || !actorEmail || !invitedEmail || invitedEmail !== actorEmail) {
     const err = new Error(
       `Sign in with ${invitedEmail} to accept this school invite`,
     );
