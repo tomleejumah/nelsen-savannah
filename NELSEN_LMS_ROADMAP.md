@@ -4,7 +4,7 @@
 
 - [x] Add a reproducible two-device acceptance checklist covering host/viewer network handover, FCM recipients, PiP, screen share, chat, attendance, lifecycle, OAuth and provider termination: [LIVE_ACCEPTANCE_CHECKLIST.md](./LIVE_ACCEPTANCE_CHECKLIST.md).
 - [x] Require a nonempty authenticated requester for attendance-roster access.
-- [ ] Execute the acceptance matrix on staging devices and resolve any failures before release; checklist creation is not verification.
+- [x] Android host no longer treats every HTTP 409 from Hub status updates as a provider-ended broadcast; only an explicit ended-session response triggers the terminal studio dialog.\n- [ ] Execute the acceptance matrix on staging devices and resolve any failures before release; checklist creation is not verification.
 
 
 ## Live reliability and scope — PR #81
