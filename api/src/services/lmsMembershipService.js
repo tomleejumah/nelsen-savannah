@@ -503,12 +503,11 @@ export async function claimInviteByToken(uid, email, token) {
     [uid, STATUSES.active, now, row.id, STATUSES.invited, uid],
   );
   if (!claimed?.changes && !claimed?.rowCount) {
-    const fresh = await dbGet("SELECT uid, status FROM school_memberships WHERE id = ?", [row.id]);
-    if (fresh?.uid !== uid || fresh?.status !== STATUSES.active) {
-      const err = new Error("Invitation has already been claimed");
-      err.status = 409;
-      throw err;
-    }
+    // A concurrent request already consumed this invitation.
+    // Do not treat an already-active membership as a new successful claim.
+    const err = new Error("Invitation has already been claimed");
+    err.status = 409;
+    throw err;
   }
   await dbRun(
     `UPDATE users_mirror SET school_id = ?, active_school_id = ?, updated_at = ?
