@@ -1,5 +1,11 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Invitation-token security — PR #81
+
+- [x] Enforce exact invited-email match even when authenticated account email is empty.
+- [x] Require pending invitation status and guard claim SQL against another account taking a token, with SQLite behavioral coverage in API CI.
+- [ ] Verify actual Firebase-authenticated invite claim/acceptance and duplicate requests against staging before release.
+
 ## Invitation and activation role consistency — PR #81
 
 - [x] Bound email invites (new/existing memberships) and token/automatic invite claims now project the selected school's assigned role to the legacy global mirror, including Mentee downgrades, without demoting platform SuperAdmin.
