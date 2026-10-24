@@ -1,5 +1,11 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Invitation and activation role consistency — PR #81
+
+- [x] Bound email invites (new/existing memberships) and token/automatic invite claims now project the selected school's assigned role to the legacy global mirror, including Mentee downgrades, without demoting platform SuperAdmin.
+- [x] Add source-level CI assertions for the invitation/claim synchronization paths.
+- [ ] Validate invite acceptance, role downgrade, multi-school switching, stale/mismatched emails and suspended-member scenarios with integration tests and actual accounts. Source guards do not replace behavior tests.
+
 ## Membership suspension role reconciliation — PR #81
 
 - [x] On a school-member status change, reconcile legacy global role from the current/other active school memberships instead of unconditionally demoting a member to Mentee when one school suspends them.
