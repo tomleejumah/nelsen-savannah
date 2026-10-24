@@ -748,6 +748,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private void syncActiveSchoolRole() {
         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
         if (current == null) return;
+        final String verifiedUid = current.getUid();
+        // Until we know the currently selected school's role, show mentee
+        // controls. A previous account or school must never inherit a staff FAB.
+        Roles.invalidateVerifiedRoles(verifiedUid);
+        if (fragmentManager != null) syncChromeToVisibleFragment();
         current.getIdToken(false).addOnSuccessListener(token ->
                 ApiClient.getLmsService().me("Bearer " + token.getToken())
                         .enqueue(new retrofit2.Callback<LmsModels.MeEnvelope>() {
@@ -756,19 +761,24 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
                                     retrofit2.Call<LmsModels.MeEnvelope> call,
                                     retrofit2.Response<LmsModels.MeEnvelope> response) {
                                 if (isFinishing() || isDestroyed()) return;
+                                FirebaseUser now = FirebaseAuth.getInstance().getCurrentUser();
+                                if (now == null || !verifiedUid.equals(now.getUid())) return;
                                 LmsModels.MeEnvelope body = response.body();
                                 if (!response.isSuccessful() || body == null || !body.ok || body.data == null) return;
-                                Object role = body.data.get("activeSchoolRole");
-                                if (role instanceof String verified && !verified.isBlank()) {
-                                    Roles.storeActiveSchoolRole(current.getUid(), verified);
+                                Object payloadUid = body.data.get("uid");
+                                if (!(payloadUid instanceof String) || !verifiedUid.equals(payloadUid)) return;
+                                Object global = body.data.get("role");
+                                Object school = body.data.get("activeSchoolRole");
+                                if (global instanceof String && school instanceof String) {
+                                    Roles.storeVerifiedRoles(verifiedUid, (String) global, (String) school);
                                     if (fragmentManager != null) syncChromeToVisibleFragment();
                                 }
                             }
                             @Override
                             public void onFailure(
                                     retrofit2.Call<LmsModels.MeEnvelope> call, Throwable error) {
-                                // The server still authorizes any protected
-                                // action; retain cached role during outages.
+                                // Stay in mentee UI until revalidated; the API
+                                // always gates any actual staff operation.
                             }
                         }));
     }
@@ -1037,7 +1047,6 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     @Override
     protected void onResume() {
         super.onResume();
-        if (fragmentManager != null) syncChromeToVisibleFragment();
         // Refresh after returning from school selection, login continuation
         // or role promotion. The result is UID-scoped, not shared with other
         // accounts that use the same Android device.

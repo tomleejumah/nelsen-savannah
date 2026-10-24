@@ -91,7 +91,7 @@ export async function recordLiveAttendance(eventId, uid, body = {}) {
     LIVE_ATTENDANCE_HEARTBEAT_SQL,
     // The first request only establishes presence; there is no elapsed
     // session time yet to credit from client-supplied watchedSeconds.
-    [eventId, uid, now, now, existing ? requested : 0],
+    [eventId, uid, now, now, existing && previousSeen >= now - ACTIVE_MS ? Math.min(requested, Math.max(0, Math.floor((now - previousSeen) / 1000))) : 0],
   );
   if (!existing) console.info("[live-attendance] join", { eventId, uid });
   else if (rejoined) console.info("[live-attendance] rejoin", { eventId, uid });

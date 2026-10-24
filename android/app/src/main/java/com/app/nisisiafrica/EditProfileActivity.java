@@ -215,7 +215,9 @@ public class EditProfileActivity extends AppCompatActivity {
                                 if (userData != null) {
                                     userData.setFirstName(firstName);
                                     userData.setLastName(lastName);
+                                    userData.setDisplayName(displayName);
                                     userData.setBio(description);
+                                    userData.setPhotoUrl(dpImageUrl);
                                     new ViewModelProvider(EditProfileActivity.this)
                                             .get(UserViewModel.class)
                                             .updateUserDataa(userData)

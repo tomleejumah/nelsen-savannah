@@ -514,8 +514,11 @@ router.post(
   lmsController.postEventReserve,
 );
 
-// Legacy authenticated events index (501)
-router.get("/events", authenticateUser, lmsController.eventsTodo);
-router.get("/events/:eventId", authenticateUser, lmsController.eventsTodo);
+// Legacy authenticated aliases. Reuse the same viewer-scoped Hub handlers
+// as /events/public: an older client must never get broader event access
+// or a different school-enrollment boundary. Keep these after the specific
+// /events/:eventId/... routes so they cannot shadow attendance/chat handlers.
+router.get("/events", authenticateUser, lmsController.getPublicHubEvents);
+router.get("/events/:eventId", authenticateUser, lmsController.getPublicHubEvent);
 
 export default router;

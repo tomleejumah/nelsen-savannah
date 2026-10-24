@@ -1,6 +1,5 @@
 package com.app.nisisiafrica.Utils;
 
-import com.app.nisisiafrica.Constants;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -36,31 +35,43 @@ public final class Roles {
     private Roles() {}
 
     private static final String SCHOOL_ROLE_KEY = "LMS_ACTIVE_SCHOOL_ROLE_";
+    private static final String PLATFORM_ROLE_KEY = "LMS_VERIFIED_PLATFORM_ROLE_";
 
     /**
-     * Global identity is separate from each school's staff privileges.
-     * Platform SuperAdmins keep their global role. Other users use the
-     * verified active-school role returned by /lms/me, scoped to their UID.
+     * Treat only /lms/me verified roles for this Firebase UID as staff.
+     * Never trust the device-wide legacy USER_ROLE preference. School roles
+     * are cleared on resume until the active school is revalidated.
      */
     public static String current() {
-        String global = Util.getState(Constants.USER_ROLE, MENTEE);
-        if (isSuperAdmin(global)) return global;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return MENTEE;
-        String schoolRole = Util.getState(SCHOOL_ROLE_KEY + user.getUid(), "");
-        if (MENTEE.equals(schoolRole) || MENTOR.equals(schoolRole)
-                || SCHOOL_ADMIN.equals(schoolRole) || SUPER_ADMIN.equals(schoolRole)) {
-            return schoolRole;
-        }
-        return global;
+        String uid = user.getUid();
+        return VerifiedRolePolicy.resolve(
+                Util.getState(PLATFORM_ROLE_KEY + uid, ""),
+                Util.getState(SCHOOL_ROLE_KEY + uid, ""));
     }
 
+    /** Apply a complete API /lms/me result only after verifying its UID. */
+    public static void storeVerifiedRoles(String uid, String globalRole, String activeSchoolRole) {
+        if (uid == null || uid.isBlank()) return;
+        String platform = isSuperAdmin(globalRole) ? SUPER_ADMIN : MENTEE;
+        Util.saveState(PLATFORM_ROLE_KEY + uid, platform);
+        storeActiveSchoolRole(uid, activeSchoolRole);
+    }
+
+    /** School role cache is temporary UI state, never a cross-school grant. */
     public static void storeActiveSchoolRole(String uid, String role) {
         if (uid == null || uid.isBlank()) return;
-        String canonical = isSuperAdmin(role) ? SUPER_ADMIN
-                : SCHOOL_ADMIN.equals(role) ? SCHOOL_ADMIN
+        String canonical = SCHOOL_ADMIN.equals(role) ? SCHOOL_ADMIN
                 : MENTOR.equals(role) ? MENTOR : MENTEE;
         Util.saveState(SCHOOL_ROLE_KEY + uid, canonical);
+    }
+
+    /** Fail closed while refreshing after login/account/school switching. */
+    public static void invalidateVerifiedRoles(String uid) {
+        if (uid == null || uid.isBlank()) return;
+        Util.saveState(PLATFORM_ROLE_KEY + uid, MENTEE);
+        Util.saveState(SCHOOL_ROLE_KEY + uid, MENTEE);
     }
 
     public static boolean isSuperAdmin() {

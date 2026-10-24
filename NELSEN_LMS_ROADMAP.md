@@ -1,8 +1,62 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Live reliability and scope — PR #81
+
+- [x] Revoke a school live-event host's event mutation permission when the host loses active membership or switches away from the owning school; add regression coverage.
+- [x] Cap attendance watch credit by server-observed heartbeat elapsed time; do not count disconnected gaps as viewing.
+- [ ] Validate real host/viewer reconnect, FCM fan-out, chat, attendance, PiP, screen share, scheduled transitions and replay on staging devices.
+
+
+## Invitation-token security — PR #81
+
+- [x] Reject invite claims with missing UID, missing invited email, missing authenticated email, or mismatched emails.
+- [x] Require pending invitation status and guard claim SQL against another account taking a token, with SQLite behavioral coverage in API CI.
+- [x] Reject a zero-row conditional claim (HTTP 409), including a concurrent claim by the same UID, rather than treating a raced already-active invitation as new success.
+- [ ] Verify actual Firebase-authenticated invite claim/acceptance and duplicate requests against staging before release.
+
+## Invitation and activation role consistency — PR #81
+
+- [x] Bound email invites (new/existing memberships) and token/automatic invite claims now project the selected school's assigned role to the legacy global mirror, including Mentee downgrades, without demoting platform SuperAdmin.
+- [x] Add source-level CI assertions for the invitation/claim synchronization paths.
+- [ ] Validate invite acceptance, role downgrade, multi-school switching, stale/mismatched emails and suspended-member scenarios with integration tests and actual accounts. Source guards do not replace behavior tests.
+
+## Membership suspension role reconciliation — PR #81
+
+- [x] On a school-member status change, reconcile legacy global role from the current/other active school memberships instead of unconditionally demoting a member to Mentee when one school suspends them.
+- [x] Add a CI source guard against unconditional global demotion; preserve per-school membership authorization.
+- [ ] Run an end-to-end multi-school test where an active Mentor at School B is suspended at School A, then switches school on Android and Web.
+- [ ] Audit remaining invitation/activation paths for global-role display parity and ensure role sync failures are handled explicitly.
+
+## Single-action school role assignment — PR #81
+
+- [x] School membership-role assignment now updates the active selected-school membership row and synchronizes the legacy global role, rather than updating only `roles` and leaving `school_memberships` stale.
+- [x] The assignment returns `activeSchoolRole`, requires an active membership and preserves platform SuperAdmin. Other schools' memberships are not mutated.
+- [x] Source-level API CI guard added for the school/global role write consistency.
+- [ ] Run final-head CI and real two-school device/account tests. Existing invite, suspension and platform-admin pathways still need an end-to-end consistency audit.
+
+## October 24 README benchmark and school-role follow-up — PR #81
+
+This follow-up is on the existing `fix/live-followup-stability` branch
+**after PR #80 was merged**. The benchmark distinguishes shipped code, CI
+checks, and real-device/server acceptance. See
+[`IMPLEMENTATION_README_BENCHMARK.md`](./IMPLEMENTATION_README_BENCHMARK.md).
+
+- [x] Cross-check root, Android, web and API READMEs against merged implementation; correct case-normalization, RTDB global role vs active-school membership, live routes and build/setup instructions.
+- [x] In Android, show staff UI only for the signed-in Firebase UID after verifying `role` and `activeSchoolRole` from `GET /lms/me`; never use a device-wide cached `USER_ROLE` to infer school privileges.
+- [x] Default to Mentee UI while rechecking role on return from school selection/account switching; reject a late API response that belongs to a different Firebase UID.
+- [x] Add pure-Java tests for Mentee at one school vs SchoolAdmin at another, Mentor, pending/unknown and platform SuperAdmin; use a non-publishing CI workflow.
+- [x] Replace legacy `GET /lms/events` and `GET /lms/events/:eventId` 501 stubs with the existing scoped Hub event handlers; retain their audience authorization.
+- [ ] Real device: test a UID that is SchoolAdmin in School A and Mentee in School B, including offline/resume, logout, a second account using the same phone, staff FABs and deep links.
+- [x] Harden `GET /lms/me` so primary LMS `roles` is authoritative; RTDB cannot promote a signed-in user's global role, and primary-down RTDB fallback is Mentee-only. Added API CI source regression guard.
+- [x] Fix learning access so an active membership with missing school role defaults to Mentee instead of inheriting global Mentor/SchoolAdmin; regression guard added.
+- [ ] Audit/deploy Firebase RTDB write rules for `roles/{uid}` and other legacy role writers (not changed by API source patch). Do not auto-promote school membership records.
+- [ ] Validate scoped event list/detail and reservation compatibility with real school/course accounts.
+- [x] PR #81 head `05d3c7e`: API, Web CI, Android CI and Android Role Tests all passed (October 24, 2026). **Do not merge/deploy without owner approval.**
+
+
 ## October 19 follow-up — live security, school roles and stream recovery
 
-Implemented and committed to the same **PR #80**, not merged or deployed.
+Implemented in **merged PR #80**; remaining field validation is tracked in PR #81 and the release acceptance checklist.
 APK installation, signing, and release publishing remain **out of scope**.
 
 - [x] Only an event's owner, platform SuperAdmin, or currently authorized SchoolAdmin can delete Hub events or change live status. Prevent deleting an active broadcast before it ends; check mutations in the service, not merely the global-role router.
@@ -20,7 +74,7 @@ APK installation, signing, and release publishing remain **out of scope**.
 
 ## Live stability, notifications and school-scope hardening — October 17, 2026
 
-All changes are on one **fix/live-followup-stability** branch / PR #80. The
+These changes landed in **merged PR #80**; the current follow-up is PR #81. The
 Android APK installation/update pipeline is **out of scope** by request.
 
 - [x] Add bounded RootEncoder RTMPS socket reconnects after transient failures, plus a manual reconnect fallback. Cover unexpected `onDisconnect` callbacks even if `onConnectionFailed` never fires; avoid double reconnect if both fire.
@@ -68,7 +122,8 @@ Android APK installation/update pipeline is **out of scope** by request.
 
 - [x] Change the bottom navigation hierarchy to **BlurView (outer) → CardView (inner) → tab row**, rather than CardView → BlurView. Apply it consistently to `activity_main.xml` and both `main_bottom_bar.xml` resource variants.
 - [x] Preserve a **22dp rounded clipped blur region**, no rectangular blur bleed, accessible tab hit targets, and a separately opaque FAB (do not blur the FAB).
-- [ ] Verify active-tab selection, bottom inset/gesture navigation, narrow phones, tablets, light/dark themes, blur visibility and performance on a real device.
+- [x] Bottom navigation rounded glass/blur appearance fixed (user-confirmed); implementation uses BlurView outer, transparent CardView inner, clipped 22dp background in phone and `sw600dp` bottom-bar XML. Do not reopen the blur styling task.
+- [ ] Separate release QA: verify tab hit targets/selection, gesture insets, font scaling and performance across devices; this is **not** a pending blur implementation.
 
 ## Single integration PR #78 — learner UI, catalog latency and production hardening (October 11, 2026)
 
@@ -727,15 +782,15 @@ The Nelsen backend should not become a video streaming server.
 
 ---
 
-## Final Deferred Android — Profile Update
+## Android Profile Update — Implemented; verification remains
 
 Do this later after the current LMS roadmap work.
 
-- [ ] Add Android **Edit profile** UI.
-- [ ] Allow the learner to update supported profile fields and profile photo where applicable.
-- [ ] Validate fields and show saving/saved/error states.
-- [ ] Persist changes through the existing profile API/data source and refresh the Android user/profile cache after a successful update.
-- [ ] Keep role/identity/security-sensitive fields read-only unless the backend explicitly allows them.
+- [x] Android `EditProfileActivity` and phone/night layouts already provide Edit Profile UI.
+- [x] Update first/last name and bio, pick/upload a profile photo, and submit changes to authenticated canonical LMS `updateMyProfile` API.
+- [x] Require nonempty names; disable Save during API request; show upload/auth/network/API errors and success; update local user cache after saving.
+- [x] The editor exposes profile fields rather than direct role/identity privilege editing.
+- [ ] Field QA: edit a name/bio/photo, restart/sign in on another device and confirm canonical sync, image permissions and cache consistency.
 
 ---
 

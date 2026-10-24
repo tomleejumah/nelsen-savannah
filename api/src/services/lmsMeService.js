@@ -258,18 +258,10 @@ export async function getMe(profile) {
         [profile.uid],
       );
 
-      let role = normalizeRole(user?.role);
-      try {
-        const rtdbRole = await readRoleFromRtdb(profile.uid);
-        if (rtdbRole) {
-          role = normalizeRole(rtdbRole);
-          if (role !== normalizeRole(user?.role)) {
-            await setUserRole(profile.uid, role);
-          }
-        }
-      } catch {
-        /* ignore RTDB role peek */
-      }
+      // The primary roles table is authoritative for platform privileges.
+      // Never promote a Firebase-authenticated user based on legacy RTDB
+      // roles/{uid}: client-readable legacy data is not an admin approval.
+      const role = normalizeRole(user?.role);
 
       let memberships = [];
       let activeSchoolId = user?.active_school_id || user?.school_id || null;
@@ -334,12 +326,10 @@ export async function getMe(profile) {
     }
   }
 
-  const [rtdbUser, rtdbRole] = await Promise.all([
-    readUserFromRtdb(profile.uid),
-    readRoleFromRtdb(profile.uid),
-  ]);
-  const role = normalizeRole(rtdbRole || ROLES.Mentee);
-  await ensureMentorRtdbProfile(profile, role, rtdbUser);
+  const rtdbUser = await readUserFromRtdb(profile.uid);
+  // Without the authoritative primary DB, expose profile fallback only.
+  // A stale/altered RTDB role must not unlock platform administration.
+  const role = ROLES.Mentee;
   const { firstName, lastName } = splitName(
     rtdbUser?.displayName || profile.displayName,
   );
