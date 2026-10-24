@@ -142,33 +142,10 @@ public class AllCoursesActivity extends AppCompatActivity {
                 return true;
             });
         }
-        if (tvTitle != null) {
-            if (!schoolNameFilter.isEmpty()) {
-                tvTitle.setText(schoolNameFilter);
-            } else {
-                String shell = Roles.lmsShell();
-                if (Roles.SHELL_STUDENT.equals(shell)) {
-                    tvTitle.setText(R.string.courses_all);
-                } else {
-                    tvTitle.setText(Roles.lmsShellLabel() + " · Courses");
-                }
-            }
-        }
-        if (tvSubtitle != null && !schoolIdFilter.isEmpty()) {
-            tvSubtitle.setText(R.string.courses_from_school);
-            tvSubtitle.setOnClickListener(null);
-        } else if (tvSubtitle != null && !Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
-            tvSubtitle.setText("Tap here for teach board (queue · mark · assign)");
-            tvSubtitle.setOnClickListener(v ->
-                    startActivity(new Intent(this, MentorBoardActivity.class)));
-        } else if (tvSubtitle != null) {
-            tvSubtitle.setText("Explore courses, complete lessons and track your coursework.");
-        }
-        View assignmentsButton = findViewById(R.id.btnAssignmentInbox);
-        if (assignmentsButton != null && Roles.SHELL_STUDENT.equals(Roles.lmsShell())) {
-            assignmentsButton.setVisibility(View.VISIBLE);
-            assignmentsButton.setOnClickListener(v -> showAssignmentsInbox());
-        }
+        // A global account role may be different from the role of the
+        // currently selected school. School-scoped screens start as Mentee
+        // until the verified membership arrives, never as privileged staff.
+        applyCourseRoleUi(schoolIdFilter.isEmpty() ? Roles.current() : Roles.MENTEE);
 
         if (btnApplySchool != null) {
             btnApplySchool.setOnClickListener(v -> applyToSchool());
@@ -180,6 +157,7 @@ public class AllCoursesActivity extends AppCompatActivity {
         rv.setAdapter(listAdapter);
 
         loadMyEnrollments();
+        if (schoolIdFilter.isEmpty()) refreshMarketplaceRole();
         if (!schoolIdFilter.isEmpty()) {
             refreshSchoolMembership();
             loadTracksForSchool(schoolIdFilter);
@@ -235,6 +213,64 @@ public class AllCoursesActivity extends AppCompatActivity {
             }
         });
         btnClearSearch.setOnClickListener(v -> etSearch.setText(""));
+    }
+
+    private void applyCourseRoleUi(String requestedRole) {
+        String role = requestedRole == null ? Roles.MENTEE : requestedRole;
+        boolean learner = Roles.SHELL_STUDENT.equals(Roles.lmsShell(role));
+        TextView title = findViewById(R.id.tvScreenTitle);
+        TextView subtitle = findViewById(R.id.tvScreenSubtitle);
+        if (title != null && schoolNameFilter.isEmpty()) {
+            if (learner) {
+                title.setText(R.string.courses_all);
+            } else {
+                String label = Roles.isSuperAdmin(role) ? "Super admin"
+                        : Roles.isSchoolAdmin(role) ? "School admin" : "Teach";
+                title.setText(label + " · Courses");
+            }
+        }
+        if (subtitle != null) {
+            if (!schoolIdFilter.isEmpty()) {
+                subtitle.setText(R.string.courses_from_school);
+                subtitle.setOnClickListener(null);
+            } else if (!learner) {
+                subtitle.setText("Tap here for teach board (queue · mark · assign)");
+                subtitle.setOnClickListener(v ->
+                        startActivity(new Intent(this, MentorBoardActivity.class)));
+            } else {
+                subtitle.setText("Explore courses, complete lessons and track your coursework.");
+                subtitle.setOnClickListener(null);
+            }
+        }
+        View assignmentsButton = findViewById(R.id.btnAssignmentInbox);
+        if (assignmentsButton != null) {
+            assignmentsButton.setVisibility(learner ? View.VISIBLE : View.GONE);
+            assignmentsButton.setOnClickListener(learner
+                    ? v -> showAssignmentsInbox() : null);
+        }
+    }
+
+    private void refreshMarketplaceRole() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().me("Bearer " + token.getToken()).enqueue(new Callback<>() {
+                    @Override public void onResponse(@NonNull Call<LmsModels.MeEnvelope> call,
+                            @NonNull Response<LmsModels.MeEnvelope> response) {
+                        if (isFinishing() || isDestroyed()) return;
+                        LmsModels.MeEnvelope body = response.body();
+                        if (!response.isSuccessful() || body == null || !body.ok || body.data == null) return;
+                        Object role = body.data.get("activeSchoolRole");
+                        if (role instanceof String activeRole && !activeRole.isBlank()) {
+                            applyCourseRoleUi(activeRole);
+                        }
+                    }
+                    @Override public void onFailure(@NonNull Call<LmsModels.MeEnvelope> call,
+                            @NonNull Throwable error) {
+                        // The API remains authoritative on every protected
+                        // route, even if role metadata cannot load offline.
+                    }
+                }));
     }
 
     private CourseItem courseItem(LmsModels.TrackCard card) {
@@ -369,6 +405,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                         schoolMemberActive = false;
                         schoolJoinPending = false;
                         schoolJoinRejected = false;
+                        String localSchoolRole = Roles.MENTEE;
                         LmsModels.MeEnvelope body = response.body();
                         if (response.isSuccessful() && body != null && body.ok && body.data != null) {
                             Object mem = body.data.get("memberships");
@@ -383,6 +420,10 @@ public class AllCoursesActivity extends AppCompatActivity {
                                     if ("active".equals(status)) {
                                         schoolMemberActive = true;
                                         schoolJoinPending = false;
+                                        Object memberRole = m.get("role");
+                                        if (memberRole instanceof String schoolRole && !schoolRole.isBlank()) {
+                                            localSchoolRole = schoolRole;
+                                        }
                                         break;
                                     }
                                     if ("applied".equals(status) || "invited".equals(status)) {
@@ -394,6 +435,7 @@ public class AllCoursesActivity extends AppCompatActivity {
                                 }
                             }
                         }
+                        applyCourseRoleUi(localSchoolRole);
                         bindApplyUi();
                         if (listAdapter != null) listAdapter.notifyDataSetChanged();
                     }

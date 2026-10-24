@@ -14,12 +14,22 @@ export async function sendFCMNotification(receiverId, notification) {
       return { success: false, reason: "no_token" };
     }
 
-    const senderSnap = await admin
-      .database()
-      .ref(`/users/${notification.senderId}/lastName`)
-      .once("value");
-
-    const senderName = senderSnap.val() || "Someone";
+    // Live-start notifications already carry a host-independent title/body.
+    // Looking up a legacy /users/<uid>/lastName before sending could fail for
+    // promoted mentors whose legacy user record is missing, dropping a valid
+    // FCM notification even though the registered device token exists.
+    let senderName = "Someone";
+    if (!(notification.type === "live" && notification.title && notification.body)) {
+      try {
+        const senderSnap = await admin
+          .database()
+          .ref(`/users/${notification.senderId}/lastName`)
+          .once("value");
+        senderName = senderSnap.val() || "Someone";
+      } catch (error) {
+        console.warn("[fcm] legacy sender-name lookup unavailable", error.message);
+      }
+    }
 
     let title = "New Notification";
     let body = `${senderName} ${notification.text}`;
@@ -74,18 +84,18 @@ export async function sendFCMNotification(receiverId, notification) {
     };
 
     const response = await admin.messaging().send(message);
-    console.log("FCM sent successfully:", response);
+    // Log aggregated fanout at caller level; response IDs are not useful
+    // in production logs and may identify individual delivery attempts.
 
     return { success: true, response };
   } catch (error) {
-    console.error("Error sending FCM:", error);
+    console.warn("[fcm] delivery failed", { code: error?.code || "unknown" });
 
     // Handle invalid token
     if (
       error.code === "messaging/invalid-registration-token" ||
       error.code === "messaging/registration-token-not-registered"
     ) {
-      console.log("Removing invalid token for:", receiverId);
       await admin.database().ref(`/Tokens/${receiverId}`).remove();
       return { success: false, reason: "invalid_token" };
     }

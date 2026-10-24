@@ -952,9 +952,27 @@ public final class LmsModels {
 
     public static class LiveStateData {
         public String eventId;
+        public String liveStatus;
+        public String liveAvailability;
+        public String meetingLink;
         public int concurrentViewers;
         public List<LivePresenceAttendee> attendees;
         public List<NativeLiveChatMessage> chat;
+        public boolean chatHasMore;
+        public String chatNextCursor;
+    }
+
+    public static class LiveChatHistoryData {
+        public String eventId;
+        public List<NativeLiveChatMessage> messages;
+        public boolean hasMore;
+        public String nextCursor;
+    }
+
+    public static class LiveChatHistoryEnvelope {
+        public boolean ok;
+        public LiveChatHistoryData data;
+        public String error;
     }
 
     public static class LiveStateEnvelope {

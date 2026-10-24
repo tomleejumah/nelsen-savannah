@@ -1,6 +1,8 @@
 package com.app.nisisiafrica.Utils;
 
 import com.app.nisisiafrica.Constants;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 /**
  * Role checks + LMS shells (aligned with API /lms/me).
@@ -33,8 +35,32 @@ public final class Roles {
 
     private Roles() {}
 
+    private static final String SCHOOL_ROLE_KEY = "LMS_ACTIVE_SCHOOL_ROLE_";
+
+    /**
+     * Global identity is separate from each school's staff privileges.
+     * Platform SuperAdmins keep their global role. Other users use the
+     * verified active-school role returned by /lms/me, scoped to their UID.
+     */
     public static String current() {
-        return Util.getState(Constants.USER_ROLE, MENTEE);
+        String global = Util.getState(Constants.USER_ROLE, MENTEE);
+        if (isSuperAdmin(global)) return global;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return MENTEE;
+        String schoolRole = Util.getState(SCHOOL_ROLE_KEY + user.getUid(), "");
+        if (MENTEE.equals(schoolRole) || MENTOR.equals(schoolRole)
+                || SCHOOL_ADMIN.equals(schoolRole) || SUPER_ADMIN.equals(schoolRole)) {
+            return schoolRole;
+        }
+        return global;
+    }
+
+    public static void storeActiveSchoolRole(String uid, String role) {
+        if (uid == null || uid.isBlank()) return;
+        String canonical = isSuperAdmin(role) ? SUPER_ADMIN
+                : SCHOOL_ADMIN.equals(role) ? SCHOOL_ADMIN
+                : MENTOR.equals(role) ? MENTOR : MENTEE;
+        Util.saveState(SCHOOL_ROLE_KEY + uid, canonical);
     }
 
     public static boolean isSuperAdmin() {

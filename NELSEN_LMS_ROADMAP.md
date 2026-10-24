@@ -1,5 +1,59 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## October 19 follow-up — live security, school roles and stream recovery
+
+Implemented and committed to the same **PR #80**, not merged or deployed.
+APK installation, signing, and release publishing remain **out of scope**.
+
+- [x] Only an event's owner, platform SuperAdmin, or currently authorized SchoolAdmin can delete Hub events or change live status. Prevent deleting an active broadcast before it ends; check mutations in the service, not merely the global-role router.
+- [x] Return current authorized watch link in live-state, count attendees with a SQL aggregate, and let Android refresh its embedded viewer when scheduled/unavailable sessions become playable. Validate embedded video IDs before loading HTML.
+- [x] Detect upstream-terminal status (HTTP 409) in the Android host and stop misleading RTMPS reconnection attempts for ended sessions; provide clear instructions to start a new session.
+- [x] Keep Android live external-player wording provider-neutral; reduce sensitive FCM recipient/message logging to aggregate counts.
+- [x] Add server-side chat cooldown/duplicate INSERT guard to prevent simultaneous SQLite sends from bypassing the pre-send check, plus SQLite regression tests.
+- [x] Enforce school-specific **active membership roles** for staff hosting, course viewers, attendance rosters, event updates/deletion and notification recipients. Missing, pending and inactive membership roles default to Mentee; only a global SuperAdmin is platform-wide.
+- [x] Return `activeSchoolRole` independently from `userRole` in the LMS me and active-school APIs. Android course controls and MainActivity refresh that UID-specific active-school role so a SchoolAdmin at School A does not show staff controls at School B.
+- [x] Explicit SuperAdmin role changes via the LMS admin API synchronize **only the user's selected active school membership** (and only when already active), never all school memberships or a pending application; add regression tests.
+- [ ] Audit historical `school_memberships.role` values for mentors/admins promoted via legacy Firebase/RTDB flows. Do not auto-elevate membership roles from a global role in another school; use authorized administrator role assignment for remediation.
+- [ ] Validate the school switch UX for a single UID holding Mentor at School A and Mentee at School B on a real Android device, including logout/account switch, offline mode, FAB/navigation and background FCM events.
+- [ ] Production PostgreSQL concurrency guard for simultaneous chat sends (SQLite single-statement guard is tested; a future PostgreSQL migration needs explicit transactional sender locking).
+- [ ] Run two-account host/viewer stability QA before approving production rollout, including real Wi-Fi/mobile-data handovers and upstream-ended broadcasts.
+
+## Live stability, notifications and school-scope hardening — October 17, 2026
+
+All changes are on one **fix/live-followup-stability** branch / PR #80. The
+Android APK installation/update pipeline is **out of scope** by request.
+
+- [x] Add bounded RootEncoder RTMPS socket reconnects after transient failures, plus a manual reconnect fallback. Cover unexpected `onDisconnect` callbacks even if `onConnectionFailed` never fires; avoid double reconnect if both fire.
+- [x] Do not end a live Hub session just because the Android host Activity is destroyed by OS lifecycle/PiP/configuration. End only on confirmed host action or observed upstream end.
+- [x] Avoid stale disconnect callbacks changing host status after reconnect; suppress reconnect prompts in PiP and ignore callbacks after host destruction.
+- [x] Prevent concurrent provider/host updates from downgrading live status or resurrecting ended sessions, and prohibit notification claims after end.
+- [x] Bind course lives to the course's canonical school; reject mismatched IDs and require active-school staff scope. Mentors host only assigned course lives; SchoolAdmin may host within their active school.
+- [x] Scope school/course notification recipient queries to active membership, active school and valid course enrollment/mentoring. Avoid verbose recipient UID lists in fanout logs.
+- [x] Do not let missing legacy sender profiles block live-start push notifications when a complete title/body is supplied.
+- [x] Add automated live-state SQL, school recipient, cross-school ownership and staff-role tests to API CI.
+- [x] Make Android learner live chat independently scrollable with new-message auto-follow only when already near the bottom; keep attendance/stats polling alive while the viewer remains visible in PiP.
+- [x] Do not send live attendance heartbeats for scheduled, ended, or unavailable streams; send viewer leave only once when finishing.
+- [x] Add access-controlled cursor pagination for live-chat history beyond 50 messages, with same-timestamp ordering, multi-page API tests and Android **Load earlier messages** for host and viewer. Preserve scroll position and merge live polling with history without duplicates.
+- [x] Deduplicate and cap server-recorded watched seconds based on elapsed time between attendance heartbeats, including retries/out-of-order requests; regression-tested.
+- [x] Initialize live tables and event/time indexes once per API worker, not on every five-second poll, to avoid rewriting sql.js SQLite repeatedly.
+- [x] Include authoritative scheduled/live/ended status in live-state polling; Android viewer updates status, disables chat after end, and only counts attendees once the stream is live.
+- [x] Fail closed for pre-audience-scope legacy live events: require authentication, infer recorded school/course only, and preserve host/admin access to private live sessions without exposing them broadly.
+
+- [ ] Verify live-chat pagination on production SQLite and PostgreSQL, and during a high-volume session on two Android devices.
+- [ ] **Final CI:** API, Android build on the same PR head (including unit/smoke checks); merge only after manual approval.
+- [ ] **Real-device live validation:** test host losing Wi-Fi then mobile reconnect, connection retry exhaustion, manual reconnect, PiP/background transitions and deliberate End Live; check provider analytics for uninterrupted live identity.
+  - Device A (SchoolAdmin host): broadcast a school-scoped session, keep it running for at least 5 minutes; switch from Wi-Fi to mobile data and back; confirm retry/status UI, camera/screen-share restoration and that the same Nelsen Hub event remains active.
+  - Device B (enrolled Mentee): join during live, enter PiP for at least a minute, return and send over 60 chat messages across both devices; load older chat pages and verify no duplicates or forced jump while scrolled upward.
+  - End session from Device A. Device B should change to replay/ended, stop attendance heartbeats and disable new chat. Confirm provider actually marks the broadcast ended rather than assuming API success.
+  - Change Device B to an unrelated school; course/school lives, chat history and FCM recipients should not cross that boundary. Repeat with a pending school applicant and a mentor unassigned to the course.
+  - During a failed host reconnect, capture `adb logcat -v time -s NelsenLive AndroidRuntime`; correlate with API logs `[youtube-live-sync]`, `[live-notify]` and `[live-attendance]` and provider dashboard timestamps. Never paste stream keys into logs or issues.
+
+- [ ] **Real-account permissions:** SchoolAdmin and Mentor on two schools, pending/not-active members, course enrollments, active-school switch and FCM delivery. Validate database membership migration for upgraded mentor profiles.
+- [ ] **Production setup:** verify channel connection, notification token presence and Firebase Notification timestamp index; inspect RTMPS/encoder logs when a device still stops mid-stream.
+- [ ] **Longer-term resilience:** move camera broadcaster to a dedicated foreground lifecycle service if Android process loss and multi-task broadcasting must survive host Activity recreation.
+- [ ] **Other roadmap work:** tablet/adaptive UI QA, selective offline materials, safe archiving of non-empty courses, chat attachments/voice notes, Web live relay, PostgreSQL migration.
+
+
 ## October 11 follow-up — safety and authoring changes
 
 - [x] Added per-school protected bulk authoring outline for mentors/admins. Web editor uses the single request and falls back to legacy module requests during rollout.

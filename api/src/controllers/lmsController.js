@@ -1377,6 +1377,21 @@ export async function getLiveAudienceState(req, res) {
   }
 }
 
+export async function getLiveChatHistory(req, res) {
+  try {
+    const svc = await import("../services/lmsLiveAttendanceService.js");
+    const result = await svc.getLiveChatHistory(req.params.eventId, req.user.uid, {
+      before: req.query.before || null,
+      limit: req.query.limit || 50,
+    });
+    return lmsOk(res, result, getPrimaryEngine() || "sqlite");
+  } catch (err) {
+    console.error("[GET /lms/events/:eventId/chat]", err.message);
+    return lmsErr(res, err.message || "Live chat history unavailable",
+      err.status || 500, getPrimaryEngine() || "sqlite");
+  }
+}
+
 export async function postLiveChatMessage(req, res) {
   try {
     const svc = await import("../services/lmsLiveAttendanceService.js");
@@ -1402,7 +1417,7 @@ export async function getLiveAttendanceSummary(req, res) {
 export async function deleteHubEvent(req, res) {
   try {
     const svc = await import("../services/lmsHubEventService.js");
-    const result = await svc.deleteHubEvent(req.params.eventId);
+    const result = await svc.deleteHubEvent(req.params.eventId, req.user.uid);
     return lmsOk(res, result, result.source);
   } catch (err) {
     console.error("[DELETE /lms/events/:eventId]", err.message);

@@ -54,6 +54,8 @@ import com.app.nisisiafrica.data.Model.MentorItem;
 import com.app.nisisiafrica.data.Model.UserData;
 import com.app.nisisiafrica.data.local.Dao.UserDao;
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource;
+import com.app.nisisiafrica.data.remote.ApiClient;
+import com.app.nisisiafrica.data.Model.LmsModels;
 import com.bumptech.glide.Glide;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -738,8 +740,37 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     }
 
     private boolean isMentorOrAdmin() {
-        String role = userRole != null ? userRole : Roles.current();
-        return Roles.canCreate(role);
+        // The account-wide Firebase role may not match the role in the
+        // currently selected school. Keep staff-only FABs school-scoped.
+        return Roles.canCreate(Roles.current());
+    }
+
+    private void syncActiveSchoolRole() {
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current == null) return;
+        current.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().me("Bearer " + token.getToken())
+                        .enqueue(new retrofit2.Callback<LmsModels.MeEnvelope>() {
+                            @Override
+                            public void onResponse(
+                                    retrofit2.Call<LmsModels.MeEnvelope> call,
+                                    retrofit2.Response<LmsModels.MeEnvelope> response) {
+                                if (isFinishing() || isDestroyed()) return;
+                                LmsModels.MeEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok || body.data == null) return;
+                                Object role = body.data.get("activeSchoolRole");
+                                if (role instanceof String verified && !verified.isBlank()) {
+                                    Roles.storeActiveSchoolRole(current.getUid(), verified);
+                                    if (fragmentManager != null) syncChromeToVisibleFragment();
+                                }
+                            }
+                            @Override
+                            public void onFailure(
+                                    retrofit2.Call<LmsModels.MeEnvelope> call, Throwable error) {
+                                // The server still authorizes any protected
+                                // action; retain cached role during outages.
+                            }
+                        }));
     }
 
     private void handleFreshUserData(UserData userData) {
@@ -1007,6 +1038,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     protected void onResume() {
         super.onResume();
         if (fragmentManager != null) syncChromeToVisibleFragment();
+        // Refresh after returning from school selection, login continuation
+        // or role promotion. The result is UID-scoped, not shared with other
+        // accounts that use the same Android device.
+        syncActiveSchoolRole();
     }
 
     @Override

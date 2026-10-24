@@ -1,50 +1,18 @@
 import admin from "../config/firebase.js";
 import { dbAll } from "../db/lmsDb.js";
 import { sendFCMNotification } from "./fcmService.js";
+import { liveRecipientQuery } from "./lmsLiveRecipientQueries.js";
 
 async function loadRecipients(event) {
-  const scope = event.audienceScope || "";
-  let rows = [];
-
-  if (scope === "course") {
-    // A course live belongs to the whole teaching room, not only enrollment
-    // rows. Include active learners plus mentors assigned to the course.
-    rows = await dbAll(
-      `SELECT DISTINCT uid
-       FROM (
-         SELECT uid
-         FROM enrollments
-         WHERE track_id = ?
-           AND uid IS NOT NULL
-           AND uid != ''
-           AND lower(COALESCE(status, 'in_progress')) NOT IN ('cancelled', 'dropped', 'suspended')
-         UNION
-         SELECT uid
-         FROM track_mentors
-         WHERE track_id = ?
-           AND uid IS NOT NULL
-           AND uid != ''
-       ) AS course_live_recipients`,
-      [event.trackId, event.trackId],
-    );
-  } else if (scope === "school") {
-    rows = await dbAll(
-      `SELECT DISTINCT uid
-       FROM school_memberships
-       WHERE school_id = ?
-         AND status = 'active'
-         AND uid IS NOT NULL
-         AND uid != ''`,
-      [event.schoolId],
-    );
-  } else if (scope === "platform") {
-    rows = await dbAll(
-      `SELECT DISTINCT uid
-       FROM users_mirror
-       WHERE uid IS NOT NULL AND uid != ''`,
-    );
+  const query = liveRecipientQuery(event);
+  if (!query) {
+    console.warn("[live-notify] audience has no valid school/course scope", {
+      eventId: event.eventId,
+      scope: event.audienceScope,
+    });
+    return [];
   }
-
+  const rows = await dbAll(query.sql, query.params);
   const creator = String(event.createdBy || "");
   return [...new Set(rows.map((row) => String(row.uid || "")).filter(Boolean))]
     .filter((uid) => uid !== creator);
@@ -86,7 +54,6 @@ export async function notifyLiveStarted(event) {
     trackId: event.trackId || "",
     creator: event.createdBy || "",
     recipients: recipients.length,
-    recipientUids: recipients,
   });
   let sent = 0;
   let missingToken = 0;
@@ -97,14 +64,12 @@ export async function notifyLiveStarted(event) {
     const results = await Promise.allSettled(batch.map((uid) => notifyOne(uid, event)));
     for (let index = 0; index < results.length; index += 1) {
       const result = results[index];
-      const uid = batch[index];
       if (result.status === "rejected") {
-        console.error("[live-notify] recipient failed", { eventId: event.eventId, uid, error: result.reason?.message || String(result.reason) });
+        // Never put recipient UIDs, push tokens or per-device FCM payloads in
+        // fanout logs. The final counters are sufficient for operational QA.
         failed += 1;
         continue;
       }
-      console.log("[live-notify] recipient result", { eventId: event.eventId, uid, fcm: result.value });
-
       if (result.value?.success) sent += 1;
       else if (result.value?.reason === "no_token") missingToken += 1;
       else failed += 1;

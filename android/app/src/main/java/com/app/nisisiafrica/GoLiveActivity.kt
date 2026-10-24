@@ -26,6 +26,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.app.nisisiafrica.Service.LiveProjectionService
+import com.app.nisisiafrica.Utils.LiveChatTimeline
 import com.app.nisisiafrica.data.Model.LmsModels
 import com.app.nisisiafrica.data.remote.ApiClient
 import com.google.android.material.button.MaterialButton
@@ -58,6 +59,9 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private lateinit var chat: TextView
     private lateinit var chatScroll: ScrollView
     private var lastChatSnapshot = ""
+    private val chatTimeline = LiveChatTimeline()
+    private lateinit var olderChatButton: MaterialButton
+    private var olderChatLoading = false
     private lateinit var hostChatInput: TextInputEditText
     private lateinit var hostChatSend: MaterialButton
     private var hostChatSending = false
@@ -87,9 +91,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     private var youtubeUrl = ""
     private var surfaceReady = false
     private var prepared = false
-    private var finishingLive = false
-    private var wentLive = false
+    @Volatile private var finishingLive = false
+    @Volatile private var wentLive = false
     private var endedSent = false
+    private var reconnectPromptVisible = false
+    @Volatile private var reconnectAttemptsExhausted = false
+    @Volatile private var reconnectInProgress = false
+    @Volatile private var encoderRetryScheduled = false
+    @Volatile private var streamDisposed = false
 
     private val screenCaptureLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -176,11 +185,18 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
         preview = findViewById(R.id.livePreview)
         status = findViewById(R.id.tvLiveStatus)
+        // If the host dismisses the reconnect prompt, the status remains an
+        // explicit way to recover without leaving or ending the broadcast.
+        status.setOnClickListener {
+            if (reconnectAttemptsExhausted) showReconnectPrompt()
+        }
         viewers = findViewById(R.id.tvLiveViewers)
         attendance = findViewById(R.id.tvHostAttendance)
         attendance.setOnClickListener { showAttendanceDialog() }
         chat = findViewById(R.id.tvLiveChat)
         chatScroll = findViewById(R.id.hostChatScroll)
+        olderChatButton = findViewById(R.id.btnLiveChatEarlier)
+        olderChatButton.setOnClickListener { loadOlderHostChat() }
         hostChatInput = findViewById(R.id.inputHostLiveChat)
         hostChatSend = findViewById(R.id.btnHostSendLiveChat)
         hostChatSend.setOnClickListener { sendHostChat() }
@@ -198,6 +214,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
         // library's Java socket implementation and avoids that dependency path.
         stream.getStreamClient().setSocketType(SocketType.JAVA)
+        // A brief mobile-data/Wi-Fi interruption should not terminate the
+        // broadcast. RootEncoder reconnects the RTMPS socket without creating
+        // a second Nelsen live session or restarting the camera encoder.
+        stream.getStreamClient().setReTries(6)
         preview.holder.addCallback(this)
 
         endButton.setOnClickListener { confirmEndLive() }
@@ -360,22 +380,92 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         response: Response<LmsModels.LiveStateEnvelope>,
                     ) {
                         val data = response.body()?.data ?: return
+                        if (streamDisposed || isFinishing || isDestroyed) return
                         viewers.text = "${data.concurrentViewers} watching"
-                        val messages = data.chat.orEmpty()
-                        val snapshot = if (messages.isEmpty()) "Live · waiting for chat" else
-                            messages.joinToString("\n") { "${it.author}: ${it.message}" }
-                        if (snapshot != lastChatSnapshot) {
-                            val wasAtBottom = !chatScroll.canScrollVertically(1)
-                            lastChatSnapshot = snapshot
-                            chat.text = snapshot
-                            if (wasAtBottom) chatScroll.post { chatScroll.fullScroll(android.view.View.FOCUS_DOWN) }
-                        }
+                        if (chatTimeline.appendLatest(data)) renderHostChat(false)
+                        refreshOlderHostButton()
                     }
                     override fun onFailure(
                         call: Call<LmsModels.LiveStateEnvelope>,
                         t: Throwable,
                     ) = Unit
                 })
+        }
+    }
+
+    private fun refreshOlderHostButton() {
+        if (!::olderChatButton.isInitialized) return
+        olderChatButton.visibility =
+            if (chatTimeline.hasOlder()) android.view.View.VISIBLE else android.view.View.GONE
+        olderChatButton.isEnabled = !olderChatLoading
+        olderChatButton.text =
+            if (olderChatLoading) "Loading messages…" else "Load earlier messages"
+    }
+
+    private fun renderHostChat(historyPrepended: Boolean) {
+        if (!::chatScroll.isInitialized || !::chat.isInitialized) return
+        val snapshot = chatTimeline.displayText()
+        if (snapshot == lastChatSnapshot) return
+        val previousHeight = chatScroll.getChildAt(0)?.height ?: 0
+        val previousY = chatScroll.scrollY
+        val nearBottom = !chatScroll.canScrollVertically(1)
+        lastChatSnapshot = snapshot
+        chat.text = snapshot
+        chatScroll.post {
+            if (streamDisposed || isFinishing || isDestroyed) return@post
+            val newHeight = chatScroll.getChildAt(0)?.height ?: return@post
+            if (historyPrepended) {
+                chatScroll.scrollTo(0, previousY + (newHeight - previousHeight).coerceAtLeast(0))
+            } else if (nearBottom) {
+                chatScroll.scrollTo(0, newHeight)
+            }
+        }
+    }
+
+    private fun loadOlderHostChat() {
+        if (olderChatLoading || !chatTimeline.hasOlder() ||
+            streamDisposed || finishingLive || eventId.isBlank()) return
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        val cursor = chatTimeline.nextCursor()
+        olderChatLoading = true
+        refreshOlderHostButton()
+        user.getIdToken(false).addOnSuccessListener { token ->
+            if (streamDisposed || isFinishing || isDestroyed) {
+                olderChatLoading = false
+                return@addOnSuccessListener
+            }
+            ApiClient.getLmsService()
+                .liveChatHistory("Bearer ${token.token}", eventId, cursor, 50)
+                .enqueue(object : Callback<LmsModels.LiveChatHistoryEnvelope> {
+                    override fun onResponse(
+                        call: Call<LmsModels.LiveChatHistoryEnvelope>,
+                        response: Response<LmsModels.LiveChatHistoryEnvelope>,
+                    ) {
+                        if (streamDisposed || isFinishing || isDestroyed) return
+                        olderChatLoading = false
+                        val page = if (response.isSuccessful) response.body()?.data else null
+                        if (page != null) {
+                            if (chatTimeline.prependHistory(page)) renderHostChat(true)
+                        } else {
+                            Toast.makeText(this@GoLiveActivity,
+                                "Could not load earlier messages", Toast.LENGTH_SHORT).show()
+                        }
+                        refreshOlderHostButton()
+                    }
+                    override fun onFailure(
+                        call: Call<LmsModels.LiveChatHistoryEnvelope>,
+                        t: Throwable,
+                    ) {
+                        if (streamDisposed || isFinishing || isDestroyed) return
+                        olderChatLoading = false
+                        refreshOlderHostButton()
+                        Toast.makeText(this@GoLiveActivity,
+                            "Could not load earlier messages", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }.addOnFailureListener {
+            olderChatLoading = false
+            if (!streamDisposed && !isFinishing && !isDestroyed) refreshOlderHostButton()
         }
     }
 
@@ -506,12 +596,46 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                     override fun onResponse(
                         call: Call<LmsModels.HubEventEnvelope>,
                         response: Response<LmsModels.HubEventEnvelope>,
-                    ) = Unit
+                    ) {
+                        if (response.isSuccessful) return
+                        android.util.Log.w(
+                            "NelsenLive", "Hub live status update failed: HTTP ${response.code()}"
+                        )
+                        // A provider-side end is terminal for this broadcast.
+                        // Do not keep automatically reconnecting an RTMPS
+                        // stream whose Hub session can no longer become live.
+                        if (response.code() == 409 && liveStatus == "live" &&
+                            !finishingLive && !streamDisposed && !isFinishing && !isDestroyed
+                        ) {
+                            finishingLive = true
+                            reconnectAttemptsExhausted = true
+                            try {
+                                if (::stream.isInitialized && stream.isStreaming) stream.stopStream()
+                            } catch (error: Exception) {
+                                android.util.Log.w("NelsenLive", "Stop after upstream end failed", error)
+                            }
+                            status.text = "Session ended upstream"
+                            AlertDialog.Builder(this@GoLiveActivity)
+                                .setTitle("Live session has ended")
+                                .setMessage(
+                                    "The broadcast has ended on the streaming service. " +
+                                    "It cannot reconnect to the same session. " +
+                                    "Close this studio and start a new live session."
+                                )
+                                .setPositiveButton("Close studio") { _, _ -> finish() }
+                                .setCancelable(false)
+                                .show()
+                        }
+                    }
 
                     override fun onFailure(
                         call: Call<LmsModels.HubEventEnvelope>,
                         t: Throwable,
-                    ) = Unit
+                    ) {
+                        android.util.Log.w("NelsenLive", "Hub status sync unavailable", t)
+                        // Transient API failures are retried on each confirmed
+                        // RTMPS connection success, not treated as an end.
+                    }
                 })
         }
     }
@@ -543,12 +667,20 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionSuccess() {
+        if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
         wentLive = true
+        reconnectAttemptsExhausted = false
+        reconnectInProgress = false
+        encoderRetryScheduled = false
+        // Reconcile the Nelsen event after reconnect too: the first API status
+        // update may have failed while the device was offline. The server has
+        // an atomic once-only notification claim and monotonic live state.
         markNelsenLiveStatus("live")
-        telemetryHandler.removeCallbacks(telemetryPoll)
-        telemetryHandler.post(telemetryPoll)
         runOnUiThread {
-            status.text = "LIVE · Streaming"
+            if (finishingLive || isDestroyed) return@runOnUiThread
+            telemetryHandler.removeCallbacks(telemetryPoll)
+            telemetryHandler.post(telemetryPoll)
+            status.text = if (sharingScreen) "LIVE · Sharing screen" else "LIVE · Streaming"
             endButton.isEnabled = true
         }
     }
@@ -558,20 +690,94 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onConnectionFailed(reason: String) {
+        if (streamDisposed || finishingLive || isFinishing || isDestroyed || reconnectAttemptsExhausted) return
+        val retrying = try {
+            // RootEncoder handles re-establishing the stream socket and bounds
+            // retries through setReTries(6). Do not mark the Hub event ended.
+            stream.getStreamClient().reTry(5_000L, reason)
+        } catch (e: Exception) {
+            android.util.Log.w("NelsenLive", "RTMPS reconnect attempt failed", e)
+            false
+        }
+        reconnectInProgress = retrying
+        encoderRetryScheduled = retrying
         runOnUiThread {
-            status.text = "Live connection failed"
-            Toast.makeText(this, reason, Toast.LENGTH_LONG).show()
+            if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@runOnUiThread
+            if (retrying) {
+                status.text = "Connection interrupted · Reconnecting…"
+            } else {
+                reconnectAttemptsExhausted = true
+                status.text = "Connection lost · Tap reconnect"
+                showReconnectPrompt()
+            }
+        }
+    }
+
+    private fun showReconnectPrompt() {
+        if (streamDisposed || reconnectPromptVisible || finishingLive || isFinishing || isDestroyed) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode) return
+        reconnectPromptVisible = true
+        AlertDialog.Builder(this)
+            .setTitle("Connection interrupted")
+            .setMessage("Nelsen Live is still scheduled as active. Check your network and reconnect without ending the session.")
+            .setPositiveButton("Reconnect") { _, _ ->
+                reconnectPromptVisible = false
+                retryHostConnection()
+            }
+            .setNegativeButton("Later") { _, _ -> reconnectPromptVisible = false }
+            .setOnCancelListener { reconnectPromptVisible = false }
+            .show()
+    }
+
+    private fun retryHostConnection() {
+        if (streamDisposed || finishingLive || isFinishing || isDestroyed) return
+        reconnectAttemptsExhausted = false
+        reconnectInProgress = true
+        encoderRetryScheduled = false
+        try {
+            if (stream.isStreaming) stream.stopStream()
+            stream.getStreamClient().setReTries(6)
+            status.text = "Reconnecting to live…"
+            // The encoder was already prepared. Restart only the RTMPS socket.
+            if (prepared) stream.startStream(ingestUrl) else maybeStartLive()
+        } catch (e: Exception) {
+            reconnectInProgress = false
+            reconnectAttemptsExhausted = true
+            android.util.Log.e("NelsenLive", "Could not restart RTMPS", e)
+            status.text = "Could not reconnect"
+            showReconnectPrompt()
         }
     }
 
     override fun onDisconnect() {
+        // RootEncoder may report a clean socket disconnect without calling
+        // onConnectionFailed (for example when upstream closes RTMPS). Cover
+        // that path too, but never restart an explicitly ended host session.
+        if (!wentLive || streamDisposed || finishingLive || reconnectInProgress ||
+            reconnectAttemptsExhausted || isFinishing || isDestroyed) return
+        reconnectInProgress = true
         runOnUiThread {
-            if (!finishingLive) status.text = "Disconnected from live"
+            if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@runOnUiThread
+            status.text = "Connection interrupted · Reconnecting…"
+            telemetryHandler.postDelayed({
+                if (streamDisposed || finishingLive || isFinishing || isDestroyed) return@postDelayed
+                // A connection-success callback may have already recovered
+                // the socket; do not interrupt that healthy broadcast.
+                if (reconnectInProgress && !encoderRetryScheduled) retryHostConnection()
+            }, 3_000L)
         }
     }
 
     override fun onAuthError() {
-        runOnUiThread { status.text = "Live stream authorization failed" }
+        // An invalid stream key is not a transient network error. Stop
+        // automatic retries; the host can leave safely without false "ended".
+        reconnectAttemptsExhausted = true
+        runOnUiThread {
+            if (!streamDisposed && !finishingLive && !isDestroyed) {
+                status.text = "Live authorization failed · Reconnect channel"
+                Toast.makeText(this, "Live connection rejected. Check the school channel connection.", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onAuthSuccess() {
@@ -597,6 +803,13 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         super.onStop()
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && reconnectAttemptsExhausted && !streamDisposed && !finishingLive &&
+            ::status.isInitialized
+        ) showReconnectPrompt()
+    }
+
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && wentLive && stream.isStreaming) {
@@ -612,19 +825,27 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     override fun onDestroy() {
+        streamDisposed = true
+        reconnectAttemptsExhausted = true
         telemetryHandler.removeCallbacks(telemetryPoll)
         try {
-            if (stream.isStreaming) stream.stopStream()
+            // This Activity can finish before the encoder is created (for
+            // example an invalid endpoint or denied permissions).
+            if (::stream.isInitialized) {
+                if (stream.isStreaming) stream.stopStream()
+                stream.release()
+            }
             mediaProjection?.stop()
             mediaProjection = null
             stopService(Intent(this, LiveProjectionService::class.java))
-            stream.release()
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            android.util.Log.w("NelsenLive", "Studio cleanup failed", error)
         }
-        if (wentLive && !endedSent && !isChangingConfigurations) {
-            endedSent = true
-            markNelsenLiveStatus("ended")
-        }
+        // An Activity can be destroyed during an Android lifecycle change,
+        // memory pressure or PiP transition. Ending the Hub broadcast here
+        // used to mark otherwise recoverable streams as ended mid-session.
+        // Only the host's confirmed End live action sends an "ended" update;
+        // upstream sync handles an actual provider-ended broadcast.
         super.onDestroy()
     }
 }
