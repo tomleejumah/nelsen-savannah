@@ -8,6 +8,8 @@ const service = readFileSync(new URL("../src/services/lmsMembershipService.js", 
 const claim = service.slice(service.indexOf("export async function claimInviteByToken("));
 assert.match(claim, /invitedEmail !== actorEmail/, "missing email must not bypass invitation identity");
 assert.match(claim, /row.status !== STATUSES.invited/, "only pending invitations may be claimed");
+assert.match(claim, /if \(!claimed\?\.changes && !claimed\?\.rowCount\)/, "database claim must check affected rows");
+assert.ok(!claim.includes("fresh?.uid !== uid"), "concurrent duplicate claims must not appear successful");
 
 test("invite claim only binds pending invitations to intended UID", async () => {
   const SQL = await initSqlJs();
