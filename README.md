@@ -57,6 +57,10 @@ Global role records are mirrored between the LMS DB and RTDB for compatibility. 
 
 Appoint SuperAdmin by email from `/admin` (target must have signed in with Firebase at least once).
 
+### Assigning a role once
+
+School administrators assign **one role in the selected school** through the membership role API. This updates the school's authoritative membership role and synchronizes the legacy global role mirror for older clients; it does not rewrite other schools' memberships. Platform SuperAdmin remains a separate platform-wide privilege and cannot be removed through school-level assignment. The API returns both `userRole` and `activeSchoolRole` for compatibility, but the user-facing school-role picker is a single action. Changing schools refreshes the selected school's role from its membership record.
+
 ### Schools / tenancy
 
 - Default Nelsen tenant: `nelsen-digital`.
