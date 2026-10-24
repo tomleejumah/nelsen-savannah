@@ -102,6 +102,7 @@ export async function getLiveAttendanceSummary(eventId, requesterUid) {
   await ensureTable();
   const event = await getHubEvent(eventId);
   if (!event || event.eventType !== "live") throw liveError("Live session not found", 404);
+  if (!requesterUid) throw liveError("Authentication required", 401);
   if (String(event.createdBy || "") !== String(requesterUid || "")) {
     const role = await getLiveSchoolRole(requesterUid, event.schoolId);
     const platformAdmin = role === "SuperAdmin";
