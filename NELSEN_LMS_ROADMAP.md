@@ -15,12 +15,12 @@ checks, and real-device/server acceptance. See
 - [ ] Real device: test a UID that is SchoolAdmin in School A and Mentee in School B, including offline/resume, logout, a second account using the same phone, staff FABs and deep links.
 - [ ] Audit Firebase RTDB write rules for `roles/{uid}`; legacy RTDB-over-DB reconciliation must not allow unauthorized promotion. Do not auto-promote school membership records.
 - [ ] Validate scoped event list/detail and reservation compatibility with real school/course accounts.
-- [ ] Verify final branch API, Web, Android build and Android role-test CI; **do not merge/deploy without owner approval**.
+- [x] PR #81 head `05d3c7e`: API, Web CI, Android CI and Android Role Tests all passed (October 24, 2026). **Do not merge/deploy without owner approval.**
 
 
 ## October 19 follow-up — live security, school roles and stream recovery
 
-Implemented and committed to the same **PR #80**, not merged or deployed.
+Implemented in **merged PR #80**; remaining field validation is tracked in PR #81 and the release acceptance checklist.
 APK installation, signing, and release publishing remain **out of scope**.
 
 - [x] Only an event's owner, platform SuperAdmin, or currently authorized SchoolAdmin can delete Hub events or change live status. Prevent deleting an active broadcast before it ends; check mutations in the service, not merely the global-role router.
@@ -38,7 +38,7 @@ APK installation, signing, and release publishing remain **out of scope**.
 
 ## Live stability, notifications and school-scope hardening — October 17, 2026
 
-All changes are on one **fix/live-followup-stability** branch / PR #80. The
+These changes landed in **merged PR #80**; the current follow-up is PR #81. The
 Android APK installation/update pipeline is **out of scope** by request.
 
 - [x] Add bounded RootEncoder RTMPS socket reconnects after transient failures, plus a manual reconnect fallback. Cover unexpected `onDisconnect` callbacks even if `onConnectionFailed` never fires; avoid double reconnect if both fire.
@@ -86,7 +86,8 @@ Android APK installation/update pipeline is **out of scope** by request.
 
 - [x] Change the bottom navigation hierarchy to **BlurView (outer) → CardView (inner) → tab row**, rather than CardView → BlurView. Apply it consistently to `activity_main.xml` and both `main_bottom_bar.xml` resource variants.
 - [x] Preserve a **22dp rounded clipped blur region**, no rectangular blur bleed, accessible tab hit targets, and a separately opaque FAB (do not blur the FAB).
-- [ ] Verify active-tab selection, bottom inset/gesture navigation, narrow phones, tablets, light/dark themes, blur visibility and performance on a real device.
+- [x] Bottom navigation rounded glass/blur appearance fixed (user-confirmed); implementation uses BlurView outer, transparent CardView inner, clipped 22dp background in phone and `sw600dp` bottom-bar XML. Do not reopen the blur styling task.
+- [ ] Separate release QA: verify tab hit targets/selection, gesture insets, font scaling and performance across devices; this is **not** a pending blur implementation.
 
 ## Single integration PR #78 — learner UI, catalog latency and production hardening (October 11, 2026)
 
@@ -745,15 +746,15 @@ The Nelsen backend should not become a video streaming server.
 
 ---
 
-## Final Deferred Android — Profile Update
+## Android Profile Update — Implemented; verification remains
 
 Do this later after the current LMS roadmap work.
 
-- [ ] Add Android **Edit profile** UI.
-- [ ] Allow the learner to update supported profile fields and profile photo where applicable.
-- [ ] Validate fields and show saving/saved/error states.
-- [ ] Persist changes through the existing profile API/data source and refresh the Android user/profile cache after a successful update.
-- [ ] Keep role/identity/security-sensitive fields read-only unless the backend explicitly allows them.
+- [x] Android `EditProfileActivity` and phone/night layouts already provide Edit Profile UI.
+- [x] Update first/last name and bio, pick/upload a profile photo, and submit changes to authenticated canonical LMS `updateMyProfile` API.
+- [x] Require nonempty names; disable Save during API request; show upload/auth/network/API errors and success; update local user cache after saving.
+- [x] The editor exposes profile fields rather than direct role/identity privilege editing.
+- [ ] Field QA: edit a name/bio/photo, restart/sign in on another device and confirm canonical sync, image permissions and cache consistency.
 
 ---
 
