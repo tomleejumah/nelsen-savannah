@@ -121,7 +121,8 @@ public class LiveViewerActivity extends AppCompatActivity {
         liveStatusView.setText(statusLabel(status));
 
         openYoutubeButton = findViewById(R.id.btnOpenYoutube);
-        openYoutubeButton.setOnClickListener(v -> openLiveExternally());
+        // Playback stays in the embedded viewer; external-player action removed.
+        openYoutubeButton.setVisibility(View.GONE);
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
         chatScroll = findViewById(R.id.liveChatScroll);
