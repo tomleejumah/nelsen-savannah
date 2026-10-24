@@ -487,8 +487,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         val active = attendanceRows.filter { it.lastSeenAt >= cutoff }
                         val names = active.take(3).joinToString(", ") { it.displayName ?: "Viewer" }
                         attendance.text = "Attendees · ${active.size} active / ${data.uniqueAttendees} total · tap to view" +
-                            if (names.isNotBlank()) "
-$names" else ""
+                            if (names.isNotBlank()) System.lineSeparator() + names else ""
                     }
                     override fun onFailure(
                         call: Call<LmsModels.LiveAttendanceEnvelope>,
