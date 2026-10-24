@@ -4,6 +4,7 @@
 
 - [x] Enforce exact invited-email match even when authenticated account email is empty.
 - [x] Require pending invitation status and guard claim SQL against another account taking a token, with SQLite behavioral coverage in API CI.
+- [x] Reject a zero-row conditional claim (HTTP 409), including a concurrent claim by the same UID, rather than treating a raced already-active invitation as new success.
 - [ ] Verify actual Firebase-authenticated invite claim/acceptance and duplicate requests against staging before release.
 
 ## Invitation and activation role consistency — PR #81
