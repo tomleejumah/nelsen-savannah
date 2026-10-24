@@ -10,7 +10,7 @@ Monorepo for the Nelsen Savannah LMS — same API for web + Android. Schools get
 | `api/` | Node LMS API + Firebase auth |
 | `android/` | Android app (Nisisi / Nelsen) |
 
-Product planning / capability map: [`LMS_ROADMAP.md`](./LMS_ROADMAP.md).
+Product capability map: [`LMS_ROADMAP.md`](./LMS_ROADMAP.md). Detailed delivery/QA checklist: [`NELSEN_LMS_ROADMAP.md`](./NELSEN_LMS_ROADMAP.md). The dated [implementation-to-README benchmark](./IMPLEMENTATION_README_BENCHMARK.md) distinguishes committed code from field-verified behavior.
 
 ---
 
@@ -21,11 +21,11 @@ Product planning / capability map: [`LMS_ROADMAP.md`](./LMS_ROADMAP.md).
 1. User signs in with **Firebase** (Google / email).
 2. Client sends `Authorization: Bearer <Firebase ID token>` to the API.
 3. API verifies the token → `uid` + email.
-4. `GET /lms/me` returns profile, **role**, school, shell, and capabilities.
+4. `GET /lms/me` returns profile, global identity **role**, memberships, `activeSchoolId`, separately verified `activeSchoolRole`, shell, and capabilities. Staff permissions within a school are determined by its active membership—not simply the global role string.
 
-### Roles (exact PascalCase — case-sensitive)
+### Roles and their scopes
 
-Stored as a **string** on the user. Wrong casing (`admin`, `ADMIN`, `schooladmin`) is treated as **Mentee**.
+Persist the canonical PascalCase values below. The API's `normalizeRole()` currently accepts some case-insensitive/legacy spellings (`admin`, `school_admin`, etc.), while Android UI role checks use the canonical strings. **Don't rely on capitalization as an authorization control.**
 
 | Role | Who | Web shell | Scope |
 |------|-----|-----------|--------|
@@ -41,29 +41,29 @@ Hierarchy: `SuperAdmin` → `SchoolAdmin` → `Mentor` → `Mentee`.
 
 Higher shells can open lower ones (e.g. SuperAdmin can use `/school` and `/teach`).
 
-### Where the role is stored (two copies, same string)
+### Where roles are stored (global identity and per-school membership)
 
 | Store | Path / table | Used by |
 |-------|----------------|---------|
 | Firebase RTDB | `roles/{uid}` → `"SchoolAdmin"` | Android + legacy |
-| LMS DB | `roles` (`uid`, `role`) | API gates (`requireRoles`, most services) |
+| LMS DB | `roles` (`uid`, `role`) | Global legacy identity and compatibility gates |
+| LMS DB | `school_memberships` (`uid`, `school_id`, `role`, `status`) | Authoritative school-specific Mentor / SchoolAdmin permissions; only `active` members qualify |
+| LMS DB | `users_mirror.active_school_id` | Selected school; checked alongside active membership |
+| Android | UID-specific verified role snapshot from `/lms/me` | Displays staff UI only after verifying both Firebase UID and active-school scope |
 
-They are meant to stay in sync:
+Global role records are mirrored between the LMS DB and RTDB for compatibility. **Current legacy behavior:** `GET /lms/me` can reconcile a differing RTDB global role into the DB. That does **not** grant an active membership role in every school. School staff scope is verified independently using the selected school's active membership.
 
-- Appoint / set-role APIs write **DB first**, then **mirror** to RTDB (`roles/{uid}`).
-- On `GET /lms/me`, if RTDB has a role and it **differs** from the DB, **RTDB wins** and the DB is updated.
-
-**To test a role manually:** set Firebase RTDB `roles/{yourUid}` to exactly `SuperAdmin` or `SchoolAdmin`, then reload the web app (or call `/lms/me`) so the DB catches up.
+**Do not edit `roles/{uid}` manually to grant production access.** Use authorized administrative role and membership APIs/UI and verify both the global and selected-school roles afterward. Treat legacy RTDB reconciliation and its Firebase security rules as a production security review item.
 
 Appoint SuperAdmin by email from `/admin` (target must have signed in with Firebase at least once).
 
 ### Schools / tenancy
 
 - Default Nelsen tenant: `nelsen-digital`.
-- Each user has a `schoolId` (and optionally memberships / `activeSchoolId`).
+- Each user may belong to multiple schools. `activeSchoolId` selects the one whose membership grants apply; an account may be Mentor at School A and Mentee at School B.
 - **SchoolAdmin** can only manage members and catalog for **their** school.
 - **SuperAdmin** is not school-locked; they create partner schools and appoint principals (`SchoolAdmin`).
-- Adding people: school admin invites **by email** (mentor or mentee). No Firebase uid needed. When that person signs in with the same email, membership activates; mentors get role `Mentor` automatically.
+- Adding people: school admin invites **by email** (mentor or mentee). No Firebase UID is needed at invite time. Accepted active memberships have their **own school role**; don't infer staff rights at other schools from a global Mentor title.
 
 ### Learning product flow
 
@@ -91,6 +91,14 @@ Profile: `/profile` (from learning Account / capabilities — not primary nav).
 
 ---
 
+## Live learning (implemented; field QA outstanding)
+
+- School channels use YouTube OAuth and RTMPS for broadcasts. Android host provides camera, microphone, screen-share controls and bounded socket reconnects. Android/web viewers use the embedded player when a public watch URL is available.
+- Audience rules are enforced by the API: `platform` only for SuperAdmin, `school` only for active members of the active school, and `course` for authorized enrolled mentees/assigned mentors or school administrators. A host can see their own session; missing legacy audience scope is **not public**.
+- Event discovery: `GET /lms/events/public`; create: `POST /lms/events`; host state: `PATCH /lms/events/:eventId/live-status`.
+- Authenticated playback metadata, viewer counts and the latest chat: `GET /lms/events/:eventId/live-state`. Older chat: `GET /lms/events/:eventId/chat?before=<cursor>&limit=50`. Attendance: `POST|GET /lms/events/:eventId/attendance`.
+- Android and API builds passing CI is **not** proof of uninterrupted broadcasts. The remaining acceptance test is two real devices, with network handover, PiP, a real channel, FCM delivery and session ending/replay.
+
 ## Live URLs
 
 | Surface | URL |
@@ -106,6 +114,6 @@ CI: `.github/workflows/web.yml` (build + rsync deploy), `.github/workflows/api.y
 
 - Web: see `web/README.md` — set `VITE_LMS_API_BASE` (or project equivalent) to the API base.
 - API: Firebase Admin credentials + DB engine (SQLite/Postgres) via env; LMS schema/migrations in `api/src/db/lmsDb.js`.
-- Android: role from RTDB `roles/{uid}` + prefs; shells aligned with API `/lms/me`.
+- Android: global legacy identity is separate from UID-verified `activeSchoolRole` fetched from the LMS API. Staff controls fail closed while that role is unverified; see `android/README.md`.
 
 When unsure about a capability, check `LMS_ROADMAP.md` and `api/src/constants/lmsRoles.js`.
