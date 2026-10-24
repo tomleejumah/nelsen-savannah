@@ -1112,14 +1112,24 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
        )`,
       [uid, schoolId],
     );
-    if (!isSuperAdmin(targetRole)) {
-      await setUserRole(uid, ROLES.Mentee);
-    }
-  } else if (next === "active") {
-    const restore = normalizeRole(mem.role || targetRole);
-    if (restore === ROLES.Mentor) {
-      await setUserRole(uid, ROLES.Mentor);
-    }
+    // Suspending one school's membership must not revoke a staff role
+    // obtained from a different active school. Reconcile below.
+  }
+  // Keep the compatibility global role aligned with an active membership,
+  // without granting the suspended school's permissions in any other tenant.
+  if (!isSuperAdmin(targetRole)) {
+    const currentSchool = await dbGet(
+      "SELECT active_school_id FROM users_mirror WHERE uid = ?",
+      [uid],
+    );
+    const active = await dbGet(
+      `SELECT school_id, role FROM school_memberships
+       WHERE uid = ? AND status = 'active'
+       ORDER BY CASE WHEN school_id = ? THEN 0 ELSE 1 END, updated_at DESC
+       LIMIT 1`,
+      [uid, currentSchool?.active_school_id || schoolId],
+    );
+    await setUserRole(uid, normalizeRole(active?.role || ROLES.Mentee));
   }
   const schoolName = await getSchoolName(schoolId);
   const notifyEmail = user?.email || mem?.email || "";
