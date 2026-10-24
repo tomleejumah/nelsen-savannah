@@ -471,9 +471,19 @@ export async function patchSchoolMemberRole(actorUid, schoolId, targetUid, body 
     "SELECT uid, school_id FROM users_mirror WHERE uid = ?",
     [targetUid],
   );
-  if (!target || (target.school_id || DEFAULT_SCHOOL_ID) !== schoolId) {
+  const membership = await dbGet(
+    `SELECT id, status FROM school_memberships
+     WHERE uid = ? AND school_id = ? AND status = 'active' LIMIT 1`,
+    [targetUid, schoolId],
+  );
+  if (!target || !membership) {
     const err = new Error("Member not in this school");
     err.status = 404;
+    throw err;
+  }
+  if (!String(body.userRole || body.role || "").trim()) {
+    const err = new Error("Role is required");
+    err.status = 400;
     throw err;
   }
   const nextRole = normalizeRole(body.userRole || body.role);
@@ -496,10 +506,24 @@ export async function patchSchoolMemberRole(actorUid, schoolId, targetUid, body 
     err.status = 400;
     throw err;
   }
-  await setMemberSchoolAndRole(targetUid, schoolId, nextRole);
+  // One role assignment updates the authoritative school membership and
+  // the legacy global mirror. Other schools' membership roles stay untouched.
+  await dbRun(
+    "UPDATE school_memberships SET role = ?, updated_at = ? WHERE id = ? AND status = 'active'",
+    [nextRole, Date.now(), membership.id],
+  );
+  const globalRole = await loadUserRole(targetUid);
+  if (!isSuperAdmin(globalRole)) {
+    await setUserRole(targetUid, nextRole);
+  }
   return {
     source: getPrimaryEngine(),
-    data: { uid: targetUid, userRole: nextRole, schoolId },
+    data: {
+      uid: targetUid,
+      userRole: isSuperAdmin(globalRole) ? ROLES.SuperAdmin : nextRole,
+      activeSchoolRole: nextRole,
+      schoolId,
+    },
   };
 }
 
