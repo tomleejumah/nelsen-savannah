@@ -8,4 +8,7 @@ assert.ok(getMe.includes("const role = normalizeRole(user?.role);"), "primary ro
 assert.ok(!getMe.includes("setUserRole("), "GET /lms/me must not mutate global role based on RTDB");
 assert.ok(!getMe.includes("readRoleFromRtdb("), "GET /lms/me must not use legacy RTDB as a role authority");
 assert.match(getMe, /const role = ROLES\.Mentee;/, "RTDB-only fallback must be unprivileged");
+const membership = readFileSync(new URL("../src/services/lmsMembershipService.js", import.meta.url), "utf8");
+const access = membership.slice(membership.indexOf("export async function getLearningAccess("), membership.indexOf("export async function assertLearningAccess("));
+assert.ok(access.includes("normalizeRole(membership.role || ROLES.Mentee)"), "missing school role must not inherit global staff title");
 console.log("Role source guard passed");
