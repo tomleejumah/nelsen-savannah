@@ -1,5 +1,12 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Membership suspension role reconciliation — PR #81
+
+- [x] On a school-member status change, reconcile legacy global role from the current/other active school memberships instead of unconditionally demoting a member to Mentee when one school suspends them.
+- [x] Add a CI source guard against unconditional global demotion; preserve per-school membership authorization.
+- [ ] Run an end-to-end multi-school test where an active Mentor at School B is suspended at School A, then switches school on Android and Web.
+- [ ] Audit remaining invitation/activation paths for global-role display parity and ensure role sync failures are handled explicitly.
+
 ## Single-action school role assignment — PR #81
 
 - [x] School membership-role assignment now updates the active selected-school membership row and synchronizes the legacy global role, rather than updating only `roles` and leaving `school_memberships` stale.
