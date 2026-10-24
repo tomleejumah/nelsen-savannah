@@ -51,7 +51,7 @@ Higher shells can open lower ones (e.g. SuperAdmin can use `/school` and `/teach
 | LMS DB | `users_mirror.active_school_id` | Selected school; checked alongside active membership |
 | Android | UID-specific verified role snapshot from `/lms/me` | Displays staff UI only after verifying both Firebase UID and active-school scope |
 
-Global role records are mirrored between the LMS DB and RTDB for compatibility. **Current legacy behavior:** `GET /lms/me` can reconcile a differing RTDB global role into the DB. That does **not** grant an active membership role in every school. School staff scope is verified independently using the selected school's active membership.
+Global role records are mirrored between the LMS DB and RTDB for compatibility. **Current hardened behavior:** `GET /lms/me` uses the primary LMS `roles` table for global privilege decisions, not `roles/{uid}` from RTDB. If the primary database is unavailable, the RTDB profile fallback is unprivileged (`Mentee`) and provides no active school staff permission. Authorized role changes must flow through the admin API. Legacy RTDB role mirrors still require an explicit Firebase write-rule audit. School staff scope is verified independently using the selected school's active membership.
 
 **Do not edit `roles/{uid}` manually to grant production access.** Use authorized administrative role and membership APIs/UI and verify both the global and selected-school roles afterward. Treat legacy RTDB reconciliation and its Firebase security rules as a production security review item.
 
