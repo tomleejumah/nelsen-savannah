@@ -131,3 +131,5 @@ CI: `.github/workflows/web.yml` (build + rsync deploy), `.github/workflows/api.y
 When unsure about a capability, check `LMS_ROADMAP.md` and `api/src/constants/lmsRoles.js`.
 
 Live event hosts must retain active membership in the owning school to mutate school-scoped events; platform administrators retain global moderation access. This has API regression coverage; real streaming/FCM verification remains pending.
+
+Live attendance heartbeats now cap credited viewing time to server-observed elapsed seconds and do not credit stale reconnect gaps. Full two-device streaming, FCM and provider-state acceptance still requires staging.
