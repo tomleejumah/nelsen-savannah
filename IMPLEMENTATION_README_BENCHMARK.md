@@ -12,13 +12,19 @@ This comparison uses the **merged** `main` baseline (`19b5d101`, including PRs #
 | Student learning / assignments | Tracks, enrollment, lessons, assignments, late text submissions, status/feedback history | Implemented; functional device QA pending | Test learner enrollment/deadline/feedback across school switch |
 | Catalog cache / deploy safety | `lmsRedisCache.js`, predeploy SQLite snapshot, integrity check, Postgres fail-closed startup | Implemented; API CI checked | Provision/benchmark Redis on VPS and test offsite restore |
 | Live host / viewer / chat | Android RTMPS host reconnect and PiP, scoped notifications, attendance, cursor-paginated chat, embedded viewer; school OAuth | Implemented; PR #80 merged with API/Android CI green | Real two-device broadcast, network handover, FCM and replay confirmation still required |
-| Events API | `GET /lms/events/public`, `POST /lms/events`, `PATCH /lms/events/:eventId/live-status`, reservations; **legacy `GET /lms/events` and `GET /lms/events/:eventId` still return a TODO/501** | `api/docs/LMS.md` says Events API entirely unbuilt — **partly outdated** | Document actual live/public routes and remaining compatibility TODO |
+| Events API | `GET /lms/events/public`, `POST /lms/events`, `PATCH /lms/events/:eventId/live-status`, reservations; legacy authenticated list/detail now reuse scoped Hub handlers instead of returning 501 | Original `api/docs/LMS.md` described events as entirely unbuilt — corrected in follow-up | Exercise list/detail and reservation routes with learner/school staff accounts |
 | Android documentation | `android/README.md` was one-line placeholder | **Missing** | Document build/test, role refresh and device acceptance tests |
 | Web documentation | `web/README.md` retained generic Lovable scaffold / `<repository-name>` commands | **Outdated** | Replace with current `web/` development commands and LMS API guidance |
 | Full Android school/admin UX | Web has dedicated school/admin consoles; Android maps several staff roles to mentor-like shell | **Incomplete by design** | Role-specific Android UI and tablet/device QA |
 | Offline media and optional video sync | Cache and offline banners exist; selective offline PDF/video downloads and retention policy remain planned | Not complete | Keep pending in `NELSEN_LMS_ROADMAP.md` |
 | Full populated-course deletion | Only dependency-free unused tracks can be deleted safely | Limited feature, intentional | Design archival/rollback before enabling destructive cleanup |
 | PostgreSQL cutover | PostgreSQL adapter present; live migration, schema consistency and offsite backups not verified | Not field verified | Staged migration rehearsal plus rollback |
+
+## Follow-up improvements after the baseline
+
+- Updated documentation from the source implementation, without changing the installer/signing pipeline.
+- Added UID-bound Android role validation, a fail-closed Mentee UI pending server confirmation and Java unit tests.
+- Replaced the legacy authenticated event GET 501 stubs with the same school/course-aware handlers used by the newer public catalogue endpoints. The service authorization is reused; device/API integration still requires acceptance testing.
 
 ## Verified against GitHub
 
