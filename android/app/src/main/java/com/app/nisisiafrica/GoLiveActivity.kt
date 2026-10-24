@@ -604,7 +604,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         // A provider-side end is terminal for this broadcast.
                         // Do not keep automatically reconnecting an RTMPS
                         // stream whose Hub session can no longer become live.
-                        if (response.code() == 409 && liveStatus == "live" &&
+                        val terminalConflict = response.code() == 409 &&\n                            (response.errorBody()?.string()?.contains("ended live session", ignoreCase = true) == true)\n                        if (terminalConflict && liveStatus == "live" &&
                             !finishingLive && !streamDisposed && !isFinishing && !isDestroyed
                         ) {
                             finishingLive = true
