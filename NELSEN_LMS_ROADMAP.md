@@ -1,5 +1,23 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## October 24 README benchmark and school-role follow-up — PR #81
+
+This follow-up is on the existing `fix/live-followup-stability` branch
+**after PR #80 was merged**. The benchmark distinguishes shipped code, CI
+checks, and real-device/server acceptance. See
+[`IMPLEMENTATION_README_BENCHMARK.md`](./IMPLEMENTATION_README_BENCHMARK.md).
+
+- [x] Cross-check root, Android, web and API READMEs against merged implementation; correct case-normalization, RTDB global role vs active-school membership, live routes and build/setup instructions.
+- [x] In Android, show staff UI only for the signed-in Firebase UID after verifying `role` and `activeSchoolRole` from `GET /lms/me`; never use a device-wide cached `USER_ROLE` to infer school privileges.
+- [x] Default to Mentee UI while rechecking role on return from school selection/account switching; reject a late API response that belongs to a different Firebase UID.
+- [x] Add pure-Java tests for Mentee at one school vs SchoolAdmin at another, Mentor, pending/unknown and platform SuperAdmin; use a non-publishing CI workflow.
+- [x] Replace legacy `GET /lms/events` and `GET /lms/events/:eventId` 501 stubs with the existing scoped Hub event handlers; retain their audience authorization.
+- [ ] Real device: test a UID that is SchoolAdmin in School A and Mentee in School B, including offline/resume, logout, a second account using the same phone, staff FABs and deep links.
+- [ ] Audit Firebase RTDB write rules for `roles/{uid}`; legacy RTDB-over-DB reconciliation must not allow unauthorized promotion. Do not auto-promote school membership records.
+- [ ] Validate scoped event list/detail and reservation compatibility with real school/course accounts.
+- [ ] Verify final branch API, Web, Android build and Android role-test CI; **do not merge/deploy without owner approval**.
+
+
 ## October 19 follow-up — live security, school roles and stream recovery
 
 Implemented and committed to the same **PR #80**, not merged or deployed.
