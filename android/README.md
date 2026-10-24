@@ -10,7 +10,6 @@ Use Android Studio with JDK 17 and a configured Android SDK, or:
 
 ```bash
 cd android
-cp ../web/.env.example /tmp/nelsen-web-env-example  # optional web reference only
 ./gradlew :app:assembleDebug
 ./gradlew :app:testDebugUnitTest
 ```
