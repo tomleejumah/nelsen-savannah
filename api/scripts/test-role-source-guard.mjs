@@ -18,4 +18,8 @@ assert.match(patchRole, /setUserRole\(targetUid, nextRole\)/, "school role assig
 assert.match(patchRole, /if \(!isSuperAdmin\(globalRole\)\)/, "school assignment must preserve platform SuperAdmin privilege");
 assert.match(patchRole, /activeSchoolRole: nextRole/, "role assignment response must return school role");
 assert.match(patchRole, /status = 'active' LIMIT 1/, "only active school memberships may be assigned");
+const statusChange = schools.slice(schools.indexOf("export async function setSchoolMemberStatus("), schools.indexOf("export async function", schools.indexOf("export async function setSchoolMemberStatus(") + 20));
+assert.match(statusChange, /SELECT school_id, role FROM school_memberships/, "role reconciliation must read other active school memberships");
+assert.match(statusChange, /status = 'active'/, "suspended membership must not drive role projection");
+assert.ok(!statusChange.includes("setUserRole(uid, ROLES.Mentee)"), "suspending a school must not blindly demote globally");
 console.log("Role source guard passed");
