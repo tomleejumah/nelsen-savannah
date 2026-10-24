@@ -10,7 +10,7 @@ Monorepo for the Nelsen Savannah LMS — same API for web + Android. Schools get
 | `api/` | Node LMS API + Firebase auth |
 | `android/` | Android app (Nisisi / Nelsen) |
 
-Product capability map: [`LMS_ROADMAP.md`](./LMS_ROADMAP.md). Detailed delivery/QA checklist: [`NELSEN_LMS_ROADMAP.md`](./NELSEN_LMS_ROADMAP.md). The dated [implementation-to-README benchmark](./IMPLEMENTATION_README_BENCHMARK.md) distinguishes committed code from field-verified behavior.
+Historical capability map (some early tables are superseded): [`LMS_ROADMAP.md`](./LMS_ROADMAP.md). Current implementation and acceptance checklist: [`NELSEN_LMS_ROADMAP.md`](./NELSEN_LMS_ROADMAP.md). The dated [implementation-to-README benchmark](./IMPLEMENTATION_README_BENCHMARK.md) distinguishes committed code from field-verified behavior.
 
 ---
 
@@ -109,6 +109,12 @@ Profile: `/profile` (from learning Account / capabilities — not primary nav).
 CI: `.github/workflows/web.yml` (build + rsync deploy), `.github/workflows/api.yml` (API deploy).
 
 ---
+
+## Android implementation notes
+
+- Rounded glass bottom navigation is **already fixed**: outer clipped `BlurView` and inner transparent `CardView` in default and `sw600dp` layouts. Only unrelated release device/inset QA remains.
+- **Edit Profile already exists** in `EditProfileActivity`: names, bio, profile-photo upload, canonical authenticated LMS save and local profile cache update. Cross-device/device QA remains.
+- These are implementation-complete items, not new feature requirements. See `IMPLEMENTATION_README_BENCHMARK.md` for the difference between code-complete and field-verified.
 
 ## Quick local pointers
 
