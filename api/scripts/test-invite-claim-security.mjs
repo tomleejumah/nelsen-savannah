@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 // Exercise the same guarded SQL used by the invite claim handler.
 const service = readFileSync(new URL("../src/services/lmsMembershipService.js", import.meta.url), "utf8");
 const claim = service.slice(service.indexOf("export async function claimInviteByToken("));
-assert.match(claim, /invitedEmail !== actorEmail/, "missing email must not bypass invitation identity");
+assert.match(claim, /!uid \|\| !actorEmail \|\| !invitedEmail \|\| invitedEmail !== actorEmail/, "claim requires UID and both matching nonempty emails");
 assert.match(claim, /row.status !== STATUSES.invited/, "only pending invitations may be claimed");
 assert.match(claim, /if \(!claimed\?\.changes && !claimed\?\.rowCount\)/, "database claim must check affected rows");
 assert.ok(!claim.includes("fresh?.uid !== uid"), "concurrent duplicate claims must not appear successful");
