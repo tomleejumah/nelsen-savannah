@@ -292,6 +292,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             if (micMuted) microphone.unMute() else microphone.mute()
             micMuted = !micMuted
             micButton.contentDescription = if (micMuted) "Unmute microphone" else "Mute microphone"
+            micButton.isActivated = micMuted
+            Toast.makeText(this, if (micMuted) "Microphone muted" else "Microphone on", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Could not change microphone", Toast.LENGTH_SHORT).show()
         }
