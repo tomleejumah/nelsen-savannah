@@ -225,6 +225,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         // a second Nelsen live session or restarting the camera encoder.
         stream.getStreamClient().setReTries(6)
         preview.holder.addCallback(this)
+        if (wentLive) {
+            status.text = "LIVE · Reconnected to studio"
+            telemetryHandler.post(telemetryPoll)
+        }
 
         endButton.setOnClickListener { confirmEndLive() }
         switchButton.setOnClickListener {
