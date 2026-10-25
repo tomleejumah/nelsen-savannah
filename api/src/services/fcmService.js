@@ -8,7 +8,7 @@ export async function sendFCMNotification(receiverId, notification) {
       .once("value");
 
     const token = tokenSnap.val();
-    if (!token) {
+    if (typeof token !== "string" || !token.trim()) {
       // Expected for web-only users and newly registered devices. The caller
       // records an in-app notification and aggregates missing-token counts.
       return { success: false, reason: "no_token" };
@@ -59,7 +59,7 @@ export async function sendFCMNotification(receiverId, notification) {
     // notification+data messages itself while the app is backgrounded, bypassing
     // FCMService and its direct LiveViewerActivity PendingIntent.
     const message = {
-      token: token,
+      token: token.trim(),
       data: {
         title,
         body,
