@@ -144,11 +144,11 @@ class EventAdapter(
                     "ended" -> "Replay available"
                     else -> "Starts at the scheduled time"
                 }
-                btnReserve.isEnabled = event.meetingLink.isNotBlank()
+                btnReserve.isEnabled = liveStatus != "live" || event.meetingLink.isNotBlank()
                 btnReserve.text = when (liveStatus) {
-                    "live" -> "Watch live"
+                    "live" -> "Join live"
                     "ended" -> "Watch replay"
-                    else -> "View live"
+                    else -> "View scheduled live"
                 }
             } else if (event.reservedByMe) {
                 seatsBlock.visibility = View.GONE
