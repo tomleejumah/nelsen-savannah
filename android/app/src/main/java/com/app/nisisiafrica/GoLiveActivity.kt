@@ -215,6 +215,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         if (stream.isStreaming) {
             prepared = true
             wentLive = true
+            sharingScreen = stream.videoSource is ScreenSource
         }
         // RootEncoder's Ktor TLS socket can collide with another Ktor ABI in the
         // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
@@ -265,7 +266,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private fun maybeStartLive() {
-        if (!surfaceReady || isFinishing || finishingLive) return
+        if (!surfaceReady || isFinishing || finishingLive || stream.isStreaming) return
 
         if (!prepared) {
             status.text = "Preparing camera and microphone…"
