@@ -135,9 +135,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         switchButton.isEnabled = false
                         status.text = "LIVE · Sharing screen"
                     } catch (e: Exception) {
-                        mediaProjection?.stop()
+                        LiveProjectionService.releaseProjection()
                         mediaProjection = null
-                        stopService(Intent(this, LiveProjectionService::class.java))
                         Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
                     } finally {
                         screenButton.isEnabled = true
@@ -217,6 +216,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             prepared = true
             wentLive = true
             sharingScreen = stream.videoSource is ScreenSource
+            screenButton.isActivated = sharingScreen
+            switchButton.isEnabled = !sharingScreen
         }
         // RootEncoder's Ktor TLS socket can collide with another Ktor ABI in the
         // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
@@ -315,7 +316,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         stream.changeVideoSource(Camera2Source(applicationContext))
         LiveProjectionService.releaseProjection()
         mediaProjection = null
-        stopService(Intent(this, LiveProjectionService::class.java))
+        // Keep the foreground stream service running after switching sources.
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
         cameraPaused = false
