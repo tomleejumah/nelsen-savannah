@@ -29,17 +29,22 @@ class LiveProjectionService : Service() {
         private var readyCallback: (() -> Unit)? = null
         private var activeStream: GenericStream? = null
         private var activeProjection: MediaProjection? = null
+        @Volatile private var projectionActive = false
+
+        fun hasProjection(): Boolean = projectionActive
 
         @Synchronized
         fun holdProjection(projection: MediaProjection) {
             activeProjection?.takeIf { it !== projection }?.stop()
             activeProjection = projection
+            projectionActive = true
         }
 
         @Synchronized
         fun releaseProjection() {
             activeProjection?.stop()
             activeProjection = null
+            projectionActive = false
         }
         private var listener = WeakReference<ConnectChecker>(null)
         private val checker = object : ConnectChecker {
