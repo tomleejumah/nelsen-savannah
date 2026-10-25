@@ -211,7 +211,11 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         findViewById<TextView>(R.id.tvLiveTitle).text =
             intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Nelsen Live" }
 
-        stream = GenericStream(applicationContext, this)
+        stream = LiveProjectionService.attachStream(applicationContext, this)
+        if (stream.isStreaming) {
+            prepared = true
+            wentLive = true
+        }
         // RootEncoder's Ktor TLS socket can collide with another Ktor ABI in the
         // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
         // library's Java socket implementation and avoids that dependency path.
@@ -586,6 +590,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             markNelsenLiveStatus("ended")
             endedSent = true
         }
+        LiveProjectionService.releaseStream()
         showEndReport()
     }
 
@@ -858,12 +863,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             // This Activity can finish before the encoder is created (for
             // example an invalid endpoint or denied permissions).
             if (::stream.isInitialized) {
-                if (stream.isStreaming) stream.stopStream()
-                stream.release()
+                if (!stream.isStreaming || finishingLive) LiveProjectionService.releaseStream()
+                else LiveProjectionService.detachObserver(this)
             }
-            mediaProjection?.stop()
-            mediaProjection = null
-            stopService(Intent(this, LiveProjectionService::class.java))
+            if (finishingLive || !::stream.isInitialized || !stream.isStreaming) {
+                mediaProjection?.stop()
+                mediaProjection = null
+                stopService(Intent(this, LiveProjectionService::class.java))
+            }
         } catch (error: Exception) {
             android.util.Log.w("NelsenLive", "Studio cleanup failed", error)
         }
