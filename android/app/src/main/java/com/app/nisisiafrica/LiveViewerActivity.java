@@ -115,7 +115,8 @@ public class LiveViewerActivity extends AppCompatActivity {
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
-        toolbar.setNavigationOnClickListener(v -> finish());
+        toolbar.setNavigationOnClickListener(v -> leaveStream());
+        findViewById(R.id.btnLeaveLive).setOnClickListener(v -> leaveStream());
 
         liveStatusView = findViewById(R.id.tvLiveStatus);
         currentLiveStatus = status;
@@ -364,7 +365,10 @@ public class LiveViewerActivity extends AppCompatActivity {
                                 if (input.getText() != null && message.contentEquals(input.getText().toString().trim())) input.setText("");
                                 loadTelemetry();
                             } else {
-                                Toast.makeText(LiveViewerActivity.this, "Message not sent (" + response.code() + ")", Toast.LENGTH_SHORT).show();
+                                String reason = response.code() == 429
+                                        ? "Please wait a moment before sending another message"
+                                        : "Message not sent (" + response.code() + ")";
+                                Toast.makeText(LiveViewerActivity.this, reason, Toast.LENGTH_SHORT).show();
                             }
                         }
                         @Override public void onFailure(Call<LmsModels.MapEnvelope> call, Throwable t) {
@@ -380,6 +384,11 @@ public class LiveViewerActivity extends AppCompatActivity {
         if (sendChatButton != null) {
             sendChatButton.setEnabled("live".equals(currentLiveStatus) && streamPlayable);
         }
+    }
+
+    private void leaveStream() {
+        recordLeaveOnce();
+        finish();
     }
 
     private void recordLeaveOnce() {
