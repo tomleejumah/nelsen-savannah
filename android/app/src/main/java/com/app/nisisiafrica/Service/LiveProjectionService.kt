@@ -27,6 +27,8 @@ class LiveProjectionService : Service() {
         private const val CHANNEL_ID = "nelsen_live_projection"
         private const val NOTIFICATION_ID = 4102
         private var readyCallback: (() -> Unit)? = null
+        private var activeService = false
+        private var appContext: Context? = null
         private var activeStream: GenericStream? = null
         private var activeProjection: MediaProjection? = null
         @Volatile private var projectionActive = false
@@ -59,6 +61,7 @@ class LiveProjectionService : Service() {
 
         @Synchronized
         fun attachStream(context: Context, observer: ConnectChecker): GenericStream {
+            appContext = context.applicationContext
             listener = WeakReference(observer)
             return activeStream ?: GenericStream(context.applicationContext, checker)
                 .also { activeStream = it }
@@ -82,6 +85,7 @@ class LiveProjectionService : Service() {
             }
             activeStream = null
             releaseProjection()
+            appContext?.stopService(Intent(appContext, LiveProjectionService::class.java))
         }
 
 
@@ -116,6 +120,7 @@ class LiveProjectionService : Service() {
             .setSilent(true)
             .build()
         startForeground(NOTIFICATION_ID, notification)
+        activeService = true
         val callback = readyCallback
         readyCallback = null
         if (callback != null) Handler(Looper.getMainLooper()).post { callback() }
@@ -123,6 +128,7 @@ class LiveProjectionService : Service() {
     }
 
     override fun onDestroy() {
+        activeService = false
         releaseStream()
         readyCallback = null
         super.onDestroy()
