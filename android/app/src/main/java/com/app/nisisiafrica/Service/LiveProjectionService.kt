@@ -10,6 +10,7 @@ import android.os.Looper
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.media.projection.MediaProjection
 import androidx.core.app.NotificationCompat
 import com.app.nisisiafrica.R
 import com.pedro.common.ConnectChecker
@@ -27,6 +28,19 @@ class LiveProjectionService : Service() {
         private const val NOTIFICATION_ID = 4102
         private var readyCallback: (() -> Unit)? = null
         private var activeStream: GenericStream? = null
+        private var activeProjection: MediaProjection? = null
+
+        @Synchronized
+        fun holdProjection(projection: MediaProjection) {
+            activeProjection?.takeIf { it !== projection }?.stop()
+            activeProjection = projection
+        }
+
+        @Synchronized
+        fun releaseProjection() {
+            activeProjection?.stop()
+            activeProjection = null
+        }
         private var listener = WeakReference<ConnectChecker>(null)
         private val checker = object : ConnectChecker {
             override fun onConnectionStarted(url: String) { listener.get()?.onConnectionStarted(url) }
@@ -62,6 +76,7 @@ class LiveProjectionService : Service() {
                 }
             }
             activeStream = null
+            releaseProjection()
         }
 
 
