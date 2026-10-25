@@ -101,6 +101,15 @@
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLeaveLive"
+            style="@style/Nelsen.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="Leave stream"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnShareLive"
             style="@style/Nelsen.Button.Secondary"
             android:layout_width="wrap_content"
