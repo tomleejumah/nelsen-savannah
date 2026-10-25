@@ -102,5 +102,11 @@ class LiveProjectionService : Service() {
         return START_NOT_STICKY
     }
 
+    override fun onDestroy() {
+        releaseStream()
+        readyCallback = null
+        super.onDestroy()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 }
