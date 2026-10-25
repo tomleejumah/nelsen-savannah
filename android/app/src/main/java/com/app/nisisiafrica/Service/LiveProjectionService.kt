@@ -12,6 +12,9 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.app.nisisiafrica.R
+import com.pedro.common.ConnectChecker
+import com.pedro.library.generic.GenericStream
+import java.lang.ref.WeakReference
 
 /**
  * Keeps Android's MediaProjection authorization valid while a host shares
@@ -23,6 +26,44 @@ class LiveProjectionService : Service() {
         private const val CHANNEL_ID = "nelsen_live_projection"
         private const val NOTIFICATION_ID = 4102
         private var readyCallback: (() -> Unit)? = null
+        private var activeStream: GenericStream? = null
+        private var listener = WeakReference<ConnectChecker>(null)
+        private val checker = object : ConnectChecker {
+            override fun onConnectionStarted(url: String) { listener.get()?.onConnectionStarted(url) }
+            override fun onConnectionSuccess() { listener.get()?.onConnectionSuccess() }
+            override fun onConnectionFailed(reason: String) { listener.get()?.onConnectionFailed(reason) }
+            override fun onNewBitrate(bitrate: Long) { listener.get()?.onNewBitrate(bitrate) }
+            override fun onDisconnect() { listener.get()?.onDisconnect() }
+            override fun onAuthError() { listener.get()?.onAuthError() }
+            override fun onAuthSuccess() { listener.get()?.onAuthSuccess() }
+        }
+
+        @Synchronized
+        fun attachStream(context: Context, observer: ConnectChecker): GenericStream {
+            listener = WeakReference(observer)
+            return activeStream ?: GenericStream(context.applicationContext, checker)
+                .also { activeStream = it }
+        }
+
+        @Synchronized
+        fun detachObserver(observer: ConnectChecker) {
+            if (listener.get() === observer) listener.clear()
+        }
+
+        @Synchronized
+        fun releaseStream() {
+            listener.clear()
+            activeStream?.let { stream ->
+                try {
+                    if (stream.isStreaming) stream.stopStream()
+                    stream.release()
+                } catch (error: Exception) {
+                    android.util.Log.w("NelsenLive", "Stream cleanup failed", error)
+                }
+            }
+            activeStream = null
+        }
+
 
         fun startWithCallback(context: Context, onReady: () -> Unit) {
             readyCallback = onReady
