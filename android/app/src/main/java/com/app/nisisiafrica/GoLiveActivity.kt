@@ -586,7 +586,23 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             markNelsenLiveStatus("ended")
             endedSent = true
         }
-        finish()
+        showEndReport()
+    }
+
+    private fun showEndReport() {
+        val rows = attendanceRows.sortedByDescending { it.watchSeconds }
+        val totalSeconds = rows.sumOf { it.watchSeconds.toLong() }
+        val details = rows.joinToString("\n") {
+            val name = it.displayName?.takeIf { name -> name.isNotBlank() } ?: "Viewer"
+            "$name · ${it.watchSeconds / 60}m ${it.watchSeconds % 60}s"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Live attendance report")
+            .setMessage("${rows.size} attendees · ${totalSeconds / 60} total watch minutes\n\n" +
+                details.ifBlank { "No attendance recorded" })
+            .setPositiveButton("Done") { _, _ -> finish() }
+            .setCancelable(false)
+            .show()
     }
 
     private fun markNelsenLiveStatus(liveStatus: String) {
