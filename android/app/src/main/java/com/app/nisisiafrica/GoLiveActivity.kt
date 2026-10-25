@@ -549,7 +549,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                             if (hostChatInput.text?.toString()?.trim() == message) hostChatInput.setText("")
                             refreshTelemetry()
                         } else {
-                            Toast.makeText(this@GoLiveActivity, "Message not sent (${response.code()})", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@GoLiveActivity, if (response.code() == 429) "Please wait a moment before sending another message" else "Message not sent (${response.code()})", Toast.LENGTH_SHORT).show()
                         }
                     }
                     override fun onFailure(call: Call<LmsModels.MapEnvelope>, t: Throwable) {
