@@ -123,6 +123,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         mediaProjection?.stop()
                         mediaProjection = manager.getMediaProjection(resultCode, consent)
                         val projection = mediaProjection ?: return@startWithCallback
+                        LiveProjectionService.holdProjection(projection)
                         stream.changeVideoSource(ScreenSource(applicationContext, projection))
                         stream.getGlInterface().setCameraOrientation(0)
                         sharingScreen = true
@@ -311,10 +312,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private fun restoreCamera() {
-        mediaProjection?.stop()
+        stream.changeVideoSource(Camera2Source(applicationContext))
+        LiveProjectionService.releaseProjection()
         mediaProjection = null
         stopService(Intent(this, LiveProjectionService::class.java))
-        stream.changeVideoSource(Camera2Source(applicationContext))
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
         cameraPaused = false
