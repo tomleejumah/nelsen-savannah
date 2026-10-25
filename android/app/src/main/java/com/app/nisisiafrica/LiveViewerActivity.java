@@ -121,7 +121,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         liveStatusView.setText(statusLabel(status));
 
         openYoutubeButton = findViewById(R.id.btnOpenYoutube);
-        openYoutubeButton.setOnClickListener(v -> openLiveExternally());
+        openYoutubeButton.setVisibility(View.GONE);
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
         chatScroll = findViewById(R.id.liveChatScroll);
@@ -279,7 +279,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         int previousHeight = child == null ? 0 : child.getHeight();
         int oldScrollY = chatScroll.getScrollY();
         int threshold = Math.round(48 * getResources().getDisplayMetrics().density);
-        boolean followingLatest = child != null &&
+        boolean followingLatest = child == null || previousHeight <= chatScroll.getHeight() ||
                 oldScrollY + chatScroll.getHeight() >= previousHeight - threshold;
         lastChatSnapshot = next;
         chatView.setText(next);
