@@ -127,6 +127,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         stream.getGlInterface().setCameraOrientation(0)
                         sharingScreen = true
                         cameraPaused = false
+                        screenButton.isActivated = true
+                        cameraButton.isActivated = false
                         screenButton.contentDescription = "Stop sharing screen"
                         cameraButton.contentDescription = "Turn camera off"
                         switchButton.isEnabled = false
@@ -307,6 +309,8 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
         cameraPaused = false
+        screenButton.isActivated = false
+        cameraButton.isActivated = false
         screenButton.contentDescription = "Share screen"
         cameraButton.contentDescription = "Turn camera off"
         switchButton.isEnabled = true
@@ -324,6 +328,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             } else {
                 stream.changeVideoSource(NoVideoSource())
                 cameraPaused = true
+                cameraButton.isActivated = true
                 cameraButton.contentDescription = "Turn camera on"
                 switchButton.isEnabled = false
                 if (wentLive) status.text = "LIVE · Camera paused"
@@ -790,6 +795,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onStop() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !sharingScreen &&
             !isFinishing &&
             wentLive &&
             stream.isStreaming &&
@@ -816,7 +822,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && wentLive && stream.isStreaming) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !sharingScreen && wentLive && stream.isStreaming) {
             try {
                 enterPictureInPictureMode(
                     PictureInPictureParams.Builder()
