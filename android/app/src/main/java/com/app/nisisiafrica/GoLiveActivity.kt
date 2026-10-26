@@ -123,18 +123,20 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                         mediaProjection?.stop()
                         mediaProjection = manager.getMediaProjection(resultCode, consent)
                         val projection = mediaProjection ?: return@startWithCallback
+                        LiveProjectionService.holdProjection(projection)
                         stream.changeVideoSource(ScreenSource(applicationContext, projection))
                         stream.getGlInterface().setCameraOrientation(0)
                         sharingScreen = true
                         cameraPaused = false
+                        screenButton.isActivated = true
+                        cameraButton.isActivated = false
                         screenButton.contentDescription = "Stop sharing screen"
                         cameraButton.contentDescription = "Turn camera off"
                         switchButton.isEnabled = false
                         status.text = "LIVE · Sharing screen"
                     } catch (e: Exception) {
-                        mediaProjection?.stop()
+                        LiveProjectionService.releaseProjection()
                         mediaProjection = null
-                        stopService(Intent(this, LiveProjectionService::class.java))
                         Toast.makeText(this, e.message ?: "Could not share screen", Toast.LENGTH_LONG).show()
                     } finally {
                         screenButton.isEnabled = true
@@ -209,7 +211,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         findViewById<TextView>(R.id.tvLiveTitle).text =
             intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Nelsen Live" }
 
-        stream = GenericStream(applicationContext, this)
+        stream = LiveProjectionService.attachStream(applicationContext, this)
+        if (stream.isStreaming) {
+            prepared = true
+            wentLive = true
+            sharingScreen = stream.videoSource is ScreenSource
+            screenButton.isActivated = sharingScreen
+            switchButton.isEnabled = !sharingScreen
+        }
         // RootEncoder's Ktor TLS socket can collide with another Ktor ABI in the
         // app at runtime (ByteChannel NoSuchMethodError). RTMPS works with the
         // library's Java socket implementation and avoids that dependency path.
@@ -219,6 +228,10 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
         // a second Nelsen live session or restarting the camera encoder.
         stream.getStreamClient().setReTries(6)
         preview.holder.addCallback(this)
+        if (wentLive) {
+            status.text = "LIVE · Reconnected to studio"
+            telemetryHandler.post(telemetryPoll)
+        }
 
         endButton.setOnClickListener { confirmEndLive() }
         switchButton.setOnClickListener {
@@ -255,7 +268,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private fun maybeStartLive() {
-        if (!surfaceReady || isFinishing || finishingLive) return
+        if (!surfaceReady || isFinishing || finishingLive || stream.isStreaming) return
 
         if (!prepared) {
             status.text = "Preparing camera and microphone…"
@@ -300,13 +313,15 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
     }
 
     private fun restoreCamera() {
-        mediaProjection?.stop()
-        mediaProjection = null
-        stopService(Intent(this, LiveProjectionService::class.java))
         stream.changeVideoSource(Camera2Source(applicationContext))
+        LiveProjectionService.releaseProjection()
+        mediaProjection = null
+        // Keep the foreground stream service running after switching sources.
         stream.getGlInterface().setCameraOrientation(90)
         sharingScreen = false
         cameraPaused = false
+        screenButton.isActivated = false
+        cameraButton.isActivated = false
         screenButton.contentDescription = "Share screen"
         cameraButton.contentDescription = "Turn camera off"
         switchButton.isEnabled = true
@@ -324,6 +339,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             } else {
                 stream.changeVideoSource(NoVideoSource())
                 cameraPaused = true
+                cameraButton.isActivated = true
                 cameraButton.contentDescription = "Turn camera on"
                 switchButton.isEnabled = false
                 if (wentLive) status.text = "LIVE · Camera paused"
@@ -544,7 +560,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
                             if (hostChatInput.text?.toString()?.trim() == message) hostChatInput.setText("")
                             refreshTelemetry()
                         } else {
-                            Toast.makeText(this@GoLiveActivity, "Message not sent (${response.code()})", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@GoLiveActivity, if (response.code() == 429) "Please wait a moment before sending another message" else "Message not sent (${response.code()})", Toast.LENGTH_SHORT).show()
                         }
                     }
                     override fun onFailure(call: Call<LmsModels.MapEnvelope>, t: Throwable) {
@@ -581,7 +597,24 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             markNelsenLiveStatus("ended")
             endedSent = true
         }
-        finish()
+        LiveProjectionService.releaseStream()
+        showEndReport()
+    }
+
+    private fun showEndReport() {
+        val rows = attendanceRows.sortedByDescending { it.watchSeconds }
+        val totalSeconds = rows.sumOf { it.watchSeconds.toLong() }
+        val details = rows.joinToString("\n") {
+            val name = it.displayName?.takeIf { name -> name.isNotBlank() } ?: "Viewer"
+            "$name · ${it.watchSeconds / 60}m ${it.watchSeconds % 60}s"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Live attendance report")
+            .setMessage("${rows.size} attendees · ${totalSeconds / 60} total watch minutes\n\n" +
+                details.ifBlank { "No attendance recorded" })
+            .setPositiveButton("Done") { _, _ -> finish() }
+            .setCancelable(false)
+            .show()
     }
 
     private fun markNelsenLiveStatus(liveStatus: String) {
@@ -790,6 +823,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onStop() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !sharingScreen &&
             !isFinishing &&
             wentLive &&
             stream.isStreaming &&
@@ -816,7 +850,7 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && wentLive && stream.isStreaming) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !sharingScreen && wentLive && stream.isStreaming) {
             try {
                 enterPictureInPictureMode(
                     PictureInPictureParams.Builder()
@@ -836,12 +870,14 @@ class GoLiveActivity : AppCompatActivity(), ConnectChecker, SurfaceHolder.Callba
             // This Activity can finish before the encoder is created (for
             // example an invalid endpoint or denied permissions).
             if (::stream.isInitialized) {
-                if (stream.isStreaming) stream.stopStream()
-                stream.release()
+                if (!stream.isStreaming || finishingLive) LiveProjectionService.releaseStream()
+                else LiveProjectionService.detachObserver(this)
             }
-            mediaProjection?.stop()
-            mediaProjection = null
-            stopService(Intent(this, LiveProjectionService::class.java))
+            if (finishingLive || !::stream.isInitialized || !stream.isStreaming) {
+                mediaProjection?.stop()
+                mediaProjection = null
+                stopService(Intent(this, LiveProjectionService::class.java))
+            }
         } catch (error: Exception) {
             android.util.Log.w("NelsenLive", "Studio cleanup failed", error)
         }

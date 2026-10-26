@@ -1,6 +1,8 @@
 package com.app.nisisiafrica.Service;
 
 import android.app.NotificationManager;
+import android.app.NotificationChannel;
+import android.os.Build;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -113,6 +115,12 @@ public class FCMService extends FirebaseMessagingService {
             pendingIntent = stackBuilder.getPendingIntent(
                     requestCode,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(new NotificationChannel(
+                    CHANNEL_ID, "Nelsen notifications", NotificationManager.IMPORTANCE_HIGH));
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)

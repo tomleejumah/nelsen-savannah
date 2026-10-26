@@ -593,20 +593,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
 
     private void handleLiveNotificationIntent(Intent intent) {
         if (intent == null || !"live".equals(intent.getStringExtra("type"))) return;
-        String youtubeUrl = intent.getStringExtra("youtubeUrl");
-        if (TextUtils.isEmpty(youtubeUrl)) return;
-
-        Intent viewer = new Intent(this, LiveViewerActivity.class)
-                .putExtra(LiveViewerActivity.EXTRA_TITLE, intent.getStringExtra("eventTitle"))
-                .putExtra(LiveViewerActivity.EXTRA_EVENT_ID, intent.getStringExtra("eventId"))
-                .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, youtubeUrl)
-                .putExtra(
-                        LiveViewerActivity.EXTRA_LIVE_STATUS,
-                        TextUtils.isEmpty(intent.getStringExtra("liveStatus"))
-                                ? "live"
-                                : intent.getStringExtra("liveStatus"));
+        String eventId = intent.getStringExtra("eventId");
         intent.removeExtra("type");
-        startActivity(viewer);
+        if (TextUtils.isEmpty(eventId)) return;
+        // Resolve the event through the authenticated API rather than trusting
+        // stale notification URLs or bypassing school/course access checks.
+        openLiveAppLink(eventId);
     }
 
     private void handleOpenChatIntent(Intent intent) {
