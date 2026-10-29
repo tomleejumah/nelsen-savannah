@@ -177,6 +177,41 @@ Changes are tracked separately from end-to-end verification. **Do not mark a tas
 
 This file is the working implementation plan for the Nelsen Savannah LMS across Web and Android.
 
+## Release-Day Priority — October 29, 2026
+
+Deadline: **today**. Finish and validate critical role, messaging, learning, and release paths before lower-priority polish.
+
+### Group chat mentions and chat discovery
+
+- [ ] Support WhatsApp-style **@name** mentions in group chat: member suggestions while typing, selectable user identity (UID), visible mention styling, and notification/deep link to the message for the mentioned member.
+- [ ] Restrict mention suggestions to users eligible to participate in that group; handle duplicate display names and deleted/removed members.
+- [ ] In **Create chat**, mentors can discover **all mentors** they are permitted to message, plus **mentees enrolled in courses assigned to that mentor**.
+- [ ] Enforce the same discovery and chat-creation scope on the API/Firestore security side, not only in the Android UI; avoid leaking unrelated mentees.
+- [ ] Verify Android and Web message rendering, notification delivery, unread counts, and group-chat mention navigation.
+
+### Android role-aware course UI
+
+- [ ] Mentors must see **View course**, not learner-only **Learn / Continue reading** calls to action.
+- [ ] Show mentor course tools (chapters, lessons, authoring/management where authorized) while hiding mentee-only progress and enrollment actions.
+- [ ] Keep mentee Learn / Continue reading, assignment answering, and quiz submission available only to eligible learners; verify SchoolAdmin/SuperAdmin states separately.
+- [ ] Test role changes and users who hold multiple school/course memberships.
+
+### Recent assignment chain — implementation complete, validation pending
+
+- [x] Mentor authoring supports separate quiz and assignment checkboxes and multiple assignment questions per lesson.
+- [x] API exposes lesson assignment questions and stops automatically treating plain text lessons as assignments.
+- [x] Web and Android mentees render and submit answers per assignment question.
+- [x] Web and Android mentor marking views show each question with its answer.
+- [x] Aggregate assignment question marks into lesson assignment progress.
+- [ ] Verify API/Web/Android builds and end-to-end assignment creation → submission → marking → progress, including partial failures/retries.
+
+### Release blockers and checks
+
+- [ ] Re-run and inspect Android, Web, and API CI; distinguish cancelled jobs from actual failures and fix any errors.
+- [ ] Confirm current branch/merge state and keep all fixes on the agreed development branch; do not deploy or merge without approval.
+- [ ] Verify post/course/story/school HTTPS sharing and Android App Links through login, privacy and enrollment checks.
+- [ ] Validate production DB backup and integrity safeguards before any release.
+
 ## Core Decision: IDE Is Course-Based
 
 The IDE is a **course-level feature**, not a lesson type and not limited to individual code lessons.
