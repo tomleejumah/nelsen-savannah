@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import heroImg from "@/assets/gallery-learners.jpg";
+import heroImg from "@/assets/hero-crawl-walk-run-innovate.jpeg";
 import {
   APPROACH,
   CORE_VALUES,
@@ -55,72 +55,56 @@ const HERO_STATS = [
 function Index() {
   return (
     <div className="bg-cream text-ink">
-      {/* Hero */}
-      <section className="border-b border-hairline">
-        <div className="mx-auto max-w-7xl px-5 pb-16 pt-28 sm:px-8 sm:pb-20 sm:pt-36">
-          <p className="text-sm text-brick">
-            Nairobi, Kenya — an education and innovation hub
-          </p>
-
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:gap-12">
-            <h1 className="font-display text-[2.35rem] leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.35rem]">
+      {/* Hero copy overlays the supplied image, like the previous homepage hero. */}
+      <section className="ns-hero relative isolate flex min-h-[820px] flex-col justify-end overflow-hidden border-b border-hairline bg-ink-deep text-on-dark sm:min-h-[900px] lg:min-h-[820px]">
+        <img
+          src={heroImg}
+          alt="Nelsen Savannah's Crawl, Walk, Run and Innovate community portrait"
+          width={1199}
+          height={1280}
+          fetchPriority="high"
+          className="ns-hero-image absolute inset-0 h-full w-full object-cover object-center"
+        />
+        <div aria-hidden="true" className="ns-hero-overlay absolute inset-0" />
+        <div className="relative z-10 w-full">
+        <div className="mx-auto w-full max-w-7xl px-5 pb-12 pt-32 sm:px-8 sm:pb-16 sm:pt-40 lg:pb-20">
+          <div className="max-w-4xl">
+            <p className="ns-hero-eyebrow inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] sm:text-sm">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-ochre" />
+              Nairobi, Kenya · Education &amp; Innovation Hub
+            </p>
+            <h1 className="mt-7 max-w-4xl font-display text-4xl font-semibold leading-[1.03] tracking-tight text-white sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
               Practical digital skills for Africa&apos;s next builders.
             </h1>
-            <p className="max-w-md text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-              Robotics, data, software, design, and audio — for graduates, career changers,
-              developers, and educators who want to build, not just study.{" "}
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg lg:text-xl">
+              Robotics, data, software, design, and audio — learn by building real things with people who make technology work.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 to="/programs"
-                className="underline decoration-hairline underline-offset-4 transition-colors hover:text-brick hover:decoration-brick"
+                className="ns-gold-button inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-sm font-bold transition duration-300 hover:-translate-y-0.5 sm:px-7 sm:text-base"
               >
-                See the programmes
+                Explore programmes <span aria-hidden="true" className="ml-2">↗</span>
               </Link>
-            </p>
+              <Link
+                to="/contact"
+                className="ns-outline-button inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 sm:px-7 sm:text-base"
+              >
+                Talk to our team
+              </Link>
+            </div>
           </div>
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-stretch lg:gap-10">
-            <figure className="relative aspect-[4/3] overflow-hidden sm:aspect-[16/11] lg:aspect-auto lg:min-h-0">
-              <img
-                src={heroImg}
-                alt="Learners building together at the Nelsen Savannah Nairobi hub"
-                width={1024}
-                height={877}
-                className="h-full w-full object-cover lg:absolute lg:inset-0"
-              />
-              <figcaption className="absolute bottom-3 left-3 z-10 bg-ink/75 px-2.5 py-1 text-xs text-on-dark">
-                A build session at the Nairobi hub
-              </figcaption>
-            </figure>
-
-            <dl className="flex flex-col justify-between">
-              {HERO_STATS.map((s) => (
-                <div
-                  key={s.value}
-                  className="grid grid-cols-[7.5rem_1fr] items-baseline gap-4 border-b border-hairline py-4 first:border-t sm:grid-cols-[8.5rem_1fr] sm:py-5"
-                >
-                  <dt className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
-                    {s.value}
-                  </dt>
-                  <dd className="text-sm leading-snug text-muted-foreground">{s.label}</dd>
-                </div>
-              ))}
-            </dl>
+          <div className="mt-14 grid max-w-5xl grid-cols-2 gap-3 sm:mt-20 sm:grid-cols-4 sm:gap-4">
+            {HERO_STATS.map((s) => (
+              <div key={s.label} className="ns-hero-stat rounded-2xl p-4 sm:p-5">
+                <p className="font-display text-2xl font-semibold tracking-tight text-ochre sm:text-3xl">{s.value}</p>
+                <p className="mt-2 text-xs leading-relaxed text-white/75 sm:text-sm">{s.label}</p>
+              </div>
+            ))}
           </div>
-
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link
-              to="/programs"
-              className="inline-flex items-center bg-ember-gradient px-5 py-3 text-sm font-medium text-maroon-foreground shadow-ember-glow transition-opacity hover:opacity-90"
-            >
-              Join a programme
-            </Link>
-            <Link
-              to="/contact"
-              className="inline-flex items-center border border-ink px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-on-dark"
-            >
-              Talk to us
-            </Link>
-          </div>
+          <p className="mt-5 text-xs text-white/55">Crawl. Walk. Run. Innovate.</p>
+        </div>
         </div>
       </section>
 
