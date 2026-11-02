@@ -674,7 +674,6 @@ object FirebaseRemoteDataSource {
         val currentUserId = auth.currentUser?.uid ?: return InvalidPagingSource()
 
         val query = firestore.collection("chatRooms")
-            .whereEqualTo("type", "direct")
             .whereArrayContains("userIds", currentUserId)
             .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
 
@@ -691,7 +690,7 @@ object FirebaseRemoteDataSource {
                     // Filter out announcements
                     val chatrooms = snapshot.toObjects(Chatroom::class.java)
                         .filter { room ->
-                            room.lastMessage.trim().isNotEmpty()
+                            (room.type == "group" || room.lastMessage.trim().isNotEmpty())
                                     && !room.lastMessage.equals("No Messages Yet", ignoreCase = true)
                         }
 
