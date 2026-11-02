@@ -98,6 +98,22 @@ export async function syncCourseChatMembership(trackId) {
   });
 }
 
+/** Periodic repair for missed membership events. No rooms are created. */
+export async function reconcileExistingCourseChats() {
+  const tracks = await dbAll("SELECT track_id FROM tracks WHERE school_id IS NOT NULL");
+  let repaired = 0;
+  let failed = 0;
+  for (const track of tracks) {
+    try {
+      if (await syncCourseChatMembership(track.track_id)) repaired++;
+    } catch (err) {
+      failed++;
+      console.warn("[course-chat] reconciliation failed", track.track_id, err.message);
+    }
+  }
+  return { scanned: tracks.length, repaired, failed };
+}
+
 export async function createCourseGroupChat(req, res) {
   try {
     const uid = req.user.uid;
