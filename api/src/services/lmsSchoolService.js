@@ -1158,6 +1158,14 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
       approved: false,
     });
   }
+  // A school suspension/reinstatement changes eligibility for every course chat.
+  try {
+    const courses = await dbAll("SELECT track_id FROM tracks WHERE school_id = ?", [schoolId]);
+    const { syncCourseChatMembership } = await import("../controllers/courseGroupChatController.js");
+    await Promise.all(courses.map(course => syncCourseChatMembership(course.track_id)));
+  } catch (err) {
+    console.error("[course-chat] school membership sync failed:", err);
+  }
   const fresh = await dbGet(
     `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,
             m.status, m.invite_token
