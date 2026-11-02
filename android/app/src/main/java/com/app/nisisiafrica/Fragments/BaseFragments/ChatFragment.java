@@ -257,7 +257,7 @@ public class ChatFragment extends Fragment {
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
 
         currentChatId = chatId;
-        currentReceiverId = "group".equals(type) ? null : chatroom.getOtherUserId(currentUserId);
+        currentReceiverId = ("group".equals(type) || "system".equals(type)) ? null : chatroom.getOtherUserId(currentUserId);
 
         showChatDetail();
         binding.etMessage.setText("");
@@ -1197,7 +1197,7 @@ public class ChatFragment extends Fragment {
                 ChatMessageEntity replyTarget = replyingTo;
                 clearReply();
                 String currentUserId = FirebaseAuth.getInstance().getUid();
-                String receiverId = "group".equals(chatroom.getType()) ? null : chatroom.getOtherUserId(currentUserId);
+                String receiverId = ("group".equals(chatroom.getType()) || "system".equals(chatroom.getType())) ? null : chatroom.getOtherUserId(currentUserId);
                 viewModel.sendMessage(chatId, msg, receiverId, replyTarget, success -> {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
