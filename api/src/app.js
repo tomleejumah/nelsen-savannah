@@ -131,6 +131,22 @@ async function start() {
   startMediaReaper();
   startYouTubeLiveSync();
   startStoryViewReceiptReaper();
+  // Repair course chat access after transient Firestore outages or missed hooks.
+  // One process should own this loop in multi-instance deployments.
+  if (process.env.COURSE_CHAT_RECONCILE !== "0") {
+    const reconcile = async () => {
+      try {
+        const { reconcileExistingCourseChats } = await import("./controllers/courseGroupChatController.js");
+        const result = await reconcileExistingCourseChats();
+        if (result.failed) console.warn("[course-chat] reconciliation incomplete", result);
+      } catch (err) {
+        console.warn("[course-chat] reconciliation unavailable", err.message);
+      }
+    };
+    setTimeout(reconcile, 30_000).unref();
+    setInterval(reconcile, 15 * 60_000).unref();
+  }
+
   app.listen(PORT, () => {
     console.log(`Nelsen Savannah service running on port ${PORT}`);
   });
