@@ -238,7 +238,7 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                 if (receiverId == null) {
                     db.collection("chatRooms").document(chatroomId).get()
                         .addOnSuccessListener { room ->
-                            if (room.getString("type") == "group") {
+                            if (room.getString("type") == "group" || (room.getString("type") == "system" && !room.getString("schoolId").isNullOrBlank())) {
                                 val ids = room.get("userIds") as? List<*> ?: emptyList<Any>()
                                 ids.filterIsInstance<String>()
                                     .filter { it != user.uid }
