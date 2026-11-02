@@ -1,5 +1,6 @@
 import admin from '../config/firebase.js';
 import { sendFCMNotification } from '../services/fcmService.js';
+import { dbAll } from '../db/lmsDb.js';
 
 export const sendChatMessageNotification = async (req, res) => {
   const uid = req.user.uid;
@@ -22,7 +23,19 @@ export const sendChatMessageNotification = async (req, res) => {
       return res.status(403).json({ error: "Invalid conversation recipient" });
     }
     // Never trust a caller-supplied recipient list for group fanout.
-    const recipients = [...new Set(group ? participants.filter(id => id !== uid) : [receiverId])];
+    let recipients = [...new Set(group ? participants.filter(id => id !== uid) : [receiverId])];
+    // Firestore room membership can lag behind school suspension. Never notify
+    // a suspended member, even before the reconciliation worker catches up.
+    if (room.type === "system" && room.schoolId) {
+      const active = await dbAll(
+        "SELECT uid, role FROM school_memberships WHERE school_id = ? AND status = 'active'",
+        [room.schoolId]);
+      const allowed = new Set(active.map(m => m.uid));
+      if (!allowed.has(uid)) return res.status(403).json({ error: "Inactive school membership" });
+      if (!active.some(m => m.uid === uid && String(m.role).toLowerCase() === "schooladmin"))
+        return res.status(403).json({ error: "School admin membership required" });
+      recipients = recipients.filter(id => allowed.has(id));
+    }
     const preview = messageText.trim().slice(0, 100);
     const outcomes = await Promise.allSettled(recipients.map(async id => {
       const notificationData = {
