@@ -18,21 +18,21 @@ async function authorizedCourse(uid, trackId) {
   const mentor = await dbGet("SELECT uid FROM track_mentors WHERE track_id = ? AND uid = ?", [trackId, uid]);
   if (!mentor) throw httpError("Not an assigned course mentor");
   // A school membership check is intentionally required in addition to course assignment.
-  const member = await dbGet("SELECT status FROM school_members WHERE school_id = ? AND uid = ?", [track.school_id, uid]);
+  const member = await dbGet("SELECT status FROM school_memberships WHERE school_id = ? AND uid = ?", [track.school_id, uid]);
   if (!member || !active(member.status)) throw httpError("Inactive school membership");
   return track;
 }
 
 async function eligibleMentees(trackId, schoolId) {
   const rows = await dbAll(
-    `SELECT DISTINCT e.uid, u.display_name
+    `SELECT DISTINCT e.uid, u.display_name, e.status AS enrollment_status, sm.status AS membership_status
        FROM enrollments e
-       JOIN school_members sm ON sm.uid = e.uid AND sm.school_id = ?
+       JOIN school_memberships sm ON sm.uid = e.uid AND sm.school_id = ?
        LEFT JOIN users_mirror u ON u.uid = e.uid
       WHERE e.track_id = ? AND e.uid IS NOT NULL`,
     [schoolId, trackId],
   );
-  return rows.filter((r) => r.uid);
+  return rows.filter((r) => r.uid && active(r.enrollment_status) && active(r.membership_status));
 }
 
 export async function getCourseChatCandidates(req, res) {
