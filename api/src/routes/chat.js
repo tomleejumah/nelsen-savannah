@@ -3,10 +3,11 @@ import { authenticateUser } from '../middleware/auth.js';
 import * as chatController from '../controllers/chatController.js';
 
 import { requireRoles } from "../middleware/lmsRoles.js";
-import { getCourseChatCandidates, createCourseGroupChat } from "../controllers/courseGroupChatController.js";
+import { listMentorChatCourses, getCourseChatCandidates, createCourseGroupChat } from "../controllers/courseGroupChatController.js";
 
 const router = express.Router();
 
+router.get("/courses/mine", authenticateUser, requireRoles("Mentor"), listMentorChatCourses);
 router.get("/course/:trackId/candidates", authenticateUser, requireRoles("Mentor"), getCourseChatCandidates);
 router.post("/course/:trackId/groups", authenticateUser, requireRoles("Mentor"), createCourseGroupChat);
 
