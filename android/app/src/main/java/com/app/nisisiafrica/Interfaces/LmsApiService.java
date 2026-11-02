@@ -19,6 +19,9 @@ import retrofit2.http.Query;
 public interface LmsApiService {
 
     /** Mentor-only course group chat endpoints. */
+    @GET("chat/courses/mine")
+    Call<com.google.gson.JsonObject> mentorChatCourses(@Header("Authorization") String bearer);
+
     @GET("chat/course/{trackId}/candidates")
     Call<com.google.gson.JsonObject> courseChatCandidates(
             @Header("Authorization") String bearer,
