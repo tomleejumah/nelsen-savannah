@@ -189,6 +189,16 @@ Deadline: **today**. Finish and validate critical role, messaging, learning, and
 - [ ] Enforce the same discovery and chat-creation scope on the API/Firestore security side, not only in the Android UI; avoid leaking unrelated mentees.
 - [ ] Verify Android and Web message rendering, notification delivery, unread counts, and group-chat mention navigation.
 
+### Mentor-created course group chats (not Communities)
+
+- [ ] Let an authorized Mentor create a **group chat** in the existing messaging system (`chatRooms`) for a course they are assigned to; expose Create course chat from the course and Chat screens, **not** the Communities feature.
+- [ ] List active mentees enrolled in that course as eligible chat participants; select individuals or add all eligible mentees, with the mentor as group admin.
+- [ ] Store `type: "group"`, `courseId`, `schoolId`, `createdBy`, and verified `userIds`/membership in the chat room; display the group chat in participants' Chat tabs and open its messages.
+- [ ] Authorize group creation and membership server-side using the mentor's assigned course, school scope and active enrollment; never trust arbitrary participant UIDs from the client.
+- [ ] Define how enrollment/mentor assignment changes revoke or update group chat access; secure reads, writes, message sends and membership changes with Firestore rules/API checks.
+- [ ] Support chat title, optional avatar, participant list and mentor admin controls; make creation idempotent to avoid accidental duplicate chats.
+- [ ] Verify Android/Web creation, group messaging, notifications, mentions, unread counts and deep links with multiple accounts.
+
 ### Android role-aware course UI
 
 - [ ] Mentors must see **View course**, not learner-only **Learn / Continue reading** calls to action.

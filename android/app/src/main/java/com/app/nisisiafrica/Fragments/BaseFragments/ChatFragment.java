@@ -233,7 +233,7 @@ public class ChatFragment extends Fragment {
                 ArrayList<Chatroom> filtered = new ArrayList<>();
                 for (Chatroom room : loadedRooms) {
                     if (room == null) continue;
-                    String name = room.getOtherUserName(currentUserId);
+                    String name = "group".equals(room.getType()) ? room.getName() : room.getOtherUserName(currentUserId);
                     if (name != null && name.toLowerCase(Locale.getDefault()).contains(query)) {
                         filtered.add(room);
                     }
@@ -285,7 +285,7 @@ public class ChatFragment extends Fragment {
     private void confirmDeleteChat(Chatroom chatroom) {
         if (chatroom == null) return;
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
-        if ("system".equals(type) || "ai".equals(type)) {
+        if ("system".equals(type) || "ai".equals(type) || "group".equals(type)) {
             Toast.makeText(requireContext(), "This chat can't be deleted", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -310,6 +310,71 @@ public class ChatFragment extends Fragment {
                 })
                 .show();
     }
+    /** Mentor course group chats are distinct from Communities. */
+    private void showCourseGroupPicker() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || !isAdded()) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            String bearer = "Bearer " + token.getToken();
+            ApiClient.getLmsService().mentorChatCourses(bearer).enqueue(new Callback<com.google.gson.JsonObject>() {
+                @Override public void onResponse(Call<com.google.gson.JsonObject> call, Response<com.google.gson.JsonObject> response) {
+                    if (!isAdded() || response.body() == null || !response.isSuccessful()) return;
+                    com.google.gson.JsonArray courses = response.body().getAsJsonArray("courses");
+                    if (courses == null || courses.size() == 0) {
+                        Toast.makeText(requireContext(), "No assigned courses", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    String[] labels = new String[courses.size()];
+                    for (int i = 0; i < courses.size(); i++) labels[i] = courses.get(i).getAsJsonObject().get("title").getAsString();
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Choose course for group chat")
+                            .setItems(labels, (d, which) -> {
+                                String id = courses.get(which).getAsJsonObject().get("trackId").getAsString();
+                                showCourseChatMembers(bearer, id, labels[which]);
+                            }).show();
+                }
+                @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't load courses", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    private void showCourseChatMembers(String bearer, String trackId, String courseTitle) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(courseTitle)
+                .setMessage("Create or open this course's group chat? All assigned mentors and enrolled mentees are added automatically. Only one chat exists per course.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Open group chat", (dialog, which) -> {
+                    ApiClient.getLmsService().createCourseGroupChat(
+                            bearer, trackId, new com.google.gson.JsonObject())
+                            .enqueue(new Callback<com.google.gson.JsonObject>() {
+                                @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                                  Response<com.google.gson.JsonObject> response) {
+                                    if (!isAdded()) return;
+                                    if (!response.isSuccessful() || response.body() == null) {
+                                        Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+                                    com.google.gson.JsonObject data = response.body();
+                                    String id = data.get("chatroomId").getAsString();
+                                    String name = data.get("name").getAsString();
+                                    if (pagedAdapter != null) pagedAdapter.refresh();
+                                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                            .collection("chatRooms").document(id).get()
+                                            .addOnSuccessListener(snapshot -> {
+                                                if (!isAdded() || !snapshot.exists()) return;
+                                                Chatroom room = snapshot.toObject(Chatroom.class);
+                                                if (room != null) openChat(room);
+                                            });
+                                }
+                                @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }).show();
+    }
+
     /** Bottom-sheet: mentors pick any mentor; mentees pick tutors from enrolled courses. */
     public void showNewChatPicker() {
         String me = FirebaseAuth.getInstance().getUid();
@@ -351,6 +416,14 @@ public class ChatFragment extends Fragment {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        if (Roles.isMentorTitle()) {
+            TextView groupOption = new TextView(requireContext());
+            groupOption.setText("Create course group chat");
+            groupOption.setTextSize(16f);
+            groupOption.setPadding(0, dp(12), 0, dp(12));
+            groupOption.setOnClickListener(v -> { dialog.dismiss(); showCourseGroupPicker(); });
+            sheet.addView(groupOption, 1);
+        }
         dialog.setContentView(sheet);
         dialog.show();
 

@@ -140,6 +140,8 @@ data class ChatMessageEntity(
 
 data class Chatroom(
     val chatroomId: String = "",
+    val name: String = "",
+    val courseId: String = "",
     val userIds: List<String> = emptyList(),
     val userNames: Map<String, String> = emptyMap(),
     val lastMessage: String = "",
