@@ -14,6 +14,17 @@ Historical capability map (some early tables are superseded): [`LMS_ROADMAP.md`]
 
 ---
 
+
+## Course group chats and school announcements (feature branch; not deployed)
+
+Development branch: `feat/course-mentor-groups` — [draft PR #88](https://github.com/tomleejumah/nelsen-savannah/pull/88). **Committed code is not proof of a passing build or working device notifications.**
+
+- **Course groups:** One Firestore `chatRooms/course_<trackId>` per course, created/opened by an assigned mentor. Its membership comes from active school memberships, assigned mentors and eligible course enrollments; all assigned mentors are group admins. Enrollment, unenrollment, mentor reassignment and school status changes trigger synchronization. The API periodically reconciles existing rooms to recover missed events.
+- **School announcements:** Separate `chatRooms/school_announcements_<schoolId>` per school. `GET /chat/schools/announcements` lists a user's active schools; `POST /chat/school/:schoolId/announcements` creates/opens the room for an authorized active school admin. Membership derives from active school memberships and is reconciled after status changes and periodically. The old global `announcements` room is retained for migration; Android no longer automatically adds users to it.
+- **Notifications:** `POST /chat/message` checks sender membership against the Firestore room and fans out to other members of group/school announcement rooms; direct messages require an authorized receiver. Android sends a notification request after successful text-message submission. Push delivery depends on registered FCM tokens and has not been verified on devices.
+- **Security boundary:** Firestore rules are externally managed; review them for school-scoped access, read/write membership and admin-only announcement publishing. API membership sync is best-effort, and the periodic reconciliation is not an immediate-revocation guarantee.
+- **Outstanding:** Android/web school announcement UI and publishing; revocation guarantees and retries; message unread-count and push-delivery integration tests; deep links; CI; multi-school acceptance testing. Do not merge or deploy without verification.
+
 ## How the system works
 
 ### Auth
