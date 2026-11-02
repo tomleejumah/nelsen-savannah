@@ -346,7 +346,29 @@ public class ChatFragment extends Fragment {
                                                 .addOnSuccessListener(doc -> {
                                                     if (!isAdded()) return;
                                                     if (!doc.exists()) {
-                                                        Toast.makeText(requireContext(), "School announcements aren't set up yet", Toast.LENGTH_LONG).show();
+                                                        String schoolId = school.get("schoolId").getAsString();
+                                                        ApiClient.getLmsService().openSchoolAnnouncements(
+                                                                bearer, schoolId, new com.google.gson.JsonObject())
+                                                                .enqueue(new Callback<com.google.gson.JsonObject>() {
+                                                                    @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                                                                     Response<com.google.gson.JsonObject> response) {
+                                                                        if (!isAdded()) return;
+                                                                        if (!response.isSuccessful()) {
+                                                                            Toast.makeText(requireContext(), "Only school admins can set up announcements", Toast.LENGTH_LONG).show();
+                                                                            return;
+                                                                        }
+                                                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                                                                .collection("chatRooms").document(id).get()
+                                                                                .addOnSuccessListener(created -> {
+                                                                                    if (!isAdded()) return;
+                                                                                    Chatroom room = created.toObject(Chatroom.class);
+                                                                                    if (room != null) openChat(room);
+                                                                                });
+                                                                    }
+                                                                    @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                                                                        if (isAdded()) Toast.makeText(requireContext(), "Couldn't set up announcements", Toast.LENGTH_SHORT).show();
+                                                                    }
+                                                                });
                                                         return;
                                                     }
                                                     Chatroom room = doc.toObject(Chatroom.class);
