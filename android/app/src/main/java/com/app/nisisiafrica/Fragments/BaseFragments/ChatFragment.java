@@ -1119,12 +1119,12 @@ public class ChatFragment extends Fragment {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
                     }
-                    if (receiverId != null) {
+                    if (success) {
                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         user.getIdToken(false).addOnSuccessListener(result -> {
                             String token = "Bearer " + result.getToken();
                             ChatNotificationRequest request = new ChatNotificationRequest(
-                                    receiverId,
+                                    receiverId == null ? "" : receiverId,
                                     msg,
                                     chatId
                             );
@@ -1132,7 +1132,9 @@ public class ChatFragment extends Fragment {
                             apiService.sendChatNotification(token, request)
                                     .enqueue(new Callback<NotificationResponse>() {
                                         @Override
-                                        public void onResponse(Call<NotificationResponse> call, Response<NotificationResponse> response) {}
+                                        public void onResponse(Call<NotificationResponse> call, Response<NotificationResponse> response) {
+                                            if (!response.isSuccessful()) Log.w("ChatNotif", "Notification HTTP " + response.code());
+                                        }
                                         @Override
                                         public void onFailure(Call<NotificationResponse> call, Throwable t) {
                                             Log.e("ChatNotif", "Failed", t);
