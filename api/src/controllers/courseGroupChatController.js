@@ -87,6 +87,7 @@ export async function syncCourseChatMembership(trackId) {
   if (!track?.school_id) return false;
   const room = admin.firestore().collection("chatRooms").doc(`course_${trackId}`);
   const { userIds, userNames, adminIds } = await courseParticipants(trackId, track.school_id);
+  if (userIds.length > 400) throw httpError("Course exceeds group chat participant limit", 409);
   return admin.firestore().runTransaction(async tx => {
     const existing = await tx.get(room);
     if (!existing.exists) return false;
