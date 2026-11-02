@@ -279,3 +279,15 @@ Today roles are flat per school: `Mentee` · `Mentor` · `SchoolAdmin` (+ platfo
 1. Student: submissions + quiz + certificates + progress/me  
 2. Mentor: submissions/queue + mark + mentees progress  
 3. Then **new** School Admin people APIs (L4) + assign (L3) + tenants (L6) + pay (L7)  
+
+## Course chat and school announcements — November 2026
+
+- [x] One course group chat per course; all active assigned mentors and enrolled mentees are members.
+- [x] Sync course group membership on enrollment, unenrollment, mentor assignment and school membership status changes (best-effort hooks).
+- [x] Group message notification fan-out; direct message notification authorization and Android trigger after successful send (needs device verification).
+- [ ] **P0:** Fix group unread counts for every recipient and verify FCM device token registration, background delivery, tap-to-chat routing and retries.
+- [ ] **P0:** Make membership revocation reliable across **course chats AND announcements**; suspended/removed users must lose access immediately, including failed sync recovery. Verify server rules and cached listeners.
+- [ ] **P0:** School-specific announcements: exactly one announcements channel per school, only active school members see it, school-scoped admins publish, and cross-school access/notifications are prohibited. Do not reuse the current global announcements channel for school-specific posts.
+- [ ] **P0:** Audit current global announcements behavior, migrations and notification targeting before replacing anything.
+- [ ] **P1:** Complete web group chat integration, automated tests, Android build, CI and multi-account verification.
+
