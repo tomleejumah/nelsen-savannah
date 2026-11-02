@@ -608,6 +608,8 @@ Make app content shareable with links that open the exact destination in Nelsen 
 - [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
 - [x] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
 - [x] Add native **Share** actions for stories/statuses, courses, schools, and groups using canonical HTTPS links rather than app-only custom schemes.
+- [ ] Consolidate share URL construction and target routing behind a reusable Nelsen sharing contract across Android and Web; avoid divergent per-feature links.
+- [ ] E2E test shared posts, stories, courses, schools and groups on installed-app, browser-fallback, logged-out, private/deleted and expired-content paths.
 - [x] Keep non-looping Web fallback routes for shared posts/stories/groups and exact Web redirects for courses/schools when the app is not installed.
 - [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community/group content; a shared group link must verify membership/join policy before opening the group.
 
@@ -705,6 +707,13 @@ This milestone tracks the current production-hardening work before the remaining
 
 - [x] Restore standalone lesson quizzes with multiple questions/options and selected correct answers for automatic marking.
 - [x] Restore lesson-level mentor-marked assignments in the course editor.
+- [x] Add separate Quiz and Assignment checkboxes to lesson authoring; support multiple assignment questions alongside quiz questions.
+- [x] Return lesson-linked assignment questions in the shared API DTO and show question-by-question answer inputs on Web and Android mentee lesson screens.
+- [x] Wire per-question assignment submissions to their assignment IDs and show each question/answer in Web and Android mentor marking queues.
+- [x] Aggregate question marks into lesson assignment progress rather than overwriting progress with the most recently marked question.
+- [x] Stop treating plain text lessons as assignments unless assignment is explicitly enabled.
+- [ ] Validate the full multi-question assignment flow on Web and Android against the deployed API, including partial failures, retries, grading and progress.
+- [ ] Verify Web, API and Android CI builds complete successfully after the assignment integration.
 - [x] Remove IDE/code-lab from lesson media choices; IDE remains course-owned.
 - [x] Add multi-select lesson deletion in the course editor.
 - [ ] Add safe backend course/track deletion with transactional cleanup of dependent LMS records.
