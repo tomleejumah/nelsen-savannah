@@ -79,6 +79,25 @@ async function courseParticipants(trackId, schoolId) {
   return { userIds: Object.keys(userNames), userNames, adminIds: [...new Set(mentorIds)] };
 }
 
+/** Refresh an existing room after enrollment or mentor assignment changes.
+ * Never creates a chat implicitly; creation remains an assigned mentor action.
+ */
+export async function syncCourseChatMembership(trackId) {
+  const track = await dbGet("SELECT track_id, title, school_id FROM tracks WHERE track_id = ?", [trackId]);
+  if (!track?.school_id) return false;
+  const room = admin.firestore().collection("chatRooms").doc(`course_${trackId}`);
+  const { userIds, userNames, adminIds } = await courseParticipants(trackId, track.school_id);
+  return admin.firestore().runTransaction(async tx => {
+    const existing = await tx.get(room);
+    if (!existing.exists) return false;
+    if (existing.get("type") !== "group" || existing.get("courseId") !== trackId) {
+      throw httpError("Course chat ID conflict", 409);
+    }
+    tx.update(room, { name: track.title || "Course chat", userIds, userNames, adminIds });
+    return true;
+  });
+}
+
 export async function createCourseGroupChat(req, res) {
   try {
     const uid = req.user.uid;
