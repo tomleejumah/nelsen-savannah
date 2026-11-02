@@ -341,53 +341,32 @@ public class ChatFragment extends Fragment {
     }
 
     private void showCourseChatMembers(String bearer, String trackId, String courseTitle) {
-        ApiClient.getLmsService().courseChatCandidates(bearer, trackId).enqueue(new Callback<com.google.gson.JsonObject>() {
-            @Override public void onResponse(Call<com.google.gson.JsonObject> call, Response<com.google.gson.JsonObject> response) {
-                if (!isAdded() || !response.isSuccessful() || response.body() == null) return;
-                com.google.gson.JsonArray members = response.body().getAsJsonArray("members");
-                if (members == null || members.size() == 0) {
-                    Toast.makeText(requireContext(), "No enrolled mentees", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                String[] labels = new String[members.size()];
-                boolean[] checked = new boolean[members.size()];
-                java.util.Arrays.fill(checked, true);
-                for (int i = 0; i < members.size(); i++) {
-                    com.google.gson.JsonObject m = members.get(i).getAsJsonObject();
-                    labels[i] = m.has("display_name") && !m.get("display_name").isJsonNull()
-                            ? m.get("display_name").getAsString() : "Mentee";
-                }
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(courseTitle + " · select mentees")
-                        .setMultiChoiceItems(labels, checked, (d, index, selected) -> checked[index] = selected)
-                        .setNegativeButton("Cancel", null)
-                        .setPositiveButton("Create group chat", (d, which) -> {
-                            com.google.gson.JsonArray ids = new com.google.gson.JsonArray();
-                            for (int i = 0; i < checked.length; i++) if (checked[i])
-                                ids.add(members.get(i).getAsJsonObject().get("uid").getAsString());
-                            if (ids.size() == 0) {
-                                Toast.makeText(requireContext(), "Select a mentee", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-                            com.google.gson.JsonObject body = new com.google.gson.JsonObject();
-                            body.addProperty("name", courseTitle + " chat");
-                            body.add("memberIds", ids);
-                            ApiClient.getLmsService().createCourseGroupChat(bearer, trackId, body).enqueue(new Callback<com.google.gson.JsonObject>() {
-                                @Override public void onResponse(Call<com.google.gson.JsonObject> c, Response<com.google.gson.JsonObject> r) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(courseTitle)
+                .setMessage("Create or open this course's group chat? All assigned mentors and enrolled mentees are added automatically. Only one chat exists per course.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Open group chat", (dialog, which) -> {
+                    ApiClient.getLmsService().createCourseGroupChat(
+                            bearer, trackId, new com.google.gson.JsonObject())
+                            .enqueue(new Callback<com.google.gson.JsonObject>() {
+                                @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                                  Response<com.google.gson.JsonObject> response) {
                                     if (!isAdded()) return;
-                                    Toast.makeText(requireContext(), r.isSuccessful() ? "Group chat ready" : "Couldn't create group chat", Toast.LENGTH_SHORT).show();
-                                    if (r.isSuccessful() && pagedAdapter != null) pagedAdapter.refresh();
+                                    if (!response.isSuccessful() || response.body() == null) {
+                                        Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+                                    com.google.gson.JsonObject data = response.body();
+                                    String id = data.get("chatroomId").getAsString();
+                                    String name = data.get("name").getAsString();
+                                    if (pagedAdapter != null) pagedAdapter.refresh();
+                                    Toast.makeText(requireContext(), "Course chat ready: " + name, Toast.LENGTH_SHORT).show();
                                 }
-                                @Override public void onFailure(Call<com.google.gson.JsonObject> c, Throwable t) {
-                                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't create group chat", Toast.LENGTH_SHORT).show();
+                                @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
                                 }
                             });
-                        }).show();
-            }
-            @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
-                if (isAdded()) Toast.makeText(requireContext(), "Couldn't load mentees", Toast.LENGTH_SHORT).show();
-            }
-        });
+                }).show();
     }
 
     /** Bottom-sheet: mentors pick any mentor; mentees pick tutors from enrolled courses. */
