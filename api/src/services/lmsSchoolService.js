@@ -1166,6 +1166,14 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
   } catch (err) {
     console.error("[course-chat] school membership sync failed:", err);
   }
+  // Revoke access to this school's announcements on suspension/rejection.
+  // A failed Firestore write is recovered by the periodic reconciliation job.
+  try {
+    const { syncSchoolAnnouncementMembership } = await import("../controllers/schoolAnnouncementController.js");
+    await syncSchoolAnnouncementMembership(schoolId);
+  } catch (err) {
+    console.error("[school-announcements] membership sync failed:", err);
+  }
   const fresh = await dbGet(
     `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,
             m.status, m.invite_token
