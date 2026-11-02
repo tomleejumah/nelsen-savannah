@@ -36,6 +36,19 @@ async function eligibleMentees(trackId, schoolId) {
   return rows.filter((r) => r.uid && enrolled(r.enrollment_status) && active(r.membership_status));
 }
 
+export async function listMentorChatCourses(req, res) {
+  try {
+    const rows = await dbAll(`SELECT DISTINCT t.track_id AS trackId, t.title
+      FROM tracks t JOIN track_mentors tm ON tm.track_id = t.track_id
+      JOIN school_memberships sm ON sm.school_id = t.school_id AND sm.uid = tm.uid
+      WHERE tm.uid = ? AND sm.status = 'active' ORDER BY t.title`, [req.user.uid]);
+    return res.json({ courses: rows });
+  } catch (err) {
+    console.error("[course-chat-courses]", err);
+    return res.status(500).json({ error: "Could not load assigned courses" });
+  }
+}
+
 export async function getCourseChatCandidates(req, res) {
   try {
     const track = await authorizedCourse(req.user.uid, req.params.trackId);
