@@ -257,7 +257,7 @@ public class ChatFragment extends Fragment {
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
 
         currentChatId = chatId;
-        currentReceiverId = chatroom.getOtherUserId(currentUserId);
+        currentReceiverId = "group".equals(type) ? null : chatroom.getOtherUserId(currentUserId);
 
         showChatDetail();
         binding.etMessage.setText("");
@@ -685,6 +685,14 @@ public class ChatFragment extends Fragment {
                 userData = null;
                 selectedOtherUserId = null;
                 break;
+            case "group":
+                binding.tvChatName.setText(chatroom.getName().isEmpty() ? "Course group" : chatroom.getName());
+                binding.tvChatRole.setText(chatroom.getUserIds().size() + " participants");
+                Glide.with(this).load(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
+                userData = null;
+                selectedOtherUserId = null;
+                selectedIsMentor = false;
+                break;
             case "ai":
                 // Should not open — AI is disabled.
                 binding.tvChatName.setText(R.string.chat_ai_assistant);
@@ -1106,7 +1114,7 @@ public class ChatFragment extends Fragment {
                 ChatMessageEntity replyTarget = replyingTo;
                 clearReply();
                 String currentUserId = FirebaseAuth.getInstance().getUid();
-                String receiverId = chatroom.getOtherUserId(currentUserId);
+                String receiverId = "group".equals(chatroom.getType()) ? null : chatroom.getOtherUserId(currentUserId);
                 viewModel.sendMessage(chatId, msg, receiverId, replyTarget, success -> {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
