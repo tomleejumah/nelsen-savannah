@@ -360,7 +360,13 @@ public class ChatFragment extends Fragment {
                                     String id = data.get("chatroomId").getAsString();
                                     String name = data.get("name").getAsString();
                                     if (pagedAdapter != null) pagedAdapter.refresh();
-                                    Toast.makeText(requireContext(), "Course chat ready: " + name, Toast.LENGTH_SHORT).show();
+                                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                            .collection("chatRooms").document(id).get()
+                                            .addOnSuccessListener(snapshot -> {
+                                                if (!isAdded() || !snapshot.exists()) return;
+                                                Chatroom room = snapshot.toObject(Chatroom.class);
+                                                if (room != null) openChat(room);
+                                            });
                                 }
                                 @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
                                     if (isAdded()) Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
