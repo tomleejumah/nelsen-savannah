@@ -138,6 +138,9 @@ async function start() {
       try {
         const { reconcileExistingCourseChats } = await import("./controllers/courseGroupChatController.js");
         const result = await reconcileExistingCourseChats();
+        const { reconcileSchoolAnnouncements } = await import("./controllers/schoolAnnouncementController.js");
+        const schoolResult = await reconcileSchoolAnnouncements();
+        if (schoolResult.failed) console.warn("[school-announcements] reconciliation incomplete", schoolResult);
         if (result.failed) console.warn("[course-chat] reconciliation incomplete", result);
       } catch (err) {
         console.warn("[course-chat] reconciliation unavailable", err.message);
