@@ -868,3 +868,12 @@ The current Android app bundles `me.didit:didit-sdk` and its native/media depend
 - [ ] Decide whether KYC should remain bundled, move to Didit's hosted/web verification flow, or be isolated into an Android dynamic feature where distribution supports it.
 - [ ] Do not implement arbitrary post-install loading of the Maven/native SDK as an asset; choose a supported delivery architecture first.
 - [ ] Preserve the existing KYC flow until this decision is made.
+
+
+### School-scoped announcements and messaging reliability (November 2026)
+
+- [ ] P0: One announcements room per school, restricted to active members of that school; no cross-school reads, writes or notifications.
+- [ ] P0: SchoolAdmin publishing controls and school-specific recipient fanout; preserve existing global announcements until migration is verified.
+- [ ] P0: Revoke chat **and announcements** access immediately when school membership is suspended/rejected or course enrollment is removed. Add reconciliation/retry for failed sync operations.
+- [ ] P0: Repair direct and course-group message push notifications end-to-end: FCM token registration, fanout, unread counts, tap-to-chat deep links and Android background delivery.
+- [ ] P1: Test school A vs school B, suspended members, multi-device clients, CI and web/Android parity.
