@@ -1,5 +1,20 @@
 # Nelsen Savannah LMS API
 
+
+## Course chats and school announcements (draft PR #88)
+
+Authenticated endpoints (Firebase bearer token):
+
+- `GET /chat/courses/mine`: assigned mentor's active-school courses.
+- `POST /chat/course/:trackId/groups`: idempotently create/open `course_<trackId>` for an active assigned mentor; participants are derived from LMS enrollments and mentor assignments.
+- `GET /chat/schools/announcements`: list active schools and their school announcement room IDs.
+- `POST /chat/school/:schoolId/announcements`: active SchoolAdmin creates/opens `school_announcements_<schoolId>`.
+- `POST /chat/message`: authorize the sender against room membership; direct recipients must belong to the room; group and school announcement notifications fan out to other room members. This is a notification endpoint, not the Firestore message write endpoint.
+
+School status changes synchronize existing course and school announcement rooms. An API startup/15-minute reconciliation retries missed updates; set `COURSE_CHAT_RECONCILE=0` to disable. On multi-instance deployments, run reconciliation on one instance. It does not guarantee immediate revocation after Firestore outages. Firestore rules are managed separately and must enforce membership and school-announcement publishing permissions.
+
+**Not yet verified:** FCM delivery/tap navigation, web/Android announcement publishing, multi-school isolation, CI and end-to-end tests. The old global `announcements` room is retained for migration; Android no longer auto-adds users to it.
+
 ## Running
 
 From `api/`: `npm ci && npm start`. Firebase Admin credentials and
