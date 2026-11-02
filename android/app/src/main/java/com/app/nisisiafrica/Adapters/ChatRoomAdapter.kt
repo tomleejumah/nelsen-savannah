@@ -37,7 +37,7 @@ class ChatRoomAdapter(
         fun bind(chatroom: Chatroom) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-            tvName.text = chatroom.getOtherUserName(currentUserId)
+            tvName.text = if (chatroom.type == "group") chatroom.name.ifBlank { "Course group" } else chatroom.getOtherUserName(currentUserId)
             tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
 
             // Unread Count logic
@@ -48,7 +48,8 @@ class ChatRoomAdapter(
             }
 
             // Load User Avatar
-            val otherUserId = chatroom.getOtherUserId(currentUserId)
+            val otherUserId = if (chatroom.type == "group") null else chatroom.getOtherUserId(currentUserId)
+            tvAvatar.setImageResource(R.drawable.ic_person)
             otherUserId?.let { id ->
                 FirebaseRemoteDataSource.getMentorData(id, onSuccess = { mentor ->
                     Glide.with(tvAvatar.context)
