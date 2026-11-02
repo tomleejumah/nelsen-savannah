@@ -59,42 +59,59 @@ export async function getCourseChatCandidates(req, res) {
   }
 }
 
+async function courseParticipants(trackId, schoolId) {
+  const mentors = await dbAll(`SELECT DISTINCT tm.uid, u.display_name
+    FROM track_mentors tm
+    JOIN school_memberships sm ON sm.uid = tm.uid AND sm.school_id = ?
+    LEFT JOIN users_mirror u ON u.uid = tm.uid
+    WHERE tm.track_id = ? AND sm.status = 'active'`, [schoolId, trackId]);
+  const mentees = await eligibleMentees(trackId, schoolId);
+  const userNames = {};
+  const mentorIds = [];
+  for (const mentor of mentors) {
+    if (!mentor.uid) continue;
+    mentorIds.push(mentor.uid);
+    userNames[mentor.uid] = mentor.display_name || "Mentor";
+  }
+  for (const mentee of mentees) {
+    if (mentee.uid && !userNames[mentee.uid]) userNames[mentee.uid] = mentee.display_name || "Mentee";
+  }
+  return { userIds: Object.keys(userNames), userNames, adminIds: [...new Set(mentorIds)] };
+}
+
 export async function createCourseGroupChat(req, res) {
   try {
     const uid = req.user.uid;
     const track = await authorizedCourse(uid, req.params.trackId);
-    const name = String(req.body?.name || `${track.title} chat`).trim();
-    if (!name || name.length > 100) throw httpError("Group name must be 1–100 characters", 400);
-    const requested = req.body?.memberIds;
-    if (requested !== undefined && (!Array.isArray(requested) || requested.length > 400 || requested.some(x => typeof x !== "string"))) {
-      throw httpError("Invalid memberIds", 400);
-    }
-    const members = await eligibleMentees(track.track_id, track.school_id);
-    const eligible = new Set(members.map(m => m.uid));
-    const selected = requested === undefined ? [...eligible] : [...new Set(requested)];
-    if (selected.some(id => !eligible.has(id))) throw httpError("Some members are not enrolled in this course");
-    const userIds = [...new Set([uid, ...selected])];
-    if (userIds.length < 2) throw httpError("Select at least one enrolled mentee", 400);
-    // Stable ID makes retries safe. One course chat per mentor; no duplicate on repeated taps.
-    const roomId = `course_${track.track_id}_${uid}`;
+    const { userIds, userNames, adminIds } = await courseParticipants(track.track_id, track.school_id);
+    if (!adminIds.includes(uid)) throw httpError("Not an active course mentor");
+    if (userIds.length > 400) throw httpError("Course exceeds group chat participant limit", 409);
+
+    // One deterministic document per course. Every assigned mentor opens the same room.
+    const roomId = `course_${track.track_id}`;
     const room = admin.firestore().collection("chatRooms").doc(roomId);
+    const name = track.title || "Course chat";
     const created = await admin.firestore().runTransaction(async tx => {
       const old = await tx.get(room);
       if (old.exists) {
-        if (old.get("createdBy") !== uid || old.get("courseId") !== track.track_id) throw httpError("Chat ID conflict", 409);
+        if (old.get("courseId") !== track.track_id || old.get("type") !== "group") {
+          throw httpError("Chat ID conflict", 409);
+        }
+        // Reconcile membership when any mentor opens the course chat. A separate
+        // enrollment hook is still needed for immediate joins and removals.
+        tx.update(room, { name, userIds, userNames, adminIds, schoolId: track.school_id });
         return false;
       }
       tx.create(room, {
         chatroomId: roomId, type: "group", name, courseId: track.track_id,
-        schoolId: track.school_id, createdBy: uid, adminIds: [uid], userIds,
-        userNames: Object.fromEntries([[uid, req.user.displayName || "Mentor"], ...members.filter(m => selected.includes(m.uid)).map(m => [m.uid, m.display_name || "Mentee"])]),
+        schoolId: track.school_id, createdBy: uid, adminIds, userIds, userNames,
         lastMessage: "", lastMessageSenderId: "", unreadCount: {},
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastMessageTimestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
       return true;
     });
-    return res.status(created ? 201 : 200).json({ chatroomId: roomId, created });
+    return res.status(created ? 201 : 200).json({ chatroomId: roomId, created, name, memberCount: userIds.length });
   } catch (err) {
     console.error("[course-group-chat]", err);
     return res.status(err.status || 500).json({ error: err.status ? err.message : "Could not create course chat" });
