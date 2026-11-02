@@ -270,8 +270,10 @@ public class ChatFragment extends Fragment {
             showChatList();
             return;
         }
-        binding.bottomChatBar.setVisibility(View.VISIBLE);
-        binding.chatComposerBlur.setVisibility(View.VISIBLE);
+        boolean schoolAnnouncement = "system".equals(type) && !chatroom.getSchoolId().isEmpty();
+        boolean canPublish = !schoolAnnouncement || chatroom.getAdminIds().contains(currentUserId);
+        binding.bottomChatBar.setVisibility(canPublish ? View.VISIBLE : View.GONE);
+        binding.chatComposerBlur.setVisibility(canPublish ? View.VISIBLE : View.GONE);
 
         startRealtimeMessages(chatId);
         // startRealtimeMessages creates the message adapter. Configure sender
@@ -738,7 +740,7 @@ public class ChatFragment extends Fragment {
 
         switch (type) {
             case "system":
-                binding.tvChatName.setText(R.string.chat_announcements);
+                binding.tvChatName.setText(chatroom.getName().isEmpty() ? getString(R.string.chat_announcements) : chatroom.getName());
                 binding.tvChatRole.setText(R.string.chat_official_updates);
                 Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
