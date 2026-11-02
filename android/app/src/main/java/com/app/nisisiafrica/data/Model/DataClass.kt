@@ -142,15 +142,15 @@ data class Chatroom(
     val chatroomId: String = "",
     val name: String = "",
     val courseId: String = "",
-    val schoolId: String = "",
-    val adminIds: List<String> = emptyList(),
     val userIds: List<String> = emptyList(),
     val userNames: Map<String, String> = emptyMap(),
     val lastMessage: String = "",
     val lastMessageTimestamp: Timestamp? = null,
     val lastMessageSenderId: String = "",
     val unreadCount: Map<String, Int> = emptyMap(),
-    val type: String = "direct"
+    val type: String = "direct",
+    val schoolId: String = "",
+    val adminIds: List<String> = emptyList()
 ) {
     /**
      * Get the other user's name (not the current user)
