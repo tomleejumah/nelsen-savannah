@@ -5,7 +5,8 @@
 import admin from "../config/firebase.js";
 import { dbAll, dbGet } from "../db/lmsDb.js";
 
-const active = (status) => !["cancelled", "canceled", "removed", "revoked", "withdrawn"].includes(String(status || "").toLowerCase());
+const active = (status) => String(status || "").toLowerCase() === "active";
+const enrolled = (status) => ["active", "in_progress", "completed", "enrolled"].includes(String(status || "").toLowerCase());
 
 function httpError(message, status = 403) {
   return Object.assign(new Error(message), { status });
@@ -32,7 +33,7 @@ async function eligibleMentees(trackId, schoolId) {
       WHERE e.track_id = ? AND e.uid IS NOT NULL`,
     [schoolId, trackId],
   );
-  return rows.filter((r) => r.uid && active(r.enrollment_status) && active(r.membership_status));
+  return rows.filter((r) => r.uid && enrolled(r.enrollment_status) && active(r.membership_status));
 }
 
 export async function getCourseChatCandidates(req, res) {
