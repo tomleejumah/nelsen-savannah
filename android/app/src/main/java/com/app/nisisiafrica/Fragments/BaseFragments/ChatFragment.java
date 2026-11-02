@@ -233,7 +233,7 @@ public class ChatFragment extends Fragment {
                 ArrayList<Chatroom> filtered = new ArrayList<>();
                 for (Chatroom room : loadedRooms) {
                     if (room == null) continue;
-                    String name = room.getOtherUserName(currentUserId);
+                    String name = "group".equals(room.getType()) ? room.getName() : room.getOtherUserName(currentUserId);
                     if (name != null && name.toLowerCase(Locale.getDefault()).contains(query)) {
                         filtered.add(room);
                     }
@@ -285,7 +285,7 @@ public class ChatFragment extends Fragment {
     private void confirmDeleteChat(Chatroom chatroom) {
         if (chatroom == null) return;
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
-        if ("system".equals(type) || "ai".equals(type)) {
+        if ("system".equals(type) || "ai".equals(type) || "group".equals(type)) {
             Toast.makeText(requireContext(), "This chat can't be deleted", Toast.LENGTH_SHORT).show();
             return;
         }
