@@ -310,6 +310,58 @@ public class ChatFragment extends Fragment {
                 })
                 .show();
     }
+    /** Choose a school announcements room from active school memberships. */
+    private void showSchoolAnnouncementsPicker() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || !isAdded()) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            String bearer = "Bearer " + token.getToken();
+            ApiClient.getLmsService().mySchoolAnnouncements(bearer)
+                    .enqueue(new Callback<com.google.gson.JsonObject>() {
+                        @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                         Response<com.google.gson.JsonObject> response) {
+                            if (!isAdded()) return;
+                            if (!response.isSuccessful() || response.body() == null) {
+                                Toast.makeText(requireContext(), "Couldn't load school announcements", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            com.google.gson.JsonArray schools = response.body().getAsJsonArray("schools");
+                            if (schools == null || schools.size() == 0) {
+                                Toast.makeText(requireContext(), "No active school memberships", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            String[] names = new String[schools.size()];
+                            for (int i = 0; i < schools.size(); i++) {
+                                names[i] = schools.get(i).getAsJsonObject().get("name").getAsString();
+                            }
+                            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                                    .setTitle("School announcements")
+                                    .setItems(names, (dialog, index) -> {
+                                        com.google.gson.JsonObject school = schools.get(index).getAsJsonObject();
+                                        String id = school.get("chatroomId").getAsString();
+                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                                .collection("chatRooms").document(id).get()
+                                                .addOnSuccessListener(doc -> {
+                                                    if (!isAdded()) return;
+                                                    if (!doc.exists()) {
+                                                        Toast.makeText(requireContext(), "School announcements aren't set up yet", Toast.LENGTH_LONG).show();
+                                                        return;
+                                                    }
+                                                    Chatroom room = doc.toObject(Chatroom.class);
+                                                    if (room != null) openChat(room);
+                                                })
+                                                .addOnFailureListener(e -> {
+                                                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open announcements", Toast.LENGTH_SHORT).show();
+                                                });
+                                    }).show();
+                        }
+                        @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                            if (isAdded()) Toast.makeText(requireContext(), "Couldn't load announcements", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        });
+    }
+
     /** Mentor course group chats are distinct from Communities. */
     private void showCourseGroupPicker() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -415,6 +467,13 @@ public class ChatFragment extends Fragment {
         sheet.addView(rv, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView announcementOption = new TextView(requireContext());
+        announcementOption.setText("School announcements");
+        announcementOption.setTextSize(16f);
+        announcementOption.setPadding(0, dp(12), 0, dp(12));
+        announcementOption.setOnClickListener(v -> { dialog.dismiss(); showSchoolAnnouncementsPicker(); });
+        sheet.addView(announcementOption, 1);
 
         if (Roles.isMentorTitle()) {
             TextView groupOption = new TextView(requireContext());
