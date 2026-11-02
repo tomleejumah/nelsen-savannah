@@ -14,7 +14,10 @@ export const sendChatMessageNotification = async (req, res) => {
     const room = roomSnap.data();
     const participants = Array.isArray(room.userIds) ? room.userIds : [];
     if (!participants.includes(uid)) return res.status(403).json({ error: "Not a participant" });
-    const group = room.type === "group";
+    const group = room.type === "group" || (room.type === "system" && Boolean(room.schoolId));
+    if (room.type === "system" && room.schoolId && !(room.adminIds || []).includes(uid)) {
+      return res.status(403).json({ error: "Only school announcement admins can notify members" });
+    }
     if (!group && (!receiverId || !participants.includes(receiverId) || receiverId === uid)) {
       return res.status(403).json({ error: "Invalid conversation recipient" });
     }
