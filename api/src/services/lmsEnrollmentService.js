@@ -255,6 +255,13 @@ export async function enrollUser(profile, { trackId, platform = "web" }) {
     },
   });
 
+  try {
+    const { syncCourseChatMembership } = await import("../controllers/courseGroupChatController.js");
+    await syncCourseChatMembership(trackId);
+  } catch (err) {
+    console.error("[course-chat] enrollment sync failed:", err);
+  }
+
   return {
     source: getPrimaryEngine(),
     data: { enrollment: mapEnrollment(enrollment) },
@@ -340,6 +347,13 @@ export async function unenrollUser(uid, trackId) {
       await admin.database().ref(`lms/enrollments/${uid}/${trackId}`).remove();
     },
   });
+
+  try {
+    const { syncCourseChatMembership } = await import("../controllers/courseGroupChatController.js");
+    await syncCourseChatMembership(trackId);
+  } catch (err) {
+    console.error("[course-chat] enrollment sync failed:", err);
+  }
 
   return {
     source: getPrimaryEngine(),
