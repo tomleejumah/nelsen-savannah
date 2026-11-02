@@ -1014,6 +1014,12 @@ export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = 
     [trackId],
   );
   await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
+  try {
+    const { syncCourseChatMembership } = await import("../controllers/courseGroupChatController.js");
+    await syncCourseChatMembership(trackId);
+  } catch (err) {
+    console.error("[course-chat] mentor assignment sync failed:", err);
+  }
   return {
     source: getPrimaryEngine(),
     data: {
