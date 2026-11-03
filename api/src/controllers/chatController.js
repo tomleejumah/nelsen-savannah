@@ -32,7 +32,7 @@ export const sendChatMessageNotification = async (req, res) => {
         [room.schoolId]);
       const allowed = new Set(active.map(m => m.uid));
       if (!allowed.has(uid)) return res.status(403).json({ error: "Inactive school membership" });
-      if (!active.some(m => m.uid === uid && String(m.role).toLowerCase() === "schooladmin"))
+      if (!active.some(m => m.uid === uid && ["schooladmin", "school_admin"].includes(String(m.role).toLowerCase())))
         return res.status(403).json({ error: "School admin membership required" });
       recipients = recipients.filter(id => allowed.has(id));
     }

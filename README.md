@@ -149,3 +149,10 @@ Live attendance heartbeats now cap credited viewing time to server-observed elap
 ### Public website policies (feature branch)
 
 The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refund Policy (`/refund-policy`), and Shipping Policy (`/shipping-policy`) routes. They use the shared responsive policy layout and existing contact email. **Policy text is a draft requiring owner/legal review before production publication**; in particular confirm refund eligibility, physical-item fulfillment, privacy practices, and applicable law. Web build and browser navigation are not yet verified.
+
+
+### Chat integration follow-up (fix/chat-integrations-p0)
+
+- School-announcement listing now quotes the PostgreSQL `schoolId` SQL alias so the Android picker receives the expected JSON field on both PostgreSQL and SQLite.
+- School announcement notification authorization accepts both `SchoolAdmin` and `school_admin` role spellings (case-insensitive).
+- **Still outstanding:** Firestore rule compatibility for AI replies, delivery retries after partially failed notification fanout, immediate membership revocation, Android debug/release CI, and web policy route generation/build verification. These changes have not been verified by CI.
