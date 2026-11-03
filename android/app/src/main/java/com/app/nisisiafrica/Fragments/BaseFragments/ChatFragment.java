@@ -614,6 +614,26 @@ public class ChatFragment extends Fragment {
         openChat(room);
     }
 
+    /** Resolve notification targets against Firestore membership before opening. */
+    public void openNotificationChat(String chatId) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null || TextUtils.isEmpty(chatId)) return;
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("chatRooms").document(chatId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isAdded() || binding == null || !doc.exists()) return;
+                    Chatroom room = doc.toObject(Chatroom.class);
+                    if (room == null || !room.getUserIds().contains(uid)) {
+                        Toast.makeText(requireContext(), "Chat no longer available", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    openChat(room);
+                })
+                .addOnFailureListener(error -> {
+                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open chat", Toast.LENGTH_SHORT).show();
+                });
+    }
+
     /** Open an existing direct chat from Profile → Message. */
     public void openDirectChat(String chatId, String otherId, String otherName) {
         if (TextUtils.isEmpty(chatId)) return;
