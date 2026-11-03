@@ -36,6 +36,34 @@ export const sendChatMessageNotification = async (req, res) => {
         return res.status(403).json({ error: "School admin membership required" });
       recipients = recipients.filter(id => allowed.has(id));
     }
+    // A caller must not be able to generate push notifications without
+    // first writing the corresponding message to Firestore.
+    const recent = await admin.firestore().collection("chatRooms").doc(conversationId)
+      .collection("messages").orderBy("timestamp", "desc").limit(25).get();
+    const now = Date.now();
+    const matchingMessage = recent.docs.find(doc => {
+      const m = doc.data();
+      const sentAt = m.timestamp?.toMillis?.();
+      return m.senderId === uid && m.message === messageText &&
+        m.deleted !== true && typeof sentAt === "number" &&
+        sentAt <= now + 30000 && sentAt >= now - 120000;
+    });
+    if (!matchingMessage) {
+      return res.status(409).json({ error: "No recent matching message to notify" });
+    }
+    // Claim the message exactly once across retries and concurrent requests.
+    const claimRef = admin.firestore().collection("chatNotificationClaims")
+      .doc(conversationId + "_" + matchingMessage.id);
+    const claimed = await admin.firestore().runTransaction(async tx => {
+      const existing = await tx.get(claimRef);
+      if (existing.exists) return false;
+      tx.create(claimRef, {
+        conversationId, messageId: matchingMessage.id, senderId: uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return true;
+    });
+    if (!claimed) return res.json({ success: true, duplicate: true, recipients: 0, stored: 0, pushed: 0 });
     const preview = messageText.trim().slice(0, 100);
     const outcomes = await Promise.allSettled(recipients.map(async id => {
       const notificationData = {
