@@ -144,3 +144,8 @@ When unsure about a capability, check `LMS_ROADMAP.md` and `api/src/constants/lm
 Live event hosts must retain active membership in the owning school to mutate school-scoped events; platform administrators retain global moderation access. This has API regression coverage; real streaming/FCM verification remains pending.
 
 Live attendance heartbeats now cap credited viewing time to server-observed elapsed seconds and do not credit stale reconnect gaps. Full two-device streaming, FCM and provider-state acceptance still requires staging.
+
+
+### Public website policies (feature branch)
+
+The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refund Policy (`/refund-policy`), and Shipping Policy (`/shipping-policy`) routes. They use the shared responsive policy layout and existing contact email. **Policy text is a draft requiring owner/legal review before production publication**; in particular confirm refund eligibility, physical-item fulfillment, privacy practices, and applicable law. Web build and browser navigation are not yet verified.
