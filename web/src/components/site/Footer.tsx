@@ -20,6 +20,11 @@ export function Footer() {
           </a>
         </p>
       </div>
+      <nav aria-label="Legal policies" className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 border-t border-hairline px-5 py-5 text-sm sm:px-8">
+        <Link to="/privacy-policy" className="transition-colors hover:text-brick">Privacy Policy</Link>
+        <Link to="/refund-policy" className="transition-colors hover:text-brick">Refund Policy</Link>
+        <Link to="/shipping-policy" className="transition-colors hover:text-brick">Shipping Policy</Link>
+      </nav>
       <div className="sr-only">
         <Link to="/programs">Programs</Link>
         <Link to="/login">Sign in</Link>

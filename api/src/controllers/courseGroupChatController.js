@@ -79,6 +79,42 @@ async function courseParticipants(trackId, schoolId) {
   return { userIds: Object.keys(userNames), userNames, adminIds: [...new Set(mentorIds)] };
 }
 
+/** Refresh an existing room after enrollment or mentor assignment changes.
+ * Never creates a chat implicitly; creation remains an assigned mentor action.
+ */
+export async function syncCourseChatMembership(trackId) {
+  const track = await dbGet("SELECT track_id, title, school_id FROM tracks WHERE track_id = ?", [trackId]);
+  if (!track?.school_id) return false;
+  const room = admin.firestore().collection("chatRooms").doc(`course_${trackId}`);
+  const { userIds, userNames, adminIds } = await courseParticipants(trackId, track.school_id);
+  if (userIds.length > 400) throw httpError("Course exceeds group chat participant limit", 409);
+  return admin.firestore().runTransaction(async tx => {
+    const existing = await tx.get(room);
+    if (!existing.exists) return false;
+    if (existing.get("type") !== "group" || existing.get("courseId") !== trackId) {
+      throw httpError("Course chat ID conflict", 409);
+    }
+    tx.update(room, { name: track.title || "Course chat", userIds, userNames, adminIds });
+    return true;
+  });
+}
+
+/** Periodic repair for missed membership events. No rooms are created. */
+export async function reconcileExistingCourseChats() {
+  const tracks = await dbAll("SELECT track_id FROM tracks WHERE school_id IS NOT NULL");
+  let repaired = 0;
+  let failed = 0;
+  for (const track of tracks) {
+    try {
+      if (await syncCourseChatMembership(track.track_id)) repaired++;
+    } catch (err) {
+      failed++;
+      console.warn("[course-chat] reconciliation failed", track.track_id, err.message);
+    }
+  }
+  return { scanned: tracks.length, repaired, failed };
+}
+
 export async function createCourseGroupChat(req, res) {
   try {
     const uid = req.user.uid;

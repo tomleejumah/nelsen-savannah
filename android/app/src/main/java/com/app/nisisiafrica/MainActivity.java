@@ -608,7 +608,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         String otherId = intent.getStringExtra(EXTRA_OPEN_CHAT_OTHER_ID);
         String otherName = intent.getStringExtra(EXTRA_OPEN_CHAT_OTHER_NAME);
         selectTab(R.id.chatFragment, true);
-        chatFragment.openDirectChat(chatId, otherId, otherName);
+        if (TextUtils.isEmpty(otherId)) {
+            chatFragment.openNotificationChat(chatId);
+        } else {
+            chatFragment.openDirectChat(chatId, otherId, otherName);
+        }
         intent.removeExtra(EXTRA_OPEN_CHAT_ID);
     }
 

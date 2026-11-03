@@ -1014,6 +1014,12 @@ export async function setSchoolTrackMentors(actorUid, schoolId, trackId, body = 
     [trackId],
   );
   await (await import("./lmsCatalogService.js")).invalidatePublicTrackCache();
+  try {
+    const { syncCourseChatMembership } = await import("../controllers/courseGroupChatController.js");
+    await syncCourseChatMembership(trackId);
+  } catch (err) {
+    console.error("[course-chat] mentor assignment sync failed:", err);
+  }
   return {
     source: getPrimaryEngine(),
     data: {
@@ -1151,6 +1157,22 @@ export async function setSchoolMemberStatus(actorUid, schoolId, targetUid, body 
       kind: "mentee",
       approved: false,
     });
+  }
+  // A school suspension/reinstatement changes eligibility for every course chat.
+  try {
+    const courses = await dbAll("SELECT track_id FROM tracks WHERE school_id = ?", [schoolId]);
+    const { syncCourseChatMembership } = await import("../controllers/courseGroupChatController.js");
+    await Promise.all(courses.map(course => syncCourseChatMembership(course.track_id)));
+  } catch (err) {
+    console.error("[course-chat] school membership sync failed:", err);
+  }
+  // Revoke access to this school's announcements on suspension/rejection.
+  // A failed Firestore write is recovered by the periodic reconciliation job.
+  try {
+    const { syncSchoolAnnouncementMembership } = await import("../controllers/schoolAnnouncementController.js");
+    await syncSchoolAnnouncementMembership(schoolId);
+  } catch (err) {
+    console.error("[school-announcements] membership sync failed:", err);
   }
   const fresh = await dbGet(
     `SELECT u.uid, u.email, u.display_name, u.photo_url, u.school_id, r.role,

@@ -14,6 +14,17 @@ Historical capability map (some early tables are superseded): [`LMS_ROADMAP.md`]
 
 ---
 
+
+## Course group chats and school announcements (feature branch; not deployed)
+
+Development branch: `feat/course-mentor-groups` — [draft PR #88](https://github.com/tomleejumah/nelsen-savannah/pull/88). **Committed code is not proof of a passing build or working device notifications.**
+
+- **Course groups:** One Firestore `chatRooms/course_<trackId>` per course, created/opened by an assigned mentor. Its membership comes from active school memberships, assigned mentors and eligible course enrollments; all assigned mentors are group admins. Enrollment, unenrollment, mentor reassignment and school status changes trigger synchronization. The API periodically reconciles existing rooms to recover missed events.
+- **School announcements:** Separate `chatRooms/school_announcements_<schoolId>` per school. `GET /chat/schools/announcements` lists a user's active schools; `POST /chat/school/:schoolId/announcements` creates/opens the room for an authorized active school admin. Membership derives from active school memberships and is reconciled after status changes and periodically. The old global `announcements` room is retained for migration; Android no longer automatically adds users to it.
+- **Notifications:** `POST /chat/message` checks sender membership against the Firestore room and fans out to other members of group/school announcement rooms; direct messages require an authorized receiver. Android sends a notification request after successful text-message submission. The API verifies a matching recent persisted Firestore message and transactionally claims it to prevent duplicate fanout; delivery retry after a partial failure is not yet implemented. School announcement notifications additionally verify active school membership against the LMS database and exclude suspended recipients; Android treats announcements as broadcasts for unread badges. Chat push taps now target MainActivity, which loads the Firestore room and checks membership before opening it. Push delivery and cold-start navigation have not been verified on devices.
+- **Security boundary:** Firestore rules are externally managed; review them for school-scoped access, read/write membership and admin-only announcement publishing. API membership sync is best-effort, and the periodic reconciliation is not an immediate-revocation guarantee.
+- **Android (partial):** School-announcement picker loads active schools; school admins can initialize missing rooms; non-admins have a read-only composer. Device verification is pending.\n- **Outstanding:** Web school announcement UI and publishing; revocation guarantees and retries; message unread-count and push-delivery integration tests; deep links; CI; multi-school acceptance testing. Do not merge or deploy without verification.
+
 ## How the system works
 
 ### Auth
@@ -133,3 +144,8 @@ When unsure about a capability, check `LMS_ROADMAP.md` and `api/src/constants/lm
 Live event hosts must retain active membership in the owning school to mutate school-scoped events; platform administrators retain global moderation access. This has API regression coverage; real streaming/FCM verification remains pending.
 
 Live attendance heartbeats now cap credited viewing time to server-observed elapsed seconds and do not credit stale reconnect gaps. Full two-device streaming, FCM and provider-state acceptance still requires staging.
+
+
+### Public website policies (feature branch)
+
+The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refund Policy (`/refund-policy`), and Shipping Policy (`/shipping-policy`) routes. They use the shared responsive policy layout and existing contact email. **Policy text is a draft requiring owner/legal review before production publication**; in particular confirm refund eligibility, physical-item fulfillment, privacy practices, and applicable law. Web build and browser navigation are not yet verified.

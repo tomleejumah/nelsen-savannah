@@ -22,10 +22,15 @@ public interface LmsApiService {
     @GET("chat/courses/mine")
     Call<com.google.gson.JsonObject> mentorChatCourses(@Header("Authorization") String bearer);
 
-    @GET("chat/course/{trackId}/candidates")
-    Call<com.google.gson.JsonObject> courseChatCandidates(
+    /** School announcements are scoped to active school membership. */
+    @GET("chat/schools/announcements")
+    Call<com.google.gson.JsonObject> mySchoolAnnouncements(@Header("Authorization") String bearer);
+
+    @POST("chat/school/{schoolId}/announcements")
+    Call<com.google.gson.JsonObject> openSchoolAnnouncements(
             @Header("Authorization") String bearer,
-            @Path("trackId") String trackId);
+            @Path("schoolId") String schoolId,
+            @Body com.google.gson.JsonObject body);
 
     @POST("chat/course/{trackId}/groups")
     Call<com.google.gson.JsonObject> createCourseGroupChat(

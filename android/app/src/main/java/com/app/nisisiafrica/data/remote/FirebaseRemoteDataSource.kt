@@ -561,34 +561,9 @@ object FirebaseRemoteDataSource {
     }
 
     fun initSpecialChatRooms() {
-        val db = FirebaseFirestore.getInstance()
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-
-        val announcementsRef = db.collection("chatRooms").document("announcements")
-
-        db.runTransaction { transaction ->
-            val snapshot = transaction.get(announcementsRef)
-
-            if (!snapshot.exists()) {
-                transaction.set(
-                    announcementsRef,
-                    hashMapOf(
-                        "chatroomId" to "announcements",
-                        "userIds" to listOf(userId),
-                        "lastMessage" to "Welcome to announcements",
-                        "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                        "type" to "system"
-                    )
-                )
-            } else {
-                transaction.update(
-                    announcementsRef,
-                    "userIds",
-                    FieldValue.arrayUnion(userId)
-                )
-            }
-        }
-        // AI assistant room intentionally not created — will plug in later.
+        // School announcement membership is now owned by the LMS API.
+        // Do not auto-enroll users into the legacy global announcements room:
+        // doing so would restore access after a school suspension.
     }
 
     fun createOrGetDirectChatRoom(
