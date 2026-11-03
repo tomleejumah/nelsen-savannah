@@ -47,7 +47,7 @@ export async function reconcileSchoolAnnouncements() {
 export async function listMySchoolAnnouncements(req, res) {
   try {
     const rows = await dbAll(
-      `SELECT s.school_id AS schoolId, s.name FROM school_memberships sm
+      `SELECT s.school_id AS "schoolId", s.name FROM school_memberships sm
        JOIN schools s ON s.school_id = sm.school_id
        WHERE sm.uid = ? AND sm.status = 'active' ORDER BY s.name`, [req.user.uid]);
     return res.json({ schools: rows.map(s => ({ ...s, chatroomId: roomId(s.schoolId) })) });
