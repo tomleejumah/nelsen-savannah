@@ -165,13 +165,17 @@ data class Chatroom(
         type: String
     ) : this(
         chatroomId = chatroomId,
+        name = "",
+        courseId = "",
         userIds = userIds,
         userNames = userNames,
         lastMessage = lastMessage,
         lastMessageTimestamp = lastMessageTimestamp,
         lastMessageSenderId = lastMessageSenderId,
         unreadCount = unreadCount,
-        type = type
+        type = type,
+        schoolId = "",
+        adminIds = emptyList()
     )
 
     /**
