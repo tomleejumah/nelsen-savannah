@@ -152,6 +152,28 @@ data class Chatroom(
     val schoolId: String = "",
     val adminIds: List<String> = emptyList()
 ) {
+    // Java ChatFragment call sites use this legacy eight-argument constructor.
+    // Keep it while the Firestore model grows additional metadata fields.
+    constructor(
+        chatroomId: String,
+        userIds: List<String>,
+        userNames: Map<String, String>,
+        lastMessage: String,
+        lastMessageTimestamp: Timestamp?,
+        lastMessageSenderId: String,
+        unreadCount: Map<String, Int>,
+        type: String
+    ) : this(
+        chatroomId = chatroomId,
+        userIds = userIds,
+        userNames = userNames,
+        lastMessage = lastMessage,
+        lastMessageTimestamp = lastMessageTimestamp,
+        lastMessageSenderId = lastMessageSenderId,
+        unreadCount = unreadCount,
+        type = type
+    )
+
     /**
      * Get the other user's name (not the current user)
      */
