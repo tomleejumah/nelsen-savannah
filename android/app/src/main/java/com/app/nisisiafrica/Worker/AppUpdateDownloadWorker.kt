@@ -62,7 +62,7 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
                     FileOutputStream(temp, append).use { output ->
                         val buffer = ByteArray(32 * 1024)
                         while (true) {
-                            if (isStopped) return Result.retry()
+                            if (isStopped) return retryOrFail()
                             val count = input.read(buffer)
                             if (count < 0) break
                             if (count == 0) continue
