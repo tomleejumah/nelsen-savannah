@@ -4,21 +4,21 @@
       Pure black dark mode. Maroon accents inherit from values/colors.xml.
     -->
 
-    <color name="bg">#000000</color>
-    <color name="surface">#000000</color>
-    <color name="surface_2">#121212</color>
-    <color name="ink">#FFFFFF</color>
-    <color name="ink_soft">#E5E5E5</color>
-    <color name="muted">#A3A3A3</color>
-    <color name="line">#2A2A2A</color>
+    <color name="bg">#101712</color>
+    <color name="surface">#18211B</color>
+    <color name="surface_2">#202A23</color>
+    <color name="ink">#EBEFE9</color>
+    <color name="ink_soft">#D0D8D1</color>
+    <color name="muted">#9AA79F</color>
+    <color name="line">#2B372F</color>
 
-    <color name="maroon_100">#2A1218</color>
-    <color name="maroon_050">#1A0C10</color>
+    <color name="maroon_100">#3A1A24</color>
+    <color name="maroon_050">#26151B</color>
 
     <color name="tag_blue_bg">#0A1528</color>
     <color name="tag_blue_text">#9DB6EC</color>
-    <color name="status_pending_bg">#1A1408</color>
-    <color name="status_pending_text">#E8B968</color>
+    <color name="status_pending_bg">#3B2E14</color>
+    <color name="status_pending_text">#E0A33A</color>
 
     <color name="shadow_maroon">#66000000</color>
 
@@ -60,15 +60,15 @@
     <color name="progress_background">@color/surface_2</color>
 
     <!-- Field Journal tokens (paper theme still warm on night until dedicated night art) -->
-    <color name="ns_page">#1A1612</color>
-    <color name="ns_ink">#F8F2E2</color>
-    <color name="ns_maroon">#C45A6A</color>
-    <color name="ns_maroon_deep">#E8B4BC</color>
-    <color name="ns_paper">#1A1612</color>
-    <color name="ns_paper_2">#241E18</color>
-    <color name="ns_cream">#2A241C</color>
-    <color name="ns_grey">#A89880</color>
-    <color name="ns_gold">#B9862E</color>
-    <color name="ns_line">#40F8F2E2</color>
+    <color name="ns_page">#101712</color>
+    <color name="ns_ink">#EBEFE9</color>
+    <color name="ns_maroon">#E08AA3</color>
+    <color name="ns_maroon_deep">#E8C9A8</color>
+    <color name="ns_paper">#18211B</color>
+    <color name="ns_paper_2">#202A23</color>
+    <color name="ns_cream">#202A23</color>
+    <color name="ns_grey">#9AA79F</color>
+    <color name="ns_gold">#E0A33A</color>
+    <color name="ns_line">#402B372F</color>
     <color name="ns_transparent">#00000000</color>
 </resources>

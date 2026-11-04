@@ -6,38 +6,38 @@
     -->
 
     <!-- Maroon / red brand scale -->
-    <color name="maroon_900">#4C0F1E</color>
-    <color name="maroon_700">#7C1F32</color>
-    <color name="maroon_600">#93283F</color>
-    <color name="maroon_500">#A8324B</color>
-    <color name="maroon_100">#F6E7EA</color>
-    <color name="maroon_050">#FBF2F3</color>
+    <color name="maroon_900">#4B3914</color>
+    <color name="maroon_700">#7A5A12</color>
+    <color name="maroon_600">#A77912</color>
+    <color name="maroon_500">#C0942F</color>
+    <color name="maroon_100">#F5E9C9</color>
+    <color name="maroon_050">#FAF3E2</color>
 
     <!-- Surfaces / text / line (white light mode) -->
-    <color name="bg">#FFFFFF</color>
+    <color name="bg">#F7F5EF</color>
     <color name="surface">#FFFFFF</color>
-    <color name="surface_2">#F4F4F5</color>
-    <color name="ink">#1A1A1A</color>
-    <color name="ink_soft">#3F3F46</color>
-    <color name="muted">#71717A</color>
-    <color name="line">#E4E4E7</color>
+    <color name="surface_2">#EEEAE0</color>
+    <color name="ink">#191815</color>
+    <color name="ink_soft">#39362F</color>
+    <color name="muted">#625D52</color>
+    <color name="line">#E3DED2</color>
 
     <color name="tag_blue_bg">#E7EEFB</color>
     <color name="tag_blue_text">#33509E</color>
-    <color name="status_pending_bg">#F7E3D0</color>
-    <color name="status_pending_text">#8A5A17</color>
+    <color name="status_pending_bg">#F4E3BF</color>
+    <color name="status_pending_text">#77520A</color>
 
-    <color name="shadow_maroon">#1A4C0F1E</color>
+    <color name="shadow_maroon">#1AA77912</color>
 
     <!-- Legacy brand constants (logo / third-party) -->
-    <color name="brand_navy">#112555</color>
-    <color name="brand_navy_dark">#0A1731</color>
-    <color name="brand_navy_soft">#4476A4</color>
+    <color name="brand_navy">#7A5A12</color>
+    <color name="brand_navy_dark">#4B3914</color>
+    <color name="brand_navy_soft">#625D52</color>
     <color name="brand_maroon">@color/maroon_700</color>
     <color name="brand_maroon_dark">@color/maroon_900</color>
     <color name="brand_maroon_light">@color/maroon_500</color>
     <color name="brand_ember">@color/maroon_600</color>
-    <color name="brand_logo_red">#E31E24</color>
+    <color name="brand_logo_red">#A77912</color>
 
     <!-- Semantic aliases → MentUI (theme + existing layouts) -->
     <color name="surface_app">@color/bg</color>
@@ -49,13 +49,13 @@
     <color name="text_strong">@color/ink</color>
     <color name="text_body">@color/ink_soft</color>
     <color name="text_muted">@color/muted</color>
-    <color name="text_on_action">#FFFFFFFF</color>
+    <color name="text_on_action">#FF191815</color>
     <color name="text_primary">@color/ink</color>
     <color name="text_secondary">@color/ink_soft</color>
     <color name="text_tertiary">@color/muted</color>
 
-    <color name="action_primary">@color/maroon_700</color>
-    <color name="action_accent">@color/maroon_600</color>
+    <color name="action_primary">#A77912</color>
+    <color name="action_accent">#A77912</color>
 
     <color name="bubble_sent">@color/maroon_700</color>
     <color name="bubble_received">@color/surface_2</color>
@@ -81,7 +81,7 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="dark_grey">#292929</color>
+    <color name="dark_grey">#29251D</color>
     <color name="blue">#6c63ff</color>
     <color name="red">#b01e28</color>
     <color name="light_black">#353839</color>
@@ -90,7 +90,7 @@
     <color name="dark_white">#e1d9d1</color>
     <color name="green">#50C878</color>
     <color name="light_blue">#add8e6</color>
-    <color name="border_color">#FFD700</color>
+    <color name="border_color">#D9B45C</color>
     <color name="disabled">#20C0C0C0</color>
     <color name="sea_green">#2E8B57</color>
     <color name="transparent">@android:color/transparent</color>
@@ -143,15 +143,15 @@
     <color name="dark_text_secondary">#E5E5E5</color>
 
     <!-- Field Journal — app-wide paper UI (white page, cream cards, maroon ink) -->
-    <color name="ns_page">#FFFFFF</color>
-    <color name="ns_ink">#241A14</color>
-    <color name="ns_maroon">#7C2430</color>
-    <color name="ns_maroon_deep">#511019</color>
-    <color name="ns_paper">#EFE6D1</color>
-    <color name="ns_paper_2">#E7DBC0</color>
-    <color name="ns_cream">#F8F2E2</color>
-    <color name="ns_grey">#8A7D6C</color>
-    <color name="ns_gold">#B9862E</color>
-    <color name="ns_line">#2E241A14</color>
+    <color name="ns_page">#F7F5EF</color>
+    <color name="ns_ink">#191815</color>
+    <color name="ns_maroon">#A77912</color>
+    <color name="ns_maroon_deep">#7A5A12</color>
+    <color name="ns_paper">#FFFFFF</color>
+    <color name="ns_paper_2">#EEEAE0</color>
+    <color name="ns_cream">#F7F5EF</color>
+    <color name="ns_grey">#625D52</color>
+    <color name="ns_gold">#C98A1B</color>
+    <color name="ns_line">#2ED5DAD3</color>
     <color name="ns_transparent">#00000000</color>
 </resources>
