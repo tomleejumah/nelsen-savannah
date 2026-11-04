@@ -169,5 +169,7 @@ The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refu
 
 - The WorkManager update downloader retains `.apk.part` across network interruptions, app backgrounding, and retries instead of deleting partial progress.
 - Android requests `Range: bytes=<offset>-`; the API's authenticated `/lms/app/android/download` endpoint now supports `206 Partial Content`, `Content-Range`, and `416` for invalid offsets. If the server ignores ranges, the downloader safely restarts from byte zero; a checksum mismatch discards the corrupt partial.
-- The download remains managed by WorkManager; completion shows **Tap to install** and does not auto-install. Android OS background execution limits can still defer a worker; foreground-service promotion is not included in this patch.
+- The download remains managed by WorkManager; completion shows **Tap to install** and does not auto-install. Android OS background execution limits can still defer a worker; foreground-service promotion is enabled via WorkManager ForegroundInfo and a low-importance persistent progress notification. Android 13+ notification permission affects notification visibility, and Android 15 dataSync foreground-service limits still apply.
 - Requires Android and API CI plus device testing (background/foreground, interrupted at 99%, server range, hash verification). No build has been run for this change.
+
+- Chat creation Logcat on 2026-11-04 confirms Firestore `PERMISSION_DENIED` during the initial `chatRooms/{id}` document get, **before create**. Check deployed Firestore rules for `get` on nonexistent direct rooms; do not attribute this error to billing without additional evidence. No chat/announcement rules changed in this PR.
