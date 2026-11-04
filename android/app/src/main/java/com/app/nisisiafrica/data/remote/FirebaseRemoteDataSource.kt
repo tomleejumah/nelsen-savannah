@@ -584,6 +584,12 @@ object FirebaseRemoteDataSource {
             "${otherUserId}_${currentUserId}"
         }
 
+        if (otherUserId.isBlank() || otherUserId == currentUserId) {
+            Log.w("ChatRoom", "Invalid direct chat recipient")
+            onComplete(null)
+            return
+        }
+
         val db = FirebaseFirestore.getInstance()
 
         // Check if chatroom exists first
@@ -591,6 +597,14 @@ object FirebaseRemoteDataSource {
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    val participants = document.get("userIds") as? List<*>
+                    if (document.getString("type") != "direct" ||
+                        participants?.contains(currentUserId) != true ||
+                        participants.contains(otherUserId) != true) {
+                        Log.e("ChatRoom", "Existing room has incompatible type or membership: $chatroomId")
+                        onComplete(null)
+                        return@addOnSuccessListener
+                    }
                     // Chatroom already exists
                     Log.d("ChatRoom", "Chatroom already exists: $chatroomId")
                     onComplete(chatroomId)
@@ -615,13 +629,13 @@ object FirebaseRemoteDataSource {
                             onComplete(chatroomId)
                         }
                         .addOnFailureListener { e ->
-                            Log.e("ChatRoom", "Error creating chatroom", e)
+                            Log.e("ChatRoom", "Direct chat creation failed; check Firestore rules and project status", e)
                             onComplete(null)
                         }
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("ChatRoom", "Error checking chatroom", e)
+                Log.e("ChatRoom", "Direct chat lookup failed; check Firestore read permissions and project status", e)
                 onComplete(null)
             }
     }
