@@ -156,3 +156,10 @@ The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refu
 - School-announcement listing now quotes the PostgreSQL `schoolId` SQL alias so the Android picker receives the expected JSON field on both PostgreSQL and SQLite.
 - School announcement notification authorization accepts both `SchoolAdmin` and `school_admin` role spellings (case-insensitive).
 - **Still outstanding:** Firestore rule compatibility for AI replies, delivery retries after partially failed notification fanout, immediate membership revocation, Android debug/release CI, and web policy route generation/build verification. These changes have not been verified by CI.
+
+
+### November 2026 web typography and chat diagnostics
+
+- Homepage hero typography received small improvements to heading spacing, weight, and supporting text readability; no page redesign.
+- Android direct-chat creation validates the recipient and existing room membership/type before opening the room. Firestore lookup and creation failures now log which stage failed, with the underlying Firebase exception.
+- School announcements are intentionally unchanged pending cross-platform design and Firestore project verification. Firestore billing status and security rules must be checked from the actual Firebase error; neither has been confirmed as the cause. CI/build verification pending.
