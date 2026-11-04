@@ -290,7 +290,7 @@ export async function downloadAndroidAppFile(req, res) {
 }
 
 /** Authenticated stream (legacy / API clients). Prefer signed /file for browsers. */
-export async function downloadAndroidApp(_req, res) {
+export async function downloadAndroidApp(req, res) {
   try {
     const {
       getAndroidReleaseMeta,
@@ -300,7 +300,7 @@ export async function downloadAndroidApp(_req, res) {
     if (!meta.available) {
       return lmsErr(res, "Android APK not published yet", 404);
     }
-    const opened = openAndroidApkStream();
+    let opened = openAndroidApkStream();
     if (!opened) {
       return lmsErr(res, "Android APK not published yet", 404);
     }
@@ -310,7 +310,24 @@ export async function downloadAndroidApp(_req, res) {
       "Content-Disposition",
       `attachment; filename="${downloadName}"`,
     );
-    res.setHeader("Content-Length", String(opened.size));
+    res.setHeader("Accept-Ranges", "bytes");
+    const range = req.headers.range;
+    if (range) {
+      const match = /^bytes=(\\d+)-$/.exec(range);
+      if (!match || Number(match[1]) >= opened.size) {
+        opened.stream.destroy();
+        res.setHeader("Content-Range", `bytes */${opened.size}`);
+        return res.status(416).end();
+      }
+      const start = Number(match[1]);
+      opened.stream.destroy();
+      opened = openAndroidApkStream(start);
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${start}-${opened.size - 1}/${opened.size}`);
+      res.setHeader("Content-Length", String(opened.size - start));
+    } else {
+      res.setHeader("Content-Length", String(opened.size));
+    }
     res.setHeader("Cache-Control", "private, no-store");
     opened.stream.on("error", (err) => {
       console.error("[GET /lms/app/android/download]", err);
