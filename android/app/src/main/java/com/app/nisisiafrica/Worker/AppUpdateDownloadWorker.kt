@@ -1,5 +1,15 @@
 package com.app.nisisiafrica.Worker
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.work.ForegroundInfo
+import com.app.nisisiafrica.MainActivity
+import com.app.nisisiafrica.R
 import android.content.Context
 import android.os.Environment
 import android.util.Log
@@ -32,6 +42,7 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
             .build()
 
         return try {
+            setForeground(downloadForegroundInfo(0))
             var offset = temp.takeIf { it.exists() }?.length() ?: 0L
             val request = Request.Builder()
                 .url(DOWNLOAD_URL)
@@ -72,6 +83,7 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
                                 val pct = ((downloaded * 100L) / totalBytes).toInt().coerceIn(0, 99)
                                 if (pct != lastProgress) {
                                     setProgress(progressData(pct))
+                                    setForeground(downloadForegroundInfo(pct))
                                     lastProgress = pct
                                 }
                             }
@@ -100,6 +112,34 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
         }
     }
 
+    private fun downloadForegroundInfo(percent: Int): ForegroundInfo {
+        val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, "App update downloads", NotificationManager.IMPORTANCE_LOW)
+            )
+        }
+        val launch = Intent(applicationContext, MainActivity::class.java)
+        val pending = PendingIntent.getActivity(
+            applicationContext, 0, launch,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setSmallIcon(R.drawable.nelsen_icon)
+            .setContentTitle("Downloading Nelsen Savannah update")
+            .setContentText("$percent% downloaded")
+            .setContentIntent(pending)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setProgress(100, percent, false)
+            .build()
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(NOTIFICATION_ID, notification)
+        }
+    }
+
     private fun retryOrFail(): Result =
         if (runAttemptCount + 1 >= MAX_ATTEMPTS) {
             Result.failure(Data.Builder().putString(KEY_ERROR, "Download interrupted; partial file saved").build())
@@ -110,6 +150,8 @@ class AppUpdateDownloadWorker(appContext: Context, params: WorkerParameters) : C
 
     companion object {
         private const val TAG = "AppUpdateDownload"
+        private const val CHANNEL_ID = "app_update_downloads"
+        private const val NOTIFICATION_ID = 3071
         private const val DOWNLOAD_URL = "https://api.nelsen-savannah.co.ke/lms/app/android/download"
         private const val MAX_ATTEMPTS = 4
         const val KEY_VERSION_CODE = "version_code"
