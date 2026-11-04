@@ -118,11 +118,11 @@ export function getAndroidReleaseMeta() {
   };
 }
 
-export function openAndroidApkStream() {
+export function openAndroidApkStream(start = 0) {
   const file = apkPath();
   if (!fs.existsSync(file)) return null;
   return {
-    stream: fs.createReadStream(file),
+    stream: fs.createReadStream(file, { start }),
     size: fs.statSync(file).size,
     fileName: APK_FILE,
   };
