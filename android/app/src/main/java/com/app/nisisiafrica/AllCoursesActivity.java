@@ -61,6 +61,7 @@ import retrofit2.Response;
 public class AllCoursesActivity extends AppCompatActivity {
 
     public static final String EXTRA_SCHOOL_ID = "schoolId";
+    public static final String EXTRA_ASSIGNMENTS_TRACK_ID = "assignmentsTrackId";
     public static final String EXTRA_SCHOOL_NAME = "schoolName";
 
     private final List<CourseItem> allCourses = new ArrayList<>();
@@ -157,6 +158,9 @@ public class AllCoursesActivity extends AppCompatActivity {
         rv.setAdapter(listAdapter);
 
         loadMyEnrollments();
+        if (getIntent().hasExtra(EXTRA_ASSIGNMENTS_TRACK_ID)) {
+            showAssignmentsInbox();
+        }
         if (schoolIdFilter.isEmpty()) refreshMarketplaceRole();
         if (!schoolIdFilter.isEmpty()) {
             refreshSchoolMembership();
@@ -241,12 +245,6 @@ public class AllCoursesActivity extends AppCompatActivity {
                 subtitle.setText("Explore courses, complete lessons and track your coursework.");
                 subtitle.setOnClickListener(null);
             }
-        }
-        View assignmentsButton = findViewById(R.id.btnAssignmentInbox);
-        if (assignmentsButton != null) {
-            assignmentsButton.setVisibility(learner ? View.VISIBLE : View.GONE);
-            assignmentsButton.setOnClickListener(learner
-                    ? v -> showAssignmentsInbox() : null);
         }
     }
 
@@ -868,7 +866,17 @@ public class AllCoursesActivity extends AppCompatActivity {
                                             "No assigned work", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
-                                List<LmsModels.AssignmentDto> assignments = body.data.assignments;
+                                String requestedTrackId = getIntent().getStringExtra(EXTRA_ASSIGNMENTS_TRACK_ID);
+                                List<LmsModels.AssignmentDto> assignments = new ArrayList<>();
+                                for (LmsModels.AssignmentDto assignment : body.data.assignments) {
+                                    if (TextUtils.isEmpty(requestedTrackId) || requestedTrackId.equals(assignment.trackId)) {
+                                        assignments.add(assignment);
+                                    }
+                                }
+                                if (assignments.isEmpty()) {
+                                    Toast.makeText(AllCoursesActivity.this, "No assignments for this course", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
                                 CharSequence[] lines = new CharSequence[assignments.size()];
                                 for (int i = 0; i < assignments.size(); i++) {
                                     LmsModels.AssignmentDto a = assignments.get(i);
