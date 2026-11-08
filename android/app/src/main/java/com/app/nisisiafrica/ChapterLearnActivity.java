@@ -333,7 +333,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             if (prog != null) lesson.lessonPercent = prog;
             lessons.add(lesson);
             LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
-            boolean canOpen = chapterReleased && (mile == null || mile.available || mile.completed);
+            boolean canOpen = chapterReleased && !chapterExpired && (mile == null || mile.available || mile.completed);
             View row = inflater.inflate(R.layout.item_chapter_lesson, lessonsContainer, false);
             TextView index = row.findViewById(R.id.tvLessonIndex);
             TextView title = row.findViewById(R.id.tvLessonTitle);
@@ -354,7 +354,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
             }
             if (!canOpen) {
                 if (metaText.length() > 0) metaText.append(" · ");
-                metaText.append("locked");
+                metaText.append(chapterExpired ? "Expired" : "locked");
             } else if (chapterExpired) {
                 if (metaText.length() > 0) metaText.append(" · ");
                 metaText.append("Past Due");
@@ -368,7 +368,9 @@ public class ChapterLearnActivity extends AppCompatActivity {
             boolean openable = canOpen;
             row.setOnClickListener(v -> {
                 if (openable) openLesson(lesson);
-                else Toast.makeText(this, "This lesson is locked", Toast.LENGTH_SHORT).show();
+                else Toast.makeText(this, chapterExpired
+                        ? "This chapter is locked — the window ended " + new java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale.getDefault()).format(new java.util.Date(dueAt))
+                        : "This lesson is locked", Toast.LENGTH_LONG).show();
             });
             lessonsContainer.addView(row);
             if (openable) {
@@ -380,9 +382,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
                 }
             }
         }
-        if (autoOpen == null && !lessons.isEmpty()) {
-            autoOpen = lessons.get(0);
-        }
+        // Never auto-open a locked lesson.
         if (autoOpen != null) openLesson(autoOpen);
     }
 
