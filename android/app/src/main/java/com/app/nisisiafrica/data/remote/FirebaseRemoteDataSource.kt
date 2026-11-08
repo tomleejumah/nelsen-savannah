@@ -439,6 +439,7 @@ object FirebaseRemoteDataSource {
                         nextKey = if (hasMore) PagingKey(keys.lastOrNull(), pageSize) else null
                     )
                 } catch (e: Exception) {
+                    Log.e("ChatRooms", "Failed to load chat rooms from Firestore", e)
                     LoadResult.Error(e)
                 }
             }
@@ -664,7 +665,6 @@ object FirebaseRemoteDataSource {
 
         val query = firestore.collection("chatRooms")
             .whereArrayContains("userIds", currentUserId)
-            .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
 
         return object : PagingSource<QuerySnapshot, Chatroom>() {
             override suspend fun load(params: LoadParams<QuerySnapshot>): LoadResult<QuerySnapshot, Chatroom> {
@@ -676,12 +676,9 @@ object FirebaseRemoteDataSource {
 
                     val snapshot = currentQuery.get().await()
 
-                    // Filter out announcements
+                    // Direct rooms without messages or timestamps must remain discoverable.
                     val chatrooms = snapshot.toObjects(Chatroom::class.java)
-                        .filter { room ->
-                            (room.type == "group" || room.lastMessage.trim().isNotEmpty())
-                                    && !room.lastMessage.equals("No Messages Yet", ignoreCase = true)
-                        }
+                        .filter { room -> room.chatroomId != "announcements" && room.type != "system" }
 
                     Log.d("ChatRooms", "Loaded ${chatrooms.size} chatrooms")
 
