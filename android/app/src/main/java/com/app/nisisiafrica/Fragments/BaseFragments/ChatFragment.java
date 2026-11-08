@@ -686,6 +686,7 @@ public class ChatFragment extends Fragment {
                             java.util.Collections.emptyMap(),
                             "direct"
                     );
+                    if (pagedAdapter != null) pagedAdapter.refresh();
                     openChat(room);
                     return Unit.INSTANCE;
                 });
@@ -1451,6 +1452,13 @@ public class ChatFragment extends Fragment {
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
         if (backCallback != null) backCallback.setEnabled(!hidden);
+        if (!hidden && pagedAdapter != null) pagedAdapter.refresh();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (pagedAdapter != null) pagedAdapter.refresh();
     }
 
     @Override
