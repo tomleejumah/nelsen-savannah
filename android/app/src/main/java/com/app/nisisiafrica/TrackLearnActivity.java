@@ -520,6 +520,17 @@ public class TrackLearnActivity extends AppCompatActivity {
             modulesContainer.addView(card);
             prefetchChapterLessons(module);
         }
+        if (enrolledOnTrack && !TextUtils.isEmpty(trackId)) {
+            MaterialButton assignments = new MaterialButton(this);
+            assignments.setText("My assignments and feedback");
+            assignments.setAllCaps(false);
+            assignments.setOnClickListener(v -> {
+                Intent intent = new Intent(this, AllCoursesActivity.class);
+                intent.putExtra(AllCoursesActivity.EXTRA_ASSIGNMENTS_TRACK_ID, trackId);
+                startActivity(intent);
+            });
+            modulesContainer.addView(assignments);
+        }
     }
 
     private void openChapter(LmsModels.ModuleDto module, int chapterIndex, String lessonId) {
