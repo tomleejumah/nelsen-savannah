@@ -697,7 +697,7 @@ public class TrackLearnActivity extends AppCompatActivity {
             if (prog != null) lesson.lessonPercent = prog;
             flatLessons.add(lesson);
             LmsModels.MilestoneDto mile = milestoneFor(lesson.lessonId);
-            boolean canOpen = chapterReleased && (mile == null || mile.available || mile.completed);
+            boolean canOpen = chapterReleased && !chapterExpired && (mile == null || mile.available || mile.completed);
             boolean isDone = lesson.lessonPercent >= 100f || (mile != null && mile.completed);
             if (isDone) lessonDone++;
             else if (!canOpen) lessonLocked++;
@@ -726,7 +726,7 @@ public class TrackLearnActivity extends AppCompatActivity {
             }
             if (!canOpen) {
                 if (metaText.length() > 0) metaText.append(" · ");
-                metaText.append("locked");
+                metaText.append(chapterExpired ? "Expired" : "locked");
             } else if (chapterExpired) {
                 if (metaText.length() > 0) metaText.append(" · ");
                 metaText.append("Past Due");
@@ -741,7 +741,7 @@ public class TrackLearnActivity extends AppCompatActivity {
             row.setOnClickListener(v -> {
                 if (canOpen) openLesson(lesson);
                 else Toast.makeText(this, chapterReleased
-                        ? milestoneLockMessage(mile)
+                        ? (chapterExpired ? "This chapter is locked — the window ended " + new java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(new java.util.Date(module.dueAt)) : milestoneLockMessage(mile))
                         : "Opens after release date", Toast.LENGTH_SHORT).show();
             });
             host.addView(row);
@@ -768,6 +768,9 @@ public class TrackLearnActivity extends AppCompatActivity {
 
     private static String milestoneLockMessage(@Nullable LmsModels.MilestoneDto mile) {
         if (mile == null) return "Lesson locked";
+        if ("expired".equals(mile.lockedReason)) {
+            return "This chapter is locked — the access window has ended";
+        }
         if ("release_date".equals(mile.lockedReason)) {
             return "Opens after release date";
         }
