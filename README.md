@@ -173,3 +173,7 @@ The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refu
 - Requires Android and API CI plus device testing (background/foreground, interrupted at 99%, server range, hash verification). No build has been run for this change.
 
 - Chat creation Logcat on 2026-11-04 confirms Firestore `PERMISSION_DENIED` during the initial `chatRooms/{id}` document get, **before create**. Check deployed Firestore rules for `get` on nonexistent direct rooms; do not attribute this error to billing without additional evidence. No chat/announcement rules changed in this PR.
+
+## Android UI redesign (in progress)
+
+Reference-driven native XML redesign is underway on `feat/android-home-reference-redesign` ([draft PR #96](https://github.com/tomleejumah/nelsen-savannah/pull/96)). The first Home pass updates the event and enrolled-course item layouts and places the existing Our Schools entry before Upcoming Events. Existing adapter view IDs and app behavior are retained. The populated school-logo rail shown in the design reference is not implemented yet; it needs a real school data source rather than static sample cards. Chat, Community and Book a Mentor remain subsequent screen-by-screen work. Build and device visual QA are still pending.
