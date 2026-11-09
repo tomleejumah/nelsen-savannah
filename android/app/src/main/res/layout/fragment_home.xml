@@ -189,6 +189,19 @@
                         android:textSize="9.5sp" />
                 </LinearLayout>
 
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvHomeSchools"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    tools:itemCount="4"
+                    tools:listitem="@layout/item_home_school" />
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -298,6 +311,7 @@
 
                 <!-- Personalized enrollments; full catalog is under Find My Path / Learning -->
                 <RelativeLayout
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
@@ -331,6 +345,7 @@
                 </RelativeLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
+                    android:visibility="gone"
                     android:id="@+id/rcCourses"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
