@@ -177,3 +177,9 @@ The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refu
 ## Android UI redesign (in progress)
 
 Reference-driven native XML redesign is underway on `feat/android-home-reference-redesign` ([draft PR #96](https://github.com/tomleejumah/nelsen-savannah/pull/96)). The first Home pass updates the event and enrolled-course item layouts and places the existing Our Schools entry before Upcoming Events. Existing adapter view IDs and app behavior are retained. The populated school-logo rail shown in the design reference is not implemented yet; it needs a real school data source rather than static sample cards. Chat, Community and Book a Mentor remain subsequent screen-by-screen work. Build and device visual QA are still pending.
+
+### Chat inbox redesign
+- Reworked the Chat inbox in phone and tablet XML layouts to match the supplied reference: title/actions, expandable search, All/Direct/Groups filters, and cleaner conversation rows.
+- Search and conversation-type filters use the existing loaded chat-room data and adapters; chat opening and message flows remain unchanged.
+- Conversation rows now show relative last-message timestamps and retain avatar loading and unread counts.
+- The overflow menu exposes the existing school-announcements and course-group chat flows.
