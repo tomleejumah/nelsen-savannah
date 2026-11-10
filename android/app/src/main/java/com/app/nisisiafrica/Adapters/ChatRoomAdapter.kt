@@ -5,6 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -33,12 +36,26 @@ class ChatRoomAdapter(
         private val tvName: TextView = itemView.findViewById(R.id.tvName)
         private val tvLastMsg: TextView = itemView.findViewById(R.id.tvLastMsg)
         private val tvUnread: TextView = itemView.findViewById(R.id.tvUnread)
+        private val tvTime: TextView = itemView.findViewById(R.id.tvTime)
+
+        private fun formatChatTime(date: Date): String {
+            val elapsed = (System.currentTimeMillis() - date.time).coerceAtLeast(0L)
+            val minutes = elapsed / 60000L
+            return when {
+                minutes < 1 -> "now"
+                minutes < 60 -> minutes.toString() + "m"
+                minutes < 1440 -> (minutes / 60).toString() + "h"
+                minutes < 10080 -> (minutes / 1440).toString() + "d"
+                else -> SimpleDateFormat("MMM d", Locale.getDefault()).format(date)
+            }
+        }
 
         fun bind(chatroom: Chatroom) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
             tvName.text = if (chatroom.type == "group") chatroom.name.ifBlank { "Course group" } else chatroom.getOtherUserName(currentUserId)
-            tvLastMsg.text = chatroom.lastMessage ?: "No messages yet"
+            tvLastMsg.text = chatroom.lastMessage?.takeIf { it.isNotBlank() } ?: "No messages yet"
+            tvTime.text = chatroom.lastMessageTimestamp?.toDate()?.let { formatChatTime(it) }.orEmpty()
 
             // Unread Count logic
             val unreadCount = chatroom.unreadCount?.get(currentUserId) ?: 0

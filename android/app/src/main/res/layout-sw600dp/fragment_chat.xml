@@ -23,21 +23,6 @@
         android:layout_height="match_parent"
         android:background="?attr/colorSurface">
 
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="0dp"
-            android:fontFamily="@font/font_ui"
-            android:text="@string/chat_messages"
-            android:textColor="@color/ink"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <Space
             android:id="@+id/chatTopSpacer"
             android:layout_width="0dp"
@@ -46,39 +31,132 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <EditText
-            android:id="@+id/etSearch"
+        <LinearLayout
+            android:id="@+id/chatListToolbar"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:color/transparent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/chatTopSpacer">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/font_ui"
+                android:text="Chat"
+                android:textColor="@color/ink"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnChatSearch"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Search conversations"
+                android:padding="10dp"
+                android:src="@drawable/ic_search"
+                app:tint="@color/ink" />
+
+            <ImageButton
+                android:id="@+id/btnChatMore"
+                android:layout_width="38dp"
+                android:layout_height="42dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Chat options"
+                android:padding="10dp"
+                android:src="@drawable/ic_more"
+                app:tint="@color/ink" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/input_bg"
             android:drawableStart="@drawable/ic_search"
-            android:drawablePadding="12dp"
+            android:drawablePadding="10dp"
             android:drawableTint="@color/muted"
             android:fontFamily="@font/font_ui"
             android:hint="Search conversations..."
             android:importantForAutofill="no"
             android:inputType="text"
-            android:paddingHorizontal="4dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="12dp"
+            android:paddingHorizontal="14dp"
             android:textColor="@color/ink"
             android:textColorHint="@color/muted"
-            android:textSize="14sp"
+            android:textSize="13sp"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/chatTopSpacer" />
+            app:layout_constraintTop_toBottomOf="@id/chatListToolbar" />
+
+        <LinearLayout
+            android:id="@+id/chatFilterBar"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/etSearch">
+
+            <TextView
+                android:id="@+id/chatFilterAll"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chat_filter_selected"
+                android:gravity="center"
+                android:text="All"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/chatFilterDirect"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chat_filter_unselected"
+                android:gravity="center"
+                android:text="Direct"
+                android:textColor="@color/ink_soft"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chatFilterGroups"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chat_filter_unselected"
+                android:gravity="center"
+                android:text="Groups"
+                android:textColor="@color/ink_soft"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <View
             android:id="@+id/searchRule"
             android:layout_width="0dp"
             android:layout_height="1dp"
-            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="10dp"
             android:background="@color/line"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etSearch" />
+            app:layout_constraintTop_toBottomOf="@id/chatFilterBar" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvChats"
@@ -92,8 +170,6 @@
             app:layout_constraintTop_toBottomOf="@id/searchRule"
             tools:listitem="@layout/item_chat_room" />
 
-        <!-- Superseded by the contextual FAB in MainActivity; kept so the
-             existing new-chat wiring has a view to bind to. -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabNewChat"
             android:layout_width="wrap_content"
@@ -101,11 +177,10 @@
             android:layout_margin="20dp"
             android:src="@drawable/ic_chat"
             android:visibility="gone"
-            app:backgroundTint="?attr/colorPrimary"
+            app:backgroundTint="@color/maroon_700"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:tint="@color/white" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Open conversation: messages full-bleed; glass header/composer overlay like Home. -->
