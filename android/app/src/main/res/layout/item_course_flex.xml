@@ -17,7 +17,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Course Image -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -34,7 +33,6 @@
                 android:maxWidth="300dp"
                 android:src="@drawable/login"/>
 
-
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/likeBtn"
                 android:layout_width="22dp"
@@ -47,7 +45,6 @@
 
         </RelativeLayout>
 
-        <!-- Main Content -->
         <LinearLayout
             android:id="@+id/courseBody"
             android:layout_width="match_parent"
@@ -96,7 +93,6 @@
 
             </LinearLayout>
 
-            <!-- Course Info -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

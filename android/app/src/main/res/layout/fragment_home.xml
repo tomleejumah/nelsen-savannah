@@ -49,6 +49,47 @@
                 android:orientation="vertical"
                 android:paddingBottom="96dp">
 
+                <!-- Reference-inspired home introduction; content remains backed by existing adapters. -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/font_ui"
+                        android:text="Hello 👋"
+                        android:textColor="@color/ns_ink"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:fontFamily="@font/font_ui"
+                        android:text="Keep learning, keep growing!"
+                        android:textColor="@color/muted"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingTop="10dp"
+                    android:fontFamily="@font/font_ui"
+                    android:text="Stories"
+                    android:textColor="@color/ns_ink"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
                 <!-- Stories: always visible; + Add pinned in adapter -->
                 <LinearLayout
                     android:id="@+id/storiesContainer"
@@ -124,7 +165,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/font_fraunces"
-                        android:text="@string/home_enroll_schools"
+                        android:text="Our Schools"
                         android:textColor="@color/ns_ink"
                         android:textSize="15sp" />
 
@@ -148,6 +189,20 @@
                         android:textSize="9.5sp" />
                 </LinearLayout>
 
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvHomeSchools"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    tools:itemCount="4"
+                    tools:listitem="@layout/item_home_school" />
+
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -163,7 +218,7 @@
                         android:layout_centerVertical="true"
                         android:drawablePadding="12dp"
                         android:gravity="center_vertical"
-                        android:text="@string/home_upcoming_schedule"
+                        android:text="Upcoming Events"
                         android:textColor="@color/ns_ink"
                         android:textSize="16sp"
                         android:fontFamily="@font/font_fraunces" />
@@ -256,6 +311,7 @@
 
                 <!-- Personalized enrollments; full catalog is under Find My Path / Learning -->
                 <RelativeLayout
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
@@ -271,7 +327,7 @@
                         android:layout_centerVertical="true"
                         android:drawablePadding="12dp"
                         android:gravity="center_vertical"
-                        android:text="@string/home_active_courses"
+                        android:text="Enrolled Courses"
                         android:textColor="@color/ns_ink"
                         android:textSize="16sp"
                         android:fontFamily="@font/font_fraunces" />
@@ -289,6 +345,7 @@
                 </RelativeLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
+                    android:visibility="gone"
                     android:id="@+id/rcCourses"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
