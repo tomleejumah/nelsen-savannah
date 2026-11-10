@@ -103,6 +103,7 @@ public class ChatFragment extends Fragment {
     private ChatRoomAdapter pagedAdapter;
     private String currentChatId;
     private String currentReceiverId;
+    private String activeChatFilter = "all";
     private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
     private ActivityResultLauncher<PickVisualMediaRequest> videoPicker;
     private ActivityResultLauncher<String> documentPicker;
@@ -134,6 +135,7 @@ public class ChatFragment extends Fragment {
 
         initConfiguration();
         setupRecyclerView();
+        setupChatListControls();
         setupGlobalClickListeners();
         setupBackNavigation();
         setupChatGlassChrome();
@@ -214,39 +216,92 @@ public class ChatFragment extends Fragment {
                 if (room != null) loadedRooms.add(room);
             }
         }
+        applyChatListFilter();
     }
 
     private void setupChatSearch() {
         binding.etSearch.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (binding == null) return;
-                String query = s.toString().trim().toLowerCase(Locale.getDefault());
-                if (query.isEmpty()) {
-                    binding.rvChats.setAdapter(concatAdapter);
-                    return;
-                }
-                String currentUserId = FirebaseAuth.getInstance().getUid();
-                ArrayList<Chatroom> filtered = new ArrayList<>();
-                for (Chatroom room : loadedRooms) {
-                    if (room == null) continue;
-                    String name = "group".equals(room.getType()) ? room.getName() : room.getOtherUserName(currentUserId);
-                    if (name != null && name.toLowerCase(Locale.getDefault()).contains(query)) {
-                        filtered.add(room);
-                    }
-                }
-                if (binding.rvChats.getAdapter() != searchAdapter) {
-                    binding.rvChats.setAdapter(searchAdapter);
-                }
-                searchAdapter.submit(filtered);
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                applyChatListFilter();
             }
-
-            @Override
-            public void afterTextChanged(android.text.Editable s) {}
+            @Override public void afterTextChanged(android.text.Editable s) {}
         });
+    }
+
+    private void setupChatListControls() {
+        binding.btnChatSearch.setOnClickListener(v -> {
+            boolean show = binding.etSearch.getVisibility() != View.VISIBLE;
+            binding.etSearch.setVisibility(show ? View.VISIBLE : View.GONE);
+            if (show) {
+                binding.etSearch.requestFocus();
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) requireContext()
+                                .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showSoftInput(binding.etSearch,
+                        android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            } else {
+                binding.etSearch.setText("");
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) requireContext()
+                                .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+            }
+        });
+        binding.chatFilterAll.setOnClickListener(v -> setChatFilter("all"));
+        binding.chatFilterDirect.setOnClickListener(v -> setChatFilter("direct"));
+        binding.chatFilterGroups.setOnClickListener(v -> setChatFilter("group"));
+        binding.btnChatMore.setOnClickListener(v -> {
+            android.widget.PopupMenu menu = new android.widget.PopupMenu(requireContext(), binding.btnChatMore);
+            menu.getMenu().add("School announcements").setOnMenuItemClickListener(item -> {
+                showSchoolAnnouncementsPicker();
+                return true;
+            });
+            menu.getMenu().add("Course group chat").setOnMenuItemClickListener(item -> {
+                showCourseGroupPicker();
+                return true;
+            });
+            menu.show();
+        });
+    }
+
+    private void setChatFilter(String filter) {
+        activeChatFilter = filter;
+        int selected = R.drawable.bg_chat_filter_selected;
+        int unselected = R.drawable.bg_chat_filter_unselected;
+        binding.chatFilterAll.setBackgroundResource("all".equals(filter) ? selected : unselected);
+        binding.chatFilterDirect.setBackgroundResource("direct".equals(filter) ? selected : unselected);
+        binding.chatFilterGroups.setBackgroundResource("group".equals(filter) ? selected : unselected);
+        binding.chatFilterAll.setTextColor(ContextCompat.getColor(requireContext(),
+                "all".equals(filter) ? R.color.white : R.color.ink_soft));
+        binding.chatFilterDirect.setTextColor(ContextCompat.getColor(requireContext(),
+                "direct".equals(filter) ? R.color.white : R.color.ink_soft));
+        binding.chatFilterGroups.setTextColor(ContextCompat.getColor(requireContext(),
+                "group".equals(filter) ? R.color.white : R.color.ink_soft));
+        applyChatListFilter();
+    }
+
+    private void applyChatListFilter() {
+        if (binding == null || concatAdapter == null || searchAdapter == null) return;
+        String query = binding.etSearch.getText().toString().trim().toLowerCase(Locale.getDefault());
+        if (query.isEmpty() && "all".equals(activeChatFilter)) {
+            binding.rvChats.setAdapter(concatAdapter);
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getUid();
+        ArrayList<Chatroom> filtered = new ArrayList<>();
+        for (Chatroom room : loadedRooms) {
+            if (room == null) continue;
+            String type = room.getType() == null ? "direct" : room.getType();
+            if ("direct".equals(activeChatFilter) && !"direct".equals(type)) continue;
+            if ("group".equals(activeChatFilter) && !"group".equals(type)) continue;
+            String name = "group".equals(type) ? room.getName() : room.getOtherUserName(currentUserId);
+            if (query.isEmpty() || (name != null && name.toLowerCase(Locale.getDefault()).contains(query))) {
+                filtered.add(room);
+            }
+        }
+        if (binding.rvChats.getAdapter() != searchAdapter) binding.rvChats.setAdapter(searchAdapter);
+        searchAdapter.submit(filtered);
     }
 
     private void openChat(Chatroom chatroom) {
