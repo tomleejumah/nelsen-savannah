@@ -1,46 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
     android:orientation="vertical">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="12dp">
-
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="11dp">
         <FrameLayout
             android:layout_width="52dp"
             android:layout_height="52dp"
             android:background="@drawable/bg_chat_dp_ring"
             android:padding="3dp">
-
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/tvAvatar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/ic_person" />
         </FrameLayout>
-
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="13dp"
             android:layout_weight="1"
             android:orientation="vertical">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
-
                 <TextView
                     android:id="@+id/tvName"
                     android:layout_width="0dp"
@@ -50,10 +43,35 @@
                     android:fontFamily="@font/font_ui"
                     android:maxLines="1"
                     android:textColor="@color/ink"
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    tools:text="Eden Pulp" />
-
+                    tools:text="General Study Chat" />
+                <TextView
+                    android:id="@+id/tvTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp"
+                    tools:text="2m" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/tvLastMsg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/font_ui"
+                    android:maxLines="1"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp"
+                    tools:text="Amina: Let's discuss the assignment..." />
                 <TextView
                     android:id="@+id/tvUnread"
                     android:layout_width="wrap_content"
@@ -61,35 +79,21 @@
                     android:layout_marginStart="8dp"
                     android:background="@drawable/unread_badge_bg"
                     android:gravity="center"
-                    android:minWidth="20dp"
-                    android:minHeight="20dp"
+                    android:minWidth="19dp"
+                    android:minHeight="19dp"
                     android:paddingHorizontal="5dp"
-                    android:text="0"
                     android:textColor="@color/white"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:visibility="gone"
-                    tools:text="2"
+                    tools:text="3"
                     tools:visibility="visible" />
             </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvLastMsg"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:ellipsize="end"
-                android:fontFamily="@font/font_ui"
-                android:maxLines="1"
-                android:textColor="@color/muted"
-                android:textSize="13sp"
-                tools:text="See you at the lab session…" />
         </LinearLayout>
     </LinearLayout>
-
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginStart="86dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginStart="83dp"
+        android:layout_marginEnd="18dp"
         android:background="@color/line" />
 </LinearLayout>
