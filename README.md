@@ -183,3 +183,8 @@ Reference-driven native XML redesign is underway on `feat/android-home-reference
 - Search and conversation-type filters use the existing loaded chat-room data and adapters; chat opening and message flows remain unchanged.
 - Conversation rows now show relative last-message timestamps and retain avatar loading and unread counts.
 - The overflow menu exposes the existing school-announcements and course-group chat flows.
+
+
+### Home enrolled-course progress
+- Restored the horizontal enrolled-course rail on Home, retaining the alternating polaroid tilt and existing like interaction.
+- Each course card now displays the API's server-calculated `trackPercent` with a percentage label and progress bar. The value comes from the authenticated enrollment response; it is not estimated on-device.
