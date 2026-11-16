@@ -79,6 +79,8 @@ data class CourseItem(
     val isLiked: Boolean = false,
     /** LMS program slug — used to age-filter after Find My Path questionnaire. */
     val programSlug: String = "",
+    /** Server-calculated learner progress for this enrolled track (0–100). */
+    val trackPercent: Float = 0f,
 )
 
 data class MentorItem(
