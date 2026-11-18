@@ -12,6 +12,7 @@ import {
   fetchLmsModule,
   fetchLmsTrack,
   uploadLessonMedia,
+  uploadLmsAttachment,
   type LessonDto,
   type ModuleDto,
   type TrackCardDto,
@@ -61,6 +62,7 @@ export function AddToCoursePanel({
   const [releaseAt, setReleaseAt] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [assignmentFiles, setAssignmentFiles] = useState<File[]>([]);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -151,12 +153,16 @@ export function AddToCoursePanel({
         } = { title: title.trim(), trackId };
         if (prompt.trim()) assignBody.prompt = prompt.trim();
         if (modelAnswer.trim()) assignBody.modelAnswer = modelAnswer.trim();
+        const uploaded = [];
+        for (const attachment of assignmentFiles) uploaded.push(await uploadLmsAttachment(token, attachment));
+        assignBody.attachmentMediaIds = uploaded.map((attachment) => attachment.mediaId);
         const result = await createAssignment(token, assignBody);
         if (!result.ok) throw new Error(result.error || "Assign failed");
         setMsg(`Course assignment published for ${trackId}.`);
         setTitle("");
         setPrompt("");
         setModelAnswer("");
+        setAssignmentFiles([]);
         onDone?.();
         return;
       }
@@ -364,6 +370,11 @@ export function AddToCoursePanel({
               rows={2}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Attach assignment documents (PDF, Word, Excel, PowerPoint, text or images)</span>
+              <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.webp" onChange={(e) => setAssignmentFiles(Array.from(e.target.files || []))} className="mt-1 block w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+            </label>
+            {assignmentFiles.length ? <p className="text-xs text-muted-foreground">{assignmentFiles.map((f) => f.name).join(" · ")}</p> : null}
           </>
         ) : null}
 
