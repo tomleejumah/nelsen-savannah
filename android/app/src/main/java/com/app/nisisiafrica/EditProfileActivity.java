@@ -401,7 +401,7 @@ public class EditProfileActivity extends AppCompatActivity {
             String link = courseLink.getText().toString().trim();
             String imageUrl = courseImageUrl.getText().toString().trim();
 
-            courseItem = new CourseItem("", id, imageUrl, dpImageUrl, name, title, duration, lessons, link, false, "");
+            courseItem = new CourseItem("", id, imageUrl, dpImageUrl, name, title, duration, lessons, link, false, "", 0f);
             courseList.add(courseItem);
             coursesAdapter.notifyItemInserted(courseList.size() - 1);
             dialog.dismiss();
