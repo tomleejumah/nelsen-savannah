@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   fetchAssignedOutbox,
+  fetchMediaPlaybackUrl,
   fetchLmsTracks,
   fetchMenteeProgress,
   fetchSubmissionQueue,
@@ -125,6 +126,12 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function openAttachment(mediaId: string) {
+    const result = await fetchMediaPlaybackUrl(await user.getIdToken(), mediaId);
+    if (!result.ok || !result.data?.url) { setError(result.error || "Document unavailable"); return; }
+    window.open(result.data.url, "_blank", "noopener,noreferrer");
+  }
 
   async function onMark(id: string, passed: boolean) {
     setMarkingId(id);
@@ -275,6 +282,7 @@ function TeachBoard({ user, me }: { user: User; me: MeDto }) {
                 <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
                   {item.text || "(no answer)"}
                 </p>
+                {item.attachments?.length ? <div className="mt-3 space-y-1"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Submitted documents</p>{item.attachments.map((file) => <button key={file.mediaId} type="button" onClick={() => void openAttachment(file.mediaId)} className="block text-sm font-medium text-maroon hover:underline">{file.filename} · Open attachment ↗</button>)}</div> : null}
                 <div className="mt-3 flex flex-wrap items-end gap-3">
                   <label className="text-xs text-muted-foreground">
                     Score
