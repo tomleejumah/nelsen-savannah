@@ -924,8 +924,8 @@ public class AllCoursesActivity extends AppCompatActivity {
             for (LmsModels.AttachmentDto attachment : assignment.attachments) {
                 if (attachment == null || TextUtils.isEmpty(attachment.mediaId)) continue;
                 TextView fileRow = new TextView(this);
-                fileRow.setText("📄 " + (TextUtils.isEmpty(attachment.filename) ? "Open document" : attachment.filename) + "  ·  Open");
-                fileRow.setTextColor(getColor(com.app.nisisiafrica.R.color.colorPrimary));
+                fileRow.setText("• " + (TextUtils.isEmpty(attachment.filename) ? "Open document" : attachment.filename) + "  ·  Open");
+                fileRow.setTextColor(getColor(android.R.color.holo_blue_dark));
                 fileRow.setPadding(0, pad / 3, 0, pad / 3);
                 fileRow.setOnClickListener(v -> openLmsAttachment(attachment.mediaId));
                 content.addView(fileRow);
