@@ -133,3 +133,8 @@ When unsure about a capability, check `LMS_ROADMAP.md` and `api/src/constants/lm
 Live event hosts must retain active membership in the owning school to mutate school-scoped events; platform administrators retain global moderation access. This has API regression coverage; real streaming/FCM verification remains pending.
 
 Live attendance heartbeats now cap credited viewing time to server-observed elapsed seconds and do not credit stale reconnect gaps. Full two-device streaming, FCM and provider-state acceptance still requires staging.
+
+
+## LMS document attachments
+
+Course assignments can carry private PDF, Word, Excel, PowerPoint, text and image attachments. Learners can attach documents to submissions from Web and Android; mentors can open submitted files from the marking queue. Files use the existing LMS media storage and access checks. Full in-app Office/PDF preview and offline-download QA remain tracked in `NELSEN_LMS_ROADMAP.md`.
