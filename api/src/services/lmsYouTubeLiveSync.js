@@ -127,7 +127,15 @@ export async function syncYouTubeLiveStatuses() {
         (candidate.currentStatus === "live" && nextStatus === "scheduled")
       ) continue;
 
-      await updateHubLiveStatus(candidate.eventId, { liveStatus: nextStatus });
+      try {
+        await updateHubLiveStatus(candidate.eventId, { liveStatus: nextStatus });
+      } catch (error) {
+        // Another worker or the Android host may have advanced this event
+        // since the candidate snapshot. That race is expected and must not
+        // abort synchronization of unrelated broadcasts.
+        if (error?.status === 409) continue;
+        throw error;
+      }
       changed += 1;
       console.log(
         `[youtube-live-sync] ${candidate.eventId} ${candidate.currentStatus} -> ${nextStatus}`,

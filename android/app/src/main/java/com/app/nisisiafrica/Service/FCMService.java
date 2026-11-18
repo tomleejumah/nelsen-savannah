@@ -1,6 +1,8 @@
 package com.app.nisisiafrica.Service;
 
 import android.app.NotificationManager;
+import android.app.NotificationChannel;
+import android.os.Build;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -91,6 +93,10 @@ public class FCMService extends FirebaseMessagingService {
                     .setData(android.net.Uri.parse(
                             "https://nelsen-savannah.co.ke/live/" + android.net.Uri.encode(eventId)))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        } else if ("chat".equals(type) && !value(data.get("conversationId")).isEmpty()) {
+            destination = new Intent(this, MainActivity.class)
+                    .putExtra(MainActivity.EXTRA_OPEN_CHAT_ID, value(data.get("conversationId")))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         } else {
             destination = new Intent(this, NotificationsActivity.class)
                     .putExtra("courseId", value(data.get("courseId")))
@@ -103,7 +109,7 @@ public class FCMService extends FirebaseMessagingService {
         int requestCode = key.isEmpty()
                 ? (int) (System.currentTimeMillis() & 0x7fffffff) : key.hashCode();
         PendingIntent pendingIntent;
-        if (isLiveLink) {
+        if (isLiveLink || ("chat".equals(type) && !value(data.get("conversationId")).isEmpty())) {
             pendingIntent = PendingIntent.getActivity(this, requestCode, destination,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         } else {
@@ -113,6 +119,12 @@ public class FCMService extends FirebaseMessagingService {
             pendingIntent = stackBuilder.getPendingIntent(
                     requestCode,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(new NotificationChannel(
+                    CHANNEL_ID, "Nelsen notifications", NotificationManager.IMPORTANCE_HIGH));
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)

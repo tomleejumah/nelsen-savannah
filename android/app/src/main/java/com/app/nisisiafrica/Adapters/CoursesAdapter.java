@@ -209,7 +209,8 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
     }
 
     class CompactViewHolder extends RecyclerView.ViewHolder {
-        TextView tv_lessons, tv_duration, tv_course_title, tv_tutor_name;
+        TextView tv_lessons, tv_duration, tv_course_title, tv_tutor_name, tvCourseProgress;
+        android.widget.ProgressBar courseProgressBar;
         CircleImageView iv_tutor_avatar, likeBtn;
         ImageView iv_course_image;
         LinearLayout courseBody;
@@ -226,6 +227,8 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             iv_course_image = itemView.findViewById(R.id.iv_course_image);
             iv_tutor_avatar = itemView.findViewById(R.id.iv_tutor_avatar);
             likeBtn = itemView.findViewById(R.id.likeBtn);
+            tvCourseProgress = itemView.findViewById(R.id.tv_course_progress);
+            courseProgressBar = itemView.findViewById(R.id.course_progress_bar);
         }
 
         void bind(CourseItem courseItem, int position) {
@@ -237,6 +240,9 @@ public class CoursesAdapter extends PagingDataAdapter<CourseItem, RecyclerView.V
             }
 
             tv_course_title.setText(courseItem.getCourseTitle());
+            int progress = Math.max(0, Math.min(100, Math.round(courseItem.getTrackPercent())));
+            if (tvCourseProgress != null) tvCourseProgress.setText(progress + "%");
+            if (courseProgressBar != null) courseProgressBar.setProgress(progress);
             String lessons = courseItem.getLessons() != null ? courseItem.getLessons().trim() : "";
             if (tv_duration != null) {
                 tv_duration.setText(courseItem.getDuration() != null ? courseItem.getDuration() : "");

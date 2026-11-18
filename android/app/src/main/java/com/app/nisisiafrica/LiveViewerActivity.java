@@ -80,6 +80,7 @@ public class LiveViewerActivity extends AppCompatActivity {
     private boolean attendanceLeaveSent = false;
     private long lastWatchTickMs = 0L;
     private boolean chatSending = false;
+    private final java.util.Map<View, Integer> pipVisibility = new java.util.HashMap<>();
     private MaterialButton sendChatButton;
      private final Runnable attendanceHeartbeat = new Runnable() {
         @Override public void run() {
@@ -114,14 +115,15 @@ public class LiveViewerActivity extends AppCompatActivity {
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(TextUtils.isEmpty(title) ? "Nelsen Live" : title);
-        toolbar.setNavigationOnClickListener(v -> finish());
+        toolbar.setNavigationOnClickListener(v -> leaveStream());
+        findViewById(R.id.btnLeaveLive).setOnClickListener(v -> leaveStream());
 
         liveStatusView = findViewById(R.id.tvLiveStatus);
         currentLiveStatus = status;
         liveStatusView.setText(statusLabel(status));
 
         openYoutubeButton = findViewById(R.id.btnOpenYoutube);
-        openYoutubeButton.setOnClickListener(v -> openLiveExternally());
+        openYoutubeButton.setVisibility(View.GONE);
         viewerCountView = findViewById(R.id.tvViewerCount);
         chatView = findViewById(R.id.tvLiveChat);
         chatScroll = findViewById(R.id.liveChatScroll);
@@ -279,7 +281,7 @@ public class LiveViewerActivity extends AppCompatActivity {
         int previousHeight = child == null ? 0 : child.getHeight();
         int oldScrollY = chatScroll.getScrollY();
         int threshold = Math.round(48 * getResources().getDisplayMetrics().density);
-        boolean followingLatest = child != null &&
+        boolean followingLatest = child == null || previousHeight <= chatScroll.getHeight() ||
                 oldScrollY + chatScroll.getHeight() >= previousHeight - threshold;
         lastChatSnapshot = next;
         chatView.setText(next);
@@ -363,7 +365,10 @@ public class LiveViewerActivity extends AppCompatActivity {
                                 if (input.getText() != null && message.contentEquals(input.getText().toString().trim())) input.setText("");
                                 loadTelemetry();
                             } else {
-                                Toast.makeText(LiveViewerActivity.this, "Message not sent (" + response.code() + ")", Toast.LENGTH_SHORT).show();
+                                String reason = response.code() == 429
+                                        ? "Please wait a moment before sending another message"
+                                        : "Message not sent (" + response.code() + ")";
+                                Toast.makeText(LiveViewerActivity.this, reason, Toast.LENGTH_SHORT).show();
                             }
                         }
                         @Override public void onFailure(Call<LmsModels.MapEnvelope> call, Throwable t) {
@@ -379,6 +384,11 @@ public class LiveViewerActivity extends AppCompatActivity {
         if (sendChatButton != null) {
             sendChatButton.setEnabled("live".equals(currentLiveStatus) && streamPlayable);
         }
+    }
+
+    private void leaveStream() {
+        recordLeaveOnce();
+        finish();
     }
 
     private void recordLeaveOnce() {
@@ -526,6 +536,37 @@ public class LiveViewerActivity extends AppCompatActivity {
     @Override
     public void onPictureInPictureModeChanged(boolean inPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(inPictureInPictureMode, newConfig);
+        android.widget.LinearLayout root = findViewById(R.id.main);
+        if (root != null) {
+            if (inPictureInPictureMode) {
+                pipVisibility.clear();
+                for (int i = 0; i < root.getChildCount(); i++) {
+                    View child = root.getChildAt(i);
+                    pipVisibility.put(child, child.getVisibility());
+                    if (child != webView.getParent()) child.setVisibility(View.GONE);
+                }
+                View playerContainer = (View) webView.getParent();
+                playerContainer.setVisibility(View.VISIBLE);
+                android.view.ViewGroup.LayoutParams params = playerContainer.getLayoutParams();
+                params.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                playerContainer.setLayoutParams(params);
+                android.view.ViewGroup.LayoutParams videoParams = webView.getLayoutParams();
+                videoParams.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                webView.setLayoutParams(videoParams);
+            } else if (!pipVisibility.isEmpty()) {
+                for (java.util.Map.Entry<View, Integer> entry : pipVisibility.entrySet()) {
+                    entry.getKey().setVisibility(entry.getValue());
+                }
+                pipVisibility.clear();
+                View playerContainer = (View) webView.getParent();
+                android.view.ViewGroup.LayoutParams params = playerContainer.getLayoutParams();
+                params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+                playerContainer.setLayoutParams(params);
+                android.view.ViewGroup.LayoutParams videoParams = webView.getLayoutParams();
+                videoParams.height = Math.round(220 * getResources().getDisplayMetrics().density);
+                webView.setLayoutParams(videoParams);
+            }
+        }
         if (inPictureInPictureMode) {
             // onPause happens before the PiP transition. Resume live stats
             // while the video remains visible and the learner is counted.

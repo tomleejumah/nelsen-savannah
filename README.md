@@ -14,6 +14,17 @@ Historical capability map (some early tables are superseded): [`LMS_ROADMAP.md`]
 
 ---
 
+
+## Course group chats and school announcements (feature branch; not deployed)
+
+Development branch: `feat/course-mentor-groups` — [draft PR #88](https://github.com/tomleejumah/nelsen-savannah/pull/88). **Committed code is not proof of a passing build or working device notifications.**
+
+- **Course groups:** One Firestore `chatRooms/course_<trackId>` per course, created/opened by an assigned mentor. Its membership comes from active school memberships, assigned mentors and eligible course enrollments; all assigned mentors are group admins. Enrollment, unenrollment, mentor reassignment and school status changes trigger synchronization. The API periodically reconciles existing rooms to recover missed events.
+- **School announcements:** Separate `chatRooms/school_announcements_<schoolId>` per school. `GET /chat/schools/announcements` lists a user's active schools; `POST /chat/school/:schoolId/announcements` creates/opens the room for an authorized active school admin. Membership derives from active school memberships and is reconciled after status changes and periodically. The old global `announcements` room is retained for migration; Android no longer automatically adds users to it.
+- **Notifications:** `POST /chat/message` checks sender membership against the Firestore room and fans out to other members of group/school announcement rooms; direct messages require an authorized receiver. Android sends a notification request after successful text-message submission. The API verifies a matching recent persisted Firestore message and transactionally claims it to prevent duplicate fanout; delivery retry after a partial failure is not yet implemented. School announcement notifications additionally verify active school membership against the LMS database and exclude suspended recipients; Android treats announcements as broadcasts for unread badges. Chat push taps now target MainActivity, which loads the Firestore room and checks membership before opening it. Push delivery and cold-start navigation have not been verified on devices.
+- **Security boundary:** Firestore rules are externally managed; review them for school-scoped access, read/write membership and admin-only announcement publishing. API membership sync is best-effort, and the periodic reconciliation is not an immediate-revocation guarantee.
+- **Android (partial):** School-announcement picker loads active schools; school admins can initialize missing rooms; non-admins have a read-only composer. Device verification is pending.\n- **Outstanding:** Web school announcement UI and publishing; revocation guarantees and retries; message unread-count and push-delivery integration tests; deep links; CI; multi-school acceptance testing. Do not merge or deploy without verification.
+
 ## How the system works
 
 ### Auth
@@ -138,3 +149,45 @@ Live attendance heartbeats now cap credited viewing time to server-observed elap
 ## LMS document attachments
 
 Course assignments can carry private PDF, Word, Excel, PowerPoint, text and image attachments. Learners can attach documents to submissions from Web and Android; mentors can open submitted files from the marking queue. Files use the existing LMS media storage and access checks. Full in-app Office/PDF preview and offline-download QA remain tracked in `NELSEN_LMS_ROADMAP.md`.
+### Public website policies (feature branch)
+
+The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refund Policy (`/refund-policy`), and Shipping Policy (`/shipping-policy`) routes. They use the shared responsive policy layout and existing contact email. **Policy text is a draft requiring owner/legal review before production publication**; in particular confirm refund eligibility, physical-item fulfillment, privacy practices, and applicable law. Web build and browser navigation are not yet verified.
+
+
+### Chat integration follow-up (fix/chat-integrations-p0)
+
+- School-announcement listing now quotes the PostgreSQL `schoolId` SQL alias so the Android picker receives the expected JSON field on both PostgreSQL and SQLite.
+- School announcement notification authorization accepts both `SchoolAdmin` and `school_admin` role spellings (case-insensitive).
+- **Still outstanding:** Firestore rule compatibility for AI replies, delivery retries after partially failed notification fanout, immediate membership revocation, Android debug/release CI, and web policy route generation/build verification. These changes have not been verified by CI.
+
+
+### November 2026 web typography and chat diagnostics
+
+- Homepage hero typography received small improvements to heading spacing, weight, and supporting text readability; no page redesign.
+- Android direct-chat creation validates the recipient and existing room membership/type before opening the room. Firestore lookup and creation failures now log which stage failed, with the underlying Firebase exception.
+- School announcements are intentionally unchanged pending cross-platform design and Firestore project verification. Firestore billing status and security rules must be checked from the actual Firebase error; neither has been confirmed as the cause. CI/build verification pending.
+
+
+### Resumable Android in-app updates
+
+- The WorkManager update downloader retains `.apk.part` across network interruptions, app backgrounding, and retries instead of deleting partial progress.
+- Android requests `Range: bytes=<offset>-`; the API's authenticated `/lms/app/android/download` endpoint now supports `206 Partial Content`, `Content-Range`, and `416` for invalid offsets. If the server ignores ranges, the downloader safely restarts from byte zero; a checksum mismatch discards the corrupt partial.
+- The download remains managed by WorkManager; completion shows **Tap to install** and does not auto-install. Android OS background execution limits can still defer a worker; foreground-service promotion is enabled via WorkManager ForegroundInfo and a low-importance persistent progress notification. Android 13+ notification permission affects notification visibility, and Android 15 dataSync foreground-service limits still apply.
+- Requires Android and API CI plus device testing (background/foreground, interrupted at 99%, server range, hash verification). No build has been run for this change.
+
+- Chat creation Logcat on 2026-11-04 confirms Firestore `PERMISSION_DENIED` during the initial `chatRooms/{id}` document get, **before create**. Check deployed Firestore rules for `get` on nonexistent direct rooms; do not attribute this error to billing without additional evidence. No chat/announcement rules changed in this PR.
+
+## Android UI redesign (in progress)
+
+Reference-driven native XML redesign is underway on `feat/android-home-reference-redesign` ([draft PR #96](https://github.com/tomleejumah/nelsen-savannah/pull/96)). The first Home pass updates the event and enrolled-course item layouts and places the existing Our Schools entry before Upcoming Events. Existing adapter view IDs and app behavior are retained. The populated school-logo rail shown in the design reference is not implemented yet; it needs a real school data source rather than static sample cards. Chat, Community and Book a Mentor remain subsequent screen-by-screen work. Build and device visual QA are still pending.
+
+### Chat inbox redesign
+- Reworked the Chat inbox in phone and tablet XML layouts to match the supplied reference: title/actions, expandable search, All/Direct/Groups filters, and cleaner conversation rows.
+- Search and conversation-type filters use the existing loaded chat-room data and adapters; chat opening and message flows remain unchanged.
+- Conversation rows now show relative last-message timestamps and retain avatar loading and unread counts.
+- The overflow menu exposes the existing school-announcements and course-group chat flows.
+
+
+### Home enrolled-course progress
+- Restored the horizontal enrolled-course rail on Home, retaining the alternating polaroid tilt and existing like interaction.
+- Each course card now displays the API's server-calculated `trackPercent` with a percentage label and progress bar. The value comes from the authenticated enrollment response; it is not estimated on-device.

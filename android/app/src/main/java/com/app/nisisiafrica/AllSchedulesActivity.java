@@ -1,6 +1,7 @@
 package com.app.nisisiafrica;
 
 import android.os.Bundle;
+import java.util.ArrayList;
 import android.view.View;
 import android.widget.TextView;
 
@@ -84,9 +85,17 @@ public class AllSchedulesActivity extends AppCompatActivity {
 
     private void load() {
         eventViewModel.fetchHubEvents(filter, events -> {
-            adapter.submitList(events);
-            boolean empty = events == null || events.isEmpty();
-            int n = empty ? 0 : events.size();
+            // Live sessions are delivered through scoped live notifications and
+            // the live viewer, not mixed into the ordinary past-event history.
+            java.util.List<com.app.nisisiafrica.data.Model.Event> visible = new ArrayList<>();
+            if (events != null) {
+                for (com.app.nisisiafrica.data.Model.Event event : events) {
+                    if (!EventActions.isLive(event)) visible.add(event);
+                }
+            }
+            adapter.submitList(visible);
+            boolean empty = visible.isEmpty();
+            int n = visible.size();
             tvEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
             tvEmpty.setText(filter.equals("past") ? "No past events" : "No upcoming events");
             if (tvResultCount != null) {

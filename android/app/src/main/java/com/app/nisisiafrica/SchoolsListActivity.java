@@ -439,7 +439,7 @@ public class SchoolsListActivity extends AppCompatActivity {
                 card.courseTitle != null ? card.courseTitle : "",
                 card.durationString(), card.lessonsString(),
                 card.courseLink != null ? card.courseLink : "",
-                card.isLiked, card.programSlug != null ? card.programSlug : "");
+                card.isLiked, card.programSlug != null ? card.programSlug : "", card.trackPercent);
     }
 
     private void openTabletCourse(CourseItem course) {

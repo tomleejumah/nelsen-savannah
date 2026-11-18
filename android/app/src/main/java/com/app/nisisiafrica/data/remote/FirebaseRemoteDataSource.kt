@@ -439,6 +439,7 @@ object FirebaseRemoteDataSource {
                         nextKey = if (hasMore) PagingKey(keys.lastOrNull(), pageSize) else null
                     )
                 } catch (e: Exception) {
+                    Log.e("ChatRooms", "Failed to load chat rooms from Firestore", e)
                     LoadResult.Error(e)
                 }
             }
@@ -561,34 +562,9 @@ object FirebaseRemoteDataSource {
     }
 
     fun initSpecialChatRooms() {
-        val db = FirebaseFirestore.getInstance()
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-
-        val announcementsRef = db.collection("chatRooms").document("announcements")
-
-        db.runTransaction { transaction ->
-            val snapshot = transaction.get(announcementsRef)
-
-            if (!snapshot.exists()) {
-                transaction.set(
-                    announcementsRef,
-                    hashMapOf(
-                        "chatroomId" to "announcements",
-                        "userIds" to listOf(userId),
-                        "lastMessage" to "Welcome to announcements",
-                        "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                        "type" to "system"
-                    )
-                )
-            } else {
-                transaction.update(
-                    announcementsRef,
-                    "userIds",
-                    FieldValue.arrayUnion(userId)
-                )
-            }
-        }
-        // AI assistant room intentionally not created — will plug in later.
+        // School announcement membership is now owned by the LMS API.
+        // Do not auto-enroll users into the legacy global announcements room:
+        // doing so would restore access after a school suspension.
     }
 
     fun createOrGetDirectChatRoom(
@@ -609,6 +585,12 @@ object FirebaseRemoteDataSource {
             "${otherUserId}_${currentUserId}"
         }
 
+        if (otherUserId.isBlank() || otherUserId == currentUserId) {
+            Log.w("ChatRoom", "Invalid direct chat recipient")
+            onComplete(null)
+            return
+        }
+
         val db = FirebaseFirestore.getInstance()
 
         // Check if chatroom exists first
@@ -616,6 +598,14 @@ object FirebaseRemoteDataSource {
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    val participants = document.get("userIds") as? List<*>
+                    if (document.getString("type") != "direct" ||
+                        participants?.contains(currentUserId) != true ||
+                        participants.contains(otherUserId) != true) {
+                        Log.e("ChatRoom", "Existing room has incompatible type or membership: $chatroomId")
+                        onComplete(null)
+                        return@addOnSuccessListener
+                    }
                     // Chatroom already exists
                     Log.d("ChatRoom", "Chatroom already exists: $chatroomId")
                     onComplete(chatroomId)
@@ -640,13 +630,13 @@ object FirebaseRemoteDataSource {
                             onComplete(chatroomId)
                         }
                         .addOnFailureListener { e ->
-                            Log.e("ChatRoom", "Error creating chatroom", e)
+                            Log.e("ChatRoom", "Direct chat creation failed; check Firestore rules and project status", e)
                             onComplete(null)
                         }
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("ChatRoom", "Error checking chatroom", e)
+                Log.e("ChatRoom", "Direct chat lookup failed; check Firestore read permissions and project status", e)
                 onComplete(null)
             }
     }
@@ -674,9 +664,7 @@ object FirebaseRemoteDataSource {
         val currentUserId = auth.currentUser?.uid ?: return InvalidPagingSource()
 
         val query = firestore.collection("chatRooms")
-            .whereEqualTo("type", "direct")
             .whereArrayContains("userIds", currentUserId)
-            .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
 
         return object : PagingSource<QuerySnapshot, Chatroom>() {
             override suspend fun load(params: LoadParams<QuerySnapshot>): LoadResult<QuerySnapshot, Chatroom> {
@@ -688,12 +676,9 @@ object FirebaseRemoteDataSource {
 
                     val snapshot = currentQuery.get().await()
 
-                    // Filter out announcements
+                    // Direct rooms without messages or timestamps must remain discoverable.
                     val chatrooms = snapshot.toObjects(Chatroom::class.java)
-                        .filter { room ->
-                            room.lastMessage.trim().isNotEmpty()
-                                    && !room.lastMessage.equals("No Messages Yet", ignoreCase = true)
-                        }
+                        .filter { room -> room.chatroomId != "announcements" && room.type != "system" }
 
                     Log.d("ChatRooms", "Loaded ${chatrooms.size} chatrooms")
 

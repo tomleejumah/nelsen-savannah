@@ -103,6 +103,7 @@ public class ChatFragment extends Fragment {
     private ChatRoomAdapter pagedAdapter;
     private String currentChatId;
     private String currentReceiverId;
+    private String activeChatFilter = "all";
     private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
     private ActivityResultLauncher<PickVisualMediaRequest> videoPicker;
     private ActivityResultLauncher<String> documentPicker;
@@ -134,6 +135,7 @@ public class ChatFragment extends Fragment {
 
         initConfiguration();
         setupRecyclerView();
+        setupChatListControls();
         setupGlobalClickListeners();
         setupBackNavigation();
         setupChatGlassChrome();
@@ -214,39 +216,92 @@ public class ChatFragment extends Fragment {
                 if (room != null) loadedRooms.add(room);
             }
         }
+        applyChatListFilter();
     }
 
     private void setupChatSearch() {
         binding.etSearch.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (binding == null) return;
-                String query = s.toString().trim().toLowerCase(Locale.getDefault());
-                if (query.isEmpty()) {
-                    binding.rvChats.setAdapter(concatAdapter);
-                    return;
-                }
-                String currentUserId = FirebaseAuth.getInstance().getUid();
-                ArrayList<Chatroom> filtered = new ArrayList<>();
-                for (Chatroom room : loadedRooms) {
-                    if (room == null) continue;
-                    String name = room.getOtherUserName(currentUserId);
-                    if (name != null && name.toLowerCase(Locale.getDefault()).contains(query)) {
-                        filtered.add(room);
-                    }
-                }
-                if (binding.rvChats.getAdapter() != searchAdapter) {
-                    binding.rvChats.setAdapter(searchAdapter);
-                }
-                searchAdapter.submit(filtered);
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                applyChatListFilter();
             }
-
-            @Override
-            public void afterTextChanged(android.text.Editable s) {}
+            @Override public void afterTextChanged(android.text.Editable s) {}
         });
+    }
+
+    private void setupChatListControls() {
+        binding.btnChatSearch.setOnClickListener(v -> {
+            boolean show = binding.etSearch.getVisibility() != View.VISIBLE;
+            binding.etSearch.setVisibility(show ? View.VISIBLE : View.GONE);
+            if (show) {
+                binding.etSearch.requestFocus();
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) requireContext()
+                                .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showSoftInput(binding.etSearch,
+                        android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            } else {
+                binding.etSearch.setText("");
+                android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) requireContext()
+                                .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+            }
+        });
+        binding.chatFilterAll.setOnClickListener(v -> setChatFilter("all"));
+        binding.chatFilterDirect.setOnClickListener(v -> setChatFilter("direct"));
+        binding.chatFilterGroups.setOnClickListener(v -> setChatFilter("group"));
+        binding.btnChatMore.setOnClickListener(v -> {
+            android.widget.PopupMenu menu = new android.widget.PopupMenu(requireContext(), binding.btnChatMore);
+            menu.getMenu().add("School announcements").setOnMenuItemClickListener(item -> {
+                showSchoolAnnouncementsPicker();
+                return true;
+            });
+            menu.getMenu().add("Course group chat").setOnMenuItemClickListener(item -> {
+                showCourseGroupPicker();
+                return true;
+            });
+            menu.show();
+        });
+    }
+
+    private void setChatFilter(String filter) {
+        activeChatFilter = filter;
+        int selected = R.drawable.bg_chat_filter_selected;
+        int unselected = R.drawable.bg_chat_filter_unselected;
+        binding.chatFilterAll.setBackgroundResource("all".equals(filter) ? selected : unselected);
+        binding.chatFilterDirect.setBackgroundResource("direct".equals(filter) ? selected : unselected);
+        binding.chatFilterGroups.setBackgroundResource("group".equals(filter) ? selected : unselected);
+        binding.chatFilterAll.setTextColor(ContextCompat.getColor(requireContext(),
+                "all".equals(filter) ? R.color.white : R.color.ink_soft));
+        binding.chatFilterDirect.setTextColor(ContextCompat.getColor(requireContext(),
+                "direct".equals(filter) ? R.color.white : R.color.ink_soft));
+        binding.chatFilterGroups.setTextColor(ContextCompat.getColor(requireContext(),
+                "group".equals(filter) ? R.color.white : R.color.ink_soft));
+        applyChatListFilter();
+    }
+
+    private void applyChatListFilter() {
+        if (binding == null || concatAdapter == null || searchAdapter == null) return;
+        String query = binding.etSearch.getText().toString().trim().toLowerCase(Locale.getDefault());
+        if (query.isEmpty() && "all".equals(activeChatFilter)) {
+            binding.rvChats.setAdapter(concatAdapter);
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getUid();
+        ArrayList<Chatroom> filtered = new ArrayList<>();
+        for (Chatroom room : loadedRooms) {
+            if (room == null) continue;
+            String type = room.getType() == null ? "direct" : room.getType();
+            if ("direct".equals(activeChatFilter) && !"direct".equals(type)) continue;
+            if ("group".equals(activeChatFilter) && !"group".equals(type)) continue;
+            String name = "group".equals(type) ? room.getName() : room.getOtherUserName(currentUserId);
+            if (query.isEmpty() || (name != null && name.toLowerCase(Locale.getDefault()).contains(query))) {
+                filtered.add(room);
+            }
+        }
+        if (binding.rvChats.getAdapter() != searchAdapter) binding.rvChats.setAdapter(searchAdapter);
+        searchAdapter.submit(filtered);
     }
 
     private void openChat(Chatroom chatroom) {
@@ -257,7 +312,7 @@ public class ChatFragment extends Fragment {
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
 
         currentChatId = chatId;
-        currentReceiverId = chatroom.getOtherUserId(currentUserId);
+        currentReceiverId = ("group".equals(type) || "system".equals(type)) ? null : chatroom.getOtherUserId(currentUserId);
 
         showChatDetail();
         binding.etMessage.setText("");
@@ -270,8 +325,10 @@ public class ChatFragment extends Fragment {
             showChatList();
             return;
         }
-        binding.bottomChatBar.setVisibility(View.VISIBLE);
-        binding.chatComposerBlur.setVisibility(View.VISIBLE);
+        boolean schoolAnnouncement = "system".equals(type) && !chatroom.getSchoolId().isEmpty();
+        boolean canPublish = !schoolAnnouncement || chatroom.getAdminIds().contains(currentUserId);
+        binding.bottomChatBar.setVisibility(canPublish ? View.VISIBLE : View.GONE);
+        binding.chatComposerBlur.setVisibility(canPublish ? View.VISIBLE : View.GONE);
 
         startRealtimeMessages(chatId);
         // startRealtimeMessages creates the message adapter. Configure sender
@@ -285,7 +342,7 @@ public class ChatFragment extends Fragment {
     private void confirmDeleteChat(Chatroom chatroom) {
         if (chatroom == null) return;
         String type = chatroom.getType() != null ? chatroom.getType() : "direct";
-        if ("system".equals(type) || "ai".equals(type)) {
+        if ("system".equals(type) || "ai".equals(type) || "group".equals(type)) {
             Toast.makeText(requireContext(), "This chat can't be deleted", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -310,6 +367,145 @@ public class ChatFragment extends Fragment {
                 })
                 .show();
     }
+    /** Choose a school announcements room from active school memberships. */
+    private void showSchoolAnnouncementsPicker() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || !isAdded()) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            String bearer = "Bearer " + token.getToken();
+            ApiClient.getLmsService().mySchoolAnnouncements(bearer)
+                    .enqueue(new Callback<com.google.gson.JsonObject>() {
+                        @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                         Response<com.google.gson.JsonObject> response) {
+                            if (!isAdded()) return;
+                            if (!response.isSuccessful() || response.body() == null) {
+                                Toast.makeText(requireContext(), "Couldn't load school announcements", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            com.google.gson.JsonArray schools = response.body().getAsJsonArray("schools");
+                            if (schools == null || schools.size() == 0) {
+                                Toast.makeText(requireContext(), "No active school memberships", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            String[] names = new String[schools.size()];
+                            for (int i = 0; i < schools.size(); i++) {
+                                names[i] = schools.get(i).getAsJsonObject().get("name").getAsString();
+                            }
+                            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                                    .setTitle("School announcements")
+                                    .setItems(names, (dialog, index) -> {
+                                        com.google.gson.JsonObject school = schools.get(index).getAsJsonObject();
+                                        String id = school.get("chatroomId").getAsString();
+                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                                .collection("chatRooms").document(id).get()
+                                                .addOnSuccessListener(doc -> {
+                                                    if (!isAdded()) return;
+                                                    if (!doc.exists()) {
+                                                        String schoolId = school.get("schoolId").getAsString();
+                                                        ApiClient.getLmsService().openSchoolAnnouncements(
+                                                                bearer, schoolId, new com.google.gson.JsonObject())
+                                                                .enqueue(new Callback<com.google.gson.JsonObject>() {
+                                                                    @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                                                                     Response<com.google.gson.JsonObject> response) {
+                                                                        if (!isAdded()) return;
+                                                                        if (!response.isSuccessful()) {
+                                                                            Toast.makeText(requireContext(), "Only school admins can set up announcements", Toast.LENGTH_LONG).show();
+                                                                            return;
+                                                                        }
+                                                                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                                                                .collection("chatRooms").document(id).get()
+                                                                                .addOnSuccessListener(created -> {
+                                                                                    if (!isAdded()) return;
+                                                                                    Chatroom room = created.toObject(Chatroom.class);
+                                                                                    if (room != null) openChat(room);
+                                                                                });
+                                                                    }
+                                                                    @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                                                                        if (isAdded()) Toast.makeText(requireContext(), "Couldn't set up announcements", Toast.LENGTH_SHORT).show();
+                                                                    }
+                                                                });
+                                                        return;
+                                                    }
+                                                    Chatroom room = doc.toObject(Chatroom.class);
+                                                    if (room != null) openChat(room);
+                                                })
+                                                .addOnFailureListener(e -> {
+                                                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open announcements", Toast.LENGTH_SHORT).show();
+                                                });
+                                    }).show();
+                        }
+                        @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                            if (isAdded()) Toast.makeText(requireContext(), "Couldn't load announcements", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        });
+    }
+
+    /** Mentor course group chats are distinct from Communities. */
+    private void showCourseGroupPicker() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || !isAdded()) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            String bearer = "Bearer " + token.getToken();
+            ApiClient.getLmsService().mentorChatCourses(bearer).enqueue(new Callback<com.google.gson.JsonObject>() {
+                @Override public void onResponse(Call<com.google.gson.JsonObject> call, Response<com.google.gson.JsonObject> response) {
+                    if (!isAdded() || response.body() == null || !response.isSuccessful()) return;
+                    com.google.gson.JsonArray courses = response.body().getAsJsonArray("courses");
+                    if (courses == null || courses.size() == 0) {
+                        Toast.makeText(requireContext(), "No assigned courses", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    String[] labels = new String[courses.size()];
+                    for (int i = 0; i < courses.size(); i++) labels[i] = courses.get(i).getAsJsonObject().get("title").getAsString();
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Choose course for group chat")
+                            .setItems(labels, (d, which) -> {
+                                String id = courses.get(which).getAsJsonObject().get("trackId").getAsString();
+                                showCourseChatMembers(bearer, id, labels[which]);
+                            }).show();
+                }
+                @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't load courses", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    private void showCourseChatMembers(String bearer, String trackId, String courseTitle) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(courseTitle)
+                .setMessage("Create or open this course's group chat? All assigned mentors and enrolled mentees are added automatically. Only one chat exists per course.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Open group chat", (dialog, which) -> {
+                    ApiClient.getLmsService().createCourseGroupChat(
+                            bearer, trackId, new com.google.gson.JsonObject())
+                            .enqueue(new Callback<com.google.gson.JsonObject>() {
+                                @Override public void onResponse(Call<com.google.gson.JsonObject> call,
+                                                                  Response<com.google.gson.JsonObject> response) {
+                                    if (!isAdded()) return;
+                                    if (!response.isSuccessful() || response.body() == null) {
+                                        Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+                                    com.google.gson.JsonObject data = response.body();
+                                    String id = data.get("chatroomId").getAsString();
+                                    String name = data.get("name").getAsString();
+                                    if (pagedAdapter != null) pagedAdapter.refresh();
+                                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                            .collection("chatRooms").document(id).get()
+                                            .addOnSuccessListener(snapshot -> {
+                                                if (!isAdded() || !snapshot.exists()) return;
+                                                Chatroom room = snapshot.toObject(Chatroom.class);
+                                                if (room != null) openChat(room);
+                                            });
+                                }
+                                @Override public void onFailure(Call<com.google.gson.JsonObject> call, Throwable t) {
+                                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open course chat", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }).show();
+    }
+
     /** Bottom-sheet: mentors pick any mentor; mentees pick tutors from enrolled courses. */
     public void showNewChatPicker() {
         String me = FirebaseAuth.getInstance().getUid();
@@ -351,6 +547,21 @@ public class ChatFragment extends Fragment {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        TextView announcementOption = new TextView(requireContext());
+        announcementOption.setText("School announcements");
+        announcementOption.setTextSize(16f);
+        announcementOption.setPadding(0, dp(12), 0, dp(12));
+        announcementOption.setOnClickListener(v -> { dialog.dismiss(); showSchoolAnnouncementsPicker(); });
+        sheet.addView(announcementOption, 1);
+
+        if (Roles.isMentorTitle()) {
+            TextView groupOption = new TextView(requireContext());
+            groupOption.setText("Create course group chat");
+            groupOption.setTextSize(16f);
+            groupOption.setPadding(0, dp(12), 0, dp(12));
+            groupOption.setOnClickListener(v -> { dialog.dismiss(); showCourseGroupPicker(); });
+            sheet.addView(groupOption, 1);
+        }
         dialog.setContentView(sheet);
         dialog.show();
 
@@ -458,6 +669,26 @@ public class ChatFragment extends Fragment {
         openChat(room);
     }
 
+    /** Resolve notification targets against Firestore membership before opening. */
+    public void openNotificationChat(String chatId) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null || TextUtils.isEmpty(chatId)) return;
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("chatRooms").document(chatId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!isAdded() || binding == null || !doc.exists()) return;
+                    Chatroom room = doc.toObject(Chatroom.class);
+                    if (room == null || !room.getUserIds().contains(uid)) {
+                        Toast.makeText(requireContext(), "Chat no longer available", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    openChat(room);
+                })
+                .addOnFailureListener(error -> {
+                    if (isAdded()) Toast.makeText(requireContext(), "Couldn't open chat", Toast.LENGTH_SHORT).show();
+                });
+    }
+
     /** Open an existing direct chat from Profile → Message. */
     public void openDirectChat(String chatId, String otherId, String otherName) {
         if (TextUtils.isEmpty(chatId)) return;
@@ -510,6 +741,7 @@ public class ChatFragment extends Fragment {
                             java.util.Collections.emptyMap(),
                             "direct"
                     );
+                    if (pagedAdapter != null) pagedAdapter.refresh();
                     openChat(room);
                     return Unit.INSTANCE;
                 });
@@ -606,11 +838,19 @@ public class ChatFragment extends Fragment {
 
         switch (type) {
             case "system":
-                binding.tvChatName.setText(R.string.chat_announcements);
+                binding.tvChatName.setText(chatroom.getName().isEmpty() ? getString(R.string.chat_announcements) : chatroom.getName());
                 binding.tvChatRole.setText(R.string.chat_official_updates);
                 Glide.with(this).load(R.drawable.nelsen_icon).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
+                break;
+            case "group":
+                binding.tvChatName.setText(chatroom.getName().isEmpty() ? "Course group" : chatroom.getName());
+                binding.tvChatRole.setText(chatroom.getUserIds().size() + " participants");
+                Glide.with(this).load(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
+                userData = null;
+                selectedOtherUserId = null;
+                selectedIsMentor = false;
                 break;
             case "ai":
                 // Should not open — AI is disabled.
@@ -1033,17 +1273,17 @@ public class ChatFragment extends Fragment {
                 ChatMessageEntity replyTarget = replyingTo;
                 clearReply();
                 String currentUserId = FirebaseAuth.getInstance().getUid();
-                String receiverId = chatroom.getOtherUserId(currentUserId);
+                String receiverId = ("group".equals(chatroom.getType()) || "system".equals(chatroom.getType())) ? null : chatroom.getOtherUserId(currentUserId);
                 viewModel.sendMessage(chatId, msg, receiverId, replyTarget, success -> {
                     if (!success) {
                         Toast.makeText(requireContext(), "Message not sent", Toast.LENGTH_SHORT).show();
                     }
-                    if (receiverId != null) {
+                    if (success) {
                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         user.getIdToken(false).addOnSuccessListener(result -> {
                             String token = "Bearer " + result.getToken();
                             ChatNotificationRequest request = new ChatNotificationRequest(
-                                    receiverId,
+                                    receiverId == null ? "" : receiverId,
                                     msg,
                                     chatId
                             );
@@ -1051,7 +1291,9 @@ public class ChatFragment extends Fragment {
                             apiService.sendChatNotification(token, request)
                                     .enqueue(new Callback<NotificationResponse>() {
                                         @Override
-                                        public void onResponse(Call<NotificationResponse> call, Response<NotificationResponse> response) {}
+                                        public void onResponse(Call<NotificationResponse> call, Response<NotificationResponse> response) {
+                                            if (!response.isSuccessful()) Log.w("ChatNotif", "Notification HTTP " + response.code());
+                                        }
                                         @Override
                                         public void onFailure(Call<NotificationResponse> call, Throwable t) {
                                             Log.e("ChatNotif", "Failed", t);
@@ -1265,6 +1507,13 @@ public class ChatFragment extends Fragment {
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
         if (backCallback != null) backCallback.setEnabled(!hidden);
+        if (!hidden && pagedAdapter != null) pagedAdapter.refresh();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (pagedAdapter != null) pagedAdapter.refresh();
     }
 
     @Override

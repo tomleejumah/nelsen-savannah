@@ -43,14 +43,14 @@ public final class EventActions {
     public static void openLiveViewer(Context ctx, Event e) {
         if (!isLive(e)) return;
         String link = e.getMeetingLink();
-        if (link == null || link.trim().isEmpty()) {
+        if ((link == null || link.trim().isEmpty()) && "live".equals(liveStatus(e))) {
             Toast.makeText(ctx, "Live stream link is unavailable", Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(ctx, LiveViewerActivity.class)
                 .putExtra(LiveViewerActivity.EXTRA_TITLE, e.getTitle())
                 .putExtra(LiveViewerActivity.EXTRA_EVENT_ID, e.getEventId())
-                .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, link)
+                .putExtra(LiveViewerActivity.EXTRA_YOUTUBE_URL, link == null ? "" : link)
                 .putExtra(LiveViewerActivity.EXTRA_LIVE_STATUS, liveStatus(e))
                 .putExtra(LiveViewerActivity.EXTRA_LIVE_AVAILABILITY, e.getLiveAvailability());
         ctx.startActivity(intent);

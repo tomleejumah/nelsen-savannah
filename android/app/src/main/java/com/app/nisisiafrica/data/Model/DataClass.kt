@@ -79,6 +79,8 @@ data class CourseItem(
     val isLiked: Boolean = false,
     /** LMS program slug — used to age-filter after Find My Path questionnaire. */
     val programSlug: String = "",
+    /** Server-calculated learner progress for this enrolled track (0–100). */
+    val trackPercent: Float = 0f,
 )
 
 data class MentorItem(
@@ -140,14 +142,44 @@ data class ChatMessageEntity(
 
 data class Chatroom(
     val chatroomId: String = "",
+    val name: String = "",
+    val courseId: String = "",
     val userIds: List<String> = emptyList(),
     val userNames: Map<String, String> = emptyMap(),
     val lastMessage: String = "",
     val lastMessageTimestamp: Timestamp? = null,
     val lastMessageSenderId: String = "",
     val unreadCount: Map<String, Int> = emptyMap(),
-    val type: String = "direct"
+    val type: String = "direct",
+    val schoolId: String = "",
+    val adminIds: List<String> = emptyList()
 ) {
+    // Java ChatFragment call sites use this legacy eight-argument constructor.
+    // Keep it while the Firestore model grows additional metadata fields.
+    constructor(
+        chatroomId: String,
+        userIds: List<String>,
+        userNames: Map<String, String>,
+        lastMessage: String,
+        lastMessageTimestamp: Timestamp?,
+        lastMessageSenderId: String,
+        unreadCount: Map<String, Int>,
+        type: String
+    ) : this(
+        chatroomId = chatroomId,
+        name = "",
+        courseId = "",
+        userIds = userIds,
+        userNames = userNames,
+        lastMessage = lastMessage,
+        lastMessageTimestamp = lastMessageTimestamp,
+        lastMessageSenderId = lastMessageSenderId,
+        unreadCount = unreadCount,
+        type = type,
+        schoolId = "",
+        adminIds = emptyList()
+    )
+
     /**
      * Get the other user's name (not the current user)
      */

@@ -1,5 +1,12 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## Live end-to-end acceptance follow-up
+
+- [x] Add a reproducible two-device acceptance checklist covering host/viewer network handover, FCM recipients, PiP, screen share, chat, attendance, lifecycle, OAuth and provider termination: [LIVE_ACCEPTANCE_CHECKLIST.md](./LIVE_ACCEPTANCE_CHECKLIST.md).
+- [x] Require a nonempty authenticated requester for attendance-roster access.
+- [x] Android host no longer treats every HTTP 409 from Hub status updates as a provider-ended broadcast; only an explicit ended-session response triggers the terminal studio dialog.\n- [ ] Execute the acceptance matrix on staging devices and resolve any failures before release; checklist creation is not verification.
+
+
 ## Live reliability and scope — PR #81
 
 - [x] Revoke a school live-event host's event mutation permission when the host loses active membership or switches away from the owning school; add regression coverage.
@@ -169,6 +176,51 @@ Changes are tracked separately from end-to-end verification. **Do not mark a tas
 - [x] Live notification join path hardened: authenticated Android startup reconciles the current FCM token, course-live fanout includes enrolled learners + assigned mentors, high-priority data messages use the app's direct live PendingIntent in foreground/background, and tapping a live alert opens the live viewer.
 
 This file is the working implementation plan for the Nelsen Savannah LMS across Web and Android.
+
+## Release-Day Priority — October 29, 2026
+
+Deadline: **today**. Finish and validate critical role, messaging, learning, and release paths before lower-priority polish.
+
+### Group chat mentions and chat discovery
+
+- [ ] Support WhatsApp-style **@name** mentions in group chat: member suggestions while typing, selectable user identity (UID), visible mention styling, and notification/deep link to the message for the mentioned member.
+- [ ] Restrict mention suggestions to users eligible to participate in that group; handle duplicate display names and deleted/removed members.
+- [ ] In **Create chat**, mentors can discover **all mentors** they are permitted to message, plus **mentees enrolled in courses assigned to that mentor**.
+- [ ] Enforce the same discovery and chat-creation scope on the API/Firestore security side, not only in the Android UI; avoid leaking unrelated mentees.
+- [ ] Verify Android and Web message rendering, notification delivery, unread counts, and group-chat mention navigation.
+
+### Mentor-created course group chats (not Communities)
+
+- [ ] Let an authorized Mentor create a **group chat** in the existing messaging system (`chatRooms`) for a course they are assigned to; expose Create course chat from the course and Chat screens, **not** the Communities feature.
+- [ ] List active mentees enrolled in that course as eligible chat participants; select individuals or add all eligible mentees, with the mentor as group admin.
+- [ ] Store `type: "group"`, `courseId`, `schoolId`, `createdBy`, and verified `userIds`/membership in the chat room; display the group chat in participants' Chat tabs and open its messages.
+- [ ] Authorize group creation and membership server-side using the mentor's assigned course, school scope and active enrollment; never trust arbitrary participant UIDs from the client.
+- [ ] Define how enrollment/mentor assignment changes revoke or update group chat access; secure reads, writes, message sends and membership changes with Firestore rules/API checks.
+- [ ] Support chat title, optional avatar, participant list and mentor admin controls; make creation idempotent to avoid accidental duplicate chats.
+- [ ] Verify Android/Web creation, group messaging, notifications, mentions, unread counts and deep links with multiple accounts.
+
+### Android role-aware course UI
+
+- [ ] Mentors must see **View course**, not learner-only **Learn / Continue reading** calls to action.
+- [ ] Show mentor course tools (chapters, lessons, authoring/management where authorized) while hiding mentee-only progress and enrollment actions.
+- [ ] Keep mentee Learn / Continue reading, assignment answering, and quiz submission available only to eligible learners; verify SchoolAdmin/SuperAdmin states separately.
+- [ ] Test role changes and users who hold multiple school/course memberships.
+
+### Recent assignment chain — implementation complete, validation pending
+
+- [x] Mentor authoring supports separate quiz and assignment checkboxes and multiple assignment questions per lesson.
+- [x] API exposes lesson assignment questions and stops automatically treating plain text lessons as assignments.
+- [x] Web and Android mentees render and submit answers per assignment question.
+- [x] Web and Android mentor marking views show each question with its answer.
+- [x] Aggregate assignment question marks into lesson assignment progress.
+- [ ] Verify API/Web/Android builds and end-to-end assignment creation → submission → marking → progress, including partial failures/retries.
+
+### Release blockers and checks
+
+- [ ] Re-run and inspect Android, Web, and API CI; distinguish cancelled jobs from actual failures and fix any errors.
+- [ ] Confirm current branch/merge state and keep all fixes on the agreed development branch; do not deploy or merge without approval.
+- [ ] Verify post/course/story/school HTTPS sharing and Android App Links through login, privacy and enrollment checks.
+- [ ] Validate production DB backup and integrity safeguards before any release.
 
 ## Core Decision: IDE Is Course-Based
 
@@ -556,6 +608,8 @@ Make app content shareable with links that open the exact destination in Nelsen 
 - [ ] Route each link to the correct native Activity/screen and validate missing/deleted/private content gracefully.
 - [x] Upgrade the existing Community post Share action from text-only sharing to a canonical HTTPS post link.
 - [x] Add native **Share** actions for stories/statuses, courses, schools, and groups using canonical HTTPS links rather than app-only custom schemes.
+- [ ] Consolidate share URL construction and target routing behind a reusable Nelsen sharing contract across Android and Web; avoid divergent per-feature links.
+- [ ] E2E test shared posts, stories, courses, schools and groups on installed-app, browser-fallback, logged-out, private/deleted and expired-content paths.
 - [x] Keep non-looping Web fallback routes for shared posts/stories/groups and exact Web redirects for courses/schools when the app is not installed.
 - [ ] Respect membership/enrollment/privacy rules when opening shared school/course/community/group content; a shared group link must verify membership/join policy before opening the group.
 
@@ -653,6 +707,13 @@ This milestone tracks the current production-hardening work before the remaining
 
 - [x] Restore standalone lesson quizzes with multiple questions/options and selected correct answers for automatic marking.
 - [x] Restore lesson-level mentor-marked assignments in the course editor.
+- [x] Add separate Quiz and Assignment checkboxes to lesson authoring; support multiple assignment questions alongside quiz questions.
+- [x] Return lesson-linked assignment questions in the shared API DTO and show question-by-question answer inputs on Web and Android mentee lesson screens.
+- [x] Wire per-question assignment submissions to their assignment IDs and show each question/answer in Web and Android mentor marking queues.
+- [x] Aggregate question marks into lesson assignment progress rather than overwriting progress with the most recently marked question.
+- [x] Stop treating plain text lessons as assignments unless assignment is explicitly enabled.
+- [ ] Validate the full multi-question assignment flow on Web and Android against the deployed API, including partial failures, retries, grading and progress.
+- [ ] Verify Web, API and Android CI builds complete successfully after the assignment integration.
 - [x] Remove IDE/code-lab from lesson media choices; IDE remains course-owned.
 - [x] Add multi-select lesson deletion in the course editor.
 - [ ] Add safe backend course/track deletion with transactional cleanup of dependent LMS records.
@@ -836,3 +897,4 @@ Support course reference documents and learner file submissions through the exis
 - [ ] Verify Office MIME types from Android document providers, file-size limits, storage CORS, SQLite and PostgreSQL migrations.
 - [ ] Run API, Web and Android CI on the current follow-up PR head; exercise mentor → learner → marker across two accounts.
 - [ ] Confirm offline Android downloads and file cleanup/retention policy.
+

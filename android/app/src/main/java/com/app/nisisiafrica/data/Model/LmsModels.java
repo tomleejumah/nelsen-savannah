@@ -311,6 +311,9 @@ public final class LmsModels {
     public static class SchoolDto {
         public String schoolId;
         public String name;
+        public String logoUrl;
+        public String logo;
+        public String imageUrl;
         public long createdAt;
         public long updatedAt;
     }

@@ -235,7 +235,22 @@ class ChatRepository(private val appDatabase: AppDatabase) {
                 if (!receiverId.isNullOrEmpty()) {
                     roomUpdates["unreadCount.$receiverId"] = FieldValue.increment(1)
                 }
-                db.collection("chatRooms").document(chatroomId).update(roomUpdates)
+                if (receiverId == null) {
+                    db.collection("chatRooms").document(chatroomId).get()
+                        .addOnSuccessListener { room ->
+                            if (room.getString("type") == "group" || (room.getString("type") == "system" && !room.getString("schoolId").isNullOrBlank())) {
+                                val ids = room.get("userIds") as? List<*> ?: emptyList<Any>()
+                                ids.filterIsInstance<String>()
+                                    .filter { it != user.uid }
+                                    .forEach { id ->
+                                        roomUpdates["unreadCount.$id"] = FieldValue.increment(1)
+                                    }
+                            }
+                            db.collection("chatRooms").document(chatroomId).update(roomUpdates)
+                        }
+                } else {
+                    db.collection("chatRooms").document(chatroomId).update(roomUpdates)
+                }
                 if (chatroomId.startsWith("ai_assistant_") && type == "text") {
                     sendToGemini(chatroomId, content)
                 }

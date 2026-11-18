@@ -58,15 +58,15 @@ function Index() {
       {/* Hero */}
       <section className="border-b border-hairline">
         <div className="mx-auto max-w-7xl px-5 pb-16 pt-28 sm:px-8 sm:pb-20 sm:pt-36">
-          <p className="text-sm text-brick">
+          <p className="text-[0.8rem] font-medium tracking-[0.015em] text-brick">
             Nairobi, Kenya — an education and innovation hub
           </p>
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:gap-12">
-            <h1 className="font-display text-[2.35rem] leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.35rem]">
+            <h1 className="max-w-[15ch] font-display text-[2.5rem] font-medium leading-[1.12] tracking-[-0.025em] text-ink sm:text-[3.2rem] lg:text-[3.55rem]">
               Practical digital skills for Africa&apos;s next builders.
             </h1>
-            <p className="max-w-md text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
+            <p className="max-w-md text-[0.98rem] leading-[1.8] tracking-[-0.005em] text-muted-foreground sm:text-[1.025rem]">
               Robotics, data, software, design, and audio — for graduates, career changers,
               developers, and educators who want to build, not just study.{" "}
               <Link
@@ -98,10 +98,10 @@ function Index() {
                   key={s.value}
                   className="grid grid-cols-[7.5rem_1fr] items-baseline gap-4 border-b border-hairline py-4 first:border-t sm:grid-cols-[8.5rem_1fr] sm:py-5"
                 >
-                  <dt className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
+                  <dt className="font-display text-[1.65rem] font-medium tracking-[-0.02em] text-ink sm:text-[1.9rem]">
                     {s.value}
                   </dt>
-                  <dd className="text-sm leading-snug text-muted-foreground">{s.label}</dd>
+                  <dd className="text-[0.875rem] leading-[1.55] text-muted-foreground">{s.label}</dd>
                 </div>
               ))}
             </dl>

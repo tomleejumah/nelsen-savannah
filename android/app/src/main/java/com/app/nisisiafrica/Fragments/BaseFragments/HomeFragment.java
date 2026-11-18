@@ -469,6 +469,14 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
         view.findViewById(R.id.cardFindMyPath).setOnClickListener(v ->
                 startActivity(new Intent(getActivity(), SchoolsListActivity.class)));
 
+        RecyclerView rvHomeSchools = view.findViewById(R.id.rvHomeSchools);
+        rvHomeSchools.setLayoutManager(new LinearLayoutManager(
+                requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvHomeSchools.setNestedScrollingEnabled(false);
+        HomeSchoolsAdapter homeSchoolsAdapter = new HomeSchoolsAdapter();
+        rvHomeSchools.setAdapter(homeSchoolsAdapter);
+        loadHomeSchools(homeSchoolsAdapter);
+
         view.findViewById(R.id.btnRecMe).setOnClickListener(v ->
                 startActivity(new Intent(getActivity(), QuestionnaireActivity.class)));
 
@@ -1003,6 +1011,93 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
                 });
             });
         });
+    }
+
+
+    private void loadHomeSchools(HomeSchoolsAdapter adapter) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || !isAdded()) return;
+        user.getIdToken(false).addOnSuccessListener(token -> {
+            if (!isAdded() || token.getToken() == null) return;
+            ApiClient.getLmsService().schoolsCatalog("Bearer " + token.getToken())
+                    .enqueue(new Callback<>() {
+                        @Override
+                        public void onResponse(@NonNull Call<LmsModels.SchoolsEnvelope> call,
+                                               @NonNull Response<LmsModels.SchoolsEnvelope> response) {
+                            if (!isAdded()) return;
+                            adapter.schools.clear();
+                            LmsModels.SchoolsEnvelope body = response.body();
+                            if (response.isSuccessful() && body != null && body.ok
+                                    && body.data != null && body.data.schools != null) {
+                                for (LmsModels.SchoolDto school : body.data.schools) {
+                                    if (school != null && school.schoolId != null
+                                            && !school.schoolId.trim().isEmpty()) {
+                                        adapter.schools.add(school);
+                                    }
+                                }
+                            }
+                            adapter.notifyDataSetChanged();
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull Call<LmsModels.SchoolsEnvelope> call,
+                                              @NonNull Throwable t) {
+                            Log.w(TAG, "Could not load Home schools", t);
+                        }
+                    });
+        }).addOnFailureListener(e -> Log.w(TAG, "Could not authenticate Home schools", e));
+    }
+
+    private class HomeSchoolsAdapter extends RecyclerView.Adapter<HomeSchoolsAdapter.VH> {
+        final List<LmsModels.SchoolDto> schools = new ArrayList<>();
+
+        @NonNull
+        @Override
+        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View item = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_home_school, parent, false);
+            return new VH(item);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull VH holder, int position) {
+            LmsModels.SchoolDto school = schools.get(position);
+            String name = school.name == null || school.name.trim().isEmpty()
+                    ? school.schoolId : school.name.trim();
+            holder.name.setText(name);
+            String logo = school.logoUrl != null && !school.logoUrl.trim().isEmpty()
+                    ? school.logoUrl
+                    : (school.logo != null && !school.logo.trim().isEmpty()
+                        ? school.logo : school.imageUrl);
+            Glide.with(holder.itemView)
+                    .load(logo == null || logo.trim().isEmpty() ? R.mipmap.ic_launcher : logo)
+                    .placeholder(R.mipmap.ic_launcher)
+                    .error(R.mipmap.ic_launcher)
+                    .centerInside()
+                    .into(holder.logo);
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(requireContext(), AllCoursesActivity.class);
+                intent.putExtra(AllCoursesActivity.EXTRA_SCHOOL_ID, school.schoolId);
+                intent.putExtra(AllCoursesActivity.EXTRA_SCHOOL_NAME, name);
+                startActivity(intent);
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return schools.size();
+        }
+
+        class VH extends RecyclerView.ViewHolder {
+            final ImageView logo;
+            final TextView name;
+
+            VH(@NonNull View itemView) {
+                super(itemView);
+                logo = itemView.findViewById(R.id.ivHomeSchoolLogo);
+                name = itemView.findViewById(R.id.tvHomeSchoolName);
+            }
+        }
     }
 
     private void setupHomeTopBlur(View view) {

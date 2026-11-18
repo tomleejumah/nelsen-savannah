@@ -17,7 +17,7 @@ function recipients(db, event) {
   }
 }
 
-test("school/course notifications follow active-school membership roles", async () => {
+test("school/course notifications follow active membership and course roles", async () => {
   const SQL = await initSqlJs();
   const db = new SQL.Database();
   try {
@@ -68,18 +68,18 @@ test("school/course notifications follow active-school membership roles", async 
 
     assert.deepEqual(recipients(db, {
       audienceScope: "course", schoolId: "school-a", trackId: "course-a",
-    }), ["admin_a", "learner_a", "mentor_a"],
-    "school admin, current mentor and enrolled learner get course notification");
+    }), ["admin_a", "dual_legacy", "learner_a", "mentor_a", "switched"],
+    "all actively affiliated enrolled learners, current mentors and school admins get course notification");
     assert.deepEqual(recipients(db, {
       audienceScope: "school", schoolId: "school-a",
     }), [
-      "admin_a", "former_mentor", "learner_a",
-      "learner_without_enrollment", "mentor_a", "suspended",
+      "admin_a", "dual_legacy", "former_mentor", "learner_a",
+      "learner_without_enrollment", "mentor_a", "suspended", "switched",
     ]);
     assert.deepEqual(recipients(db, {
       audienceScope: "school", schoolId: "school-b",
     }), ["cross_school", "dual_legacy", "switched"],
-    "legacy user without active school receives only latest active membership's alerts");
+    "all active members receive school alerts even when another school is selected");
 
     // Assigned mentor who was downgraded to Mentee cannot receive a
     // course alert solely because an old track_mentors row still exists.
