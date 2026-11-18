@@ -259,19 +259,27 @@ export async function userMayPlayMedia(uid, mediaId) {
     if (!media || media.status !== "ready") return false;
     if (media.uid === uid) return true;
     const role = await resolveRole(uid);
-    if (role === "SuperAdmin" || role === "Admin" || role === "SchoolAdmin" || role === "Mentor") return true;
-    const assignments = await dbAll("SELECT assignment_id, track_id, assignee_uid, attachments_json FROM assignments WHERE attachments_json IS NOT NULL");
+    const assignments = await dbAll("SELECT assignment_id, assigned_by, school_id, attachments_json FROM assignments WHERE attachments_json IS NOT NULL");
     for (const assignment of assignments) {
-      let attachments = []; try { attachments = JSON.parse(assignment.attachments_json || "[]"); } catch { /* malformed legacy row */ }
-      if (attachments.some((item) => item?.mediaId === mediaId)) {
-        const { getAssignmentForSubmit } = await import("./lmsAssignmentService.js");
-        if (await getAssignmentForSubmit(assignment.assignment_id, uid)) return true;
-      }
+      let attachments = [];
+      try { attachments = JSON.parse(assignment.attachments_json || "[]"); } catch { /* malformed legacy row */ }
+      if (!attachments.some((item) => item?.mediaId === mediaId)) continue;
+      if (assignment.assigned_by === uid) return true;
+      if ((role === "SuperAdmin" || role === "Admin" || role === "SchoolAdmin") && sameSchool(await actorSchoolId(uid), assignment.school_id)) return true;
+      const { getAssignmentForSubmit } = await import("./lmsAssignmentService.js");
+      if (await getAssignmentForSubmit(assignment.assignment_id, uid)) return true;
     }
-    const submissions = await dbAll("SELECT uid, attachments_json FROM submissions WHERE attachments_json IS NOT NULL");
+    const submissions = await dbAll("SELECT uid, assignment_id, attachments_json FROM submissions WHERE attachments_json IS NOT NULL");
     for (const submission of submissions) {
-      let attachments = []; try { attachments = JSON.parse(submission.attachments_json || "[]"); } catch { /* malformed legacy row */ }
-      if (submission.uid === uid && attachments.some((item) => item?.mediaId === mediaId)) return true;
+      let attachments = [];
+      try { attachments = JSON.parse(submission.attachments_json || "[]"); } catch { /* malformed legacy row */ }
+      if (!attachments.some((item) => item?.mediaId === mediaId)) continue;
+      if (submission.uid === uid) return true;
+      if (submission.assignment_id && (role === "Mentor" || role === "SchoolAdmin" || role === "Admin" || role === "SuperAdmin")) {
+        const assignment = await dbGet("SELECT assigned_by, school_id FROM assignments WHERE assignment_id = ?", [submission.assignment_id]);
+        if (assignment?.assigned_by === uid) return true;
+        if (assignment && (role === "SuperAdmin" || role === "Admin" || role === "SchoolAdmin") && sameSchool(await actorSchoolId(uid), assignment.school_id)) return true;
+      }
     }
     return false;
   }
