@@ -167,6 +167,13 @@ export type LessonDto = {
   } | null;
 };
 
+export type LmsAttachmentDto = {
+  mediaId: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 export type SubmissionDto = {
   id: string;
   lessonId: string;
@@ -178,6 +185,7 @@ export type SubmissionDto = {
   score: number | null;
   feedback: string | null;
   assignmentId?: string | null;
+  attachments?: LmsAttachmentDto[];
   submittedAt: number;
   markedAt: number | null;
 };
@@ -194,6 +202,7 @@ export type QueueItemDto = {
   assignmentId?: string | null;
   assignmentTitle?: string | null;
   assignmentPrompt?: string | null;
+  attachments?: LmsAttachmentDto[];
   submittedAt: number;
 };
 
@@ -220,6 +229,7 @@ export type AssignmentDto = {
   cohort: string | null;
   dueAt: number | null;
   createdAt: number;
+  attachments?: LmsAttachmentDto[];
 };
 
 export type SchoolDto = {
@@ -822,6 +832,7 @@ export async function submitAssignment(
     text: string;
     platform?: string;
     assignmentId?: string;
+    attachmentMediaIds?: string[];
   },
 ) {
   return lmsFetch<{ submission: SubmissionDto }>("/lms/submissions", idToken, {
@@ -832,6 +843,7 @@ export async function submitAssignment(
       text: body.text,
       platform: body.platform || "web",
       assignmentId: body.assignmentId,
+      attachmentMediaIds: body.attachmentMediaIds || [],
     }),
   });
 }
@@ -1001,6 +1013,7 @@ export async function createAssignment(
     assigneeUid?: string;
     cohort?: string;
     dueAt?: number;
+    attachmentMediaIds?: string[];
   },
 ) {
   return lmsFetch<{ assignment: AssignmentDto }>("/lms/assignments", idToken, {
@@ -1546,6 +1559,15 @@ export async function finalizeMediaUpload(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+export async function uploadLmsAttachment(idToken: string, file: File) {
+  const ticket = await requestMediaUploadUrl(idToken, { filename: file.name, contentType: file.type || "application/octet-stream", sizeBytes: file.size, scope: "misc" });
+  if (!ticket.ok || !ticket.data) throw new Error(ticket.error || "Could not prepare file upload");
+  await putToPresignedUrl(ticket.data, file);
+  const finalized = await finalizeMediaUpload(idToken, ticket.data.mediaId);
+  if (!finalized.ok || !finalized.data) throw new Error(finalized.error || "File upload could not be finalized");
+  return { mediaId: ticket.data.mediaId, filename: file.name, mimeType: file.type || "application/octet-stream", sizeBytes: file.size } satisfies LmsAttachmentDto;
 }
 
 export async function fetchMediaPlaybackUrl(idToken: string, mediaId: string) {

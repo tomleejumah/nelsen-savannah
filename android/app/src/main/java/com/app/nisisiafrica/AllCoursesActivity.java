@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.nisisiafrica.Utils.Roles;
+import com.app.nisisiafrica.Utils.LmsDocumentUploader;
 import com.app.nisisiafrica.ViewModel.SharedViewModel;
 import com.app.nisisiafrica.data.Model.CourseItem;
 import com.app.nisisiafrica.data.Model.LmsModels;
@@ -59,6 +60,9 @@ import retrofit2.Response;
  * Tap opens {@link TrackLearnActivity}.
  */
 public class AllCoursesActivity extends AppCompatActivity {
+    private static final int REQUEST_ASSIGNMENT_DOCUMENT = 7401;
+    private android.net.Uri selectedAssignmentDocument;
+    private TextView selectedAssignmentDocumentLabel;
 
     public static final String EXTRA_SCHOOL_ID = "schoolId";
     public static final String EXTRA_ASSIGNMENTS_TRACK_ID = "assignmentsTrackId";
@@ -923,6 +927,46 @@ public class AllCoursesActivity extends AppCompatActivity {
         }
         prompt.setText(details.toString());
         content.addView(prompt);
+        selectedAssignmentDocument = null;
+        selectedAssignmentDocumentLabel = new TextView(this);
+        selectedAssignmentDocumentLabel.setText("No response document selected");
+        selectedAssignmentDocumentLabel.setTextSize(12);
+        content.addView(selectedAssignmentDocumentLabel);
+        TextView chooseDocument = new TextView(this);
+        chooseDocument.setText("＋ Attach response document");
+        chooseDocument.setPadding(0, pad / 2, 0, pad / 2);
+        chooseDocument.setTextColor(getColor(android.R.color.holo_blue_dark));
+        chooseDocument.setOnClickListener(v -> {
+            Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            pick.addCategory(Intent.CATEGORY_OPENABLE);
+            pick.setType("*/*");
+            pick.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                    "application/pdf", "application/msword",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "application/vnd.ms-excel",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.ms-powerpoint",
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    "text/plain", "image/*"});
+            startActivityForResult(pick, REQUEST_ASSIGNMENT_DOCUMENT);
+        });
+        content.addView(chooseDocument);
+        if (assignment.attachments != null && !assignment.attachments.isEmpty()) {
+            TextView filesHeading = new TextView(this);
+            filesHeading.setText("Assignment documents");
+            filesHeading.setTypeface(null, android.graphics.Typeface.BOLD);
+            filesHeading.setPadding(0, pad, 0, pad / 3);
+            content.addView(filesHeading);
+            for (LmsModels.AttachmentDto attachment : assignment.attachments) {
+                if (attachment == null || TextUtils.isEmpty(attachment.mediaId)) continue;
+                TextView fileRow = new TextView(this);
+                fileRow.setText("• " + (TextUtils.isEmpty(attachment.filename) ? "Open document" : attachment.filename) + "  ·  Open");
+                fileRow.setTextColor(getColor(android.R.color.holo_blue_dark));
+                fileRow.setPadding(0, pad / 3, 0, pad / 3);
+                fileRow.setOnClickListener(v -> openLmsAttachment(attachment.mediaId));
+                content.addView(fileRow);
+            }
+        }
         android.widget.TextView history = new android.widget.TextView(this);
         history.setPadding(0, pad / 2, 0, pad / 2);
         history.setText("Loading submission history…");
@@ -987,8 +1031,8 @@ public class AllCoursesActivity extends AppCompatActivity {
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     String responseText = answer.getText().toString().trim();
-                    if (responseText.isEmpty()) {
-                        answer.setError("Write an answer first");
+                    if (responseText.isEmpty() && selectedAssignmentDocument == null) {
+                        answer.setError("Write an answer or attach a document first");
                         return;
                     }
                     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -997,38 +1041,94 @@ public class AllCoursesActivity extends AppCompatActivity {
                         return;
                     }
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-                    user.getIdToken(false).addOnSuccessListener(token ->
-                            ApiClient.getLmsService().submitAssignment(
-                                    "Bearer " + token.getToken(),
-                                    new LmsModels.SubmissionBody(assignment.lessonId, responseText, assignment.id))
-                                    .enqueue(new Callback<>() {
-                                        @Override
-                                        public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
-                                                               Response<LmsModels.SubmissionEnvelope> response) {
-                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                                            if (response.isSuccessful() && response.body() != null
-                                                    && response.body().ok) {
-                                                dialog.dismiss();
-                                                Toast.makeText(AllCoursesActivity.this,
-                                                        "Assignment submitted", Toast.LENGTH_SHORT).show();
-                                            } else {
-                                                Toast.makeText(AllCoursesActivity.this,
-                                                        "Submission rejected. Please try again.", Toast.LENGTH_LONG).show();
-                                            }
+                    user.getIdToken(false).addOnSuccessListener(token -> {
+                        String bearer = "Bearer " + token.getToken();
+                        if (selectedAssignmentDocument != null) {
+                            LmsDocumentUploader.upload(this, bearer, selectedAssignmentDocument,
+                                    new LmsDocumentUploader.Listener() {
+                                        @Override public void onSuccess(String mediaId, String filename, String mimeType, long sizeBytes) {
+                                            submitAssignmentNow(bearer, assignment, responseText, mediaId, dialog);
                                         }
-                                        @Override
-                                        public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable error) {
+                                        @Override public void onError(String message) {
                                             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                                            Toast.makeText(AllCoursesActivity.this,
-                                                    "Network error. Your answer is still here.", Toast.LENGTH_LONG).show();
+                                            Toast.makeText(AllCoursesActivity.this, message, Toast.LENGTH_LONG).show();
                                         }
-                                    }))
-                            .addOnFailureListener(error -> {
-                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                                Toast.makeText(this, "Could not authenticate", Toast.LENGTH_SHORT).show();
-                            });
+                                    });
+                        } else {
+                            submitAssignmentNow(bearer, assignment, responseText, null, dialog);
+                        }
+                    }).addOnFailureListener(error -> {
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                        Toast.makeText(this, "Could not authenticate", Toast.LENGTH_SHORT).show();
+                    });
                 }));
         dialog.show();
+    }
+
+
+
+    private void submitAssignmentNow(String bearer, LmsModels.AssignmentDto assignment,
+                                     String responseText, String mediaId, AlertDialog dialog) {
+        LmsModels.SubmissionBody body = new LmsModels.SubmissionBody(
+                assignment.lessonId, responseText, assignment.id);
+        if (!TextUtils.isEmpty(mediaId)) body.attachmentMediaIds = java.util.Collections.singletonList(mediaId);
+        ApiClient.getLmsService().submitAssignment(bearer, body).enqueue(new Callback<>() {
+            @Override public void onResponse(Call<LmsModels.SubmissionEnvelope> call,
+                                             Response<LmsModels.SubmissionEnvelope> response) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                if (response.isSuccessful() && response.body() != null && response.body().ok) {
+                    selectedAssignmentDocument = null;
+                    dialog.dismiss();
+                    Toast.makeText(AllCoursesActivity.this, "Assignment submitted", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(AllCoursesActivity.this, "Submission rejected. Please try again.", Toast.LENGTH_LONG).show();
+                }
+            }
+            @Override public void onFailure(Call<LmsModels.SubmissionEnvelope> call, Throwable error) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                Toast.makeText(AllCoursesActivity.this, "Network error. Your answer is still here.", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_ASSIGNMENT_DOCUMENT && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            selectedAssignmentDocument = data.getData();
+            try { getContentResolver().takePersistableUriPermission(selectedAssignmentDocument, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception ignored) {}
+            if (selectedAssignmentDocumentLabel != null) {
+                String name = selectedAssignmentDocument.getLastPathSegment();
+                selectedAssignmentDocumentLabel.setText("Selected: " + (name == null ? "document" : name));
+            }
+        }
+    }
+
+    private void openLmsAttachment(String mediaId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().mediaPlaybackUrl("Bearer " + token.getToken(), mediaId)
+                        .enqueue(new Callback<>() {
+                            @Override public void onResponse(Call<LmsModels.MediaPlaybackEnvelope> call,
+                                                             Response<LmsModels.MediaPlaybackEnvelope> response) {
+                                LmsModels.MediaPlaybackEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok
+                                        || body.data == null || TextUtils.isEmpty(body.data.url)) {
+                                    Toast.makeText(AllCoursesActivity.this, "Document unavailable", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                try {
+                                    Intent view = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(body.data.url));
+                                    startActivity(view);
+                                } catch (Exception error) {
+                                    Toast.makeText(AllCoursesActivity.this, "Install a PDF or Office viewer to open this file", Toast.LENGTH_LONG).show();
+                                }
+                            }
+                            @Override public void onFailure(Call<LmsModels.MediaPlaybackEnvelope> call, Throwable error) {
+                                Toast.makeText(AllCoursesActivity.this, "Could not load document", Toast.LENGTH_SHORT).show();
+                            }
+                        }));
     }
 
     @Override

@@ -146,7 +146,6 @@ router.post(
 router.post(
   "/media/upload-url",
   authenticateUser,
-  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.postMediaUploadUrl,
 );
 router.get("/media/blob", lmsController.mediaBlob);
@@ -160,7 +159,6 @@ router.get(
 router.post(
   "/media/:mediaId/finalize",
   authenticateUser,
-  requireRoles("Mentor", "Admin", "SchoolAdmin"),
   lmsController.postMediaFinalize,
 );
 router.get("/media/:mediaId/play", lmsController.playMedia);

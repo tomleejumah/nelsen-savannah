@@ -8,6 +8,9 @@ import {
   fetchMyAssignments,
   fetchMySubmissions,
   submitAssignment,
+  uploadLmsAttachment,
+  fetchMediaPlaybackUrl,
+  type LmsAttachmentDto,
   type AssignmentDto,
   type SubmissionDto,
 } from "@/lib/lmsApi";
@@ -35,6 +38,14 @@ function CourseworkPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
+  const [files, setFiles] = useState<Record<string, File[]>>({});
+
+  async function openAttachment(file: LmsAttachmentDto) {
+    if (!user) return;
+    const result = await fetchMediaPlaybackUrl(await user.getIdToken(), file.mediaId);
+    if (!result.ok || !result.data?.url) { setSubmitMsg(result.error || "Could not open this document."); return; }
+    window.open(result.data.url, "_blank", "noopener,noreferrer");
+  }
 
   const load = useCallback(async (u: User) => {
     setBusy(true);
@@ -77,24 +88,29 @@ function CourseworkPage() {
     e.preventDefault();
     if (!user) return;
     const text = (drafts[a.id] || "").trim();
-    if (!text) {
-      setSubmitMsg("Write your answer before submitting.");
+    const selectedFiles = files[a.id] || [];
+    if (!text && selectedFiles.length === 0) {
+      setSubmitMsg("Write an answer or attach at least one file.");
       return;
     }
     setSavingId(a.id);
     setSubmitMsg(null);
     try {
       const token = await user.getIdToken();
+      const uploaded = [];
+      for (const file of selectedFiles) uploaded.push(await uploadLmsAttachment(token, file));
       const result = await submitAssignment(token, {
         assignmentId: a.id,
         lessonId: a.lessonId || undefined,
         text,
+        attachmentMediaIds: uploaded.map((file) => file.mediaId),
       });
       if (!result.ok) {
         setSubmitMsg(result.error || "Submit failed");
         return;
       }
       setDrafts((d) => ({ ...d, [a.id]: "" }));
+      setFiles((d) => ({ ...d, [a.id]: [] }));
       setSubmitMsg("Submitted — waiting for mentor mark.");
       await load(user);
     } catch (err) {
@@ -166,6 +182,7 @@ function CourseworkPage() {
                           <p className="mt-2 text-sm text-muted-foreground">
                             {a.prompt || "Complete and submit your answer below."}
                           </p>
+                          {a.attachments?.length ? <div className="mt-3 space-y-1"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assignment documents</p>{a.attachments.map((file) => <button key={file.mediaId} type="button" onClick={() => void openAttachment(file)} className="block text-sm font-medium text-maroon hover:underline">{file.filename} · Open document ↗</button>)}</div> : null}
                           {a.trackId ? (
                             <p className="mt-1 text-xs text-muted-foreground">
                               Track {a.trackId}
@@ -203,6 +220,8 @@ function CourseworkPage() {
                             placeholder="Write your answer…"
                             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                           />
+                          <label className="block text-sm font-medium">Attach files (PDF, Word, Excel, PowerPoint, images)<input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.webp" onChange={(e) => setFiles((d) => ({ ...d, [a.id]: Array.from(e.target.files || []) }))} className="mt-2 block w-full text-sm text-muted-foreground" /></label>
+                          {(files[a.id] || []).length ? <p className="text-xs text-muted-foreground">{(files[a.id] || []).map((f) => f.name).join(" · ")}</p> : null}
                           <div className="flex flex-wrap gap-2">
                             <button
                               type="submit"

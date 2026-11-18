@@ -30,11 +30,25 @@ function mapAssignment(row, { includeModelAnswer = false } = {}) {
     cohort: row.cohort || null,
     dueAt: row.due_at ? Number(row.due_at) : null,
     createdAt: Number(row.created_at),
+    attachments: (() => { try { return JSON.parse(row.attachments_json || "[]"); } catch { return []; } })(),
   };
   if (includeModelAnswer) {
     mapped.modelAnswer = row.model_answer || "";
   }
   return mapped;
+}
+
+async function resolveAssignmentAttachments(profile, attachmentMediaIds, schoolId) {
+  const ids = [...new Set((Array.isArray(attachmentMediaIds) ? attachmentMediaIds : []).map((id) => String(id || "").trim()).filter(Boolean))];
+  if (ids.length > 10) { const err = new Error("A maximum of 10 assignment files is allowed"); err.status = 400; throw err; }
+  const attachments = [];
+  for (const mediaId of ids) {
+    const media = await dbGet("SELECT media_id, uid, school_id, filename, mime_type, size_bytes, status FROM media_assets WHERE media_id = ?", [mediaId]);
+    if (!media || media.status !== "ready" || media.uid !== profile.uid) { const err = new Error("Assignment file is missing, not ready, or was not uploaded by you"); err.status = 400; throw err; }
+    if (schoolId && media.school_id && media.school_id !== schoolId) { const err = new Error("Assignment file belongs to another school"); err.status = 403; throw err; }
+    attachments.push({ mediaId: media.media_id, filename: media.filename || "Document", mimeType: media.mime_type || "application/octet-stream", sizeBytes: Number(media.size_bytes || 0) });
+  }
+  return attachments;
 }
 
 export async function createAssignment(profile, body = {}) {
@@ -78,12 +92,13 @@ export async function createAssignment(profile, body = {}) {
   const assigneeUid = body.assigneeUid || null;
   const cohort = body.cohort || null;
   const dueAt = body.dueAt ? Number(body.dueAt) : null;
+  const attachments = await resolveAssignmentAttachments(profile, body.attachmentMediaIds, schoolId);
 
   await dbRun(
     `INSERT INTO assignments (
       assignment_id, school_id, track_id, lesson_id, title, prompt, model_answer,
-      assigned_by, assignee_uid, cohort, due_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      assigned_by, assignee_uid, cohort, due_at, created_at, attachments_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       assignmentId,
       schoolId,
@@ -97,6 +112,7 @@ export async function createAssignment(profile, body = {}) {
       cohort,
       dueAt,
       now,
+      JSON.stringify(attachments),
     ],
   );
 

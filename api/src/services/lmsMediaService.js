@@ -2,7 +2,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
+import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { dualWrite, mirrorLesson, mirrorMedia } from "./lmsMirror.js";
 import { DEFAULT_SCHOOL_ID, normalizeRole } from "../constants/lmsRoles.js";
 import {
@@ -73,7 +73,7 @@ export function verifyMediaPlayToken(mediaId, uid, token) {
 
 function canUpload(role) {
   const r = normalizeRole(role);
-  return r === "Mentor" || r === "SuperAdmin" || r === "SchoolAdmin" || r === "Admin";
+  return r === "Mentor" || r === "SuperAdmin" || r === "SchoolAdmin" || r === "Admin" || r === "Mentee";
 }
 
 async function resolveRole(uid) {
@@ -255,11 +255,33 @@ export async function userMayPlayMedia(uid, mediaId) {
     [mediaId],
   );
   if (!lesson) {
-    // orphan media: uploader or admin only
     const media = await getMediaFileRow(mediaId);
-    if (media?.uid === uid) return true;
+    if (!media || media.status !== "ready") return false;
+    if (media.uid === uid) return true;
     const role = await resolveRole(uid);
-    return role === "SuperAdmin";
+    const assignments = await dbAll("SELECT assignment_id, assigned_by, school_id, attachments_json FROM assignments WHERE attachments_json IS NOT NULL");
+    for (const assignment of assignments) {
+      let attachments = [];
+      try { attachments = JSON.parse(assignment.attachments_json || "[]"); } catch { /* malformed legacy row */ }
+      if (!attachments.some((item) => item?.mediaId === mediaId)) continue;
+      if (assignment.assigned_by === uid) return true;
+      if ((role === "SuperAdmin" || role === "Admin" || role === "SchoolAdmin") && sameSchool(await actorSchoolId(uid), assignment.school_id)) return true;
+      const { getAssignmentForSubmit } = await import("./lmsAssignmentService.js");
+      if (await getAssignmentForSubmit(assignment.assignment_id, uid)) return true;
+    }
+    const submissions = await dbAll("SELECT uid, assignment_id, attachments_json FROM submissions WHERE attachments_json IS NOT NULL");
+    for (const submission of submissions) {
+      let attachments = [];
+      try { attachments = JSON.parse(submission.attachments_json || "[]"); } catch { /* malformed legacy row */ }
+      if (!attachments.some((item) => item?.mediaId === mediaId)) continue;
+      if (submission.uid === uid) return true;
+      if (submission.assignment_id && (role === "Mentor" || role === "SchoolAdmin" || role === "Admin" || role === "SuperAdmin")) {
+        const assignment = await dbGet("SELECT assigned_by, school_id FROM assignments WHERE assignment_id = ?", [submission.assignment_id]);
+        if (assignment?.assigned_by === uid) return true;
+        if (assignment && (role === "SuperAdmin" || role === "Admin" || role === "SchoolAdmin") && sameSchool(await actorSchoolId(uid), assignment.school_id)) return true;
+      }
+    }
+    return false;
   }
   try {
     const { assertLearningAccess } = await import("./lmsMembershipService.js");

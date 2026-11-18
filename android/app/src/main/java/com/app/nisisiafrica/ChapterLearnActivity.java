@@ -108,6 +108,7 @@ public class ChapterLearnActivity extends AppCompatActivity {
     private String activeMediaId;
     private String mediaRefreshAttemptedLessonId;
     private boolean activeLessonIsPdf;
+    private boolean activeLessonIsDocument;
     private int activeLessonLastPage;
     private long releaseAt;
     private LmsCacheBridge offlineCache;
@@ -455,8 +456,11 @@ public class ChapterLearnActivity extends AppCompatActivity {
 
         String url = !TextUtils.isEmpty(lesson.playbackUrl) ? lesson.playbackUrl : lesson.contentUrl;
         activeLessonIsPdf = isPdfLesson(lesson, url);
+        activeLessonIsDocument = isDocumentLesson(lesson, url);
         if (activeLessonIsPdf && !TextUtils.isEmpty(url)) {
             openPdf(url, activeLessonLastPage);
+        } else if (activeLessonIsDocument && !TextUtils.isEmpty(url)) {
+            openExternalDocument(url, null);
         } else if (!activeLessonIsPdf && !TextUtils.isEmpty(url)) {
             playUrl(url);
         } else if (!TextUtils.isEmpty(activeMediaId) && refreshActiveMedia()) {
@@ -503,6 +507,8 @@ public class ChapterLearnActivity extends AppCompatActivity {
                                                 && !TextUtils.isEmpty(freshUrl)) {
                                             if (activeLessonIsPdf) {
                                                 openPdf(freshUrl, activeLessonLastPage);
+                                            } else if (activeLessonIsDocument) {
+                                                openExternalDocument(freshUrl, body.data.mimeType);
                                             } else {
                                                 playUrl(freshUrl);
                                             }
@@ -533,6 +539,31 @@ public class ChapterLearnActivity extends AppCompatActivity {
             tvPlayerPlaceholder.setOnClickListener(null);
             refreshActiveMedia();
         });
+    }
+
+    private static boolean isDocumentLesson(LmsModels.LessonDto lesson, String url) {
+        if (lesson == null || isPdfLesson(lesson, url)) return false;
+        return "read".equalsIgnoreCase(lesson.type) || "document".equalsIgnoreCase(lesson.type);
+    }
+
+    private void openExternalDocument(String url, String mimeType) {
+        if (TextUtils.isEmpty(url)) { showMediaLoadError(); return; }
+        hidePlayers();
+        tvPlayerPlaceholder.setVisibility(View.VISIBLE);
+        tvPlayerPlaceholder.setText("Opening document in a viewer…");
+        String type = mimeType;
+        if (TextUtils.isEmpty(type)) {
+            String extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(url);
+            type = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        }
+        try {
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            intent.setDataAndType(android.net.Uri.parse(url), TextUtils.isEmpty(type) ? "*/*" : type);
+            startActivity(android.content.Intent.createChooser(intent, "Open document"));
+        } catch (Exception error) {
+            try { startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
+            catch (Exception ignored) { showMediaLoadError(); }
+        }
     }
 
     private static boolean isPdfLesson(LmsModels.LessonDto lesson, String url) {

@@ -1,6 +1,7 @@
 package com.app.nisisiafrica;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -18,6 +19,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.app.nisisiafrica.Utils.LmsDocumentUploader;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
 import com.google.firebase.auth.FirebaseAuth;
@@ -30,6 +32,9 @@ import retrofit2.Response;
 /** L2/L3 mentor board — queue mark + students + assign. */
 public class MentorBoardActivity extends AppCompatActivity {
 
+    private static final int REQUEST_ASSIGNMENT_DOCUMENT = 7402;
+    private android.net.Uri selectedAssignmentDocument;
+    private TextView selectedAssignmentDocumentLabel;
     private LinearLayout root;
     private TextView status;
 
@@ -92,6 +97,14 @@ public class MentorBoardActivity extends AppCompatActivity {
                             }
                             if (!TextUtils.isEmpty(item.text)) {
                                 root.addView(label(item.text, 13, false));
+                            }
+                            if (item.attachments != null) {
+                                for (LmsModels.AttachmentDto attachment : item.attachments) {
+                                    if (attachment == null || TextUtils.isEmpty(attachment.mediaId)) continue;
+                                    TextView document = label("Open submission: " + attachment.filename, 13, true);
+                                    document.setOnClickListener(v -> openLmsAttachment(attachment.mediaId));
+                                    root.addView(document);
+                                }
                             }
                         }
                     }
@@ -179,6 +192,22 @@ public class MentorBoardActivity extends AppCompatActivity {
         box.addView(prompt);
         box.addView(trackId);
         box.addView(uid);
+        selectedAssignmentDocument = null;
+        selectedAssignmentDocumentLabel = label("No document attached", 12, false);
+        TextView attach = label("＋ Attach assignment document", 14, true);
+        attach.setOnClickListener(v -> {
+            Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            pick.addCategory(Intent.CATEGORY_OPENABLE);
+            pick.setType("*/*");
+            pick.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/pdf", "application/msword",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    "text/plain", "image/*"});
+            startActivityForResult(pick, REQUEST_ASSIGNMENT_DOCUMENT);
+        });
+        box.addView(attach);
+        box.addView(selectedAssignmentDocumentLabel);
         new AlertDialog.Builder(this)
                 .setTitle("Assign work")
                 .setView(box)
@@ -194,30 +223,74 @@ public class MentorBoardActivity extends AppCompatActivity {
                         Toast.makeText(this, "Need trackId or uid", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    ApiClient.getLmsService().createAssignment(bearer,
-                                    new LmsModels.AssignmentBody(
-                                            t,
-                                            prompt.getText() != null ? prompt.getText().toString() : "",
-                                            tr.isEmpty() ? null : tr,
-                                            asg.isEmpty() ? null : asg))
-                            .enqueue(new Callback<>() {
-                                @Override
-                                public void onResponse(Call<LmsModels.AssignmentEnvelope> call,
-                                                       Response<LmsModels.AssignmentEnvelope> response) {
-                                    Toast.makeText(MentorBoardActivity.this,
-                                            response.isSuccessful() ? "Assigned" : "Failed",
-                                            Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onFailure(Call<LmsModels.AssignmentEnvelope> call, Throwable t) {
-                                    Toast.makeText(MentorBoardActivity.this,
-                                            "Network error", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                    LmsModels.AssignmentBody body = new LmsModels.AssignmentBody(
+                            t, prompt.getText() != null ? prompt.getText().toString() : "",
+                            tr.isEmpty() ? null : tr, asg.isEmpty() ? null : asg);
+                    if (selectedAssignmentDocument != null) {
+                        LmsDocumentUploader.upload(this, bearer, selectedAssignmentDocument,
+                                new LmsDocumentUploader.Listener() {
+                                    @Override public void onSuccess(String mediaId, String filename, String mimeType, long sizeBytes) {
+                                        body.attachmentMediaIds = java.util.Collections.singletonList(mediaId);
+                                        publishAssignment(bearer, body);
+                                    }
+                                    @Override public void onError(String message) {
+                                        Toast.makeText(MentorBoardActivity.this, message, Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                    } else {
+                        publishAssignment(bearer, body);
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+
+    private void publishAssignment(String bearer, LmsModels.AssignmentBody body) {
+        ApiClient.getLmsService().createAssignment(bearer, body).enqueue(new Callback<>() {
+            @Override public void onResponse(Call<LmsModels.AssignmentEnvelope> call,
+                                             Response<LmsModels.AssignmentEnvelope> response) {
+                Toast.makeText(MentorBoardActivity.this,
+                        response.isSuccessful() && response.body() != null && response.body().ok ? "Assigned" : "Assignment failed",
+                        Toast.LENGTH_SHORT).show();
+            }
+            @Override public void onFailure(Call<LmsModels.AssignmentEnvelope> call, Throwable error) {
+                Toast.makeText(MentorBoardActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_ASSIGNMENT_DOCUMENT && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            selectedAssignmentDocument = data.getData();
+            try { getContentResolver().takePersistableUriPermission(selectedAssignmentDocument, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception ignored) {}
+            if (selectedAssignmentDocumentLabel != null) selectedAssignmentDocumentLabel.setText("Selected: " + selectedAssignmentDocument.getLastPathSegment());
+        }
+    }
+
+
+    private void openLmsAttachment(String mediaId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().mediaPlaybackUrl("Bearer " + token.getToken(), mediaId)
+                        .enqueue(new Callback<>() {
+                            @Override public void onResponse(Call<LmsModels.MediaPlaybackEnvelope> call,
+                                                             Response<LmsModels.MediaPlaybackEnvelope> response) {
+                                LmsModels.MediaPlaybackEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok || body.data == null || TextUtils.isEmpty(body.data.url)) {
+                                    Toast.makeText(MentorBoardActivity.this, "Document unavailable", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(body.data.url))); }
+                                catch (Exception error) { Toast.makeText(MentorBoardActivity.this, "Install a PDF or Office viewer", Toast.LENGTH_LONG).show(); }
+                            }
+                            @Override public void onFailure(Call<LmsModels.MediaPlaybackEnvelope> call, Throwable error) {
+                                Toast.makeText(MentorBoardActivity.this, "Could not load document", Toast.LENGTH_SHORT).show();
+                            }
+                        }));
     }
 
     private void mark(String id, int score, boolean passed, String feedback) {

@@ -879,10 +879,22 @@ The current Android app bundles `me.didit:didit-sdk` and its native/media depend
 - [ ] Preserve the existing KYC flow until this decision is made.
 
 
-### School-scoped announcements and messaging reliability (November 2026)
+---
 
-- [ ] P0: One announcements room per school, restricted to active members of that school; no cross-school reads, writes or notifications.
-- [ ] P0: SchoolAdmin publishing controls and school-specific recipient fanout; preserve existing global announcements until migration is verified.
-- [ ] P0: Revoke chat **and announcements** access immediately when school membership is suspended/rejected or course enrollment is removed. Add reconciliation/retry for failed sync operations.
-- [ ] P0: Repair direct and course-group message push notifications end-to-end: FCM token registration, fanout, unread counts, tap-to-chat deep links and Android background delivery.
-- [ ] P1: Test school A vs school B, suspended members, multi-device clients, CI and web/Android parity.
+## LMS Document Attachments — November 2026
+
+Support course reference documents and learner file submissions through the existing private media pipeline.
+
+- [x] Extend media MIME/extension mapping for DOC/DOCX, XLS/XLSX, PPT/PPTX and TXT.
+- [x] Add assignment attachment metadata with additive SQLite/Postgres migrations.
+- [x] Add submission attachment metadata without replacing legacy submission media URL fields.
+- [x] Allow authenticated learners to request private upload tickets for their own submission documents.
+- [x] Validate that assignment and submission attachments are finalized media uploaded by the submitting/assigning user.
+- [x] Add Web assignment creation attachments, learner submission uploads and attachment links in the mentor marking queue.
+- [x] Add Android assignment creation/submission uploads and open/download fallback for attached files.
+- [x] Restrict attachment playback to the uploader, eligible assignees/enrollees, assignment creator and authorized school staff.
+- [ ] Add a consistent in-app document preview for PDF and images on Android and Web; Office formats need a trusted conversion/preview strategy rather than a public third-party viewer.
+- [ ] Verify Office MIME types from Android document providers, file-size limits, storage CORS, SQLite and PostgreSQL migrations.
+- [ ] Run API, Web and Android CI on the current follow-up PR head; exercise mentor → learner → marker across two accounts.
+- [ ] Confirm offline Android downloads and file cleanup/retention policy.
+

@@ -60,6 +60,9 @@ function SignedMediaPlayer({
   const lastReport = useRef(0);
   const mediaId = lesson.mediaId ?? null;
   const isPdf = lesson.type === "pdf" || lesson.isPdf === true || /\.pdf(\?|$)/i.test(url);
+  const isDocument = !isPdf && (lesson.type === "read" || lesson.type === "document");
+  const isImageDocument = isDocument && /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url);
+  const isTextDocument = isDocument && /\.txt(\?|$)/i.test(url);
 
   useEffect(() => {
     setUrl(lesson.playbackUrl || lesson.contentUrl || "");
@@ -156,10 +159,23 @@ function SignedMediaPlayer({
     else if (video.requestFullscreen) await video.requestFullscreen();
   }
 
-  const playable = !isPdf && (/\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/"));
+  const playable = !isPdf && !isDocument && (/\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.includes("/lms/media/"));
 
   return (
     <div className="space-y-3">
+      {isDocument && url ? (
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          {isImageDocument ? <img src={url} alt={lesson.title} className="max-h-[70vh] w-full object-contain" /> : null}
+          {isTextDocument ? <iframe title={lesson.title} src={url} className="h-[65vh] w-full bg-background" /> : null}
+          {!isImageDocument && !isTextDocument ? (
+            <div className="space-y-2 p-5">
+              <p className="font-display text-lg font-semibold">{lesson.title}</p>
+              <p className="text-sm text-muted-foreground">This document format opens in your browser or an installed Office application.</p>
+              <a href={url} target="_blank" rel="noreferrer" className="inline-flex rounded-full bg-ember-gradient px-4 py-2 text-sm font-semibold text-maroon-foreground">Open document</a>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {isPdf && url ? (
         <PdfReader
           url={url}
@@ -270,7 +286,7 @@ function SignedMediaPlayer({
         rel="noreferrer"
         className="inline-flex text-sm font-semibold text-ember hover:underline"
       >
-        {isPdf ? "Open PDF in a new tab" : "Open lesson media"}
+        {isPdf ? "Open PDF in a new tab" : isDocument ? "Open document in a new tab" : "Open lesson media"}
       </a>
       {expiresAt ? (
         <p className="text-xs text-muted-foreground">

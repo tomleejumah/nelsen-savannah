@@ -560,11 +560,19 @@ public final class LmsModels {
         public String error;
     }
 
+    public static class AttachmentDto {
+        public String mediaId;
+        public String filename;
+        public String mimeType;
+        public long sizeBytes;
+    }
+
     public static class SubmissionBody {
         public String lessonId;
         public String text;
         public String platform = "android";
         public String assignmentId;
+        public java.util.List<String> attachmentMediaIds;
         public SubmissionBody(String lessonId, String text) {
             this(lessonId, text, null);
         }
@@ -584,6 +592,7 @@ public final class LmsModels {
         public String text;
         public Float score;
         public String feedback;
+        public java.util.List<AttachmentDto> attachments;
         public long submittedAt;
     }
 
@@ -636,6 +645,7 @@ public final class LmsModels {
         public String assignmentId;
         public String assignmentTitle;
         public String assignmentPrompt;
+        public java.util.List<AttachmentDto> attachments;
         public long submittedAt;
     }
 
@@ -692,6 +702,7 @@ public final class LmsModels {
         public String assigneeUid;
         public Long dueAt;
         public long createdAt;
+        public java.util.List<AttachmentDto> attachments;
     }
 
     public static class AssignmentBody {
@@ -699,6 +710,7 @@ public final class LmsModels {
         public String prompt;
         public String trackId;
         public String assigneeUid;
+        public java.util.List<String> attachmentMediaIds;
         public AssignmentBody(String title, String prompt, String trackId, String assigneeUid) {
             this.title = title;
             this.prompt = prompt;
