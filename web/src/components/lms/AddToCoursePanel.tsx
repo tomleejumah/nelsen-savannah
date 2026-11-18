@@ -150,6 +150,7 @@ export function AddToCoursePanel({
           trackId: string;
           prompt?: string;
           modelAnswer?: string;
+          attachmentMediaIds?: string[];
         } = { title: title.trim(), trackId };
         if (prompt.trim()) assignBody.prompt = prompt.trim();
         if (modelAnswer.trim()) assignBody.modelAnswer = modelAnswer.trim();
