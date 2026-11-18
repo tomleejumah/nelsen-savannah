@@ -21,7 +21,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import retrofit2.Call;
 import retrofit2.Callback;
-import retrofit2.Response as RetrofitResponse;
 
 /** Uploads private LMS documents through the existing presigned media pipeline. */
 public final class LmsDocumentUploader {
