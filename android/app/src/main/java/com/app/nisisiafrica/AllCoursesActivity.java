@@ -915,6 +915,22 @@ public class AllCoursesActivity extends AppCompatActivity {
         }
         prompt.setText(details.toString());
         content.addView(prompt);
+        if (assignment.attachments != null && !assignment.attachments.isEmpty()) {
+            TextView filesHeading = new TextView(this);
+            filesHeading.setText("Assignment documents");
+            filesHeading.setTypeface(null, android.graphics.Typeface.BOLD);
+            filesHeading.setPadding(0, pad, 0, pad / 3);
+            content.addView(filesHeading);
+            for (LmsModels.AttachmentDto attachment : assignment.attachments) {
+                if (attachment == null || TextUtils.isEmpty(attachment.mediaId)) continue;
+                TextView fileRow = new TextView(this);
+                fileRow.setText("📄 " + (TextUtils.isEmpty(attachment.filename) ? "Open document" : attachment.filename) + "  ·  Open");
+                fileRow.setTextColor(getColor(com.app.nisisiafrica.R.color.colorPrimary));
+                fileRow.setPadding(0, pad / 3, 0, pad / 3);
+                fileRow.setOnClickListener(v -> openLmsAttachment(attachment.mediaId));
+                content.addView(fileRow);
+            }
+        }
         android.widget.TextView history = new android.widget.TextView(this);
         history.setPadding(0, pad / 2, 0, pad / 2);
         history.setText("Loading submission history…");
@@ -1021,6 +1037,34 @@ public class AllCoursesActivity extends AppCompatActivity {
                             });
                 }));
         dialog.show();
+    }
+
+
+    private void openLmsAttachment(String mediaId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().mediaPlaybackUrl("Bearer " + token.getToken(), mediaId)
+                        .enqueue(new Callback<>() {
+                            @Override public void onResponse(Call<LmsModels.MediaPlaybackEnvelope> call,
+                                                             Response<LmsModels.MediaPlaybackEnvelope> response) {
+                                LmsModels.MediaPlaybackEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok
+                                        || body.data == null || TextUtils.isEmpty(body.data.url)) {
+                                    Toast.makeText(AllCoursesActivity.this, "Document unavailable", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                try {
+                                    Intent view = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(body.data.url));
+                                    startActivity(view);
+                                } catch (Exception error) {
+                                    Toast.makeText(AllCoursesActivity.this, "Install a PDF or Office viewer to open this file", Toast.LENGTH_LONG).show();
+                                }
+                            }
+                            @Override public void onFailure(Call<LmsModels.MediaPlaybackEnvelope> call, Throwable error) {
+                                Toast.makeText(AllCoursesActivity.this, "Could not load document", Toast.LENGTH_SHORT).show();
+                            }
+                        }));
     }
 
     @Override
