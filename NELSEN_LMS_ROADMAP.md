@@ -816,3 +816,23 @@ The current Android app bundles `me.didit:didit-sdk` and its native/media depend
 - [ ] Decide whether KYC should remain bundled, move to Didit's hosted/web verification flow, or be isolated into an Android dynamic feature where distribution supports it.
 - [ ] Do not implement arbitrary post-install loading of the Maven/native SDK as an asset; choose a supported delivery architecture first.
 - [ ] Preserve the existing KYC flow until this decision is made.
+
+
+---
+
+## LMS Document Attachments — November 2026
+
+Support course reference documents and learner file submissions through the existing private media pipeline.
+
+- [x] Extend media MIME/extension mapping for DOC/DOCX, XLS/XLSX, PPT/PPTX and TXT.
+- [x] Add assignment attachment metadata with additive SQLite/Postgres migrations.
+- [x] Add submission attachment metadata without replacing legacy submission media URL fields.
+- [x] Allow authenticated learners to request private upload tickets for their own submission documents.
+- [x] Validate that assignment and submission attachments are finalized media uploaded by the submitting/assigning user.
+- [x] Add Web assignment creation attachments, learner submission uploads and attachment links in the mentor marking queue.
+- [x] Add Android assignment creation/submission uploads and open/download fallback for attached files.
+- [x] Restrict attachment playback to the uploader, eligible assignees/enrollees, assignment creator and authorized school staff.
+- [ ] Add a consistent in-app document preview for PDF and images on Android and Web; Office formats need a trusted conversion/preview strategy rather than a public third-party viewer.
+- [ ] Verify Office MIME types from Android document providers, file-size limits, storage CORS, SQLite and PostgreSQL migrations.
+- [ ] Run API, Web and Android CI on the current follow-up PR head; exercise mentor → learner → marker across two accounts.
+- [ ] Confirm offline Android downloads and file cleanup/retention policy.
