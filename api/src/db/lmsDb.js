@@ -440,6 +440,8 @@ async function ensureMigrations() {
       ? "ALTER TABLE media_assets ADD COLUMN finalized_at BIGINT"
       : "ALTER TABLE media_assets ADD COLUMN finalized_at INTEGER",
     "ALTER TABLE assignments ADD COLUMN model_answer TEXT",
+    "ALTER TABLE assignments ADD COLUMN attachments_json TEXT",
+    "ALTER TABLE submissions ADD COLUMN attachments_json TEXT",
     engine === "postgres"
       ? "ALTER TABLE milestones ADD COLUMN due_at BIGINT"
       : "ALTER TABLE milestones ADD COLUMN due_at INTEGER",
