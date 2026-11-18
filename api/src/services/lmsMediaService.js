@@ -2,7 +2,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
+import { dbAll, dbGet, dbRun, getPrimaryEngine } from "../db/lmsDb.js";
 import { dualWrite, mirrorLesson, mirrorMedia } from "./lmsMirror.js";
 import { DEFAULT_SCHOOL_ID, normalizeRole } from "../constants/lmsRoles.js";
 import {
