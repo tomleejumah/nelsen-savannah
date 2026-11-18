@@ -76,6 +76,17 @@ public interface LmsApiService {
             @Header("Authorization") String bearer,
             @Path("lessonId") String lessonId);
 
+    @POST("lms/media/upload-url")
+    Call<LmsModels.MapEnvelope> createMediaUploadUrl(
+            @Header("Authorization") String bearer,
+            @Body java.util.Map<String, Object> body);
+
+    @POST("lms/media/{mediaId}/finalize")
+    Call<LmsModels.MapEnvelope> finalizeMediaUpload(
+            @Header("Authorization") String bearer,
+            @Path("mediaId") String mediaId,
+            @Body java.util.Map<String, Object> body);
+
     @GET("lms/media/{mediaId}/url")
     Call<LmsModels.MediaPlaybackEnvelope> mediaPlaybackUrl(
             @Header("Authorization") String bearer,
