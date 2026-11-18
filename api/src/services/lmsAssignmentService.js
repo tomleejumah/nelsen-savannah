@@ -98,7 +98,7 @@ export async function createAssignment(profile, body = {}) {
     `INSERT INTO assignments (
       assignment_id, school_id, track_id, lesson_id, title, prompt, model_answer,
       assigned_by, assignee_uid, cohort, due_at, created_at, attachments_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       assignmentId,
       schoolId,
