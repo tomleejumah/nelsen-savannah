@@ -84,6 +84,7 @@ class LmsTracksPagingSource(
                     courseLink = "",
                     isLiked = false,
                     programSlug = enrollment.programSlug ?: "",
+                    trackPercent = enrollment.trackPercent,
                 )
             }.filter { it.courseId.isNotBlank() }
             LoadResult.Page(ageFilter(items), prevKey = null, nextKey = null)
