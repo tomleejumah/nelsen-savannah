@@ -18,7 +18,7 @@ import {
   type TrackCardDto,
 } from "@/lib/lmsApi";
 
-type Kind = "video" | "pdf" | "assignment" | "milestone";
+type Kind = "video" | "pdf" | "document" | "assignment" | "milestone";
 
 function slugId(prefix: string, title: string) {
   const base = title
@@ -199,7 +199,7 @@ export function AddToCoursePanel({
       if (!moduleId) throw new Error("Pick or create a module");
 
       const mid = await ensureModule(token);
-      const lid = slugId(kind === "video" ? "vid" : "pdf", title);
+      const lid = slugId(kind === "video" ? "vid" : kind === "pdf" ? "pdf" : "doc", title);
       const lessonType = kind === "video" ? "video" : "read";
       const created = await adminCreateLesson(token, {
         lessonId: lid,
@@ -217,7 +217,7 @@ export function AddToCoursePanel({
         onProgress: setUploadPct,
       });
       setMsg(
-        `${kind === "video" ? "Video" : "PDF"} lesson added to ${trackId} (${media.mediaId}).`,
+        `${kind === "video" ? "Video" : kind === "pdf" ? "PDF" : "Document"} lesson added to ${trackId} (${media.mediaId}).`,
       );
       setTitle("");
       setFile(null);
@@ -233,7 +233,8 @@ export function AddToCoursePanel({
 
   const kinds: { id: Kind; label: string; blurb: string }[] = [
     { id: "video", label: "Video", blurb: "Lesson + upload on this track" },
-    { id: "pdf", label: "PDF", blurb: "Reading material for the course" },
+    { id: "pdf", label: "PDF", blurb: "PDF reading material for the course" },
+    { id: "document", label: "Document", blurb: "Word, Excel, PowerPoint, text and image resources" },
     { id: "assignment", label: "Assignment", blurb: "Course-wide — all enrolled mentees" },
     { id: "milestone", label: "Milestone", blurb: "Release / due date on a lesson" },
   ];
@@ -243,7 +244,7 @@ export function AddToCoursePanel({
       <div>
         <h2 className="font-display text-xl font-semibold">Add to course</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Grow a track gradually — video, PDF, course assignment, or calendar milestone.
+          Grow a track gradually — video, documents, course assignments, or calendar milestones.
         </p>
       </div>
 
@@ -295,7 +296,7 @@ export function AddToCoursePanel({
           </label>
         )}
 
-        {(kind === "video" || kind === "pdf") && (
+        {(kind === "video" || kind === "pdf" || kind === "document") && (
           <>
             <label className="block text-sm">
               <span className="text-muted-foreground">Module / section</span>
@@ -333,7 +334,7 @@ export function AddToCoursePanel({
             <input
               required
               type="file"
-              accept={kind === "video" ? "video/*" : "application/pdf"}
+              accept={kind === "video" ? "video/*" : kind === "pdf" ? "application/pdf" : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.webp"}
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
             />
