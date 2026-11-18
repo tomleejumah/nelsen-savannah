@@ -1023,8 +1023,8 @@ public class AllCoursesActivity extends AppCompatActivity {
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     String responseText = answer.getText().toString().trim();
-                    if (responseText.isEmpty()) {
-                        answer.setError("Write an answer first");
+                    if (responseText.isEmpty() && selectedAssignmentDocument == null) {
+                        answer.setError("Write an answer or attach a document first");
                         return;
                     }
                     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
