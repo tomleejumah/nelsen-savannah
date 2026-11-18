@@ -37,6 +37,7 @@ function mapSubmission(row, extras = {}) {
     feedback: row.feedback || null,
     mentorId: row.mentor_id || null,
     assignmentId: row.assignment_id || null,
+    attachments: (() => { try { return JSON.parse(row.attachments_json || "[]"); } catch { return []; } })(),
     submittedAt: Number(row.submitted_at),
     markedAt: row.marked_at ? Number(row.marked_at) : null,
     ...extras,
@@ -110,6 +111,16 @@ export async function createSubmission(profile, body = {}) {
     }
   }
 
+  const attachmentIds = [...new Set((Array.isArray(body.attachmentMediaIds) ? body.attachmentMediaIds : []).map((id) => String(id || "").trim()).filter(Boolean))];
+  if (attachmentIds.length > 10) { const err = new Error("A maximum of 10 submission files is allowed"); err.status = 400; throw err; }
+  const attachments = [];
+  for (const mediaId of attachmentIds) {
+    const media = await dbGet("SELECT media_id, uid, school_id, filename, mime_type, size_bytes, status FROM media_assets WHERE media_id = ?", [mediaId]);
+    if (!media || media.status !== "ready" || media.uid !== profile.uid) { const err = new Error("Submission file is missing, not ready, or was not uploaded by you"); err.status = 400; throw err; }
+    if (media.school_id && lesson.school_id && media.school_id !== lesson.school_id) { const err = new Error("Submission file belongs to another school"); err.status = 403; throw err; }
+    attachments.push({ mediaId: media.media_id, filename: media.filename || "Document", mimeType: media.mime_type || "application/octet-stream", sizeBytes: Number(media.size_bytes || 0) });
+  }
+
   const now = Date.now();
   const submissionId = newSubmissionId();
   const text = body.text || body.body || "";
@@ -124,8 +135,8 @@ export async function createSubmission(profile, body = {}) {
         `INSERT INTO submissions (
           submission_id, uid, lesson_id, track_id, module_id, body,
           media_urls_json, status, score, feedback, mentor_id,
-          submitted_at, marked_at, assignment_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', NULL, NULL, NULL, ?, NULL, ?)`,
+          submitted_at, marked_at, assignment_id, attachments_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', NULL, NULL, NULL, ?, NULL, ?, ?)`,
         [
           submissionId,
           profile.uid,
@@ -136,6 +147,7 @@ export async function createSubmission(profile, body = {}) {
           mediaUrls,
           now,
           assignmentId,
+          JSON.stringify(attachments),
         ],
       );
       return dbGet("SELECT * FROM submissions WHERE submission_id = ?", [
@@ -210,6 +222,7 @@ export async function listSubmissionQueue(mentorUid) {
         assignmentId: r.assignment_id || null,
         assignmentTitle: r.assignment_title || null,
         assignmentPrompt: r.assignment_prompt || null,
+        attachments: (() => { try { return JSON.parse(r.attachments_json || "[]"); } catch { return []; } })(),
         fileUrl: null,
         linkUrl: null,
         submittedAt: Number(r.submitted_at),
