@@ -8,13 +8,14 @@ import android.provider.OpenableColumns;
 import com.app.nisisiafrica.data.Model.LmsModels;
 import com.app.nisisiafrica.data.remote.ApiClient;
 
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
+import okio.BufferedSink;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -90,16 +91,34 @@ public final class LmsDocumentUploader {
                                        String filename, String mime, long size, Listener listener) {
         new Thread(() -> {
             try {
-                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                try (InputStream input = context.getContentResolver().openInputStream(uri)) {
-                    if (input == null) throw new IllegalStateException("Could not read selected document.");
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
-                }
-                byte[] bytes = output.toByteArray();
-                if (bytes.length > MAX_DOCUMENT_BYTES) throw new IllegalStateException("Documents must be 100 MB or smaller.");
-                RequestBody body = RequestBody.create(bytes, MediaType.parse(mime));
+                RequestBody body = new RequestBody() {
+                    @Override public MediaType contentType() {
+                        return MediaType.parse(mime);
+                    }
+
+                    @Override public long contentLength() {
+                        return size;
+                    }
+
+                    @Override public void writeTo(BufferedSink sink) throws IOException {
+                        try (InputStream input = context.getContentResolver().openInputStream(uri)) {
+                            if (input == null) throw new IOException("Could not read selected document.");
+                            byte[] buffer = new byte[32 * 1024];
+                            long written = 0L;
+                            int read;
+                            while ((read = input.read(buffer)) != -1) {
+                                written += read;
+                                if (written > MAX_DOCUMENT_BYTES) {
+                                    throw new IOException("Documents must be 100 MB or smaller.");
+                                }
+                                sink.write(buffer, 0, read);
+                            }
+                            if (size >= 0L && written != size) {
+                                throw new IOException("Selected document changed while uploading.");
+                            }
+                        }
+                    }
+                };
                 Request.Builder builder = new Request.Builder().url(uploadUrl).method(method, body);
                 for (Map.Entry<String, String> entry : headers.entrySet()) builder.header(entry.getKey(), entry.getValue());
                 OkHttpClient client = new OkHttpClient.Builder()
@@ -116,7 +135,7 @@ public final class LmsDocumentUploader {
                                                              retrofit2.Response<LmsModels.MapEnvelope> response) {
                                 LmsModels.MapEnvelope result = response.body();
                                 if (response.isSuccessful() && result != null && result.ok) {
-                                    listener.onSuccess(mediaId, filename, mime, bytes.length);
+                                    listener.onSuccess(mediaId, filename, mime, size);
                                 } else {
                                     listener.onError(result != null ? result.error : "Could not finalize document upload.");
                                 }
