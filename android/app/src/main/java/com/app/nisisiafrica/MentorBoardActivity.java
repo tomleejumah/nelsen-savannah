@@ -98,6 +98,14 @@ public class MentorBoardActivity extends AppCompatActivity {
                             if (!TextUtils.isEmpty(item.text)) {
                                 root.addView(label(item.text, 13, false));
                             }
+                            if (item.attachments != null) {
+                                for (LmsModels.AttachmentDto attachment : item.attachments) {
+                                    if (attachment == null || TextUtils.isEmpty(attachment.mediaId)) continue;
+                                    TextView document = label("Open submission: " + attachment.filename, 13, true);
+                                    document.setOnClickListener(v -> openLmsAttachment(attachment.mediaId));
+                                    root.addView(document);
+                                }
+                            }
                         }
                     }
 
@@ -260,6 +268,29 @@ public class MentorBoardActivity extends AppCompatActivity {
             try { getContentResolver().takePersistableUriPermission(selectedAssignmentDocument, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception ignored) {}
             if (selectedAssignmentDocumentLabel != null) selectedAssignmentDocumentLabel.setText("Selected: " + selectedAssignmentDocument.getLastPathSegment());
         }
+    }
+
+
+    private void openLmsAttachment(String mediaId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+        user.getIdToken(false).addOnSuccessListener(token ->
+                ApiClient.getLmsService().mediaPlaybackUrl("Bearer " + token.getToken(), mediaId)
+                        .enqueue(new Callback<>() {
+                            @Override public void onResponse(Call<LmsModels.MediaPlaybackEnvelope> call,
+                                                             Response<LmsModels.MediaPlaybackEnvelope> response) {
+                                LmsModels.MediaPlaybackEnvelope body = response.body();
+                                if (!response.isSuccessful() || body == null || !body.ok || body.data == null || TextUtils.isEmpty(body.data.url)) {
+                                    Toast.makeText(MentorBoardActivity.this, "Document unavailable", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(body.data.url))); }
+                                catch (Exception error) { Toast.makeText(MentorBoardActivity.this, "Install a PDF or Office viewer", Toast.LENGTH_LONG).show(); }
+                            }
+                            @Override public void onFailure(Call<LmsModels.MediaPlaybackEnvelope> call, Throwable error) {
+                                Toast.makeText(MentorBoardActivity.this, "Could not load document", Toast.LENGTH_SHORT).show();
+                            }
+                        }));
     }
 
     private void mark(String id, int score, boolean passed, String feedback) {
