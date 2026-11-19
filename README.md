@@ -146,13 +146,14 @@ Live event hosts must retain active membership in the owning school to mutate sc
 Live attendance heartbeats now cap credited viewing time to server-observed elapsed seconds and do not credit stale reconnect gaps. Full two-device streaming, FCM and provider-state acceptance still requires staging.
 
 
-## LMS
+## LMS document attachments
+
+Course assignments can carry private PDF, Word, Excel, PowerPoint, text and image attachments. Learners can attach documents to submissions from Web and Android; mentors can open submitted files from the marking queue. Files use the existing LMS media storage and access checks. Full in-app Office/PDF preview and offline-download QA remain tracked in `NELSEN_LMS_ROADMAP.md`.
+
+## LMS lesson scheduling
 
 - Mentors can edit a unit's unlock and closing date/time from the course authoring panel.
 - Individual lessons can override their unit schedule with their own unlock and closing date/time; clearing both dates restores the unit schedule.
- document attachments
-
-Course assignments can carry private PDF, Word, Excel, PowerPoint, text and image attachments. Learners can attach documents to submissions from Web and Android; mentors can open submitted files from the marking queue. Files use the existing LMS media storage and access checks. Full in-app Office/PDF preview and offline-download QA remain tracked in `NELSEN_LMS_ROADMAP.md`.
 ### Public website policies (feature branch)
 
 The site-wide footer links to full-page Privacy Policy (`/privacy-policy`), Refund Policy (`/refund-policy`), and Shipping Policy (`/shipping-policy`) routes. They use the shared responsive policy layout and existing contact email. **Policy text is a draft requiring owner/legal review before production publication**; in particular confirm refund eligibility, physical-item fulfillment, privacy practices, and applicable law. Web build and browser navigation are not yet verified.
