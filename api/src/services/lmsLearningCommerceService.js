@@ -654,10 +654,14 @@ export async function getChapterLockForLesson(uid, lesson) {
   const mod = await dbGet("SELECT * FROM modules WHERE module_id = ?", [
     lesson.module_id,
   ]);
-  if (!mod || mod.release_at == null || mod.due_at == null) return null;
+  const lessonReleaseAt = lesson.release_at == null ? null : Number(lesson.release_at);
+  const lessonDueAt = lesson.due_at == null ? null : Number(lesson.due_at);
+  const hasLessonWindow = lessonReleaseAt != null && lessonDueAt != null;
+  const hasModuleWindow = mod && mod.release_at != null && mod.due_at != null;
+  if (!hasLessonWindow && !hasModuleWindow) return null;
   const now = Date.now();
-  const releaseAt = Number(mod.release_at);
-  const dueAt = Number(mod.due_at);
+  const releaseAt = hasLessonWindow ? lessonReleaseAt : Number(mod.release_at);
+  const dueAt = hasLessonWindow ? lessonDueAt : Number(mod.due_at);
   const progress = await dbGet(
     "SELECT lesson_percent FROM progress WHERE uid = ? AND lesson_id = ?",
     [uid, lesson.lesson_id],
@@ -668,7 +672,8 @@ export async function getChapterLockForLesson(uid, lesson) {
   const available = released && !expired;
   return {
     moduleId: mod.module_id,
-    title: mod.title,
+    lessonId: lesson.lesson_id,
+    title: lessonReleaseAt != null ? "Lesson schedule" : mod.title,
     releaseAt,
     dueAt,
     released,

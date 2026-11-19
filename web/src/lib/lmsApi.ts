@@ -108,6 +108,8 @@ export type LessonDto = {
   does: string;
   type: string;
   estimatedMinutes: number;
+  releaseAt?: number | null;
+  dueAt?: number | null;
   hasQuiz: boolean;
   hasAssignment: boolean;
   lessonPercent: number;
@@ -1468,6 +1470,8 @@ export async function adminUpdateLesson(
     does?: string;
     type?: string;
     hasQuiz?: boolean;
+    releaseAt?: number | null;
+    dueAt?: number | null;
     mediaId?: string | null;
     lab?: {
       language?: string;
