@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS lessons (
   media_id TEXT,
   lab_json TEXT,
   sort_order INTEGER DEFAULT 0,
+  release_at INTEGER,
+  due_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (module_id) REFERENCES modules(module_id),
@@ -298,6 +300,8 @@ CREATE TABLE IF NOT EXISTS lessons (
   media_id TEXT,
   lab_json TEXT,
   sort_order INTEGER DEFAULT 0,
+  release_at BIGINT,
+  due_at BIGINT,
   created_at BIGINT NOT NULL,
   updated_at BIGINT NOT NULL
 );
@@ -456,6 +460,12 @@ async function ensureMigrations() {
     "ALTER TABLE progress ADD COLUMN watch_seconds INTEGER DEFAULT 0",
     "ALTER TABLE progress ADD COLUMN watch_pct INTEGER DEFAULT 0",
     "ALTER TABLE lessons ADD COLUMN lab_json TEXT",
+    engine === "postgres"
+      ? "ALTER TABLE lessons ADD COLUMN release_at BIGINT"
+      : "ALTER TABLE lessons ADD COLUMN release_at INTEGER",
+    engine === "postgres"
+      ? "ALTER TABLE lessons ADD COLUMN due_at BIGINT"
+      : "ALTER TABLE lessons ADD COLUMN due_at INTEGER",
     "ALTER TABLE school_memberships ADD COLUMN invite_token TEXT",
     "ALTER TABLE tracks ADD COLUMN ide_enabled INTEGER DEFAULT 0",
     "ALTER TABLE hub_events ADD COLUMN audience_scope TEXT",
