@@ -83,6 +83,8 @@ export async function adminTrackAuthoringOutline(actorUid, trackId) {
       does: row.does || "",
       type: row.type === "read" ? "text" : row.type,
       estimatedMinutes: Number(row.estimated_minutes) || 0,
+      releaseAt: row.release_at == null ? null : Number(row.release_at),
+      dueAt: row.due_at == null ? null : Number(row.due_at),
       hasQuiz: Boolean(row.has_quiz),
       hasAssignment: Boolean(row.has_assignment),
       mediaId: row.media_id || null,
@@ -713,8 +715,8 @@ export async function adminCreateLesson(actorUid, body = {}) {
         `INSERT INTO lessons (
           lesson_id, module_id, track_id, title, does, type,
           estimated_minutes, has_quiz, has_assignment, content_url,
-          media_id, lab_json, sort_order, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          media_id, lab_json, sort_order, release_at, due_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           lessonId,
           moduleId,
@@ -729,6 +731,8 @@ export async function adminCreateLesson(actorUid, body = {}) {
           body.mediaId || null,
           labJson,
           body.order || 0,
+          body.releaseAt == null ? null : Number(body.releaseAt),
+          body.dueAt == null ? null : Number(body.dueAt),
           now,
           now,
         ],
@@ -809,6 +813,17 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
   if (type === "code" && (body.lab || body.language || body.starter != null)) {
     labJson = serializeLab({ ...parseLab(row), ...(body.lab || body) });
   }
+  let releaseAt = row.release_at == null ? null : Number(row.release_at);
+  let dueAt = row.due_at == null ? null : Number(row.due_at);
+  if (Object.prototype.hasOwnProperty.call(body, "releaseAt") || Object.prototype.hasOwnProperty.call(body, "dueAt")) {
+    releaseAt = body.releaseAt == null || body.releaseAt === "" ? null : Number(body.releaseAt);
+    dueAt = body.dueAt == null || body.dueAt === "" ? null : Number(body.dueAt);
+    if ((releaseAt == null) !== (dueAt == null) || (releaseAt != null && (!Number.isFinite(releaseAt) || releaseAt <= 0)) || (dueAt != null && (!Number.isFinite(dueAt) || dueAt <= 0)) || (releaseAt != null && dueAt < releaseAt)) {
+      const err = new Error("Provide both valid lesson dates; closing date must be on or after unlock date");
+      err.status = 400;
+      throw err;
+    }
+  }
   const now = Date.now();
   await dualWrite({
     label: `admin-lesson-upd:${lid}`,
@@ -817,7 +832,7 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
         `UPDATE lessons SET
           title = ?, does = ?, type = ?, estimated_minutes = ?,
           has_quiz = ?, has_assignment = ?, content_url = ?, media_id = ?,
-          lab_json = ?, sort_order = ?, updated_at = ?
+          lab_json = ?, sort_order = ?, release_at = ?, due_at = ?, updated_at = ?
          WHERE lesson_id = ?`,
         [
           title,
@@ -830,6 +845,8 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
           mediaId,
           labJson,
           sortOrder,
+          releaseAt,
+          dueAt,
           now,
           lid,
         ],
@@ -848,6 +865,8 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
         hasAssignment: Boolean(hasAssignment),
         mediaId,
         contentUrl,
+        releaseAt,
+        dueAt,
         updatedAt: now,
       });
     },
@@ -865,6 +884,8 @@ export async function adminUpdateLesson(actorUid, lessonId, body = {}) {
         does,
         hasQuiz: Boolean(quizFlag),
         mediaId,
+        releaseAt,
+        dueAt,
       },
     },
   };
