@@ -87,6 +87,9 @@ export function AddToCoursePanel({
       setModules([]);
       setLessons([]);
       setModuleId("");
+      setTimelineModuleId("");
+      setTimelineReleaseAt("");
+      setTimelineDueAt("");
       return;
     }
     let cancelled = false;
@@ -97,7 +100,13 @@ export function AddToCoursePanel({
       const list = envelope.data?.modules || [];
       setModules(list);
       setModuleId((prev) => (prev && list.some((m) => m.moduleId === prev) ? prev : ""));
-      setTimelineModuleId((prev) => (prev && list.some((m) => m.moduleId === prev) ? prev : list[0]?.moduleId || ""));
+      const selectedTimelineId = list.some((m) => m.moduleId === timelineModuleId)
+        ? timelineModuleId
+        : list[0]?.moduleId || "";
+      setTimelineModuleId(selectedTimelineId);
+      const selectedTimelineModule = list.find((m) => m.moduleId === selectedTimelineId);
+      setTimelineReleaseAt(toLocalDateTime(selectedTimelineModule?.releaseAt));
+      setTimelineDueAt(toLocalDateTime(selectedTimelineModule?.dueAt));
       const lessonLists = await Promise.all(
         list.map(async (m) => {
           const modEnv = await fetchLmsModule(token, m.moduleId);
