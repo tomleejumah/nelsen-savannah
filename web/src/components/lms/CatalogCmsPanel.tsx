@@ -509,6 +509,24 @@ export function CatalogCmsPanel({
     onChanged?.();
   }
 
+  async function saveLessonSchedule(e: React.FormEvent<HTMLFormElement>, lesson: LessonDto) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const startValue = String(form.get("releaseAt") || "");
+    const endValue = String(form.get("dueAt") || "");
+    const releaseAt = startValue ? fromLocalInput(startValue) : null;
+    const dueAt = endValue ? fromLocalInput(endValue) : null;
+    if ((releaseAt == null) !== (dueAt == null) || (releaseAt != null && (!Number.isFinite(releaseAt) || !Number.isFinite(dueAt) || dueAt! < releaseAt))) {
+      setMsg("Set both lesson dates; closing date must be on or after unlock date");
+      return;
+    }
+    setMsg(null);
+    const token = await user.getIdToken();
+    const result = await adminUpdateLesson(token, lesson.lessonId, { releaseAt, dueAt });
+    setMsg(result.ok ? `Schedule saved for “${lesson.title}”` : result.error || "Failed to save lesson schedule");
+    if (result.ok) { await loadSyllabus(); onChanged?.(); }
+  }
+
   async function deleteLesson(lessonId: string, title: string) {
     if (!confirm(`Delete lesson “${title}”?`)) return;
     const token = await user.getIdToken();
@@ -940,6 +958,15 @@ export function CatalogCmsPanel({
                                       </span>
                                       </span>
                                     </span>
+                                    <details className="basis-full pt-2">
+                                      <summary className="cursor-pointer text-xs text-muted-foreground underline">Edit lesson schedule</summary>
+                                      <form onSubmit={(e) => void saveLessonSchedule(e, l)} className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                                        <label className="space-y-1 text-xs"><span className="text-muted-foreground">Unlock date &amp; time</span><input name="releaseAt" type="datetime-local" defaultValue={toLocalInput(l.releaseAt)} className="w-full rounded-lg border border-border bg-background px-2 py-1.5" /></label>
+                                        <label className="space-y-1 text-xs"><span className="text-muted-foreground">Close date &amp; time</span><input name="dueAt" type="datetime-local" defaultValue={toLocalInput(l.dueAt)} className="w-full rounded-lg border border-border bg-background px-2 py-1.5" /></label>
+                                        <button type="submit" className="self-end rounded-full border border-border px-3 py-1.5 text-xs hover:bg-secondary">Save schedule</button>
+                                      </form>
+                                      <p className="mt-1 text-[11px] text-muted-foreground">Leave both empty to use the module schedule.</p>
+                                    </details>
                                     <button
                                       type="button"
                                       className="text-xs text-destructive underline"
