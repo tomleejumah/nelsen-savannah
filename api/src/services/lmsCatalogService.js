@@ -170,6 +170,8 @@ function mapLesson(row, { lessonPercent = 0, status = "available" } = {}) {
     does: row.does || "",
     type,
     estimatedMinutes: Number(row.estimated_minutes ?? row.estimatedMinutes ?? 0),
+    releaseAt: row.release_at == null && row.releaseAt == null ? null : Number(row.release_at ?? row.releaseAt),
+    dueAt: row.due_at == null && row.dueAt == null ? null : Number(row.due_at ?? row.dueAt),
     hasQuiz: Boolean(row.has_quiz ?? row.hasQuiz),
     hasAssignment: Boolean(row.has_assignment ?? row.hasAssignment),
     lessonPercent: Number(lessonPercent) || 0,
