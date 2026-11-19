@@ -21,6 +21,11 @@ test("new SQLite install creates invite_token before unique index", async () => 
       ["idx_school_memberships_token"],
     );
     assert.equal(index?.name, "idx_school_memberships_token");
+    for (const table of ["assignments", "submissions"]) {
+      const columns = await dbAll(`PRAGMA table_info(${table})`);
+      assert.ok(columns.some((column) => column.name === "attachments_json"),
+        `${table}.attachments_json must exist`);
+    }
   } finally {
     if (previousDataDir === undefined) delete process.env.LMS_DATA_DIR;
     else process.env.LMS_DATA_DIR = previousDataDir;
