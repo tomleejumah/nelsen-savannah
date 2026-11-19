@@ -191,3 +191,7 @@ Reference-driven native XML redesign is underway on `feat/android-home-reference
 ### Home enrolled-course progress
 - Restored the horizontal enrolled-course rail on Home, retaining the alternating polaroid tilt and existing like interaction.
 - Each course card now displays the API's server-calculated `trackPercent` with a percentage label and progress bar. The value comes from the authenticated enrollment response; it is not estimated on-device.
+
+
+### Mentor unit unlock timelines
+Mentors assigned to a course can update each module/unit's unlock and close dates from the course authoring panel. The unlock date controls when all lessons in that unit become available; moving it to the present or an earlier time opens the unit immediately. The close date remains validated to be on or after the unlock date.
