@@ -898,3 +898,10 @@ Support course reference documents and learner file submissions through the exis
 - [ ] Run API, Web and Android CI on the current follow-up PR head; exercise mentor → learner → marker across two accounts.
 - [ ] Confirm offline Android downloads and file cleanup/retention policy.
 
+
+
+### Mentor-controlled unit unlock dates
+- [x] Allow an assigned mentor to update a module/unit unlock date and close date from the course authoring panel.
+- [x] Reuse the existing module update authorization: mentor must be linked to that course; school and super admins retain their existing access.
+- [x] Changing a unit's release date updates availability for all lessons in that unit; setting it to now/past unlocks the unit.
+- [ ] Verify with a mentor and learner account on Web and Android; confirm the learner outline refreshes and locked lessons become available.
