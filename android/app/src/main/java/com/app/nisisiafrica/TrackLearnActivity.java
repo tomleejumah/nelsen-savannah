@@ -196,6 +196,7 @@ public class TrackLearnActivity extends AppCompatActivity {
     private void showCourseActions(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
         menu.getMenu().add("Share course");
+        if (enrolledOnTrack) menu.getMenu().add("My assignments and feedback");
         if (courseIdeAvailable) menu.getMenu().add("Go to IDE");
         if (enrolledOnTrack) menu.getMenu().add("Leave course");
         menu.setOnMenuItemClickListener(item -> {
@@ -206,6 +207,12 @@ public class TrackLearnActivity extends AppCompatActivity {
                 String label = tvTitle != null ? tvTitle.getText().toString().trim() : "";
                 share.putExtra(Intent.EXTRA_TEXT, (label.isEmpty() ? "" : label + "\n") + url);
                 startActivity(Intent.createChooser(share, "Share course"));
+                return true;
+            }
+            if ("My assignments and feedback".contentEquals(item.getTitle())) {
+                Intent intent = new Intent(this, AllCoursesActivity.class);
+                intent.putExtra(AllCoursesActivity.EXTRA_ASSIGNMENTS_TRACK_ID, trackId);
+                startActivity(intent);
                 return true;
             }
             if ("Go to IDE".contentEquals(item.getTitle())) { openCourseIde(); return true; }
@@ -519,17 +526,6 @@ public class TrackLearnActivity extends AppCompatActivity {
             openHint.setOnClickListener(openChapter);
             modulesContainer.addView(card);
             prefetchChapterLessons(module);
-        }
-        if (enrolledOnTrack && !TextUtils.isEmpty(trackId)) {
-            MaterialButton assignments = new MaterialButton(this);
-            assignments.setText("My assignments and feedback");
-            assignments.setAllCaps(false);
-            assignments.setOnClickListener(v -> {
-                Intent intent = new Intent(this, AllCoursesActivity.class);
-                intent.putExtra(AllCoursesActivity.EXTRA_ASSIGNMENTS_TRACK_ID, trackId);
-                startActivity(intent);
-            });
-            modulesContainer.addView(assignments);
         }
     }
 
