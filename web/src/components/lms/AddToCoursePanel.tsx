@@ -7,6 +7,7 @@ import type { User } from "firebase/auth";
 import {
   adminCreateLesson,
   adminCreateModule,
+  adminUpdateModule,
   createAssignment,
   createMilestone,
   fetchLmsModule,
@@ -18,7 +19,14 @@ import {
   type TrackCardDto,
 } from "@/lib/lmsApi";
 
-type Kind = "video" | "pdf" | "document" | "assignment" | "milestone";
+type Kind = "video" | "pdf" | "document" | "assignment" | "milestone" | "timeline";
+
+function toLocalDateTime(timestamp?: number | null) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
 
 function slugId(prefix: string, title: string) {
   const base = title
@@ -61,6 +69,9 @@ export function AddToCoursePanel({
   const [lessonIdForMile, setLessonIdForMile] = useState("");
   const [releaseAt, setReleaseAt] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [timelineModuleId, setTimelineModuleId] = useState("");
+  const [timelineReleaseAt, setTimelineReleaseAt] = useState("");
+  const [timelineDueAt, setTimelineDueAt] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [assignmentFiles, setAssignmentFiles] = useState<File[]>([]);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
@@ -86,6 +97,7 @@ export function AddToCoursePanel({
       const list = envelope.data?.modules || [];
       setModules(list);
       setModuleId((prev) => (prev && list.some((m) => m.moduleId === prev) ? prev : ""));
+      setTimelineModuleId((prev) => (prev && list.some((m) => m.moduleId === prev) ? prev : list[0]?.moduleId || ""));
       const lessonLists = await Promise.all(
         list.map(async (m) => {
           const modEnv = await fetchLmsModule(token, m.moduleId);
@@ -168,6 +180,28 @@ export function AddToCoursePanel({
         return;
       }
 
+      if (kind === "timeline") {
+        const selected = modules.find((module) => module.moduleId === timelineModuleId);
+        if (!selected) throw new Error("Select a module / unit first");
+        if (!timelineReleaseAt || !timelineDueAt) throw new Error("Set both the unlock and close dates");
+        const nextReleaseAt = new Date(timelineReleaseAt).getTime();
+        const nextDueAt = new Date(timelineDueAt).getTime();
+        if (!Number.isFinite(nextReleaseAt) || !Number.isFinite(nextDueAt) || nextDueAt < nextReleaseAt) {
+          throw new Error("The close date must be on or after the unlock date");
+        }
+        const result = await adminUpdateModule(token, selected.moduleId, {
+          releaseAt: nextReleaseAt,
+          dueAt: nextDueAt,
+        });
+        if (!result.ok) throw new Error(result.error || "Could not update module timeline");
+        setModules((prev) => prev.map((module) => module.moduleId === selected.moduleId
+          ? { ...module, releaseAt: nextReleaseAt, dueAt: nextDueAt }
+          : module));
+        setMsg(`Unlock timeline updated for ${selected.title}.`);
+        onDone?.();
+        return;
+      }
+
       if (kind === "milestone") {
         if (!runId) throw new Error("Attach a cohort run first (Cohort walkthrough below).");
         if (!lessonIdForMile.trim()) throw new Error("Lesson id required");
@@ -236,7 +270,8 @@ export function AddToCoursePanel({
     { id: "pdf", label: "PDF", blurb: "PDF reading material for the course" },
     { id: "document", label: "Document", blurb: "Word, Excel, PowerPoint, text and image resources" },
     { id: "assignment", label: "Assignment", blurb: "Course-wide — all enrolled mentees" },
-    { id: "milestone", label: "Milestone", blurb: "Release / due date on a lesson" },
+    { id: "milestone", label: "Milestone", blurb: "Release / due date on a lesson in a cohort run" },
+    { id: "timeline", label: "Unit timeline", blurb: "Change when a whole module / unit unlocks and closes" },
   ];
 
   return (
@@ -380,6 +415,42 @@ export function AddToCoursePanel({
           </>
         ) : null}
 
+        {kind === "timeline" ? (
+          <>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Module / unit</span>
+              <select
+                required
+                value={timelineModuleId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setTimelineModuleId(nextId);
+                  const selected = modules.find((module) => module.moduleId === nextId);
+                  setTimelineReleaseAt(toLocalDateTime(selected?.releaseAt));
+                  setTimelineDueAt(toLocalDateTime(selected?.dueAt));
+                }}
+                className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Select module / unit</option>
+                {modules.map((module) => (
+                  <option key={module.moduleId} value={module.moduleId}>{module.title}</option>
+                ))}
+              </select>
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Unlock date</span>
+                <input required type="datetime-local" value={timelineReleaseAt} onChange={(e) => setTimelineReleaseAt(e.target.value)} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+              </label>
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Close date</span>
+                <input required type="datetime-local" value={timelineDueAt} onChange={(e) => setTimelineDueAt(e.target.value)} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">Changing these dates affects every lesson in this unit. Set the unlock date to now or an earlier date to open it immediately.</p>
+          </>
+        ) : null}
+
         {kind === "milestone" ? (
           <>
             {!runId ? (
@@ -445,7 +516,9 @@ export function AddToCoursePanel({
               ? "Publish assignment"
               : kind === "milestone"
                 ? "Schedule milestone"
-                : "Add to course"}
+                : kind === "timeline"
+                  ? "Update unlock dates"
+                  : "Add to course"}
         </button>
         {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
       </form>
