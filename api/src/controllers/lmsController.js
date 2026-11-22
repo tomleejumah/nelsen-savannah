@@ -811,10 +811,35 @@ export const markSubmission = handle("[PATCH /lms/submissions/:id/mark]", async 
   return mark(profileFromReq(req), req.params.id, req.body || {});
 });
 
+export const verifyCertificate = handle("[GET /lms/certificates/verify/:uid/:trackId]", async (req) => {
+  const { verifyCertificate: verify } = await import("../services/lmsCertificateService.js");
+  return { data: await verify(req.params.uid, req.params.trackId), source: getPrimaryEngine() };
+});
+
 export const getCertificatesMe = handle("[GET /lms/certificates/me]", async (req) => {
   const { listMyCertificates } = await import("../services/lmsCertificateService.js");
   return listMyCertificates(req.user.uid);
 });
+
+export async function downloadMyCertificate(req, res) {
+  try {
+    const { getMyCertificatePdf } = await import("../services/lmsCertificateService.js");
+    const { pdf, filename } = await getMyCertificatePdf(req.user.uid, req.params.trackId);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", String(pdf.length));
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.status(200).send(pdf);
+  } catch (err) {
+    console.error("[GET /lms/certificates/:trackId/download]", err);
+    return lmsErr(
+      res,
+      err.message || "Could not download certificate",
+      err.status || 500,
+      getPrimaryEngine(),
+    );
+  }
+}
 
 export const likeTrack = handle("[POST /lms/tracks/:trackId/like]", async (req) => {
   const { toggleTrackLike } = await import("../services/lmsAdminService.js");

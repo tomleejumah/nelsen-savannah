@@ -179,9 +179,18 @@ router.patch(
 );
 
 router.get(
+  "/certificates/verify/:uid/:trackId",
+  lmsController.verifyCertificate,
+);
+router.get(
   "/certificates/me",
   authenticateUser,
   lmsController.getCertificatesMe,
+);
+router.get(
+  "/certificates/:trackId/download",
+  authenticateUser,
+  lmsController.downloadMyCertificate,
 );
 
 router.post(
