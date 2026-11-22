@@ -183,6 +183,11 @@ router.get(
   authenticateUser,
   lmsController.getCertificatesMe,
 );
+router.get(
+  "/certificates/:trackId/download",
+  authenticateUser,
+  lmsController.downloadMyCertificate,
+);
 
 router.post(
   "/assignments",
