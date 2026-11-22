@@ -811,6 +811,11 @@ export const markSubmission = handle("[PATCH /lms/submissions/:id/mark]", async 
   return mark(profileFromReq(req), req.params.id, req.body || {});
 });
 
+export const verifyCertificate = handle("[GET /lms/certificates/verify/:uid/:trackId]", async (req) => {
+  const { verifyCertificate: verify } = await import("../services/lmsCertificateService.js");
+  return { data: await verify(req.params.uid, req.params.trackId), source: getPrimaryEngine() };
+});
+
 export const getCertificatesMe = handle("[GET /lms/certificates/me]", async (req) => {
   const { listMyCertificates } = await import("../services/lmsCertificateService.js");
   return listMyCertificates(req.user.uid);
