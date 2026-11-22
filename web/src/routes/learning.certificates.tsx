@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { Award, LogIn } from "lucide-react";
+import { Award, Download, LogIn } from "lucide-react";
 
 import { getFirebaseAuth } from "@/lib/firebase";
 import {
   fetchLmsMe,
+  downloadMyCertificatePdf,
   fetchMyCertificates,
   fetchMyEnrollments,
   type CertificateDto,
@@ -31,9 +32,15 @@ const PASS_THRESHOLD = 80;
 function BlankCertificatePreview({
   learnerName,
   courseTitle,
+  score,
+  issuedAt,
+  certificateId,
 }: {
   learnerName: string;
   courseTitle?: string;
+  score?: number;
+  issuedAt?: number;
+  certificateId?: string;
 }) {
   return (
     <div className="relative overflow-hidden rounded-3xl border border-ember/30 bg-card p-8 shadow-elevated sm:p-10">
@@ -56,8 +63,23 @@ function BlankCertificatePreview({
         <p className="mt-2 font-display text-lg font-semibold text-maroon">
           {courseTitle || "— track title —"}
         </p>
+        {score != null ? (
+          <p className="mt-4 text-sm font-semibold text-foreground">
+            Overall course result: {score}%
+          </p>
+        ) : null}
+        {issuedAt ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Issued {new Date(issuedAt).toLocaleDateString()}
+          </p>
+        ) : null}
+        {certificateId ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Certificate ID: {certificateId}
+          </p>
+        ) : null}
         <div className="mx-auto mt-10 flex max-w-md items-center justify-between gap-4 border-t border-border/60 pt-6 text-xs text-muted-foreground">
-          <span>Issued when you pass ({PASS_THRESHOLD}%+)</span>
+          <span>{score != null ? "Verified course completion" : `Issued at ${PASS_THRESHOLD}% or higher`}</span>
           <span className="icon-chip">
             <Award className="h-4 w-4" />
           </span>
@@ -75,6 +97,7 @@ function CertificatesPage() {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<CertificateDto | null>(null);
+  const [downloadingTrackId, setDownloadingTrackId] = useState<string | null>(null);
 
   const load = useCallback(async (u: User) => {
     setBusy(true);
@@ -118,6 +141,27 @@ function CertificatesPage() {
 
   const learnerName =
     me?.displayName || user?.displayName || me?.email || "Learner";
+
+  const downloadCertificate = async (certificate: CertificateDto) => {
+    if (!user) return;
+    setDownloadingTrackId(certificate.trackId);
+    try {
+      const token = await user.getIdToken();
+      const blob = await downloadMyCertificatePdf(token, certificate.trackId);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `nelsen-certificate-${certificate.certificateId}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download certificate");
+    } finally {
+      setDownloadingTrackId(null);
+    }
+  };
   const towardCert = enrollments.filter(
     (e) => e.status !== "certified" && (e.trackPercent ?? 0) < PASS_THRESHOLD,
   );
@@ -183,8 +227,11 @@ function CertificatesPage() {
                 ) : null}
               </div>
               <BlankCertificatePreview
-                learnerName={learnerName}
+                learnerName={preview?.learnerName || learnerName}
                 courseTitle={preview?.courseTitle}
+                score={preview?.trackPercent}
+                issuedAt={preview?.issuedAt}
+                certificateId={preview?.certificateId}
               />
             </section>
 
@@ -197,25 +244,33 @@ function CertificatesPage() {
               ) : (
                 <ul className="mt-4 space-y-3">
                   {items.map((c) => (
-                    <li key={`${c.trackId}-${c.issuedAt}`}>
+                    <li
+                      key={`${c.trackId}-${c.issuedAt}`}
+                      className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card px-5 py-4"
+                    >
+                      <span className="icon-chip">
+                        <Award className="h-5 w-5" />
+                      </span>
                       <button
                         type="button"
                         onClick={() => setPreview(c)}
-                        className="flex w-full gap-4 rounded-2xl border border-border/70 bg-card px-5 py-4 text-left transition-colors hover:border-ember/40 hover:bg-accent/40"
+                        className="min-w-0 flex-1 text-left"
                       >
-                        <span className="icon-chip">
-                          <Award className="h-5 w-5" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-display font-semibold">{c.courseTitle}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {new Date(c.issuedAt).toLocaleDateString()} ·{" "}
-                            {c.trackPercent}%
-                          </p>
-                        </div>
-                        <span className="shrink-0 self-center text-xs font-semibold text-ember">
-                          Open
-                        </span>
+                        <p className="font-display font-semibold">{c.courseTitle}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {c.learnerName} · {new Date(c.issuedAt).toLocaleDateString()} ·{" "}
+                          {c.trackPercent}%
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{c.certificateId}</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void downloadCertificate(c)}
+                        disabled={downloadingTrackId === c.trackId}
+                        className="inline-flex items-center gap-2 rounded-full bg-ember-gradient px-4 py-2 text-xs font-semibold text-maroon-foreground disabled:opacity-60"
+                      >
+                        <Download className="h-4 w-4" />
+                        {downloadingTrackId === c.trackId ? "Preparing…" : "Download PDF"}
                       </button>
                     </li>
                   ))}
@@ -250,6 +305,10 @@ function CertificatesPage() {
             {towardCert.length > 0 ? (
               <section>
                 <h2 className="font-display text-lg font-semibold">In progress</h2>
+                <p className="mt-2 rounded-xl border border-ember/20 bg-ember/5 px-4 py-3 text-sm text-muted-foreground">
+                  To unlock your certificate, you must obtain at least {PASS_THRESHOLD}% overall in this course.
+                  Keep working through the course and its required assignments.
+                </p>
                 <ul className="mt-4 space-y-2">
                   {towardCert.map((e) => (
                     <li key={e.trackId}>
