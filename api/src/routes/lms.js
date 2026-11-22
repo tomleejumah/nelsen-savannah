@@ -179,6 +179,10 @@ router.patch(
 );
 
 router.get(
+  "/certificates/verify/:uid/:trackId",
+  lmsController.verifyCertificate,
+);
+router.get(
   "/certificates/me",
   authenticateUser,
   lmsController.getCertificatesMe,
