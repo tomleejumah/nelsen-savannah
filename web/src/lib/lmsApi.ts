@@ -290,10 +290,12 @@ export type SchoolMemberDto = {
 
 export type CertificateDto = {
   trackId: string;
+  learnerName: string;
   courseTitle: string;
   issuedAt: number;
   verifyUrl: string;
   pdfUrl: string | null;
+  certificateId: string;
   trackPercent: number;
 };
 
@@ -863,6 +865,24 @@ export async function fetchMyCertificates(idToken: string) {
     "/lms/certificates/me",
     idToken,
   );
+}
+
+export async function downloadMyCertificatePdf(idToken: string, trackId: string) {
+  const response = await fetch(
+    `${LMS_API_BASE}/lms/certificates/${encodeURIComponent(trackId)}/download`,
+    { headers: { Authorization: `Bearer ${idToken}` } },
+  );
+  if (!response.ok) {
+    let message = "Could not download certificate";
+    try {
+      const payload = await response.json();
+      message = payload.error || payload.message || message;
+    } catch {
+      // Keep the fallback message for non-JSON API errors.
+    }
+    throw new Error(message);
+  }
+  return response.blob();
 }
 
 export async function fetchSubmissionQueue(idToken: string) {
