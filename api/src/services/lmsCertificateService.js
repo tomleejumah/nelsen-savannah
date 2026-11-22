@@ -234,6 +234,26 @@ export async function getMyCertificatePdf(uid, trackId) {
   };
 }
 
+export async function verifyCertificate(uid, trackId) {
+  const row = await certificateRecord(uid, trackId);
+  if (!row) {
+    const err = new Error("Certificate not found");
+    err.status = 404;
+    throw err;
+  }
+  return {
+    valid: true,
+    learnerName:
+      [row.first_name, row.last_name].filter(Boolean).join(" ").trim() ||
+      row.display_name ||
+      "Learner",
+    courseTitle: row.course_title,
+    issuedAt: Number(row.issued_at),
+    overallScore: Number(row.track_percent),
+    certificateId: certificateNumber(uid, trackId, Number(row.issued_at)),
+  };
+}
+
 export async function listMyCertificates(uid) {
   const rows = await dbAll(
     `SELECT c.*, t.title AS course_title, u.display_name, u.first_name, u.last_name
