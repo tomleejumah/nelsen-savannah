@@ -19,27 +19,85 @@ function certificateNumber(uid, trackId, issuedAt) {
   return `NS-${digest}`;
 }
 
-export async function maybeIssueCertificate(uid, trackId) {
-  const enroll = await dbGet(
-    "SELECT * FROM enrollments WHERE uid = ? AND track_id = ?",
-    [uid, trackId],
-  );
-  if (!enroll || Number(enroll.track_percent) < PASS_THRESHOLD) return null;
-
-  // Every course assignment configured as required must have a passed mark.
-  const required = await dbAll(
-    "SELECT lesson_id FROM lessons WHERE track_id = ? AND has_assignment = 1",
+async function courseAssessmentResult(uid, trackId) {
+  const lessons = await dbAll(
+    `SELECT lesson_id, has_quiz, has_assignment
+     FROM lessons
+     WHERE track_id = ? AND (has_quiz = 1 OR has_assignment = 1)`,
     [trackId],
   );
-  for (const lesson of required) {
-    const submission = await dbGet(
-      `SELECT status FROM submissions
-       WHERE uid = ? AND lesson_id = ? AND status = 'passed'
-       ORDER BY marked_at DESC LIMIT 1`,
-      [uid, lesson.lesson_id],
-    );
-    if (!submission) return null;
+  const scores = [];
+
+  for (const lesson of lessons) {
+    if (Boolean(lesson.has_quiz)) {
+      const attempt = await dbGet(
+        `SELECT score FROM (
+           SELECT score, submitted_at FROM quiz_attempts
+           WHERE uid = ? AND lesson_id = ?
+           UNION ALL
+           SELECT score, submitted_at FROM cohort_quiz_attempts
+           WHERE uid = ? AND lesson_id = ?
+         ) attempts
+         ORDER BY submitted_at DESC LIMIT 1`,
+        [uid, lesson.lesson_id, uid, lesson.lesson_id],
+      );
+      if (!attempt) return { score: null, completed: scores.length, required: lessons.length };
+      scores.push(Math.max(0, Math.min(100, Number(attempt.score) || 0)));
+    }
+
+    if (Boolean(lesson.has_assignment)) {
+      const assignments = await dbAll(
+        `SELECT assignment_id FROM assignments
+         WHERE lesson_id = ? AND (assignee_uid IS NULL OR assignee_uid = ?)`,
+        [lesson.lesson_id, uid],
+      );
+      if (assignments.length) {
+        const assignmentScores = [];
+        for (const assignment of assignments) {
+          const submission = await dbGet(
+            `SELECT score FROM submissions
+             WHERE uid = ? AND lesson_id = ? AND assignment_id = ?
+               AND status IN ('passed', 'failed') AND score IS NOT NULL
+             ORDER BY marked_at DESC LIMIT 1`,
+            [uid, lesson.lesson_id, assignment.assignment_id],
+          );
+          if (!submission) {
+            return { score: null, completed: scores.length + assignmentScores.length, required: lessons.length + assignments.length - 1 };
+          }
+          assignmentScores.push(Math.max(0, Math.min(100, Number(submission.score) || 0)));
+        }
+        scores.push(...assignmentScores);
+      } else {
+        const submission = await dbGet(
+          `SELECT score FROM submissions
+           WHERE uid = ? AND lesson_id = ?
+             AND status IN ('passed', 'failed') AND score IS NOT NULL
+           ORDER BY marked_at DESC LIMIT 1`,
+          [uid, lesson.lesson_id],
+        );
+        if (!submission) return { score: null, completed: scores.length, required: lessons.length };
+        scores.push(Math.max(0, Math.min(100, Number(submission.score) || 0)));
+      }
+    }
   }
+
+  if (!scores.length) return { score: null, completed: 0, required: 0 };
+  return {
+    score: Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length),
+    completed: scores.length,
+    required: scores.length,
+  };
+}
+
+export async function maybeIssueCertificate(uid, trackId) {
+  const enrollment = await dbGet(
+    "SELECT uid FROM enrollments WHERE uid = ? AND track_id = ?",
+    [uid, trackId],
+  );
+  if (!enrollment) return null;
+
+  const result = await courseAssessmentResult(uid, trackId);
+  if (result.score == null || result.score < PASS_THRESHOLD) return null;
 
   const existing = await dbGet(
     "SELECT * FROM certificates WHERE uid = ? AND track_id = ?",
@@ -55,7 +113,7 @@ export async function maybeIssueCertificate(uid, trackId) {
       await dbRun(
         `INSERT INTO certificates (uid, track_id, issued_at, cert_url, track_percent)
          VALUES (?, ?, ?, ?, ?)`,
-        [uid, trackId, now, certUrl, Number(enroll.track_percent)],
+        [uid, trackId, now, certUrl, result.score],
       );
       await dbRun(
         "UPDATE enrollments SET status = 'certified' WHERE uid = ? AND track_id = ?",
@@ -67,7 +125,8 @@ export async function maybeIssueCertificate(uid, trackId) {
       await mirrorCertificate(uid, trackId, {
         issuedAt: now,
         certUrl,
-        trackPercent: Number(enroll.track_percent),
+        trackPercent: result.score,
+        overallScore: result.score,
       });
     },
   });
@@ -200,6 +259,7 @@ export async function listMyCertificates(uid) {
         pdfUrl: null,
         certificateId: certificateNumber(uid, row.track_id, Number(row.issued_at)),
         trackPercent: Number(row.track_percent),
+        overallScore: Number(row.track_percent),
       })),
     },
   };
