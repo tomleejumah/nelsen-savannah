@@ -162,12 +162,9 @@ function CertificatesPage() {
       setDownloadingTrackId(null);
     }
   };
-  const towardCert = enrollments.filter(
-    (e) => e.status !== "certified" && (e.trackPercent ?? 0) < PASS_THRESHOLD,
-  );
-  const readySoon = enrollments.filter(
-    (e) =>
-      e.status !== "certified" && (e.trackPercent ?? 0) >= PASS_THRESHOLD,
+  const earnedTrackIds = new Set(items.map((certificate) => certificate.trackId));
+  const awaitingCertificates = enrollments.filter(
+    (enrollment) => !earnedTrackIds.has(enrollment.trackId),
   );
 
   return (
@@ -229,7 +226,7 @@ function CertificatesPage() {
               <BlankCertificatePreview
                 learnerName={preview?.learnerName || learnerName}
                 courseTitle={preview?.courseTitle}
-                score={preview?.trackPercent}
+                score={preview?.overallScore}
                 issuedAt={preview?.issuedAt}
                 certificateId={preview?.certificateId}
               />
@@ -239,7 +236,7 @@ function CertificatesPage() {
               <h2 className="font-display text-lg font-semibold">Earned</h2>
               {items.length === 0 ? (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  None issued yet. Finish a track to unlock a filled certificate here.
+                  None issued yet. Your certificate appears here once your overall course assessment score reaches at least 80%.
                 </p>
               ) : (
                 <ul className="mt-4 space-y-3">
@@ -259,7 +256,7 @@ function CertificatesPage() {
                         <p className="font-display font-semibold">{c.courseTitle}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {c.learnerName} · {new Date(c.issuedAt).toLocaleDateString()} ·{" "}
-                          {c.trackPercent}%
+                          {c.overallScore}%
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">{c.certificateId}</p>
                       </button>
@@ -278,49 +275,23 @@ function CertificatesPage() {
               )}
             </section>
 
-            {readySoon.length > 0 ? (
+            {awaitingCertificates.length > 0 ? (
               <section>
-                <h2 className="font-display text-lg font-semibold">Ready to certify</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Track progress is at the pass mark — complete required mentor-marked
-                  assignments if any are still open.
-                </p>
-                <ul className="mt-4 space-y-2">
-                  {readySoon.map((e) => (
-                    <li key={e.trackId}>
-                      <Link
-                        to="/learning/$trackId"
-                        params={{ trackId: e.trackId }}
-                        className="flex items-center justify-between rounded-2xl border border-border/60 px-4 py-3 text-sm hover:bg-accent/40"
-                      >
-                        <span>{e.courseTitle || e.trackId}</span>
-                        <span className="text-ember">{e.trackPercent}%</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-
-            {towardCert.length > 0 ? (
-              <section>
-                <h2 className="font-display text-lg font-semibold">In progress</h2>
+                <h2 className="font-display text-lg font-semibold">Certificates still locked</h2>
                 <p className="mt-2 rounded-xl border border-ember/20 bg-ember/5 px-4 py-3 text-sm text-muted-foreground">
-                  To unlock your certificate, you must obtain at least {PASS_THRESHOLD}% overall in this course.
-                  Keep working through the course and its required assignments.
+                  To unlock a certificate, obtain at least {PASS_THRESHOLD}% overall across the course assessments.
+                  Complete every course quiz and required assignment so your final score can be calculated.
                 </p>
                 <ul className="mt-4 space-y-2">
-                  {towardCert.map((e) => (
-                    <li key={e.trackId}>
+                  {awaitingCertificates.map((enrollment) => (
+                    <li key={enrollment.trackId}>
                       <Link
                         to="/learning/$trackId"
-                        params={{ trackId: e.trackId }}
+                        params={{ trackId: enrollment.trackId }}
                         className="flex items-center justify-between rounded-2xl border border-border/60 px-4 py-3 text-sm hover:bg-accent/40"
                       >
-                        <span>{e.courseTitle || e.trackId}</span>
-                        <span className="text-muted-foreground">
-                          {e.trackPercent}% / {PASS_THRESHOLD}%
-                        </span>
+                        <span>{enrollment.courseTitle || enrollment.trackId}</span>
+                        <span className="text-muted-foreground">Certificate locked</span>
                       </Link>
                     </li>
                   ))}
