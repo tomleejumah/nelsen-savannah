@@ -297,6 +297,7 @@ export type CertificateDto = {
   pdfUrl: string | null;
   certificateId: string;
   trackPercent: number;
+  overallScore: number;
 };
 
 export type TrackDetailDto = {
