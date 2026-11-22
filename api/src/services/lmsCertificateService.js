@@ -22,12 +22,23 @@ function certificateNumber(uid, trackId, issuedAt) {
 async function courseAssessmentResult(uid, trackId) {
   const lessons = await dbAll(
     `SELECT lesson_id, has_quiz, has_assignment
-     FROM lessons
-     WHERE track_id = ? AND (has_quiz = 1 OR has_assignment = 1)`,
+     FROM lessons WHERE track_id = ?`,
     [trackId],
   );
-  const scores = [];
+  const assignments = await dbAll(
+    `SELECT assignment_id, lesson_id FROM assignments
+     WHERE track_id = ? AND lesson_id IS NOT NULL
+       AND (assignee_uid IS NULL OR assignee_uid = ?)`,
+    [trackId, uid],
+  );
+  const assignmentsByLesson = new Map();
+  for (const assignment of assignments) {
+    const list = assignmentsByLesson.get(assignment.lesson_id) || [];
+    list.push(assignment);
+    assignmentsByLesson.set(assignment.lesson_id, list);
+  }
 
+  const scores = [];
   for (const lesson of lessons) {
     if (Boolean(lesson.has_quiz)) {
       const attempt = await dbGet(
@@ -41,51 +52,43 @@ async function courseAssessmentResult(uid, trackId) {
          ORDER BY submitted_at DESC LIMIT 1`,
         [uid, lesson.lesson_id, uid, lesson.lesson_id],
       );
-      if (!attempt) return { score: null, completed: scores.length, required: lessons.length };
+      if (!attempt) return { score: null, completed: scores.length };
       scores.push(Math.max(0, Math.min(100, Number(attempt.score) || 0)));
     }
 
-    if (Boolean(lesson.has_assignment)) {
-      const assignments = await dbAll(
-        `SELECT assignment_id FROM assignments
-         WHERE lesson_id = ? AND (assignee_uid IS NULL OR assignee_uid = ?)`,
-        [lesson.lesson_id, uid],
+    // Older lesson-configured assignments may have no assignments row.
+    // Their submission is still included as one assessed course component.
+    if (Boolean(lesson.has_assignment) && !assignmentsByLesson.has(lesson.lesson_id)) {
+      const submission = await dbGet(
+        `SELECT score FROM submissions
+         WHERE uid = ? AND lesson_id = ?
+           AND status IN ('passed', 'failed') AND score IS NOT NULL
+         ORDER BY marked_at DESC LIMIT 1`,
+        [uid, lesson.lesson_id],
       );
-      if (assignments.length) {
-        const assignmentScores = [];
-        for (const assignment of assignments) {
-          const submission = await dbGet(
-            `SELECT score FROM submissions
-             WHERE uid = ? AND lesson_id = ? AND assignment_id = ?
-               AND status IN ('passed', 'failed') AND score IS NOT NULL
-             ORDER BY marked_at DESC LIMIT 1`,
-            [uid, lesson.lesson_id, assignment.assignment_id],
-          );
-          if (!submission) {
-            return { score: null, completed: scores.length + assignmentScores.length, required: lessons.length + assignments.length - 1 };
-          }
-          assignmentScores.push(Math.max(0, Math.min(100, Number(submission.score) || 0)));
-        }
-        scores.push(...assignmentScores);
-      } else {
-        const submission = await dbGet(
-          `SELECT score FROM submissions
-           WHERE uid = ? AND lesson_id = ?
-             AND status IN ('passed', 'failed') AND score IS NOT NULL
-           ORDER BY marked_at DESC LIMIT 1`,
-          [uid, lesson.lesson_id],
-        );
-        if (!submission) return { score: null, completed: scores.length, required: lessons.length };
-        scores.push(Math.max(0, Math.min(100, Number(submission.score) || 0)));
-      }
+      if (!submission) return { score: null, completed: scores.length };
+      scores.push(Math.max(0, Math.min(100, Number(submission.score) || 0)));
     }
   }
 
-  if (!scores.length) return { score: null, completed: 0, required: 0 };
+  // Include mentor-created course assignments even when the lesson itself
+  // was not authored with has_assignment=true.
+  for (const assignment of assignments) {
+    const submission = await dbGet(
+      `SELECT score FROM submissions
+       WHERE uid = ? AND lesson_id = ? AND assignment_id = ?
+         AND status IN ('passed', 'failed') AND score IS NOT NULL
+       ORDER BY marked_at DESC LIMIT 1`,
+      [uid, assignment.lesson_id, assignment.assignment_id],
+    );
+    if (!submission) return { score: null, completed: scores.length };
+    scores.push(Math.max(0, Math.min(100, Number(submission.score) || 0)));
+  }
+
+  if (!scores.length) return { score: null, completed: 0 };
   return {
     score: Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length),
     completed: scores.length,
-    required: scores.length,
   };
 }
 
