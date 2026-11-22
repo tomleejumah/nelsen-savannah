@@ -221,8 +221,9 @@ async function certificateRecord(uid, trackId) {
 
 export async function getMyCertificatePdf(uid, trackId) {
   const row = await certificateRecord(uid, trackId);
-  if (!row) {
-    const err = new Error("Certificate not available. Reach the course pass threshold and complete required assignments first.");
+  const result = row ? await courseAssessmentResult(uid, trackId) : null;
+  if (!row || result?.score == null || result.score < PASS_THRESHOLD) {
+    const err = new Error("Certificate locked. Complete all course assessments and achieve at least 80% overall.");
     err.status = 403;
     throw err;
   }
@@ -234,7 +235,7 @@ export async function getMyCertificatePdf(uid, trackId) {
   const pdf = makeCertificatePdf({
     learnerName,
     courseTitle: row.course_title,
-    score: Number(row.track_percent),
+    score: result.score,
     issuedAt: Number(row.issued_at),
     certificateId: id,
     verifyUrl: row.cert_url || "",
@@ -247,8 +248,9 @@ export async function getMyCertificatePdf(uid, trackId) {
 
 export async function verifyCertificate(uid, trackId) {
   const row = await certificateRecord(uid, trackId);
-  if (!row) {
-    const err = new Error("Certificate not found");
+  const result = row ? await courseAssessmentResult(uid, trackId) : null;
+  if (!row || result?.score == null || result.score < PASS_THRESHOLD) {
+    const err = new Error("Certificate not found or no longer eligible");
     err.status = 404;
     throw err;
   }
@@ -260,7 +262,7 @@ export async function verifyCertificate(uid, trackId) {
       "Learner",
     courseTitle: row.course_title,
     issuedAt: Number(row.issued_at),
-    overallScore: Number(row.track_percent),
+    overallScore: result.score,
     certificateId: certificateNumber(uid, trackId, Number(row.issued_at)),
   };
 }
