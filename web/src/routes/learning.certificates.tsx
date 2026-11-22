@@ -155,7 +155,7 @@ function CertificatesPage() {
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not download certificate");
     } finally {
@@ -173,8 +173,8 @@ function CertificatesPage() {
         <p className="eyebrow text-ember">Student</p>
         <h1 className="mt-4 font-display text-4xl font-bold">Certificates</h1>
         <p className="mt-3 text-muted-foreground">
-          Issued when a track hits {PASS_THRESHOLD}% and required assignments are marked.
-          Open a blank preview anytime — earned certificates appear below.
+          Earn a certificate by averaging at least {PASS_THRESHOLD}% across all course quizzes
+          and graded assignments. Every configured assessment must be completed first.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <Link to="/learning" className="font-medium text-maroon hover:underline">
