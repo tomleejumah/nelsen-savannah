@@ -103,7 +103,18 @@ export async function maybeIssueCertificate(uid, trackId) {
     "SELECT * FROM certificates WHERE uid = ? AND track_id = ?",
     [uid, trackId],
   );
-  if (existing) return existing;
+  if (existing) {
+    // Older certificates stored course completion progress in this legacy
+    // column. Replace it with the verified assessment average before reuse.
+    await dbRun(
+      "UPDATE certificates SET track_percent = ? WHERE uid = ? AND track_id = ?",
+      [result.score, uid, trackId],
+    );
+    return dbGet(
+      "SELECT * FROM certificates WHERE uid = ? AND track_id = ?",
+      [uid, trackId],
+    );
+  }
 
   const now = Date.now();
   const certUrl = `${publicBaseUrl()}/lms/certificates/verify/${encodeURIComponent(uid)}/${encodeURIComponent(trackId)}`;
@@ -264,23 +275,34 @@ export async function listMyCertificates(uid) {
      ORDER BY c.issued_at DESC`,
     [uid],
   );
+  const certificates = [];
+  for (const row of rows) {
+    const result = await courseAssessmentResult(uid, row.track_id);
+    // Do not display legacy progress-based certificates as assessment scores.
+    if (result.score == null || result.score < PASS_THRESHOLD) continue;
+    if (Number(row.track_percent) !== result.score) {
+      await dbRun(
+        "UPDATE certificates SET track_percent = ? WHERE uid = ? AND track_id = ?",
+        [result.score, uid, row.track_id],
+      );
+    }
+    certificates.push({
+      trackId: row.track_id,
+      learnerName:
+        [row.first_name, row.last_name].filter(Boolean).join(" ").trim() ||
+        row.display_name ||
+        "Learner",
+      courseTitle: row.course_title,
+      issuedAt: Number(row.issued_at),
+      verifyUrl: row.cert_url,
+      pdfUrl: null,
+      certificateId: certificateNumber(uid, row.track_id, Number(row.issued_at)),
+      trackPercent: result.score,
+      overallScore: result.score,
+    });
+  }
   return {
     source: getPrimaryEngine(),
-    data: {
-      certificates: rows.map((row) => ({
-        trackId: row.track_id,
-        learnerName:
-          [row.first_name, row.last_name].filter(Boolean).join(" ").trim() ||
-          row.display_name ||
-          "Learner",
-        courseTitle: row.course_title,
-        issuedAt: Number(row.issued_at),
-        verifyUrl: row.cert_url,
-        pdfUrl: null,
-        certificateId: certificateNumber(uid, row.track_id, Number(row.issued_at)),
-        trackPercent: Number(row.track_percent),
-        overallScore: Number(row.track_percent),
-      })),
-    },
+    data: { certificates },
   };
 }
