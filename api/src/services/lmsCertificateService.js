@@ -81,10 +81,10 @@ export async function maybeIssueCertificate(uid, trackId) {
 function pdfEscape(value) {
   return String(value ?? "")
     .normalize("NFKD")
-    .replace(/[^\\x20-\\x7E]/g, "")
-    .replace(/\\\\/g, "\\\\\\\\")
-    .replace(/\\(/g, "\\\\(")
-    .replace(/\\)/g, "\\\\)");
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
 }
 
 function makeCertificatePdf({ learnerName, courseTitle, score, issuedAt, certificateId, verifyUrl }) {
@@ -121,20 +121,20 @@ function makeCertificatePdf({ learnerName, courseTitle, score, issuedAt, certifi
     "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
-    `<< /Length ${Buffer.byteLength(stream, "ascii")} >>\\nstream\\n${stream}\\nendstream`,
+    `<< /Length ${Buffer.byteLength(stream, "ascii")} >>\nstream\n${stream}\nendstream`,
   ];
-  let pdf = "%PDF-1.4\\n";
+  let pdf = "%PDF-1.4\n";
   const offsets = [0];
   for (let i = 0; i < objects.length; i++) {
     offsets.push(Buffer.byteLength(pdf, "ascii"));
-    pdf += `${i + 1} 0 obj\\n${objects[i]}\\nendobj\\n`;
+    pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
   }
   const xrefOffset = Buffer.byteLength(pdf, "ascii");
-  pdf += `xref\\n0 ${objects.length + 1}\\n0000000000 65535 f \\n`;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   for (const offset of offsets.slice(1)) {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \\n`;
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
   }
-  pdf += `trailer\\n<< /Size ${objects.length + 1} /Root 1 0 R >>\\nstartxref\\n${xrefOffset}\\n%%EOF`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
   return Buffer.from(pdf, "ascii");
 }
 
