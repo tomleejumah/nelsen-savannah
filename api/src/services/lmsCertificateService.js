@@ -1,6 +1,6 @@
 /**
- * Certificates — issued when a learner reaches the course pass threshold
- * and all required mentor-marked assignments have passed.
+ * Certificates — issued when every configured course assessment is graded
+ * and the average of the latest quiz and assignment scores reaches 80%.
  */
 
 import crypto from "node:crypto";
