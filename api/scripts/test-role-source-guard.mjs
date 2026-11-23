@@ -7,6 +7,11 @@ const getMe = source.slice(source.indexOf("export async function getMe("), sourc
 assert.ok(getMe.includes("const role = normalizeRole(user?.role);"), "primary roles must determine global role");
 assert.ok(!getMe.includes("setUserRole("), "GET /lms/me must not mutate global role based on RTDB");
 assert.ok(!getMe.includes("readRoleFromRtdb("), "GET /lms/me must not use legacy RTDB as a role authority");
+const payload = source.slice(source.indexOf("function mePayload("), source.indexOf("/**\n * Mentors"));
+assert.match(payload, /const effectiveRole = normalizeRole\(extras\.activeSchoolRole \|\| globalRole\)/, "visible role must follow active school membership");
+assert.match(payload, /userRole: effectiveRole/, "web clients must receive the active school role as userRole");
+assert.match(payload, /shell: shellFor\(effectiveRole\)/, "workspace routing must follow the active school role");
+assert.match(payload, /globalRole,/, "platform role must remain separately available");
 assert.match(getMe, /const role = ROLES\.Mentee;/, "RTDB-only fallback must be unprivileged");
 const membership = readFileSync(new URL("../src/services/lmsMembershipService.js", import.meta.url), "utf8");
 const access = membership.slice(membership.indexOf("export async function getLearningAccess("), membership.indexOf("export async function assertLearningAccess("));

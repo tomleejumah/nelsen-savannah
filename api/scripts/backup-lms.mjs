@@ -4,7 +4,7 @@
  * No npm dependencies: safe to run BEFORE npm ci / install / API shutdown.
  *
  * Usage: node scripts/backup-lms.mjs /home/server/Apis/nelsen-savannah
- * Set LMS_BACKUP_RETENTION (default 14); LMS_DATA_DIR overrides the data folder.
+ * Set LMS_BACKUP_RETENTION (default 7, maximum 30); LMS_DATA_DIR overrides the data folder.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -23,7 +23,8 @@ function envValue(name) {
 const dataDir = path.resolve(appDir, envValue("LMS_DATA_DIR") || "data");
 const source = path.join(dataDir, "lms.sqlite");
 const destinationDir = path.join(dataDir, "backups");
-const retention = Math.max(1, Math.min(90, Number(envValue("LMS_BACKUP_RETENTION")) || 14));
+const configuredRetention = Number(envValue("LMS_BACKUP_RETENTION"));
+const retention = Math.max(1, Math.min(30, Number.isFinite(configuredRetention) && configuredRetention > 0 ? Math.floor(configuredRetention) : 7));
 const postgres = Boolean(envValue("DATABASE_URL"));
 
 if (postgres) {
