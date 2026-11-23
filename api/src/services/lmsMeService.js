@@ -107,6 +107,12 @@ function mePayload(profile, user, role, source, extras = {}) {
   const schoolId =
     user?.schoolId || user?.school_id || activeSchoolId || null;
   const unaffiliated = Boolean(extras.unaffiliated);
+  // Platform role remains authoritative for platform-level privileges, but
+  // the visible product shell and school capabilities must follow the active
+  // school's membership. Otherwise a stale/global SchoolAdmin role keeps a
+  // learner in the School workspace after their membership is changed to Mentee.
+  const globalRole = normalizeRole(role);
+  const effectiveRole = normalizeRole(extras.activeSchoolRole || globalRole);
   return {
     source,
     data: {
@@ -118,9 +124,11 @@ function mePayload(profile, user, role, source, extras = {}) {
       lastName: user?.lastName || user?.last_name || "",
       photoUrl: user?.photoUrl || user?.photo_url || profile.photoUrl || "",
       bio: user?.bio || user?.Bio || "",
-      userRole: role,
+      userRole: effectiveRole,
       /** @deprecated use userRole — kept for older clients */
-      role,
+      role: effectiveRole,
+      /** Platform-level role; school UI must use userRole/activeSchoolRole. */
+      globalRole,
       schoolId,
       schoolName: user?.schoolName || "",
       activeSchoolId,
@@ -132,8 +140,8 @@ function mePayload(profile, user, role, source, extras = {}) {
       unaffiliated,
       /** True until the mentee has an active school membership (picker / deep link). */
       needsSchoolPick: unaffiliated,
-      shell: shellFor(role),
-      capabilities: capabilitiesFor(role),
+      shell: shellFor(effectiveRole),
+      capabilities: capabilitiesFor(effectiveRole),
     },
   };
 }
