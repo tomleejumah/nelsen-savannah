@@ -109,6 +109,12 @@ function seal(doc, cx, cy) {
   doc.restore();
 }
 
+function displayName(name) {
+  const n = String(name || "").trim();
+  if (n !== n.toLowerCase() && n !== n.toUpperCase()) return n;
+  return n.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+}
+
 function fitted(doc, text, font, size, maxWidth) {
   let s = size;
   doc.font(font);
@@ -121,7 +127,8 @@ function centered(doc, text, y, font, size, color, extra = {}) {
   doc.text(text, 0, y, { width: W, align: "center", lineBreak: false, ...extra });
 }
 
-export function renderCertificate(doc, { learnerName, courseTitle, score, date, certificateId, verifyUrl }) {
+export function renderCertificate(doc, { learnerName: rawName, courseTitle, score, date, certificateId, verifyUrl }) {
+  const learnerName = displayName(rawName);
   doc.rect(0, 0, W, H).fill(C.paper);
   watermark(doc);
 

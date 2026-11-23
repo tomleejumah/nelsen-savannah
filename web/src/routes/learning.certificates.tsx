@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { Award, Download, LogIn } from "lucide-react";
 
-import nelsenLogo from "@/assets/nelsen-logo.png";
+import { CertificateArt } from "@/components/certificate-art";
 import { getFirebaseAuth } from "@/lib/firebase";
 import {
   fetchLmsMe,
@@ -38,71 +38,28 @@ function BlankCertificatePreview({
   certificateId,
 }: {
   learnerName: string;
-  courseTitle?: string;
-  score?: number;
-  issuedAt?: number;
-  certificateId?: string;
+  courseTitle?: string | undefined;
+  score?: number | undefined;
+  issuedAt?: number | undefined;
+  certificateId?: string | undefined;
 }) {
-  const hasMeta = Boolean(issuedAt || certificateId || score != null);
+  const date = issuedAt
+    ? new Date(issuedAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    : undefined;
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-hairline bg-cream px-8 pb-12 pt-14 text-center shadow-elevated sm:px-12">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(
-            `<svg xmlns='http://www.w3.org/2000/svg' width='220' height='90'><text x='10' y='50' transform='rotate(-24 110 45)' font-family='Arial' font-weight='700' font-size='11' letter-spacing='3' fill='#A84A38'>NELSEN SAVANNAH</text></svg>`,
-          )}")`,
-        }}
+    <div className="overflow-hidden rounded-xl border border-hairline shadow-elevated">
+      <CertificateArt
+        learnerName={learnerName}
+        courseTitle={courseTitle}
+        score={score}
+        date={date}
+        certificateId={certificateId}
       />
-      <div aria-hidden className="pointer-events-none absolute inset-2 rounded-xl border-2 border-navy" />
-      <div aria-hidden className="pointer-events-none absolute inset-3.5 rounded-lg border border-ochre" />
-      <img
-        src={nelsenLogo}
-        alt="Nelsen Savannah"
-        className="mx-auto h-12 w-auto mix-blend-multiply sm:h-14"
-      />
-      <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-brick">
-        Certificate of completion
-      </p>
-      <h2 className="mt-5 font-display text-3xl font-semibold text-navy sm:text-4xl">
-        {learnerName || "Your name"}
-      </h2>
-      <p className="mt-4 text-sm text-muted-foreground">has successfully completed</p>
-      <p className="mt-1 font-display text-xl font-semibold text-ink sm:text-2xl">
-        {courseTitle || "Learning track"}
-      </p>
-
-      <div className="mt-10 flex items-center justify-center gap-6 sm:gap-10">
-        <div className="hidden w-28 text-xs text-muted-foreground sm:block">
-          {issuedAt ? (
-            <>
-              <p className="font-medium text-ink">
-                {new Date(issuedAt).toLocaleDateString(undefined, {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
-              <p>Date issued</p>
-            </>
-          ) : null}
-        </div>
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ochre text-ink outline outline-2 outline-offset-4 outline-ochre">
-          <Award className="h-7 w-7" />
-        </span>
-        <div className="hidden w-28 text-xs text-muted-foreground sm:block">
-          {certificateId ? (
-            <>
-              <p className="font-medium text-ink">{certificateId}</p>
-              <p>Certificate ID</p>
-            </>
-          ) : null}
-        </div>
-      </div>
-      {hasMeta && score != null ? (
-        <p className="mt-6 text-xs text-muted-foreground">Overall result: {score}%</p>
-      ) : null}
     </div>
   );
 }
