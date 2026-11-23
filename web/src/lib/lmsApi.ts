@@ -23,6 +23,9 @@ export type MeDto = {
   photoUrl: string;
   bio?: string;
   userRole: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
+  /** Platform-wide role; userRole is scoped to the active school. */
+  globalRole?: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
+  activeSchoolRole?: "Mentee" | "Mentor" | "SchoolAdmin" | "SuperAdmin" | "Admin";
   schoolId?: string | null;
   schoolName?: string | null;
   activeSchoolId?: string | null;
