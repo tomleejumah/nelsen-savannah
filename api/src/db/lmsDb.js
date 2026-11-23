@@ -870,7 +870,13 @@ async function initPostgres(databaseUrl) {
 }
 
 async function initSqlite() {
-  const dataDir = process.env.LMS_DATA_DIR || path.join(ROOT, "data");
+  const configuredDataDir = process.env.LMS_DATA_DIR?.trim();
+  // Resolve relative overrides from the API root, not process.cwd(). Admin
+  // scripts are often launched from api/scripts; using cwd would silently
+  // create/update a second scripts/data/lms.sqlite instead of the live DB.
+  const dataDir = configuredDataDir
+    ? path.resolve(ROOT, configuredDataDir)
+    : path.join(ROOT, "data");
   ensureDir(dataDir);
   sqlitePath = path.join(dataDir, "lms.sqlite");
 
