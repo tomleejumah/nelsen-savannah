@@ -59,12 +59,15 @@ export function CertificateArt({
   score,
   date,
   certificateId,
+  sample,
 }: {
   learnerName: string;
   courseTitle?: string | undefined;
   score?: number | undefined;
   date?: string | undefined;
   certificateId?: string | undefined;
+  /** Unearned preview: blurs the name, greys the seal and stamps PREVIEW across the page. */
+  sample?: boolean | undefined;
 }) {
   const uid = useId().replace(/:/g, "");
   const guilloche = useMemo(() => [95, 80, 65, 50].map((d) => guillocheD(d)), []);
@@ -87,6 +90,8 @@ export function CertificateArt({
       <defs>
         <clipPath id={`${uid}-page`}><rect width={W} height={H} /></clipPath>
         <clipPath id={`${uid}-inner`}><rect x="46" y="46" width={W - 92} height={H - 92} /></clipPath>
+        <filter id={`${uid}-blur`} x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="5" /></filter>
+        <filter id={`${uid}-grey`}><feColorMatrix type="saturate" values="0" /></filter>
         <path id={`${uid}-mt`} d={`M52,52 H${W - 52} V${H - 52} H52 Z`} />
       </defs>
       <rect width={W} height={H} fill={C.paper} />
@@ -131,7 +136,7 @@ export function CertificateArt({
         </g>
         <rect x={W / 2 - 3} y="198" width="6" height="6" fill={C.ochre} transform={`rotate(45 ${W / 2} 201)`} />
         <text x={W / 2} y="234" fontFamily={serif} fontStyle="italic" fontSize="12" fill={C.muted}>This certifies that</text>
-        <text x={W / 2} y="288" fontFamily={serif} fontStyle="italic" fontSize={nameSize} fill={C.navy}>{name}</text>
+        <text x={W / 2} y="288" fontFamily={serif} fontStyle="italic" fontSize={nameSize} fill={C.navy} filter={sample ? `url(#${uid}-blur)` : undefined}>{name}</text>
         <line x1={W / 2 - 195} y1="298" x2={W / 2 + 195} y2="298" stroke={C.ochre} strokeWidth="1" />
         <text x={W / 2} y="341" fontFamily={serif} fontStyle="italic" fontSize="12" fill={C.muted}>has successfully completed the learning track</text>
         <text x={W / 2} y={352 + titleSize * 0.85} fontFamily={serif} fontWeight="700" fontSize={titleSize} fill={C.ink}>{title}</text>
@@ -140,7 +145,7 @@ export function CertificateArt({
         ) : null}
       </g>
 
-      <g transform={`translate(${W / 2} 482)`}>
+      <g transform={`translate(${W / 2} 482)`} filter={sample ? `url(#${uid}-grey)` : undefined} opacity={sample ? 0.6 : 1}>
         <polygon points="-19,13 -28,49 -15,42 -6,54 1,21" fill={C.brick} />
         <polygon points="19,13 28,49 15,42 6,54 -1,21" fill={C.brickDeep} />
         <path d={scallop} fill={C.ochre} />
@@ -157,6 +162,12 @@ export function CertificateArt({
         <line x1={W - 297} y1="481" x2={W - 157} y2="481" stroke={C.ochre} strokeWidth="0.7" />
         <text x={W - 157} y="496" fontSize="7.5" letterSpacing="1.2" fill={C.faint} textAnchor="end">CERTIFICATE ID</text>
       </g>
+      {sample ? (
+        <g transform={`rotate(-24 ${W / 2} ${H / 2})`} fontFamily={sans} fontWeight="700" textAnchor="middle">
+          <rect x={W / 2 - 290} y={H / 2 - 42} width="580" height="84" rx="6" fill="none" stroke={C.brick} strokeWidth="4" opacity="0.3" />
+          <text x={W / 2} y={H / 2 + 14} fontSize="40" letterSpacing="7" fill={C.brick} opacity="0.3">PREVIEW · NOT ISSUED</text>
+        </g>
+      ) : null}
     </svg>
   );
 }

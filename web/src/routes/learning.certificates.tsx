@@ -59,6 +59,7 @@ function BlankCertificatePreview({
         score={score}
         date={date}
         certificateId={certificateId}
+        sample
       />
     </div>
   );
