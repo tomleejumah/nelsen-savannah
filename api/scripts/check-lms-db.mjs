@@ -5,9 +5,13 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import initSqlJs from "sql.js";
 
-const appDir = path.resolve(process.argv[2] || ".");
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+// Default to the API root, not process.cwd() (operators commonly run this
+// from api/scripts, which would otherwise inspect scripts/data/lms.sqlite).
+const appDir = path.resolve(process.argv[2] || path.join(scriptDir, ".."));
 const envText = fs.existsSync(path.join(appDir, ".env"))
   ? fs.readFileSync(path.join(appDir, ".env"), "utf8") : "";
 function envValue(name) {
