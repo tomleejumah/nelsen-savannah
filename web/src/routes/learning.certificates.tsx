@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { Award, Download, LogIn } from "lucide-react";
 
+import nelsenLogo from "@/assets/nelsen-logo.png";
 import { getFirebaseAuth } from "@/lib/firebase";
 import {
   fetchLmsMe,
@@ -42,49 +43,66 @@ function BlankCertificatePreview({
   issuedAt?: number;
   certificateId?: string;
 }) {
+  const hasMeta = Boolean(issuedAt || certificateId || score != null);
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-ember/30 bg-card p-8 shadow-elevated sm:p-10">
+    <div className="relative overflow-hidden rounded-2xl border border-hairline bg-cream px-8 pb-12 pt-14 text-center shadow-elevated sm:px-12">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.52_0.21_25_/_0.08),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(
+            `<svg xmlns='http://www.w3.org/2000/svg' width='220' height='90'><text x='10' y='50' transform='rotate(-24 110 45)' font-family='Arial' font-weight='700' font-size='11' letter-spacing='3' fill='#A84A38'>NELSEN SAVANNAH</text></svg>`,
+          )}")`,
+        }}
       />
-      <div className="relative text-center">
-        <p className="eyebrow text-ember">Certificate of completion</p>
-        <h2 className="mt-4 font-display text-2xl font-bold sm:text-3xl">
-          Nelsen Savannah
-        </h2>
-        <p className="mt-6 text-sm text-muted-foreground">This certifies that</p>
-        <p className="mt-2 font-display text-xl font-semibold text-foreground sm:text-2xl">
-          {learnerName || "Your name"}
-        </p>
-        <p className="mt-6 text-sm text-muted-foreground">
-          has completed the learning track
-        </p>
-        <p className="mt-2 font-display text-lg font-semibold text-maroon">
-          {courseTitle || "— track title —"}
-        </p>
-        {score != null ? (
-          <p className="mt-4 text-sm font-semibold text-foreground">
-            Overall course result: {score}%
-          </p>
-        ) : null}
-        {issuedAt ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Issued {new Date(issuedAt).toLocaleDateString()}
-          </p>
-        ) : null}
-        {certificateId ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Certificate ID: {certificateId}
-          </p>
-        ) : null}
-        <div className="mx-auto mt-10 flex max-w-md items-center justify-between gap-4 border-t border-border/60 pt-6 text-xs text-muted-foreground">
-          <span>{score != null ? "Verified course completion" : `Issued at ${PASS_THRESHOLD}% or higher`}</span>
-          <span className="icon-chip">
-            <Award className="h-4 w-4" />
-          </span>
+      <div aria-hidden className="pointer-events-none absolute inset-2 rounded-xl border-2 border-navy" />
+      <div aria-hidden className="pointer-events-none absolute inset-3.5 rounded-lg border border-ochre" />
+      <img
+        src={nelsenLogo}
+        alt="Nelsen Savannah"
+        className="mx-auto h-12 w-auto mix-blend-multiply sm:h-14"
+      />
+      <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-brick">
+        Certificate of completion
+      </p>
+      <h2 className="mt-5 font-display text-3xl font-semibold text-navy sm:text-4xl">
+        {learnerName || "Your name"}
+      </h2>
+      <p className="mt-4 text-sm text-muted-foreground">has successfully completed</p>
+      <p className="mt-1 font-display text-xl font-semibold text-ink sm:text-2xl">
+        {courseTitle || "Learning track"}
+      </p>
+
+      <div className="mt-10 flex items-center justify-center gap-6 sm:gap-10">
+        <div className="hidden w-28 text-xs text-muted-foreground sm:block">
+          {issuedAt ? (
+            <>
+              <p className="font-medium text-ink">
+                {new Date(issuedAt).toLocaleDateString(undefined, {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+              <p>Date issued</p>
+            </>
+          ) : null}
+        </div>
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ochre text-ink outline outline-2 outline-offset-4 outline-ochre">
+          <Award className="h-7 w-7" />
+        </span>
+        <div className="hidden w-28 text-xs text-muted-foreground sm:block">
+          {certificateId ? (
+            <>
+              <p className="font-medium text-ink">{certificateId}</p>
+              <p>Certificate ID</p>
+            </>
+          ) : null}
         </div>
       </div>
+      {hasMeta && score != null ? (
+        <p className="mt-6 text-xs text-muted-foreground">Overall result: {score}%</p>
+      ) : null}
     </div>
   );
 }
