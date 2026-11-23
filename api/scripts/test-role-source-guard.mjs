@@ -7,7 +7,9 @@ const getMe = source.slice(source.indexOf("export async function getMe("), sourc
 assert.ok(getMe.includes("const role = normalizeRole(user?.role);"), "primary roles must determine global role");
 assert.ok(!getMe.includes("setUserRole("), "GET /lms/me must not mutate global role based on RTDB");
 assert.ok(!getMe.includes("readRoleFromRtdb("), "GET /lms/me must not use legacy RTDB as a role authority");
-const payload = source.slice(source.indexOf("function mePayload("), source.indexOf("/**\n * Mentors"));
+const payloadStart = source.indexOf("function mePayload(");
+const payloadEnd = source.indexOf("export async function upsertUserFromToken(", payloadStart);
+const payload = source.slice(payloadStart, payloadEnd);
 assert.match(payload, /const effectiveRole = normalizeRole\(extras\.activeSchoolRole \|\| globalRole\)/, "visible role must follow active school membership");
 assert.match(payload, /userRole: effectiveRole/, "web clients must receive the active school role as userRole");
 assert.match(payload, /shell: shellFor\(effectiveRole\)/, "workspace routing must follow the active school role");
