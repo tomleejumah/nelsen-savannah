@@ -91,6 +91,102 @@ MentUI form; brand/company name required (validation copy strengthened).
 
 ---
 
+## Round 2 — Chat, community and app polish (Nov 2026)
+
+Status key as above. Nothing here is built unless marked `done`. Android changes are not compiled in CI; every chunk needs a device pass.
+
+### Already shipped (android-chat-fixes-1)
+**Status:** `done` (device QA pending)
+- Chat list live from a Firestore snapshot listener, newest activity first; rooms without messages fall back to `createdAt`; one unreadable room no longer empties the list.
+- AI rooms show "AI Assistant" instead of "Unknown User".
+- Rating card only on mentor profiles (never on a mentee's).
+- Group header "N participants" opens a member list (dialog; replaced by a full screen in R2-4).
+- Backend: Firestore `chatRooms` list rule fixed (`request.auth.uid in resource.data.userIds`).
+
+### R2-1 — Chat list correctness
+**Status:** `pending`
+- Direct chats that were created but never messaged are **not listed** (no empty rows). Create the room lazily on first send, or hide rooms with no `lastMessage` for the creator.
+- Group filter bug: filtering to Groups shows the *sender's* name instead of the group name. Group rows must use the room `name`.
+- Replace the scattered filter buttons (All / Direct / Groups) with one hamburger/overflow menu or filter drawer.
+- Search inside the New Chat picker.
+- Unread counter on the Chats bottom-nav item.
+
+### R2-2 — Message status ticks
+**Status:** `pending`
+- Sent = single grey tick, delivered = double grey, **read = double blue**. Needs a per-message `readBy` or room-level `lastReadAt[uid]`; rules must allow a participant to write only their own read marker.
+- Open question: confirm "no tick when sent" vs one grey tick for sent.
+
+### R2-3 — New chat reaches everyone in the school
+**Status:** `pending`
+- API: school members endpoint (uid, name, avatar, role), scoped to the caller's active school memberships.
+- Picker: searchable, grouped by role; keeps mentor/mentee rules for booking-gated chats if product wants them (decide).
+
+### R2-4 — Group / community chat features
+**Status:** `pending`
+- Members list as a **full screen** (not a dialog): avatar, name, role tag, search.
+- Mentor view: each student's progress on that unit/course inside the members screen (API endpoint to confirm/add).
+- `@mention` for any member (WhatsApp style suggestion list, stored as `mentions: [uid]` on the message, highlighted in the bubble, push + notification entry).
+- Mentor/admin can change the group photo and pin/unpin messages. Needs Firestore rules additions: admins may update `photoUrl` and `pinnedMessageId`; storage upload path and rules.
+- Course group membership stays limited to learners enrolled in the course (server already enforces; add periodic reconcile so dropped learners are removed).
+
+### R2-5 — Media picking
+**Status:** `pending`
+- Replace the attachment dialog with a Telegram-style bottom sheet: recent gallery grid, camera, file, multi-select with a send count, preview before send.
+- Multiple images/files in one action; upload progress per item.
+
+### R2-6 — Chat screen behavior
+**Status:** `pending`
+- Top section (header) scrolls away on scroll-up and returns on scroll-down.
+- Transitions: search expand/collapse, list-to-chat, filter menu (shared-element or slide/fade; respect reduced-motion).
+- Add the missing chat icon (confirm placement: bottom nav / Home top bar).
+
+### R2-7 — Notifications
+**Status:** `pending`
+- New chat messages and mentions appear in the Notifications screen.
+- Unread badge on the bottom-nav chat tab (counts rooms with unread, and mentions).
+- FCM payload carries `roomId`, `messageId`, `type` so taps deep-link into the chat.
+
+### R2-8 — Home and navigation
+**Status:** `pending`
+- Greeting: "Hello, {first name}".
+- Remove the Home FAB (Create Story already has a top button; Create Group does not belong on Home).
+- Rebrand "Groups" to **Community** everywhere user-facing; the Community tab has a visible Create button; posts stay inside communities.
+- Book button label: **Book mentor**.
+- Logout row gets an icon to match the rest of Settings.
+
+### R2-9 — Profile redesign
+**Status:** `pending`
+- Fix the user icon/avatar disappearing under the profile tab view; redesign header and tab area.
+
+### R2-10 — Book mentor
+**Status:** `pending`
+- Fix the booking calendar (date selection, timezones, unavailable slots).
+- Loading spinners on booking confirm and slot fetch.
+
+### R2-11 — Loading and progress states
+**Status:** `pending`
+- Spinners/progress for: book mentor, story upload, chat send/upload, profile save, lists on first load.
+
+### R2-12 — Offline and caching
+**Status:** `pending`
+- Firestore offline persistence enabled and verified; chat list and recent messages readable offline (Room cache for chat rooms/messages where Firestore cache is not enough).
+- Use the existing offline flag to show an "You're offline" banner; disable send/upload with a clear message.
+
+### R2-13 — Stories and school branding
+**Status:** `pending`
+- Mentor story upload uses the same form/flow as mentee upload.
+- Only **school admins** may publish corporate (brand) or personal-brand stories; others get the standard story only (confirm exact rule).
+- School admin can upload/replace the school logo (API + storage + rules + Android and web).
+
+### R2-14 — App optimization
+**Status:** `pending`
+- Startup time, list diffing/paging, image sizes (Glide), R8/shrink, baseline profile, remove unused dependencies, Firestore listener lifecycle (detach when not visible).
+
+### Suggested order
+R2-1 → R2-12 (offline, so everything after is testable) → R2-3 → R2-4 → R2-5 → R2-2 → R2-7 → R2-6 → R2-8 → R2-9 → R2-10 → R2-11 → R2-13 → R2-14.
+
+---
+
 ## Explicit do-nots (from MentUI brief)
 
 - No hardcoded preview copy (“Trailblazers”, “82 seats left”, etc.).
