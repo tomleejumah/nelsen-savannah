@@ -4,7 +4,7 @@
     <string name="terms">J\'ai lu et compris les conditions d\'utilisation, la politique de confidentialité et les règles de la communauté</string>
 
     <string name="nav_home">Accueil</string>
-    <string name="nav_groups">Groupes</string>
+    <string name="nav_groups">Communauté</string>
     <string name="nav_chat">Discussion</string>
     <string name="nav_profile">Profil</string>
 
@@ -21,7 +21,7 @@
     <string name="story_add">Ajouter</string>
     <string name="stories_empty_hint">Soyez le premier à partager</string>
 
-    <string name="groups_title">Groupes</string>
+    <string name="groups_title">Communauté</string>
     <string name="groups_empty_title">Aucun groupe pour l\'instant</string>
     <string name="groups_empty_body">Rejoignez des espaces thématiques, posez des questions et partagez avec mentors et pairs.</string>
     <string name="group_change_logo">Changer le logo</string>
@@ -48,7 +48,7 @@
     <string name="home_admit_one">admettre un mentoré</string>
     <string name="home_reserve">Réserver</string>
     <string name="topbar_profile">Profil</string>
-    <string name="topbar_groups">Groupes</string>
+    <string name="topbar_groups">Communauté</string>
     <string name="topbar_messages">Messages</string>
 
     <string name="enquiry_as">Je m\'informe en tant que</string>
@@ -79,7 +79,7 @@
     <string name="home_other_resources">Autres ressources</string>
     <string name="home_recognize_me">Me reconnaître</string>
     <string name="home_your_calendar">Votre calendrier</string>
-    <string name="fab_group">Groupe</string>
+    <string name="fab_group">Communauté</string>
     <string name="fab_story">Story</string>
     <string name="fab_event">Événement</string>
     <string name="home_full">Complet</string>

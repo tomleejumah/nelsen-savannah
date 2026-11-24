@@ -53,7 +53,7 @@ class ChatRoomAdapter(
         fun bind(chatroom: Chatroom) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-            tvName.text = if (chatroom.type == "group") chatroom.name.ifBlank { "Course group" } else chatroom.getOtherUserName(currentUserId)
+            tvName.text = chatroom.listTitle(currentUserId)
             tvLastMsg.text = chatroom.lastMessage?.takeIf { it.isNotBlank() } ?: "No messages yet"
             tvTime.text = chatroom.lastMessageTimestamp?.toDate()?.let { formatChatTime(it) }.orEmpty()
 
@@ -65,7 +65,7 @@ class ChatRoomAdapter(
             }
 
             // Load User Avatar
-            val otherUserId = if (chatroom.type == "group") null else chatroom.getOtherUserId(currentUserId)
+            val otherUserId = if (chatroom.isMultiParty()) null else chatroom.getOtherUserId(currentUserId)
             tvAvatar.setImageResource(R.drawable.ic_person)
             otherUserId?.let { id ->
                 FirebaseRemoteDataSource.getMentorData(id, onSuccess = { mentor ->

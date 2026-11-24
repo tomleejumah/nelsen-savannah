@@ -124,7 +124,7 @@
                     android:background="@drawable/bg_btn_primary"
                     android:minWidth="0dp"
                     android:paddingHorizontal="14dp"
-                    android:text="Book now"
+                    android:text="Book mentor"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="12sp"

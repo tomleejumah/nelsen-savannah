@@ -198,6 +198,26 @@ data class Chatroom(
         }
     }
 
+    /**
+     * Direct chats that were created but never messaged are not listed (no empty rows).
+     * Groups, AI and school rooms always list, since they are meaningful when empty.
+     */
+    fun hasListActivity(): Boolean = type != "direct" || lastMessage.isNotBlank()
+
+    /** True for rooms that have no single "other user" (groups, school/system rooms). */
+    fun isMultiParty(): Boolean = type == "group" || type == "system"
+
+    /**
+     * Title for chat list rows and search/filter results. Groups and system rooms
+     * use the room name, never the sender's/other participant's name.
+     */
+    fun listTitle(currentUserId: String): String = when {
+        type == "ai" || chatroomId.startsWith("ai_assistant_") -> "AI Assistant"
+        type == "group" -> name.ifBlank { "Course group" }
+        type == "system" -> name.ifBlank { "Announcements" }
+        else -> getOtherUserName(currentUserId)
+    }
+
     /** Time used to order the chat list: last message, else creation time. */
     fun sortTimeMillis(): Long =
         (lastMessageTimestamp ?: createdAt)?.toDate()?.time ?: 0L

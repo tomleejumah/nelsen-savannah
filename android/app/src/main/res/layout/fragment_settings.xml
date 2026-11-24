@@ -457,6 +457,8 @@
                     android:layout_marginEnd="20dp"
                     android:gravity="start|center_vertical"
                     android:text="@string/settings_log_out"
+                    android:drawableStart="@drawable/ic_logout"
+                    android:drawablePadding="12dp"
                     android:textAlignment="viewStart"
                     android:textColor="@color/accent_error"
                     android:textSize="14sp"

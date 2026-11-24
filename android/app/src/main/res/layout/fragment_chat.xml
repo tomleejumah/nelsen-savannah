@@ -142,7 +142,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_chat_filter_unselected"
                 android:gravity="center"
-                android:text="Groups"
+                android:text="Community"
                 android:textColor="@color/ink_soft"
                 android:textSize="13sp" />
         </LinearLayout>

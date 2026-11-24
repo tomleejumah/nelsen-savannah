@@ -686,7 +686,7 @@ object FirebaseRemoteDataSource {
                         Log.w("ChatRooms", "Skipping unreadable room ${doc.id}", e)
                         null
                     }
-                }.filter { it.chatroomId != "announcements" && it.type != "system" }
+                }.filter { it.chatroomId != "announcements" && it.type != "system" && it.hasListActivity() }
                     .sortedByDescending { it.sortTimeMillis() }
                 trySend(rooms)
             }
@@ -714,7 +714,7 @@ object FirebaseRemoteDataSource {
 
                     // Direct rooms without messages or timestamps must remain discoverable.
                     val chatrooms = snapshot.toObjects(Chatroom::class.java)
-                        .filter { room -> room.chatroomId != "announcements" && room.type != "system" }
+                        .filter { room -> room.chatroomId != "announcements" && room.type != "system" && room.hasListActivity() }
 
                     Log.d("ChatRooms", "Loaded ${chatrooms.size} chatrooms")
 

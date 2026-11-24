@@ -542,7 +542,7 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="12dp"
         android:backgroundTint="@color/maroon_700"
-        android:text="Book now"
+        android:text="Book mentor"
         android:textColor="@color/white"
         app:iconPadding="8dp"
         app:iconTint="@color/white"

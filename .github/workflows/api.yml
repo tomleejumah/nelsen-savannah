@@ -76,6 +76,10 @@ jobs:
         run: node --test scripts/test-invite-claim-security.mjs
       - name: Live chat cursor pagination tests
         run: node --test scripts/test-live-chat-pagination.mjs
+      - name: School directory scope tests
+        run: node --test scripts/test-school-directory.mjs
+      - name: Chat notification claim/retry tests
+        run: node --test scripts/test-chat-notification-claim.mjs
       - name: Live chat duplicate and cooldown tests
         run: node --test scripts/test-live-chat-insert.mjs
       - name: Live attendance idempotency tests

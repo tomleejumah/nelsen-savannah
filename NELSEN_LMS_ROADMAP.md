@@ -1,5 +1,19 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## November 24 follow-up — chat notification retry and Android copy
+
+- [x] `POST /chat/message`: per-message claim state (`processing`/`partial`/`complete`/`failed`), `deliveredTo`, attempt cap (5) and 60s lease; a retry after partial fanout failure re-sends only to undelivered recipients and re-applies the suspended-member filter.
+- [x] Response reports `retryable` when some recipients failed; legacy claim docs (no status) are treated as complete, so nothing is re-sent.
+- [x] Add `api/scripts/test-chat-notification-claim.mjs` (5 tests, passing locally) and an API CI step.
+- [x] Android: user-facing "Groups" → "Community" (en/fr strings, bottom menu, chat filter, create sheet); "Book now" → "Book mentor"; icon on Settings logout row (R2-8 partial).
+- [x] `GET /lms/me/school-directory`: active-members-only school directory scoped to the caller's active schools, search with literal `%`/`_`, limit clamp, no emails; `api/scripts/test-school-directory.mjs` + CI step (R2-3 API side; Android picker still pending).
+- [x] `firestore.rules.draft` added for review (not deployed; not verified against live rules).
+- [x] Android (R2-1/R2-12 partial): never-messaged direct chats are hidden from the list (`Chatroom.hasListActivity()`; groups/AI/school rooms still list); new-chat picker has a name search; chat send is blocked with a toast while offline (`Utils/Connectivity`). The global offline banner already existed (`NetworkStatusBanner`).
+- [ ] Confirm API CI passes on the PR head; Android build and device check of the copy/icon changes.
+- [ ] Android client auto-retry for `retryable: true`; retry still needs the original message within the 2-minute recent-message window.
+- [x] Home greeting "Hello, {first name}" (R2-8); chat filter/search shows group name instead of sender's (R2-1 group bug) via `Chatroom.listTitle()`.
+- [ ] R2-8 remainder: confirm the contextual bottom-bar create FAB on Home (the Home speed-dial is already hidden in code). R2-1 remainder: hide never-messaged direct chats, single filter menu, picker search, chat-tab unread badge.
+
 ## Live end-to-end acceptance follow-up
 
 - [x] Add a reproducible two-device acceptance checklist covering host/viewer network handover, FCM recipients, PiP, screen share, chat, attendance, lifecycle, OAuth and provider termination: [LIVE_ACCEPTANCE_CHECKLIST.md](./LIVE_ACCEPTANCE_CHECKLIST.md).

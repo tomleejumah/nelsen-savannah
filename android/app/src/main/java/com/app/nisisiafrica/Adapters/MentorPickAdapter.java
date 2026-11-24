@@ -25,6 +25,7 @@ public class MentorPickAdapter extends RecyclerView.Adapter<MentorPickAdapter.Vi
     }
 
     private final List<MentorItem> items = new ArrayList<>();
+    private final List<MentorItem> all = new ArrayList<>();
     private final OnPick listener;
 
     public MentorPickAdapter(OnPick listener) {
@@ -32,8 +33,19 @@ public class MentorPickAdapter extends RecyclerView.Adapter<MentorPickAdapter.Vi
     }
 
     public void submit(List<MentorItem> list) {
+        all.clear();
+        if (list != null) all.addAll(list);
+        filter("");
+    }
+
+    /** Case-insensitive name filter over the full submitted list. */
+    public void filter(String query) {
+        String q = query == null ? "" : query.trim().toLowerCase(java.util.Locale.getDefault());
         items.clear();
-        if (list != null) items.addAll(list);
+        for (MentorItem m : all) {
+            String n = m.getMentorName() == null ? "" : m.getMentorName().toLowerCase(java.util.Locale.getDefault());
+            if (q.isEmpty() || n.contains(q)) items.add(m);
+        }
         notifyDataSetChanged();
     }
 

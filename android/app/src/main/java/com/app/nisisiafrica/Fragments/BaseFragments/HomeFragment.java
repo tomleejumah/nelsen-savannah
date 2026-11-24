@@ -204,6 +204,9 @@ public class HomeFragment extends Fragment implements FirebaseCallback {
             if (data == null) return;
 
             userData = data;
+            TextView greeting = view.findViewById(R.id.tvHomeGreeting);
+            String first = data.getFirstName() == null ? "" : data.getFirstName().trim();
+            if (greeting != null) greeting.setText(first.isEmpty() ? "Hello 👋" : "Hello, " + first + " 👋");
             onUserDataReceived(data);
 
             // Floating speed-dial replaced by MainActivity's contextual bottom-bar FAB.

@@ -295,7 +295,7 @@ public class ChatFragment extends Fragment {
             String type = room.getType() == null ? "direct" : room.getType();
             if ("direct".equals(activeChatFilter) && !"direct".equals(type)) continue;
             if ("group".equals(activeChatFilter) && !"group".equals(type)) continue;
-            String name = "group".equals(type) ? room.getName() : room.getOtherUserName(currentUserId);
+            String name = room.listTitle(currentUserId == null ? "" : currentUserId);
             if (query.isEmpty() || (name != null && name.toLowerCase(Locale.getDefault()).contains(query))) {
                 filtered.add(room);
             }
@@ -530,6 +530,12 @@ public class ChatFragment extends Fragment {
         title.setPadding(0, 0, 0, dp(12));
         sheet.addView(title);
 
+        android.widget.EditText pickerSearch = new android.widget.EditText(requireContext());
+        pickerSearch.setHint("Search");
+        pickerSearch.setSingleLine(true);
+        pickerSearch.setVisibility(View.GONE);
+        sheet.addView(pickerSearch);
+
         TextView status = new TextView(requireContext());
         status.setText("Loading…");
         status.setTextColor(ContextCompat.getColor(requireContext(), R.color.muted));
@@ -541,6 +547,13 @@ public class ChatFragment extends Fragment {
         MentorPickAdapter adapter = new MentorPickAdapter(mentor -> {
             dialog.dismiss();
             startMentorDirectChat(mentor);
+        });
+        pickerSearch.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                adapter.filter(s == null ? "" : s.toString());
+            }
+            @Override public void afterTextChanged(android.text.Editable s) {}
         });
         rv.setAdapter(adapter);
         sheet.addView(rv, new LinearLayout.LayoutParams(
@@ -580,6 +593,7 @@ public class ChatFragment extends Fragment {
                 }
                 status.setVisibility(View.GONE);
                 rv.setVisibility(View.VISIBLE);
+                pickerSearch.setVisibility(View.VISIBLE);
                 adapter.submit(others);
                 return Unit.INSTANCE;
             }, e -> {
@@ -588,12 +602,12 @@ public class ChatFragment extends Fragment {
                 return Unit.INSTANCE;
             });
         } else {
-            loadEnrolledTutors(me, status, rv, adapter);
+            loadEnrolledTutors(me, status, rv, adapter, pickerSearch);
         }
     }
 
     private void loadEnrolledTutors(String me, TextView status, RecyclerView rv,
-                                    MentorPickAdapter adapter) {
+                                    MentorPickAdapter adapter, View pickerSearch) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             status.setText(R.string.chat_no_enrolled_tutors);
@@ -637,6 +651,7 @@ public class ChatFragment extends Fragment {
                     }
                     status.setVisibility(View.GONE);
                     rv.setVisibility(View.VISIBLE);
+                    pickerSearch.setVisibility(View.VISIBLE);
                     adapter.submit(new ArrayList<>(byId.values()));
                 }
 
@@ -1297,6 +1312,10 @@ public class ChatFragment extends Fragment {
     private void setupSendAction(String chatId, Chatroom chatroom) {
         binding.btnSend.setOnClickListener(v -> {
             String msg = binding.etMessage.getText().toString().trim();
+            if (!msg.isEmpty() && !com.app.nisisiafrica.Utils.Connectivity.isOnline(requireContext())) {
+                Toast.makeText(requireContext(), "You're offline — message not sent", Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (!msg.isEmpty()) {
                 binding.etMessage.setText("");
                 ChatMessageEntity replyTarget = replyingTo;

@@ -1,6 +1,7 @@
 import admin from '../config/firebase.js';
 import { sendFCMNotification } from '../services/fcmService.js';
 import { dbAll } from '../db/lmsDb.js';
+import { claimChatNotification, finishChatNotification } from '../services/chatNotificationClaim.js';
 
 export const sendChatMessageNotification = async (req, res) => {
   const uid = req.user.uid;
@@ -51,21 +52,27 @@ export const sendChatMessageNotification = async (req, res) => {
     if (!matchingMessage) {
       return res.status(409).json({ error: "No recent matching message to notify" });
     }
-    // Claim the message exactly once across retries and concurrent requests.
-    const claimRef = admin.firestore().collection("chatNotificationClaims")
+    // Claim the message; a retry after a partial failure only re-sends to
+    // recipients that were not delivered the first time.
+    const firestore = admin.firestore();
+    const claimRef = firestore.collection("chatNotificationClaims")
       .doc(conversationId + "_" + matchingMessage.id);
-    const claimed = await admin.firestore().runTransaction(async tx => {
-      const existing = await tx.get(claimRef);
-      if (existing.exists) return false;
-      tx.create(claimRef, {
+    const claim = await claimChatNotification({
+      firestore, claimRef, recipients,
+      base: {
         conversationId, messageId: matchingMessage.id, senderId: uid,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      return true;
+      },
     });
-    if (!claimed) return res.json({ success: true, duplicate: true, recipients: 0, stored: 0, pushed: 0 });
+    if (!claim.claimed) {
+      return res.json({
+        success: true, duplicate: claim.reason !== "in_progress", inProgress: claim.reason === "in_progress",
+        recipients: 0, stored: 0, pushed: 0,
+      });
+    }
+    const pending = claim.pending;
     const preview = messageText.trim().slice(0, 100);
-    const outcomes = await Promise.allSettled(recipients.map(async id => {
+    const outcomes = await Promise.allSettled(pending.map(async id => {
       const notificationData = {
         senderId: uid, text: group ? "sent a group message" : "sent you a message",
         messagePreview: preview, conversationId, type: "chat",
@@ -79,7 +86,13 @@ export const sendChatMessageNotification = async (req, res) => {
     }));
     const stored = outcomes.filter(o => o.status === "fulfilled").length;
     const pushed = outcomes.filter(o => o.status === "fulfilled" && o.value.delivered).length;
-    return res.json({ success: true, recipients: recipients.length, stored, pushed });
+    const status = await finishChatNotification({
+      firestore, claimRef, pending, outcomes, FieldValue: admin.firestore.FieldValue,
+    });
+    return res.json({
+      success: true, recipients: pending.length, stored, pushed,
+      retry: claim.retry, retryable: status === "partial",
+    });
   } catch (error) {
     console.error("[chat-notification]", error);
     return res.status(500).json({ error: "Failed to send chat notifications" });

@@ -60,6 +60,7 @@
                     android:paddingBottom="12dp">
 
                     <TextView
+                        android:id="@+id/tvHomeGreeting"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/font_ui"

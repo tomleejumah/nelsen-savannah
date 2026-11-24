@@ -54,11 +54,11 @@ public class ChatSearchAdapter extends RecyclerView.Adapter<ChatSearchAdapter.Vi
         Chatroom room = items.get(position);
         String currentUserId = FirebaseAuth.getInstance().getUid();
         if (currentUserId == null) currentUserId = "";
-        holder.name.setText(room.getOtherUserName(currentUserId));
+        holder.name.setText(room.listTitle(currentUserId));
         holder.lastMsg.setText(room.getLastMessage() != null ? room.getLastMessage() : "No messages yet");
         holder.unread.setVisibility(View.GONE);
 
-        String otherUserId = room.getOtherUserId(currentUserId);
+        String otherUserId = room.isMultiParty() ? null : room.getOtherUserId(currentUserId);
         if (otherUserId != null) {
             FirebaseRemoteDataSource.INSTANCE.getMentorData(otherUserId, mentor -> {
                 Glide.with(holder.avatar.getContext())

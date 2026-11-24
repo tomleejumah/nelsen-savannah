@@ -104,7 +104,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 - Backend: Firestore `chatRooms` list rule fixed (`request.auth.uid in resource.data.userIds`).
 
 ### R2-1 — Chat list correctness
-**Status:** `pending`
+**Status:** `in_progress` (done: group filter/search shows group name, hide empty direct chats, picker search; remaining: single filter menu, nav unread badge)
 - Direct chats that were created but never messaged are **not listed** (no empty rows). Create the room lazily on first send, or hide rooms with no `lastMessage` for the creator.
 - Group filter bug: filtering to Groups shows the *sender's* name instead of the group name. Group rows must use the room `name`.
 - Replace the scattered filter buttons (All / Direct / Groups) with one hamburger/overflow menu or filter drawer.
@@ -117,7 +117,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 - Open question: confirm "no tick when sent" vs one grey tick for sent.
 
 ### R2-3 — New chat reaches everyone in the school
-**Status:** `pending`
+**Status:** `in_progress` (API `GET /lms/me/school-directory` done and tested; Android picker pending; booking-gate rule still undecided)
 - API: school members endpoint (uid, name, avatar, role), scoped to the caller's active school memberships.
 - Picker: searchable, grouped by role; keeps mentor/mentee rules for booking-gated chats if product wants them (decide).
 
@@ -147,7 +147,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 - FCM payload carries `roomId`, `messageId`, `type` so taps deep-link into the chat.
 
 ### R2-8 — Home and navigation
-**Status:** `pending`
+**Status:** `in_progress` (done: Community rebrand, Book mentor label, logout icon, greeting; remaining: confirm bottom-bar create FAB on Home)
 - Greeting: "Hello, {first name}".
 - Remove the Home FAB (Create Story already has a top button; Create Group does not belong on Home).
 - Rebrand "Groups" to **Community** everywhere user-facing; the Community tab has a visible Create button; posts stay inside communities.

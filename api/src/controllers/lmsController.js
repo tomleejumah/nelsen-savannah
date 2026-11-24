@@ -1136,6 +1136,15 @@ export const patchSchoolAdmins = handle(
   },
 );
 
+export const getSchoolDirectory = handle(
+  "[GET /lms/me/school-directory]",
+  async (req) => {
+    const svc = await import("../services/lmsSchoolDirectory.js");
+    const { q, schoolId, limit } = req.query || {};
+    return { data: await svc.listSchoolDirectory(req.user.uid, { q, schoolId, limit }) };
+  },
+);
+
 export const listSchoolMembers = handle(
   "[GET /lms/schools/:id/members]",
   async (req) => {

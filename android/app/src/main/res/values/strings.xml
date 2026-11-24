@@ -6,7 +6,7 @@
     <string name="percent_sign" translatable="false">%</string>
 
     <string name="nav_home">Home</string>
-    <string name="nav_groups">Groups</string>
+    <string name="nav_groups">Community</string>
     <string name="nav_chat">Chat</string>
     <string name="nav_profile">Profile</string>
 
@@ -23,7 +23,7 @@
     <string name="story_add">Add</string>
     <string name="stories_empty_hint">Be the first to share</string>
 
-    <string name="groups_title">Groups</string>
+    <string name="groups_title">Community</string>
     <string name="your_communities">Your communities</string>
     <string name="find_your_people">Find your people</string>
     <string name="edit">Edit</string>
@@ -68,7 +68,7 @@
     <string name="home_admit_one">open seats</string>
     <string name="home_reserve">Reserve</string>
     <string name="topbar_profile">Profile</string>
-    <string name="topbar_groups">Groups</string>
+    <string name="topbar_groups">Community</string>
     <string name="topbar_messages">Messages</string>
 
     <!-- Enquiry dialog -->
@@ -101,7 +101,7 @@
     <string name="home_other_resources">Other Resources</string>
     <string name="home_recognize_me">Recognize me</string>
     <string name="home_your_calendar">Your Calendar</string>
-    <string name="fab_group">Group</string>
+    <string name="fab_group">Community</string>
     <string name="fab_story">Story</string>
     <string name="fab_event">Event</string>
     <string name="home_full">Full</string>
