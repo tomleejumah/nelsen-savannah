@@ -1,3 +1,4 @@
 *.jks
 *.sqlite
 .idea/
+android/.idea/

@@ -1,19 +1,17 @@
 package com.app.nisisiafrica.data.Repository
 
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.app.nisisiafrica.data.Model.Chatroom
 import com.app.nisisiafrica.data.remote.FirebaseRemoteDataSource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class ChatRoomRepository() {
 
     fun getChatRooms(): Flow<PagingData<Chatroom>> {
-        return Pager(
-            config = PagingConfig(pageSize = 20, enablePlaceholders = false),
-            pagingSourceFactory = { FirebaseRemoteDataSource.getChatRoomsPagingSource() }
-        ).flow
+        // Live snapshot listener, already sorted newest-first. Wrapped as PagingData
+        // so the existing PagingDataAdapter keeps working unchanged.
+        return FirebaseRemoteDataSource.getChatRoomsFlow().map { PagingData.from(it) }
     }
 
     fun initAnnouncementChatRoom(){

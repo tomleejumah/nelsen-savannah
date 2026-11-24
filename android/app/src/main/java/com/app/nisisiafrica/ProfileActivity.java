@@ -728,7 +728,21 @@ public class ProfileActivity extends AppCompatActivity implements FirebaseCallba
             card.setVisibility(View.GONE);
             return;
         }
-        card.setVisibility(View.VISIBLE);
+        // Ratings are only for mentors: never offer them on a mentee's profile.
+        card.setVisibility(View.GONE);
+        FirebaseRemoteDataSource.INSTANCE.getRemoteUserData(mentorId, user -> {
+            boolean mentorRole = user != null && Roles.actsAsMentor(user.getUserRole());
+            if (mentorRole) {
+                card.setVisibility(View.VISIBLE);
+            } else if (user == null || user.getUserRole() == null || user.getUserRole().isEmpty()) {
+                // Legacy mentors only have a /mentors record.
+                FirebaseRemoteDataSource.INSTANCE.getMentorData(mentorId, m -> {
+                    if (m != null && !isFinishing()) card.setVisibility(View.VISIBLE);
+                    return kotlin.Unit.INSTANCE;
+                }, e -> kotlin.Unit.INSTANCE);
+            }
+            return kotlin.Unit.INSTANCE;
+        }, e -> kotlin.Unit.INSTANCE);
 
         ratingsRef = FirebaseDatabase.getInstance()
                 .getReference("mentors").child(mentorId).child("ratings");

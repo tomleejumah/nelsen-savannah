@@ -152,7 +152,8 @@ data class Chatroom(
     val unreadCount: Map<String, Int> = emptyMap(),
     val type: String = "direct",
     val schoolId: String = "",
-    val adminIds: List<String> = emptyList()
+    val adminIds: List<String> = emptyList(),
+    val createdAt: Timestamp? = null
 ) {
     // Java ChatFragment call sites use this legacy eight-argument constructor.
     // Keep it while the Firestore model grows additional metadata fields.
@@ -184,6 +185,8 @@ data class Chatroom(
      * Get the other user's name (not the current user)
      */
     fun getOtherUserName(currentUserId: String): String {
+        // AI assistant rooms have no real second participant.
+        if (type == "ai" || chatroomId.startsWith("ai_assistant_")) return "AI Assistant"
         // Find the other user's ID (the one that's not current user)
         val otherUserId = userIds.firstOrNull { it != currentUserId }
 
@@ -194,6 +197,10 @@ data class Chatroom(
             "Unknown User"
         }
     }
+
+    /** Time used to order the chat list: last message, else creation time. */
+    fun sortTimeMillis(): Long =
+        (lastMessageTimestamp ?: createdAt)?.toDate()?.time ?: 0L
 
     /**
      * Get the other user's ID

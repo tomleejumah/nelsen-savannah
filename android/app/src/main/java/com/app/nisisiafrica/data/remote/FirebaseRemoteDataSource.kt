@@ -657,6 +657,42 @@ object FirebaseRemoteDataSource {
             }
     }
 
+    /**
+     * Live list of the signed-in user's chat rooms, newest activity first.
+     * Sorted client-side so rooms without a lastMessageTimestamp (new directs,
+     * fresh group chats) stay visible, and a malformed document is skipped
+     * instead of failing the whole list.
+     */
+    fun getChatRoomsFlow(): Flow<List<Chatroom>> = callbackFlow {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            trySend(emptyList())
+            awaitClose { }
+            return@callbackFlow
+        }
+        val registration = FirebaseFirestore.getInstance().collection("chatRooms")
+            .whereArrayContains("userIds", uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("ChatRooms", "Chat list listener failed", error)
+                    return@addSnapshotListener
+                }
+                val rooms = snapshot?.documents.orEmpty().mapNotNull { doc ->
+                    try {
+                        doc.toObject(Chatroom::class.java)?.let { room ->
+                            if (room.chatroomId.isEmpty()) room.copy(chatroomId = doc.id) else room
+                        }
+                    } catch (e: Exception) {
+                        Log.w("ChatRooms", "Skipping unreadable room ${doc.id}", e)
+                        null
+                    }
+                }.filter { it.chatroomId != "announcements" && it.type != "system" }
+                    .sortedByDescending { it.sortTimeMillis() }
+                trySend(rooms)
+            }
+        awaitClose { registration.remove() }
+    }
+
     // In ChatRepository
     fun getChatRoomsPagingSource(): PagingSource<QuerySnapshot, Chatroom> {
         val firestore = FirebaseFirestore.getInstance()

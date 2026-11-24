@@ -833,8 +833,36 @@ public class ChatFragment extends Fragment {
         });
     }
 
+    /** Lists everyone in a group chat; mentors (room admins) are tagged and listed first. */
+    private void showGroupMembers(Chatroom chatroom) {
+        if (chatroom == null || !isAdded()) return;
+        java.util.List<String> admins = chatroom.getAdminIds();
+        java.util.List<String> ids = new ArrayList<>(chatroom.getUserIds());
+        java.util.Collections.sort(ids, (a, b) -> {
+            boolean aa = admins.contains(a);
+            boolean bb = admins.contains(b);
+            if (aa != bb) return aa ? -1 : 1;
+            String an = chatroom.getUserNames().get(a);
+            String bn = chatroom.getUserNames().get(b);
+            return (an == null ? "" : an).compareToIgnoreCase(bn == null ? "" : bn);
+        });
+        String[] labels = new String[ids.size()];
+        for (int i = 0; i < ids.size(); i++) {
+            String name = chatroom.getUserNames().get(ids.get(i));
+            if (name == null || name.isEmpty()) name = "Member";
+            labels[i] = admins.contains(ids.get(i)) ? name + "  ·  Mentor" : name;
+        }
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(ids.size() + " participants")
+                .setItems(labels, null)
+                .setPositiveButton("Close", null)
+                .show();
+    }
+
     private void updateChatHeader(Chatroom chatroom, String type, String currentUserId) {
         binding.btnViewProfile.setVisibility(View.GONE);
+        binding.tvChatRole.setOnClickListener(null);
+        binding.tvChatRole.setClickable(false);
 
         switch (type) {
             case "system":
@@ -847,6 +875,7 @@ public class ChatFragment extends Fragment {
             case "group":
                 binding.tvChatName.setText(chatroom.getName().isEmpty() ? "Course group" : chatroom.getName());
                 binding.tvChatRole.setText(chatroom.getUserIds().size() + " participants");
+                binding.tvChatRole.setOnClickListener(v -> showGroupMembers(chatroom));
                 Glide.with(this).load(R.drawable.ic_person).circleCrop().into(binding.tvHeaderAvatar);
                 userData = null;
                 selectedOtherUserId = null;
