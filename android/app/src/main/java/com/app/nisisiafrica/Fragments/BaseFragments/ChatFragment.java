@@ -4,6 +4,8 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -28,6 +30,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -104,19 +107,44 @@ public class ChatFragment extends Fragment {
     private String currentChatId;
     private String currentReceiverId;
     private String activeChatFilter = "all";
-    private ActivityResultLauncher<PickVisualMediaRequest> imagePicker;
+    private ActivityResultLauncher<PickVisualMediaRequest> galleryPicker;
+    private ActivityResultLauncher<Uri> cameraLauncher;
+    private ActivityResultLauncher<String> cameraPermission;
+    private Uri pendingCameraUri;
     private ActivityResultLauncher<PickVisualMediaRequest> videoPicker;
     private ActivityResultLauncher<String> documentPicker;
     private String pendingMediaType = "file";
+    private static final int MAX_GALLERY_ITEMS = 10;
     private ActionMode messageActionMode;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Must register before the fragment is created — not in onCreateView.
-        imagePicker = registerForActivityResult(
-                new ActivityResultContracts.PickVisualMedia(), uri -> {
-                    if (uri != null) sendPickedImage(uri);
+        galleryPicker = registerForActivityResult(
+                new ActivityResultContracts.PickMultipleVisualMedia(MAX_GALLERY_ITEMS), uris -> {
+                    if (uris == null || uris.isEmpty()) return;
+                    if (uris.size() > 1) {
+                        Toast.makeText(requireContext(), "Sending " + uris.size() + " items",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    for (Uri u : uris) {
+                        String mime = requireContext().getContentResolver().getType(u);
+                        if (mime != null && mime.startsWith("video/")) sendPickedMedia(u, "video");
+                        else sendPickedImage(u);
+                    }
+                });
+        cameraLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(), saved -> {
+                    Uri photo = pendingCameraUri;
+                    pendingCameraUri = null;
+                    if (Boolean.TRUE.equals(saved) && photo != null) sendPickedImage(photo);
+                });
+        cameraPermission = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(), granted -> {
+                    if (Boolean.TRUE.equals(granted)) launchCamera();
+                    else Toast.makeText(requireContext(), "Camera permission needed",
+                            Toast.LENGTH_SHORT).show();
                 });
         videoPicker = registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), uri -> {
@@ -230,47 +258,52 @@ public class ChatFragment extends Fragment {
     }
 
     private void setupChatListControls() {
-        binding.btnChatSearch.setOnClickListener(v -> {
-            boolean show = binding.etSearch.getVisibility() != View.VISIBLE;
-            binding.etSearch.setVisibility(show ? View.VISIBLE : View.GONE);
-            if (show) {
-                binding.etSearch.requestFocus();
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) requireContext()
-                                .getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.showSoftInput(binding.etSearch,
-                        android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
-            } else {
-                binding.etSearch.setText("");
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) requireContext()
-                                .getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
-            }
-        });
+        binding.btnChatSearch.setOnClickListener(v -> toggleChatSearch());
         binding.chatFilterAll.setOnClickListener(v -> setChatFilter("all"));
         binding.chatFilterDirect.setOnClickListener(v -> setChatFilter("direct"));
         binding.chatFilterGroups.setOnClickListener(v -> setChatFilter("group"));
-        binding.btnChatMore.setOnClickListener(v -> {
-            android.widget.PopupMenu menu = new android.widget.PopupMenu(requireContext(), binding.btnChatMore);
-            String[][] filters = {{"all", "All chats"}, {"direct", "Direct"}, {"group", "Community"}};
-            for (String[] f : filters) {
-                android.view.MenuItem item = menu.getMenu().add(1, android.view.Menu.NONE, android.view.Menu.NONE, f[1]);
-                item.setCheckable(true);
-                item.setChecked(f[0].equals(activeChatFilter));
-                item.setOnMenuItemClickListener(i -> { setChatFilter(f[0]); return true; });
-            }
-            menu.getMenu().setGroupCheckable(1, true, true);
-            menu.getMenu().add("School announcements").setOnMenuItemClickListener(item -> {
-                showSchoolAnnouncementsPicker();
-                return true;
-            });
-            menu.getMenu().add("Course group chat").setOnMenuItemClickListener(item -> {
-                showCourseGroupPicker();
-                return true;
-            });
-            menu.show();
+        binding.btnChatMore.setOnClickListener(v -> showChatMenu(binding.btnChatMore));
+    }
+
+    /** Shows/hides the conversation search field. Also called from the MainActivity top bar. */
+    public void toggleChatSearch() {
+        if (binding == null || !isAdded()) return;
+        boolean show = binding.etSearch.getVisibility() != View.VISIBLE;
+        binding.etSearch.setVisibility(show ? View.VISIBLE : View.GONE);
+        android.view.inputmethod.InputMethodManager imm =
+                (android.view.inputmethod.InputMethodManager) requireContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (show) {
+            binding.etSearch.requestFocus();
+            if (imm != null) imm.showSoftInput(binding.etSearch,
+                    android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        } else {
+            binding.etSearch.setText("");
+            if (imm != null) imm.hideSoftInputFromWindow(binding.etSearch.getWindowToken(), 0);
+        }
+    }
+
+    /** Filter + announcements/course-group menu, anchored to whichever ⋮ the caller owns. */
+    public void showChatMenu(View anchor) {
+        if (binding == null || !isAdded() || anchor == null) return;
+        android.widget.PopupMenu menu = new android.widget.PopupMenu(requireContext(), anchor);
+        String[][] filters = {{"all", "All chats"}, {"direct", "Direct"}, {"group", "Community"}};
+        for (String[] f : filters) {
+            android.view.MenuItem item = menu.getMenu().add(1, android.view.Menu.NONE, android.view.Menu.NONE, f[1]);
+            item.setCheckable(true);
+            item.setChecked(f[0].equals(activeChatFilter));
+            item.setOnMenuItemClickListener(i -> { setChatFilter(f[0]); return true; });
+        }
+        menu.getMenu().setGroupCheckable(1, true, true);
+        menu.getMenu().add("School announcements").setOnMenuItemClickListener(item -> {
+            showSchoolAnnouncementsPicker();
+            return true;
         });
+        menu.getMenu().add("Course group chat").setOnMenuItemClickListener(item -> {
+            showCourseGroupPicker();
+            return true;
+        });
+        menu.show();
     }
 
     private void setChatFilter(String filter) {
@@ -783,34 +816,62 @@ public class ChatFragment extends Fragment {
         return "Mentor";
     }
 
-    /** Lets the user attach a photo, document, or audio file to the open chat. */
+    /** Bottom sheet icon grid: Gallery (multi), Camera, Video, Audio, Document. */
     private void showAttachmentChooser() {
-        CharSequence[] options = {"Photo", "Video", "Audio", "Document"};
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Send attachment")
-                .setItems(options, (d, which) -> {
-                    switch (which) {
-                        case 0:
-                            imagePicker.launch(new PickVisualMediaRequest.Builder()
-                                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                                    .build());
-                            break;
-                        case 1:
-                            videoPicker.launch(new PickVisualMediaRequest.Builder()
-                                    .setMediaType(ActivityResultContracts.PickVisualMedia.VideoOnly.INSTANCE)
-                                    .build());
-                            break;
-                        case 2:
-                            pendingMediaType = "audio";
-                            documentPicker.launch("audio/*");
-                            break;
-                        case 3:
-                            pendingMediaType = "file";
-                            documentPicker.launch("*/*");
-                            break;
-                    }
-                })
-                .show();
+        if (!isAdded()) return;
+        final com.google.android.material.bottomsheet.BottomSheetDialog sheet =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        View root = getLayoutInflater().inflate(R.layout.sheet_chat_attachments, null);
+        root.findViewById(R.id.attach_gallery).setOnClickListener(v -> {
+            sheet.dismiss();
+            galleryPicker.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageAndVideo.INSTANCE)
+                    .build());
+        });
+        root.findViewById(R.id.attach_camera).setOnClickListener(v -> {
+            sheet.dismiss();
+            launchCamera();
+        });
+        root.findViewById(R.id.attach_video).setOnClickListener(v -> {
+            sheet.dismiss();
+            videoPicker.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.VideoOnly.INSTANCE)
+                    .build());
+        });
+        root.findViewById(R.id.attach_audio).setOnClickListener(v -> {
+            sheet.dismiss();
+            pendingMediaType = "audio";
+            documentPicker.launch("audio/*");
+        });
+        root.findViewById(R.id.attach_document).setOnClickListener(v -> {
+            sheet.dismiss();
+            pendingMediaType = "file";
+            documentPicker.launch("*/*");
+        });
+        sheet.setContentView(root);
+        sheet.show();
+    }
+
+    /** CAMERA is declared in the manifest, so ACTION_IMAGE_CAPTURE needs the runtime grant first. */
+    private void launchCamera() {
+        if (!isAdded()) return;
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            cameraPermission.launch(Manifest.permission.CAMERA);
+            return;
+        }
+        try {
+            java.io.File dir = new java.io.File(requireContext().getCacheDir(), "chat_camera");
+            if (!dir.exists() && !dir.mkdirs()) throw new java.io.IOException("mkdirs failed");
+            java.io.File file = new java.io.File(dir, "IMG_" + System.currentTimeMillis() + ".jpg");
+            pendingCameraUri = FileProvider.getUriForFile(requireContext(),
+                    requireContext().getPackageName() + ".provider", file);
+            cameraLauncher.launch(pendingCameraUri);
+        } catch (Exception e) {
+            pendingCameraUri = null;
+            android.util.Log.w("ChatAttach", "Camera launch failed", e);
+            Toast.makeText(requireContext(), "Can't open camera", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void sendPickedMedia(Uri uri, String type) {

@@ -110,6 +110,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     private View fabCard;
     private ImageView navHomeIcon, navGroupsIcon, navChatIcon, navProfileIcon;
     private TextView navHomeLabel, navGroupsLabel, navChatLabel, navProfileLabel;
+    private TextView navChatBadge;
+    private View btnChatSearchTop, btnChatMoreTop;
+    private final com.app.nisisiafrica.Utils.ChatUnreadTracker chatUnreadTracker =
+            new com.app.nisisiafrica.Utils.ChatUnreadTracker();
     private View topBarRow;
     private TextView topBarTitle;
     private View btnHomeNotifications;
@@ -334,6 +338,14 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         topBarRow = findViewById(R.id.topBarRow);
         topBarTitle = findViewById(R.id.homeTopTitle);
         btnHomeNotifications = findViewById(R.id.btnHomeNotifications);
+        btnChatSearchTop = findViewById(R.id.btnChatSearchTop);
+        btnChatMoreTop = findViewById(R.id.btnChatMoreTop);
+        btnChatSearchTop.setOnClickListener(v -> {
+            if (chatFragment != null) chatFragment.toggleChatSearch();
+        });
+        btnChatMoreTop.setOnClickListener(v -> {
+            if (chatFragment != null) chatFragment.showChatMenu(v);
+        });
         notifCounter = findViewById(R.id.notifCounter);
         imgDp = findViewById(R.id.imgDp);
 
@@ -404,6 +416,9 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
             return;
         }
         topBarRow.setVisibility(View.VISIBLE);
+        int chatActions = (tabId == R.id.chatFragment && !chatConversationOpen) ? View.VISIBLE : View.GONE;
+        if (btnChatSearchTop != null) btnChatSearchTop.setVisibility(chatActions);
+        if (btnChatMoreTop != null) btnChatMoreTop.setVisibility(chatActions);
         if (tabId == R.id.homeFragment) {
             topBarTitle.setText(R.string.app_name);
             if (btnHomeNotifications != null) btnHomeNotifications.setVisibility(View.VISIBLE);
@@ -427,6 +442,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         navHomeIcon = findViewById(R.id.navHomeIcon);
         navGroupsIcon = findViewById(R.id.navGroupsIcon);
         navChatIcon = findViewById(R.id.navChatIcon);
+        navChatBadge = findViewById(R.id.navChatBadge);
         navProfileIcon = findViewById(R.id.navProfileIcon);
         navHomeLabel = findViewById(R.id.navHomeLabel);
         navGroupsLabel = findViewById(R.id.navGroupsLabel);
@@ -436,6 +452,12 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
         findViewById(R.id.homeFragment).setOnClickListener(v -> selectTab(R.id.homeFragment, true));
         findViewById(R.id.communitiesFragment).setOnClickListener(v -> selectTab(R.id.communitiesFragment, true));
         findViewById(R.id.chatFragment).setOnClickListener(v -> selectTab(R.id.chatFragment, true));
+        chatUnreadTracker.start(currentUser, total -> {
+            if (navChatBadge == null) return;
+            String label = com.app.nisisiafrica.Utils.UnreadTotals.label(total);
+            navChatBadge.setText(label);
+            navChatBadge.setVisibility(label.isEmpty() ? View.GONE : View.VISIBLE);
+        });
         findViewById(R.id.profileFragment).setOnClickListener(v -> selectTab(R.id.profileFragment, true));
         findViewById(R.id.fabCard).setOnClickListener(v -> onContextualFabClicked());
     }
@@ -1062,6 +1084,7 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.onSc
     @Override
     protected void onDestroy() {
         NotificationCounter.stopListening();
+        chatUnreadTracker.stop();
         super.onDestroy();
         disposables.clear();
     }
