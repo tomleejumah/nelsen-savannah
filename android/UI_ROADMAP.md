@@ -104,7 +104,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 - Backend: Firestore `chatRooms` list rule fixed (`request.auth.uid in resource.data.userIds`).
 
 ### R2-1 — Chat list correctness
-**Status:** `in_progress` (done: group filter/search shows group name, hide empty direct chats, picker search; remaining: single filter menu, nav unread badge)
+**Status:** `in_progress` (done: group filter/search shows group name, hide empty direct chats, picker search; single filter menu; remaining: nav unread badge)
 - Direct chats that were created but never messaged are **not listed** (no empty rows). Create the room lazily on first send, or hide rooms with no `lastMessage` for the creator.
 - Group filter bug: filtering to Groups shows the *sender's* name instead of the group name. Group rows must use the room `name`.
 - Replace the scattered filter buttons (All / Direct / Groups) with one hamburger/overflow menu or filter drawer.

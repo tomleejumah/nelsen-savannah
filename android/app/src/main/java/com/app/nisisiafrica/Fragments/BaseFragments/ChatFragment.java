@@ -253,6 +253,14 @@ public class ChatFragment extends Fragment {
         binding.chatFilterGroups.setOnClickListener(v -> setChatFilter("group"));
         binding.btnChatMore.setOnClickListener(v -> {
             android.widget.PopupMenu menu = new android.widget.PopupMenu(requireContext(), binding.btnChatMore);
+            String[][] filters = {{"all", "All chats"}, {"direct", "Direct"}, {"group", "Community"}};
+            for (String[] f : filters) {
+                android.view.MenuItem item = menu.getMenu().add(1, android.view.Menu.NONE, android.view.Menu.NONE, f[1]);
+                item.setCheckable(true);
+                item.setChecked(f[0].equals(activeChatFilter));
+                item.setOnMenuItemClickListener(i -> { setChatFilter(f[0]); return true; });
+            }
+            menu.getMenu().setGroupCheckable(1, true, true);
             menu.getMenu().add("School announcements").setOnMenuItemClickListener(item -> {
                 showSchoolAnnouncementsPicker();
                 return true;

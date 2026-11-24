@@ -182,6 +182,16 @@ public class EditProfileActivity extends AppCompatActivity {
         });
     }
 
+    private CharSequence saveLabel;
+
+    /** Disables Save and shows "Saving…" while the profile request is in flight. */
+    private void setSaving(boolean saving) {
+        android.widget.TextView b = findViewById(R.id.btnSave);
+        if (saveLabel == null) saveLabel = b.getText();
+        b.setEnabled(!saving);
+        b.setText(saving ? "Saving…" : saveLabel);
+    }
+
     private void updateCanonicalProfile(String firstName, String lastName, String description) {
         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
         if (current == null) {
@@ -193,7 +203,7 @@ public class EditProfileActivity extends AppCompatActivity {
         LmsModels.ProfileUpdateBody body = new LmsModels.ProfileUpdateBody(
                 displayName, firstName, lastName, dpImageUrl, description);
 
-        findViewById(R.id.btnSave).setEnabled(false);
+        setSaving(true);
         current.getIdToken(false)
                 .addOnSuccessListener(token -> ApiClient.getLmsService()
                         .updateMyProfile("Bearer " + token.getToken(), body)
@@ -201,7 +211,7 @@ public class EditProfileActivity extends AppCompatActivity {
                             @Override
                             public void onResponse(Call<LmsModels.MeEnvelope> call,
                                                    Response<LmsModels.MeEnvelope> response) {
-                                findViewById(R.id.btnSave).setEnabled(true);
+                                setSaving(false);
                                 LmsModels.MeEnvelope envelope = response.body();
                                 if (!response.isSuccessful() || envelope == null || !envelope.ok) {
                                     String message = envelope != null && envelope.error != null
@@ -234,7 +244,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
                             @Override
                             public void onFailure(Call<LmsModels.MeEnvelope> call, Throwable t) {
-                                findViewById(R.id.btnSave).setEnabled(true);
+                                setSaving(false);
                                 Log.e(TAG, "Canonical profile update failed", t);
                                 CustomSnackbar.show(EditProfileActivity.this,
                                         "Failed. Check your internet and retry",
@@ -242,7 +252,7 @@ public class EditProfileActivity extends AppCompatActivity {
                             }
                         }))
                 .addOnFailureListener(error -> {
-                    findViewById(R.id.btnSave).setEnabled(true);
+                    setSaving(false);
                     Log.e(TAG, "Could not get auth token", error);
                     CustomSnackbar.show(this, "Could not authenticate profile update",
                             Snackbar.LENGTH_SHORT, 3);

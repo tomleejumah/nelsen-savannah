@@ -9,6 +9,8 @@
 - [x] `GET /lms/me/school-directory`: active-members-only school directory scoped to the caller's active schools, search with literal `%`/`_`, limit clamp, no emails; `api/scripts/test-school-directory.mjs` + CI step (R2-3 API side; Android picker still pending).
 - [x] `firestore.rules.draft` added for review (not deployed; not verified against live rules).
 - [x] Android (R2-1/R2-12 partial): never-messaged direct chats are hidden from the list (`Chatroom.hasListActivity()`; groups/AI/school rooms still list); new-chat picker has a name search; chat send is blocked with a toast while offline (`Utils/Connectivity`). The global offline banner already existed (`NetworkStatusBanner`).
+- [x] Android: single chat filter menu (All/Direct/Community in the ⋮ menu; old button bar hidden, not deleted); Edit Profile Save shows "Saving…" and is disabled while the request runs.
+- [ ] Not done: chat-tab unread badge (needs a live unread count source plus a nav layout change); loading state on booking confirm (submit path is not a single call site); chat send spinner.
 - [ ] Confirm API CI passes on the PR head; Android build and device check of the copy/icon changes.
 - [ ] Android client auto-retry for `retryable: true`; retry still needs the original message within the 2-minute recent-message window.
 - [x] Home greeting "Hello, {first name}" (R2-8); chat filter/search shows group name instead of sender's (R2-1 group bug) via `Chatroom.listTitle()`.
