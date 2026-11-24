@@ -113,6 +113,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 
 ### R2-2 — Message status ticks
 **Status:** `pending`
+**Approach:** see NELSEN_LMS_ROADMAP.md → NEXT-AGENT HANDOFF → item E (room-level `lastReadAt[uid]`, do after reactions because both change rules).
 - Sent = single grey tick, delivered = double grey, **read = double blue**. Needs a per-message `readBy` or room-level `lastReadAt[uid]`; rules must allow a participant to write only their own read marker.
 - Open question: confirm "no tick when sent" vs one grey tick for sent.
 
@@ -123,6 +124,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 
 ### R2-4 — Group / community chat features
 **Status:** `pending`
+**Related new item:** message reactions (HANDOFF item D) share the same rules work as pinning/group photo; design rules for both together.
 - Members list as a **full screen** (not a dialog): avatar, name, role tag, search.
 - Mentor view: each student's progress on that unit/course inside the members screen (API endpoint to confirm/add).
 - `@mention` for any member (WhatsApp style suggestion list, stored as `mentions: [uid]` on the message, highlighted in the bubble, push + notification entry).
@@ -131,6 +133,7 @@ Status key as above. Nothing here is built unless marked `done`. Android changes
 
 ### R2-5 — Media picking
 **Status:** `pending`
+**Approach:** see NELSEN_LMS_ROADMAP.md → HANDOFF → item C (C1 bottom-sheet grid + system photo picker multi-select first; C2 inline gallery grid later).
 - Replace the attachment dialog with a Telegram-style bottom sheet: recent gallery grid, camera, file, multi-select with a send count, preview before send.
 - Multiple images/files in one action; upload progress per item.
 

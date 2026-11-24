@@ -1,5 +1,78 @@
 # Nelsen Savannah — LMS Implementation Roadmap
 
+## NEXT-AGENT HANDOFF (read this first)
+
+**Owner preferences:** Arch + neovim + tmux, self-hosted Debian server. Be brief and direct. Deliver work as **sequential `git apply` patch files**, each buildable and testable, with a stated verification command. Do not claim anything Android is working: this environment had **no Android SDK**, so every Android change below is **uncompiled and untested on a device**. API changes are covered by `node --test` scripts and all passed locally.
+
+**Patch history (confirm what is actually applied with `git log` / `git status`; do not assume):**
+1. Chat notification retry (API) + Android copy ("Community", "Book mentor", logout icon).
+2. `Chatroom.listTitle()` (group filter shows group name), Home greeting.
+3. `GET /lms/me/school-directory` + `firestore.rules.draft`.
+4. Hide never-messaged direct chats, new-chat picker search, offline send guard (`Utils/Connectivity.java`).
+5. Single chat filter menu (old button bar hidden, not deleted), Edit Profile "Saving…" state.
+
+**Step 0 — verify before building anything new:**
+```
+cd android && ./gradlew assembleDebug          # fix compile errors from patches 1-5 FIRST
+cd ../api && npm ci && for f in scripts/test-*.mjs; do node --test $f; done   # (test-role-source-guard.mjs: run with plain node)
+cd ../web && npm ci && npm run build
+```
+Most likely Android compile spots: `ChatFragment.showNewChatPicker` (picker search, `loadEnrolledTutors` signature), `HomeFragment` greeting (`view` capture in the user observer), `EditProfileActivity.setSaving`, `ChatFragment` filter popup.
+
+**Rules for the next agent**
+- One concern per patch. After each: run the verification command, regenerate an incremental patch, and prove the chain applies on a clean checkout (`git worktree add` + `git apply` each patch in order).
+- Never edit Firestore/RTDB rules in the repo and imply they are deployed. `firestore.rules.draft` is **unreviewed and undeployed**; diff against the live console first.
+- Do not auto-promote roles or touch role storage (see README "Where roles are stored").
+- Keep web history intact (web is connected to Lovable; see `web/AGENTS.md`).
+
+### Work queue (in this order)
+
+**A. Chat-tab unread badge (R2-1 remainder) — low risk, Android only**
+- Data already exists: `Chatroom.unreadCount: Map<uid,Int>` (`data/Model/DataClass.kt`). Sender increments `unreadCount.<receiverId>` in `data/Repository/ChatRepository.kt` (~line 236 direct, ~246 group); `resetUnread` zeroes it when a room opens (~line 169).
+- Missing: an app-wide total. `ChatFragment` only sees paged rooms, so it cannot own the badge.
+- Approach: in `MainActivity`, attach a Firestore snapshot listener on `chatRooms` where `userIds` array-contains uid (same query shape as `FirebaseRemoteDataSource.getChatRoomsFlow`), sum `unreadCount[uid]`, remove the listener in `onDestroy`/sign-out. Reuse the system/announcement filter used by the list. Wrap `navChatIcon` in a `FrameLayout` in `res/layout/activity_main.xml` and add a small badge `TextView` (show "99+" cap, hide at 0).
+- Risks: reads grow with room count (acceptable; only changed docs bill after the first snapshot); counters can drift because the **sender's app writes the receiver's counter**. Longer-term fix: increment server-side (API already fans out chat notifications in `api/src/controllers/chatController.js`).
+- Test: manual two-account; add a pure-Kotlin unit test for the summing helper (extract it so it needs no Firebase).
+
+**B. Chat list header: search + ⋮ next to "Messages" (R2-8 polish)**
+- "Messages" is rendered by `MainActivity` top bar (`homeTopTitle`, set from `R.string.topbar_messages`, ~line 416). The search and ⋮ buttons live in the fragment's own row `chatListToolbar` (`res/layout/fragment_chat.xml` and `layout-sw600dp`), so they appear on a second line.
+- Approach: when the Chat tab is active, show search and ⋮ in the `MainActivity` top bar (right side) and hide `chatListToolbar`; forward clicks to `ChatFragment` (it already owns `etSearch` toggle and the ⋮ `PopupMenu` at ~lines 240-266). Keep fragment code as the single owner of behavior; expose two public methods like `showNewChatPicker()` already does.
+
+**C. Telegram-style attachment sheet (R2-5)**
+- Today: `ChatFragment.showAttachmentChooser()` (~line 787) is a `MaterialAlertDialogBuilder` list with launchers `imagePicker`, `videoPicker`, `documentPicker` and `pendingMediaType`; send paths are `sendPickedMedia` / `sendPickedImage` (~lines 793-816). Manifest already has `CAMERA` and a `FileProvider`.
+- Step C1 (do first): replace the dialog with a `BottomSheetDialog` icon grid (Gallery, Camera, Video, Audio, Document) calling the existing launchers. Camera: `ActivityResultContracts.TakePicture` into a `FileProvider` URI. Multi-select: `PickMultipleVisualMedia` (system photo picker, no storage permission) then loop the existing send path with a "Send (N)" count.
+- Step C2 (only after C1 works on a device): inline recent-photos grid via `MediaStore` (needs `READ_MEDIA_IMAGES`/`READ_MEDIA_VIDEO` on Android 13+, `READ_EXTERNAL_STORAGE` below), preview screen, per-item upload progress.
+
+**D. Message reactions (new; Firestore rules change required)**
+- Library choice: use Google's `androidx.emoji2:emoji2-emojipicker` for the full picker (check the current release/version before pinning) and a **custom** quick-reaction row (👍 ❤️ 😂 😮 😢 🙏) with a "+" opening the picker, shown on long-press of a bubble (long-press currently starts `ensureActionMode()` ~line 1038; add reactions to that flow rather than a second gesture). Avoid unmaintained third-party "reaction popup" libraries.
+- Data model: `reactions: Map<uid, emoji>` on the message doc (one reaction per user; tapping the same emoji again removes it). Write with a field path: `update("reactions.$uid", emoji)` / `FieldValue.delete()`.
+- **Local cache:** messages are mirrored in Room (`ChatMessageEntity`, `DataBase/AppDatabase.kt`). Adding a field needs a **Room migration** (or storing reactions as a JSON string column); do not bump the schema without a tested migration.
+- Rules (draft file): currently a message can only be updated by its sender. Add: any room member may update a message **only** if `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])` and the only changed key inside `reactions` is their own uid. Test with the Firebase emulator + `@firebase/rules-unit-testing` (not runnable in the authoring sandbox).
+- UI: chips under the bubble with counts, your own highlighted; long-press chip lists who reacted (resolve names via `userNames` on the room).
+- Optional later: notify the message author (reuse the claim/retry service, new `type: "reaction"`).
+- Tests: pure unit test for the toggle/reduce logic; rules test file; manual two-device check.
+
+**E. Read ticks (R2-2) — do after D (shares the rules change)**
+- Spec in `android/UI_ROADMAP.md` R2-2: sent = grey tick, delivered = double grey, read = double blue. **Open owner question:** one grey tick for "sent" or none.
+- Prefer room-level `lastReadAt: Map<uid, Timestamp>` over per-message `readBy` (far fewer writes). Write own marker when the room is visible; each bubble compares its timestamp to the other members' markers (direct: other user; group: show blue only when all members read, or skip ticks in groups initially).
+- "Delivered" cannot be derived from Firestore alone; either skip the double-grey state or add a delivered marker written by the recipient's app when the room doc arrives.
+- Rules: a participant may write only their own `lastReadAt.<uid>`.
+
+**F. New-chat picker backed by the school directory (R2-3)**
+- API is done and tested: `GET /lms/me/school-directory?q=&schoolId=&limit=`. Android picker still uses `fetchAllMentors` / enrolled tutors. Switch the picker to the endpoint (Retrofit service in `data/remote`, token via `FirebaseAuth.getIdToken`). **Owner decision needed:** may mentees message any school member, or does the mentor-booking gate still apply?
+
+**G. Remaining UI roadmap items** — see `android/UI_ROADMAP.md`: R2-4 (group members screen, @mentions, group photo/pin; needs rules), R2-6, R2-7, R2-9 (profile), R2-10 (booking calendar), R2-11 (loading states; booking confirm submit is not a single call site), R2-12 (offline caching beyond the existing banner), R2-13, R2-14.
+
+### Audit still TO DO (not performed yet — do not assume anything below is verified)
+1. **Live streaming (YouTube-based).** Read in this order: `README.md` "Live learning", `LIVE_ACCEPTANCE_CHECKLIST.md`, `api/src/services/lmsYouTubeLiveSync.js`, `lmsLiveStatusSql.js`, `lmsLiveChatSql.js`, `lmsLiveRecipientQueries.js`, Android `GoLiveActivity.kt` + `Service/LiveProjectionService.kt`, web `src/routes/live.$eventId.tsx` and `components/lms/YouTubeConnectionPanel.tsx`. Look for: polling cost and interval (host chat polls every ~5s), reconnect/retry exhaustion paths, ended-session resurrection, scope leaks in `live-state`, attendance heartbeat load, FCM no-token cases. Real-device acceptance (checklist) has **never been executed**.
+2. **Web parity.** Web already has a viewer route (`live.$eventId.tsx`) and YouTube connection panel; **hosting from web is not implemented** (roadmap lists "Web live relay"). Options to evaluate, each with cost/complexity: (a) web "Go live" form that creates the broadcast and shows RTMPS URL + stream key for OBS (smallest), (b) browser capture → server relay → RTMPS (needs a media server; largest), (c) keep Android as the only host and make web viewer/chat/attendance fully equal. Also compare chat features web vs Android (web has no chat inbox route; only `groups.$groupId.tsx`).
+3. **Bugs/perf sweep:** N+1 queries in `lmsController.js`, missing Firestore/RTDB indexes (`.indexOn` timestamps), Redis cache coverage, the PostgreSQL concurrency guard for chat sends (listed open), chat notification 2-minute retry window, paging source ignoring lastMessage order (ordering is client-side in the flow but not in `getChatRoomsPagingSource`).
+4. **Role-aware app.** Produce a matrix (Mentee / Mentor / SchoolAdmin / SuperAdmin × Android / Web / API) of what each role can see and do, and mark gaps. Use README "Roles and their scopes" as the source of truth.
+
+### Documentation consolidation (requested, NOT done yet)
+Goal: one canonical `README.md` (what exists, how to run, how it works) and one `ROADMAP.md` (everything open, grouped by area, with a role matrix and per-item owner decision). Plan: inventory every `[ ]` in `NELSEN_LMS_ROADMAP.md`, `LMS_ROADMAP.md`, `android/UI_ROADMAP.md`, `IMPLEMENTATION_README_BENCHMARK.md`, `LIVE_ACCEPTANCE_CHECKLIST.md`; dedupe; move finished history to `docs/archive/` (do not delete). Do this **after** the Step 0 builds pass, so the roadmap reflects reality.
+
+
 ## November 24 follow-up — chat notification retry and Android copy
 
 - [x] `POST /chat/message`: per-message claim state (`processing`/`partial`/`complete`/`failed`), `deliveredTo`, attempt cap (5) and 60s lease; a retry after partial fanout failure re-sends only to undelivered recipients and re-applies the suspended-member filter.
