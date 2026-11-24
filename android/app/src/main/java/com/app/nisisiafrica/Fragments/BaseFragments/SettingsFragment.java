@@ -401,9 +401,17 @@ public class SettingsFragment extends Fragment {
     }
 
     private void updateVerificationUI(String status) {
-        requireActivity().runOnUiThread(() -> {
-            TextView statusText = getView().findViewById(R.id.txtVerificationStatus);
-            View verifyCard = getView().findViewById(R.id.cardVerifyProfile);
+        // Didit/Firebase callbacks can arrive after a locale change has recreated
+        // the Activity and detached this Fragment's old view.
+        View root = getView();
+        if (root == null) return;
+
+        root.post(() -> {
+            if (!isAdded() || getView() != root) return;
+
+            TextView statusText = root.findViewById(R.id.txtVerificationStatus);
+            View verifyCard = root.findViewById(R.id.cardVerifyProfile);
+            if (statusText == null || verifyCard == null) return;
 
             switch (status) {
                 case "approved":
@@ -429,9 +437,14 @@ public class SettingsFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
-        super.onDestroyView();
         if (handler != null) {
             handler.cleanup();
+            handler = null;
         }
+        if (loadingDialog != null) {
+            if (loadingDialog.isShowing()) loadingDialog.dismiss();
+            loadingDialog = null;
+        }
+        super.onDestroyView();
     }
 }
